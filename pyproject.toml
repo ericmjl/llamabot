@@ -56,8 +56,7 @@ profile = "black"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["llamabot"]
-include = ["pkg*"]  # alternatively: `exclude = ["additional*"]`
+where = ["."]
 namespaces = false
 
 [project]
