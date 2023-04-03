@@ -1,6 +1,6 @@
 # LLaMaBot: A Pythonic bot interface to LLMs
 
-[![All Contributors](https://img.shields.io/github/all-contributors/projectOwner/projectName?color=ee8449&style=flat-square)](#contributors)
+[![All Contributors](https://img.shields.io/github/all-contributors/ericmjl/llamabot?color=ee8449&style=flat-square)](#contributors)
 
 LLaMaBot implements a Pythonic interface to LLMs,
 making it much easier to experiment with LLMs in a Jupyter notebook.
