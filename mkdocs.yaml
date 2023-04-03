@@ -1,0 +1,68 @@
+site_name: "llamabot"
+site_url: https://ericmjl.github.io/llamabot
+
+docs_dir: docs/
+
+# For more configuration on the theme, see https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/
+theme:
+  name: material
+  icon:
+    logo: "fontawesome/solid/book"
+  features:
+    - instant
+    - tabs
+  language: en
+
+# We customize the navigation by hand to control the order
+# in which pages show up.
+
+plugins:
+  - search
+  - mknotebooks:
+      execute: true
+      write_markdown: true
+      allow_errors: false
+      timeout: 1200
+      binder: true
+      binder_service_name: "gh"
+      binder_branch: "master"
+      binder_ui: "lab"
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: true
+          # https://github.com/mkdocstrings/mkdocstrings/issues/278#issuecomment-831411193
+          selection:
+            docstring_style: restructured-text
+      # custom_templates: templates
+      watch:
+        - llamabot
+# Taken from here: https://squidfunk.github.io/mkdocs-material/extensions/codehilite/
+markdown_extensions:
+  - codehilite
+  - admonition
+  - pymdownx.superfences
+  - markdown.extensions.attr_list
+
+extra_css:
+  - apidocs.css
+
+extra_javascript:
+  - config.js
+
+repo_name: "ericmjl/llamabot"
+repo_url: "https://github.com/ericmjl/llamabot"
+
+extra:
+  social:
+    - icon: "fontawesome/brands/github"
+      link: "https://github.com/ericmjl"
+
+    - icon: "fontawesome/brands/twitter"
+      link: "https://twitter.com/ericmjl"
+
+
+    - icon: "fontawesome/brands/linkedin"
+      link: "https://linkedin.com/in/ericmjl"
