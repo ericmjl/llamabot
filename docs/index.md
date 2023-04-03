@@ -87,7 +87,6 @@ Please submit a bug report using the issue tracker.
 
 Please use the Discussions feature on GitHub.
 
-
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
