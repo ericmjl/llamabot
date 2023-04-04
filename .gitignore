@@ -147,3 +147,4 @@ cython_debug/
 # Custom
 oryx-build-commands.txt
 .DS_Store
+*.md.tmp
