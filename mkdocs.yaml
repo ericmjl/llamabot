@@ -27,18 +27,7 @@ plugins:
       binder_service_name: "gh"
       binder_branch: "master"
       binder_ui: "lab"
-  - mkdocstrings:
-      default_handler: python
-      handlers:
-        python:
-          rendering:
-            show_source: true
-          # https://github.com/mkdocstrings/mkdocstrings/issues/278#issuecomment-831411193
-          selection:
-            docstring_style: restructured-text
-      # custom_templates: templates
-      watch:
-        - llamabot
+
 # Taken from here: https://squidfunk.github.io/mkdocs-material/extensions/codehilite/
 markdown_extensions:
   - codehilite

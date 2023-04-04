@@ -32,6 +32,7 @@ dependencies:
 - mkdocs
 - mkdocs-material
 - mkdocstrings
+- mknotebooks
 # pip dependencies
 - pip:
   # Place packages that cannot be installed by conda in this section.
