@@ -28,10 +28,13 @@ From there, `llamabot` will automagically load the environment variable for you.
 
 ### Simple Bot
 
-The simplest use case of LLaMaBot is to create a simple bot that keeps no record of chat history.
+The simplest use case of LLaMaBot
+is to create a simple bot that keeps no record of chat history.
 This is useful for prompt experimentation,
-or for creating simple bots that can be called upon repeatedly with different messages.
-For example, to create a Bot that explains a given chunk of text like Richard Feynman would:
+or for creating simple bots that are preconditioned on an instruction to handle texts
+and are then called upon repeatedly with different texts.
+For example, to create a Bot that explains a given chunk of text
+like Richard Feynman would:
 
 ```python
 from llamabot import SimpleBot
@@ -48,8 +51,10 @@ feynman("Enzyme function annotation is a fundamental challenge, and numerous com
 
 ### Chat Bot
 
-To experiment with a Chat Bot in the Jupyter notebook, we also provide the ChatBot interface.
-This interface automagically keeps track of chat history for as long as your Jupyter session is alive.
+To experiment with a Chat Bot in the Jupyter notebook,
+we also provide the ChatBot interface.
+This interface automagically keeps track of chat history
+for as long as your Jupyter session is alive.
 Doing so allows you to use your own local Jupyter notebook as a chat interface.
 
 For example:
@@ -86,7 +91,7 @@ Please submit a bug report using the issue tracker.
 
 ### Questions/Discussions
 
-Please use the Discussions feature on GitHub.
+Please use the issue tracker on GitHub.
 
 ## Contributors
 
