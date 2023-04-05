@@ -64,16 +64,19 @@ name = "llamabot"
 version = "0.0.4"
 dependencies = [
     "openai",
-    "langchain"
+    "langchain",
+    "typer"
 ]
 
 [project.optional-dependencies]
 tests = [
-    'pytest'
+    "pytest"
 ]
 docs = [
-    'mkdocs-material',
-    'mkdocs'
+    "mkdocs-material",
+    "mkdocs",
+    "panel",
+    "jupyter_bokeh"
 ]
 
 [project.scripts]
