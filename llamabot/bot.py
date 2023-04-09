@@ -12,7 +12,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class SimpleBot:
-    """Simple Bot that is primed with a system prompt, accepts a human message, and sends back a single response."""
+    """Simple Bot that is primed with a system prompt, accepts a human message, and sends back a single response.
+
+    This bot does not retain chat history.
+    """
 
     def __init__(self, system_prompt, temperature=0.0):
         """Initialize the SimpleBot.
