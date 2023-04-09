@@ -32,7 +32,6 @@ dependencies:
 - mkdocs
 - mkdocs-material
 - mkdocstrings
-- mknotebooks
 - panel
 - jupyter_bokeh
 # pip dependencies
@@ -40,3 +39,4 @@ dependencies:
   # Place packages that cannot be installed by conda in this section.
   - openai
   - langchain
+  - mknotebooks
