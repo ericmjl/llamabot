@@ -6,6 +6,6 @@ This is the file from which you can do:
 
 Use it to control the top-level API of your Python data science project.
 """
-from .bot import ChatBot, SimpleBot
+from .bot import ChatBot, QueryBot, SimpleBot
 
-__all__ = ["ChatBot", "SimpleBot"]
+__all__ = ["ChatBot", "SimpleBot", "QueryBot"]
