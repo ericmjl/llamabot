@@ -143,13 +143,13 @@ class QueryBot:
         self.index = index
 
     def __call__(
-        self, query: str, return_sources: bool = False, **kwargs
+        self, query: str, return_sources: bool = True, **kwargs
     ) -> Union[str, Response]:
         """Call the QueryBot.
 
         :param query: The query to send to the document index.
         :param return_sources: Whether to return the source nodes of the query.
-            Defaults to False.
+            Defaults to True.
             If True, we return the Response object from LlamaIndex;
             if False, we simply return the text generated.
         :param kwargs: Additional keyword arguments to pass to the chatbot.
