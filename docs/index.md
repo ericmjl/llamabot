@@ -74,6 +74,27 @@ feynman("Is there a simpler way to rephrase the text?")
 
 And your bot will work with the chat history to respond.
 
+### QueryBot
+
+The final bot provided is a QueryBot.
+This bot lets you query a collection of documents.
+To use it, you have two options:
+
+1. Pass in a list of paths to text files, or
+2. Pass in a pre-computed `GPTSimpleIndex` from LlamaIndex.
+
+As an illustrative example:
+
+```python
+from llamabot import QueryBot
+from pathlib import Path
+
+blog_index = Path("/path/to/index.json")
+bot = QueryBot(system_message="You are a Q&A bot.", saved_index_path=blog_index)
+result = bot("Do you have any advice for me on career development?", similarity_top_k=5)
+display(Markdown(result.response))
+```
+
 ## Contributing
 
 ### New features
