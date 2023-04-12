@@ -62,7 +62,7 @@ class ChatBot:
         self.model = ChatOpenAI(model_name="gpt-4", temperature=temperature)
         self.chat_history = [SystemMessage(content=system_prompt)]
 
-    def __call__(self, human_message) -> str:
+    def __call__(self, human_message) -> Response:
         """Call the ChatBot.
 
         :param human_message: The human message to use.
@@ -71,7 +71,7 @@ class ChatBot:
         self.chat_history.append(HumanMessage(content=human_message))
         response = self.model(self.chat_history)
         self.chat_history.append(response)
-        return response.content
+        return response
 
     def __repr__(self):
         """Return a string representation of the ChatBot.
