@@ -23,14 +23,17 @@ class SimpleBot:
     This bot does not retain chat history.
     """
 
-    def __init__(self, system_prompt, temperature=0.0):
+    def __init__(self, system_prompt, temperature=0.0, model_name="gpt-4"):
         """Initialize the SimpleBot.
 
         :param system_prompt: The system prompt to use.
-        :param temperature: The temperature to use.
+        :param temperature: The model temperature to use.
+            See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
+            for more information.
+        :param model_name: The name of the OpenAI model to use.
         """
         self.system_prompt = system_prompt
-        self.model = ChatOpenAI(model_name="gpt-4", temperature=temperature)
+        self.model = ChatOpenAI(model_name=model_name, temperature=temperature)
 
     def __call__(self, human_message):
         """Call the SimpleBot.
@@ -53,13 +56,16 @@ class ChatBot:
     h/t Andrew Giessel/GPT4 for the idea.
     """
 
-    def __init__(self, system_prompt, temperature=0.0):
+    def __init__(self, system_prompt, temperature=0.0, model_name="gpt-4"):
         """Initialize the ChatBot.
 
         :param system_prompt: The system prompt to use.
-        :param temperature: The temperature to use.
+        :param temperature: The model temperature to use.
+            See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
+            for more information.
+        :param model_name: The name of the OpenAI model to use.
         """
-        self.model = ChatOpenAI(model_name="gpt-4", temperature=temperature)
+        self.model = ChatOpenAI(model_name=model_name, temperature=temperature)
         self.chat_history = [SystemMessage(content=system_prompt)]
 
     def __call__(self, human_message) -> Response:
@@ -98,8 +104,12 @@ class QueryBot:
     def __init__(
         self,
         system_message: str,
+        model_name="gpt-4",
+        temperature=0.0,
         doc_paths: List[Union[str, Path]] = None,
         saved_index_path: Union[str, Path] = None,
+        chunk_size: int = 2000,
+        chunk_overlap: int = 0,
     ):
         """Initialize QueryBot.
 
@@ -112,14 +122,20 @@ class QueryBot:
         We also default to using GPT4 with temperature 0.0.
 
         :param system_message: The system message to send to the chatbot.
+        :param model_name: The name of the OpenAI model to use.
+        :param temperature: The model temperature to use.
+            See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
+            for more information.
         :param doc_paths: A list of paths to the documents to use for the chatbot.
             These are assumed to be plain text files.
         :param saved_index_path: The path to the saved index to use for the chatbot.
+        :param chunk_size: The chunk size to use for the LlamaIndex TokenTextSplitter.
+        :param chunk_overlap: The chunk overlap to use for the LlamaIndex TokenTextSplitter.
         """
 
         self.system_message = system_message
 
-        chat = ChatOpenAI(model_name="gpt-4", temperature=0.0)
+        chat = ChatOpenAI(model_name=model_name, temperature=temperature)
         llm_predictor = LLMPredictor(llm=chat)
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
@@ -131,7 +147,9 @@ class QueryBot:
 
         else:
             self.doc_paths = doc_paths
-            splitter = TokenTextSplitter(chunk_size=2000, chunk_overlap=0)
+            splitter = TokenTextSplitter(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
             documents = []
             for fname in doc_paths:
                 with open(fname, "r") as f:
