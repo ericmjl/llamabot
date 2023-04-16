@@ -66,6 +66,7 @@ dependencies = [
     "openai",
     "langchain",
     "typer"
+    "llama_index",
 ]
 
 [project.optional-dependencies]
