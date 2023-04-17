@@ -71,7 +71,8 @@ dependencies = [
 
 [project.optional-dependencies]
 tests = [
-    "pytest"
+    "pytest",
+    "typer",
 ]
 docs = [
     "mkdocs-material",
