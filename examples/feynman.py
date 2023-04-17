@@ -1,14 +1,19 @@
+"""Example Feynman bot at the CLI."""
 import typer
 
 from llamabot import SimpleBot
 
 feynman = SimpleBot(
-    "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
+    "You are Richard Feynman. "
+    "You will be given a difficult concept, and your task is to explain it back."
 )
 
 
 def ask_feynman(text: str):
-    """Ask Feynman."""
+    """Ask Feynman.
+
+    :param text: Text to ask Feynman.
+    """
     result = feynman(text)
     print(result)
 
