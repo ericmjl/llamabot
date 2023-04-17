@@ -43,7 +43,7 @@ jobs:
         with:
           # https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-set-personal-access-token-personal_token
 
-          personal_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.GHPAGES_DEPLOY_KEY }}
 
           publish_dir: /tmp/docs
           publish_branch: gh-pages
