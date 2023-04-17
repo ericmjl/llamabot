@@ -65,14 +65,12 @@ version = "0.0.8"
 dependencies = [
     "openai",
     "langchain",
-    "typer",
     "llama_index",
 ]
 
 [project.optional-dependencies]
 tests = [
     "pytest",
-    "typer",
 ]
 docs = [
     "mkdocs-material",
