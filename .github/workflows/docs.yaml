@@ -32,10 +32,10 @@ jobs:
 
       - name: Build docs
         run: |
-          conda activate llamabot && \
-          python -m ipykernel install --user --name llamabot && \
-          pip install -e . && \
-          typer llamabot.cli utils docs --name llamabot --output docs/cli.md && \
+          conda activate llamabot
+          python -m ipykernel install --user --name llamabot
+          pip install -e .
+          typer llamabot.cli utils docs --name llamabot --output docs/cli.md
           mkdocs build --site-dir /tmp/docs
 
       - name: Deploy website
