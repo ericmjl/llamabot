@@ -47,7 +47,7 @@ class SimpleBot:
         submit_button_label="Submit",
         site_name="SimpleBot",
         title="SimpleBot",
-        serve=False,
+        show=False,
     ):
         """Create a Panel app that wraps a LlamaBot.
 
@@ -56,10 +56,10 @@ class SimpleBot:
         :param submit_button_label: The label for the submit button.
         :param site_name: The name of the site.
         :param title: The title of the site.
-        :param serve: Whether to serve the app.
+        :param show: Whether to show the app.
             If False, we return the Panel app directly.
-            If True, we call `.serve()` on the app.
-        :return: The Panel app, either served or directly.
+            If True, we call `.show()` on the app.
+        :return: The Panel app, either showed or directly.
         """
         input_text = pn.widgets.TextAreaInput(
             name=input_text_label, value="", height=200, width=500
@@ -94,6 +94,6 @@ class SimpleBot:
             main_max_width="768px",
         )
         app = pn.panel(app)
-        if serve:
+        if show:
             return app.show()
         return app
