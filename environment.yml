@@ -13,6 +13,7 @@ dependencies:
   - mamba
   - pip
   - twine
+  - loguru
   # Utilities
   - pyprojroot
   - python-dotenv
