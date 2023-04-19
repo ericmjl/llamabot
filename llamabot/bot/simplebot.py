@@ -1,9 +1,13 @@
 """Class definition for SimpleBot."""
 import panel as pn
 from dotenv import load_dotenv
+from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
 from loguru import logger
+
+from llamabot.panel_utils import PanelMarkdownCallbackHandler
 
 pn.extension()
 
@@ -26,7 +30,13 @@ class SimpleBot:
         :param model_name: The name of the OpenAI model to use.
         """
         self.system_prompt = system_prompt
-        self.model = ChatOpenAI(model_name=model_name, temperature=temperature)
+        self.model = ChatOpenAI(
+            model_name=model_name,
+            temperature=temperature,
+            streaming=True,
+            verbose=True,
+            callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        )
 
     def __call__(self, human_message):
         """Call the SimpleBot.
@@ -64,7 +74,7 @@ class SimpleBot:
         input_text = pn.widgets.TextAreaInput(
             name=input_text_label, value="", height=200, width=500
         )
-        output_text = pn.pane.Markdown()
+        output_text = pn.pane.Markdown("")
         submit = pn.widgets.Button(name=submit_button_label, button_type="success")
 
         def b(event):
@@ -73,8 +83,11 @@ class SimpleBot:
             :param event: The button click event.
             """
             logger.info(input_text.value)
+            output_text.object = ""
+            markdown_handler = PanelMarkdownCallbackHandler(output_text)
+            self.model.callback_manager.set_handler(markdown_handler)
             response = self(input_text.value)
-            output_text.object = response.content
+            logger.info(response)
 
         submit.on_click(b)
 
