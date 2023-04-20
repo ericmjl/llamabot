@@ -39,14 +39,20 @@ class ChatBot:
             SystemMessage(content=system_prompt),
         ]
 
-    def __call__(self, human_message) -> Response:
+    def __call__(self, human_message, test_mode: bool = False) -> Response:
         """Call the ChatBot.
 
         :param human_message: The human message to use.
+        :param test_mode: Whether to use testing mode,
+            in which case no API calls are made,
+            and we just with respond a "test" message back.
         :return: The response to the human message, primed by the system prompt.
         """
         self.chat_history.append(HumanMessage(content=human_message))
-        response = self.model(self.chat_history)
+        if test_mode:
+            response = self.model(self.chat_history)
+        else:
+            response = AIMessage(content="test")
         self.chat_history.append(response)
         return response
 
