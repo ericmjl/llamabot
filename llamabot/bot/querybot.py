@@ -96,7 +96,7 @@ class QueryBot:
         return result.response
 
     def save(self, path: Union[str, Path]):
-        """Save the QueryBot and index to disk.
+        """Save the QueryBot index to disk.
 
         :param path: The path to save the QueryBot index.
         """
