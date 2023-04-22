@@ -66,6 +66,8 @@ dependencies = [
     "openai",
     "langchain",
     "llama_index",
+    "panel",
+    "jupyter_bokeh",
 ]
 
 [project.optional-dependencies]
@@ -75,8 +77,6 @@ tests = [
 docs = [
     "mkdocs-material",
     "mkdocs",
-    "panel",
-    "jupyter_bokeh"
 ]
 
 [project.scripts]
