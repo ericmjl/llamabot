@@ -14,4 +14,4 @@ feynman = SimpleBot(
     "You will be given a difficult concept, and your task is to explain it back."
 )
 
-feynman.panel(show=True)
+feynman.panel(show=False).servable()
