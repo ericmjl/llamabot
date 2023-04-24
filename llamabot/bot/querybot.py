@@ -2,10 +2,13 @@
 from pathlib import Path
 from typing import List, Union
 
+from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
-from langchain.text_splitter import TokenTextSplitter
 from llama_index import Document, GPTSimpleVectorIndex, LLMPredictor, ServiceContext
 from llama_index.response.schema import Response
+
+from llamabot.doc_processor import magic_load_doc, split_document
 
 
 class QueryBot:
@@ -45,7 +48,13 @@ class QueryBot:
 
         self.system_message = system_message
 
-        chat = ChatOpenAI(model_name=model_name, temperature=temperature)
+        chat = ChatOpenAI(
+            model_name=model_name,
+            temperature=temperature,
+            streaming=True,
+            verbose=True,
+            callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        )
         llm_predictor = LLMPredictor(llm=chat)
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
@@ -56,19 +65,29 @@ class QueryBot:
             )
 
         else:
-            self.doc_paths = doc_paths
-            splitter = TokenTextSplitter(
-                chunk_size=chunk_size, chunk_overlap=chunk_overlap
-            )
-            documents = []
-            for fname in doc_paths:
-                with open(fname, "r") as f:
-                    docs = splitter.split_text(f.read())
-                    documents.extend([Document(d) for d in docs])
+            # Step 1: Use the appropriate document loader to load the document.
+            # loaded_docs are named as such because they are loaded from llamahub loaders.
+            # however, we still will need to split them up further into chunks of 2,000 tokens,
+            # which will be done later to give us `final_docs`.
+            raw_docs = []
+            for file in doc_paths:
+                raw_docs.extend(magic_load_doc(file))
+
+            # Step 2: Ensure each doc is 2000 tokens long maximum.
+            documents: List[Document] = []
+            for doc in raw_docs:
+                documents.extend(
+                    split_document(
+                        doc, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+                    )
+                )
+
+            # Step 3: Generate the index from the documents.
             index = GPTSimpleVectorIndex.from_documents(
                 documents, service_context=service_context
             )
         self.index = index
+        self.doc_paths = doc_paths
 
     def __call__(
         self, query: str, return_sources: bool = True, **kwargs
