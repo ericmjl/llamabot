@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
@@ -37,8 +37,9 @@ class SimpleBot:
             verbose=True,
             callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
         )
+        self.chat_history = []
 
-    def __call__(self, human_message):
+    def __call__(self, human_message) -> AIMessage:
         """Call the SimpleBot.
 
         :param human_message: The human message to use.
@@ -48,7 +49,10 @@ class SimpleBot:
             SystemMessage(content=self.system_prompt),
             HumanMessage(content=human_message),
         ]
-        return self.model(messages)
+        response = self.model(messages)
+        self.chat_history.append(HumanMessage(content=human_message))
+        self.chat_history.append(response)
+        return response
 
     def panel(
         self,
