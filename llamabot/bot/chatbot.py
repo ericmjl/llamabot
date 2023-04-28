@@ -5,7 +5,6 @@ from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
-from llama_index.response.schema import Response
 
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 
@@ -39,7 +38,7 @@ class ChatBot:
             SystemMessage(content=system_prompt),
         ]
 
-    def __call__(self, human_message) -> Response:
+    def __call__(self, human_message) -> AIMessage:
         """Call the ChatBot.
 
         :param human_message: The human message to use.
