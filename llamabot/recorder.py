@@ -15,8 +15,12 @@ class PromptRecorder:
         self.prompts_and_responses = []
 
     def __enter__(self):
-        """Enter the context manager."""
-        print("Recording prompt and response...")
+        """Enter the context manager.
+
+        :returns: The prompt recorder.
+        """
+        prompt_recorder_var.set(self)
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit the context manager.
@@ -25,6 +29,7 @@ class PromptRecorder:
         :param exc_val: The exception value.
         :param exc_tb: The exception traceback.
         """
+        prompt_recorder_var.set(None)
         print("Recording complete!🎉")
 
     def log(self, prompt: str, response: str):
@@ -50,7 +55,7 @@ class PromptRecorder:
         return pd.DataFrame(self.prompts_and_responses)._repr_html_()
 
 
-def autorecord(prompt, response):
+def autorecord(prompt: str, response: str):
     """Record a prompt and response.
 
     :param prompt: The human prompt.
@@ -59,4 +64,4 @@ def autorecord(prompt, response):
     # Log the response.
     prompt_recorder: Optional[PromptRecorder] = prompt_recorder_var.get(None)
     if prompt_recorder:
-        prompt_recorder.log(prompt, response.content)
+        prompt_recorder.log(prompt, response)
