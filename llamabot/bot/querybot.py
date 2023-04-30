@@ -1,4 +1,5 @@
 """Class definition for QueryBot."""
+import contextvars
 from pathlib import Path
 from typing import List, Union
 
@@ -10,6 +11,8 @@ from llama_index import Document, GPTSimpleVectorIndex, LLMPredictor, ServiceCon
 from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
+
+prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
 class QueryBot:
@@ -149,6 +152,11 @@ class QueryBot:
 
         # Step 5: Record the source nodes of the query.
         self.source_nodes[query] = init_response.source_nodes
+
+        # Log the response.
+        prompt_recorder = prompt_recorder_var.get(None)
+        if prompt_recorder:
+            prompt_recorder.log(query, response.content)
 
         # Step 6: Return the response.
         return response

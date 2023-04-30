@@ -1,6 +1,7 @@
 """Class definition for SimpleBot."""
+import contextvars
+
 import panel as pn
-from dotenv import load_dotenv
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
@@ -9,9 +10,7 @@ from loguru import logger
 
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 
-pn.extension()
-
-load_dotenv()
+prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
 class SimpleBot:
@@ -45,6 +44,7 @@ class SimpleBot:
         :param human_message: The human message to use.
         :return: The response to the human message, primed by the system prompt.
         """
+
         messages = [
             SystemMessage(content=self.system_prompt),
             HumanMessage(content=human_message),
@@ -52,6 +52,11 @@ class SimpleBot:
         response = self.model(messages)
         self.chat_history.append(HumanMessage(content=human_message))
         self.chat_history.append(response)
+
+        # Log the response.
+        prompt_recorder = prompt_recorder_var.get(None)
+        if prompt_recorder:
+            prompt_recorder.log(human_message, response.content)
         return response
 
     def panel(

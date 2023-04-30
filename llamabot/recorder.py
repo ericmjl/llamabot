@@ -1,9 +1,9 @@
 """Prompt recorder class definition."""
-from typing import Union
+import contextvars
 
 import pandas as pd
 
-from llamabot import ChatBot, QueryBot, SimpleBot
+prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
 class PromptRecorder:
@@ -26,17 +26,13 @@ class PromptRecorder:
         """
         print("Recording complete!🎉")
 
-    def log(self, bot: Union[SimpleBot, ChatBot, QueryBot], prompt: str):
+    def log(self, prompt: str, response: str):
         """Log the prompt and response in chat history.
 
-        :param bot: An instance of a llamabot bot.
-        :param prompt: A prompt to record along with the bot's response.
+        :param prompt: The human prompt.
+        :param response: A the response from the bot.
         """
-        response = bot(prompt)
-
-        self.prompts_and_responses.append(
-            {"prompt": prompt, "response": response.content}
-        )
+        self.prompts_and_responses.append({"prompt": prompt, "response": response})
 
     def __repr__(self):
         """Return a string representation of the prompt recorder.
