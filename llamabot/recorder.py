@@ -1,5 +1,6 @@
 """Prompt recorder class definition."""
 import contextvars
+from typing import Optional
 
 import pandas as pd
 
@@ -47,3 +48,15 @@ class PromptRecorder:
         :return: We delegate to the _repr_html_ method of the pandas DataFrame class.
         """
         return pd.DataFrame(self.prompts_and_responses)._repr_html_()
+
+
+def autorecord(prompt, response):
+    """Record a prompt and response.
+
+    :param prompt: The human prompt.
+    :param response: A the response from the bot.
+    """
+    # Log the response.
+    prompt_recorder: Optional[PromptRecorder] = prompt_recorder_var.get(None)
+    if prompt_recorder:
+        prompt_recorder.log(prompt, response.content)

@@ -9,6 +9,7 @@ from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
+from llamabot.recorder import autorecord
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -38,7 +39,7 @@ class SimpleBot:
         )
         self.chat_history = []
 
-    def __call__(self, human_message) -> AIMessage:
+    def __call__(self, human_message: str) -> AIMessage:
         """Call the SimpleBot.
 
         :param human_message: The human message to use.
@@ -52,11 +53,7 @@ class SimpleBot:
         response = self.model(messages)
         self.chat_history.append(HumanMessage(content=human_message))
         self.chat_history.append(response)
-
-        # Log the response.
-        prompt_recorder = prompt_recorder_var.get(None)
-        if prompt_recorder:
-            prompt_recorder.log(human_message, response.content)
+        autorecord(human_message, response.content)
         return response
 
     def panel(

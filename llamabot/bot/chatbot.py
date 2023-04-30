@@ -9,6 +9,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
+from llamabot.recorder import autorecord
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -51,11 +52,7 @@ class ChatBot:
         self.chat_history.append(HumanMessage(content=human_message))
         response = self.model(self.chat_history)
         self.chat_history.append(response)
-
-        # Log the response.
-        prompt_recorder = prompt_recorder_var.get(None)
-        if prompt_recorder:
-            prompt_recorder.log(human_message, response.content)
+        autorecord(human_message, response.content)
 
         return response
 

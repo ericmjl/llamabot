@@ -11,6 +11,7 @@ from llama_index import Document, GPTSimpleVectorIndex, LLMPredictor, ServiceCon
 from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
+from llamabot.recorder import autorecord
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -153,10 +154,7 @@ class QueryBot:
         # Step 5: Record the source nodes of the query.
         self.source_nodes[query] = init_response.source_nodes
 
-        # Log the response.
-        prompt_recorder = prompt_recorder_var.get(None)
-        if prompt_recorder:
-            prompt_recorder.log(query, response.content)
+        autorecord(query, response.content)
 
         # Step 6: Return the response.
         return response
