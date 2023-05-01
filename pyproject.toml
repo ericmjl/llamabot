@@ -68,6 +68,7 @@ dependencies = [
     "llama_index",
     "panel",
     "jupyter_bokeh",
+    "loguru",
 ]
 
 [project.optional-dependencies]
