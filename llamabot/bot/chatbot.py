@@ -3,6 +3,7 @@
 import contextvars
 
 import panel as pn
+import tiktoken
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
@@ -50,7 +51,26 @@ class ChatBot:
         :return: The response to the human message, primed by the system prompt.
         """
         self.chat_history.append(HumanMessage(content=human_message))
-        response = self.model(self.chat_history)
+
+        # Get out the last 6000 tokens of chat history.
+        faux_chat_history = []
+        enc = tiktoken.encoding_for_model("gpt-4")
+        token_budget = 6_000
+
+        # Put the system message into the faux chat history.
+        for message in self.chat_history:
+            if isinstance(message, SystemMessage):
+                faux_chat_history.append(message)
+                tokens = enc.encode(message.content)
+                token_budget -= len(tokens)
+
+        for message in self.chat_history[::-1]:
+            tokens = enc.encode(message.content)
+            if token_budget > 0:
+                faux_chat_history.append(message)
+                token_budget -= len(tokens)
+
+        response = self.model(faux_chat_history[::-1])
         self.chat_history.append(response)
         autorecord(human_message, response.content)
 
