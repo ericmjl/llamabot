@@ -8,6 +8,7 @@ from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from loguru import logger
 
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
@@ -58,19 +59,25 @@ class ChatBot:
         token_budget = 6_000
 
         # Put the system message into the faux chat history.
+        system_messages = []
         for message in self.chat_history:
             if isinstance(message, SystemMessage):
+                system_messages.append(message)
+                tokens = enc.encode(message.content)
+                token_budget -= len(tokens)
+
+        faux_chat_history = []
+        for message in self.chat_history[::-1]:
+            if token_budget > 0:
+                logger.info(f"Token budget: {token_budget}")
                 faux_chat_history.append(message)
                 tokens = enc.encode(message.content)
                 token_budget -= len(tokens)
 
-        for message in self.chat_history[::-1]:
-            tokens = enc.encode(message.content)
-            if token_budget > 0:
-                faux_chat_history.append(message)
-                token_budget -= len(tokens)
+        messages = system_messages + faux_chat_history[::-1]
+        logger.info(messages)
 
-        response = self.model(faux_chat_history[::-1])
+        response = self.model(messages)
         self.chat_history.append(response)
         autorecord(human_message, response.content)
 
@@ -117,14 +124,20 @@ class ChatBot:
                 if isinstance(message, SystemMessage):
                     pass
                 elif isinstance(message, HumanMessage):
-                    chat_markdown = pn.pane.Markdown(f"Human: {message.content}")
+                    chat_markdown = pn.pane.Markdown(
+                        f"Human: {message.content}", width=600
+                    )
                     chat_messages.append(chat_markdown)
                 elif isinstance(message, AIMessage):
-                    chat_markdown = pn.pane.Markdown(f"Bot: {message.content}")
+                    chat_markdown = pn.pane.Markdown(
+                        f"Bot: {message.content}", width=600
+                    )
                     chat_messages.append(chat_markdown)
 
-            chat_messages.append(pn.pane.Markdown(f"Human: {text_input.value}"))
-            bot_reply = pn.pane.Markdown("Bot: ")
+            chat_messages.append(
+                pn.pane.Markdown(f"Human: {text_input.value}", width=600)
+            )
+            bot_reply = pn.pane.Markdown("Bot: ", width=600)
             chat_messages.append(bot_reply)
             chat_history.objects = chat_messages
             markdown_handler = PanelMarkdownCallbackHandler(bot_reply)
@@ -134,7 +147,7 @@ class ChatBot:
 
         send_button.on_click(b)
         input_pane = pn.Row(text_input, send_button)
-        output_pane = pn.Column(chat_history, scroll=True, height=500)
+        output_pane = pn.Column(chat_history, scroll=True, height=500, width=700)
 
         main = pn.Row(input_pane, output_pane)
         app = pn.template.FastListTemplate(
