@@ -101,18 +101,29 @@ class ChatBot:
             representation += f"{prefix}{message.content}" + "\n\n"
         return representation
 
-    def panel(self, show: bool = True):
+    def panel(
+        self,
+        show: bool = True,
+        site="ChatBot",
+        title="ChatBot",
+        width=768,
+    ):
         """Create a Panel app that wraps a LlamaBot.
 
         :param show: Whether to show the app.
             If False, we return the Panel app directly.
             If True, we call `.show()` on the app.
+        :param site: The name of the site.
+        :param title: The title of the app.
+        :param width: The width of the app in pixels.
         :return: The Panel app, either showed or directly.
         """
 
         text_input = pn.widgets.TextAreaInput(placeholder="Start chatting...")
         chat_history = pn.Column(*[])
         send_button = pn.widgets.Button(name="Send", button_type="primary")
+
+        widget_width = width - 150
 
         def b(event):
             """Button click handler.
@@ -125,19 +136,19 @@ class ChatBot:
                     pass
                 elif isinstance(message, HumanMessage):
                     chat_markdown = pn.pane.Markdown(
-                        f"Human: {message.content}", width=600
+                        f"Human: {message.content}", width=widget_width
                     )
                     chat_messages.append(chat_markdown)
                 elif isinstance(message, AIMessage):
                     chat_markdown = pn.pane.Markdown(
-                        f"Bot: {message.content}", width=600
+                        f"Bot: {message.content}", width=widget_width
                     )
                     chat_messages.append(chat_markdown)
 
             chat_messages.append(
-                pn.pane.Markdown(f"Human: {text_input.value}", width=600)
+                pn.pane.Markdown(f"Human: {text_input.value}", width=widget_width)
             )
-            bot_reply = pn.pane.Markdown("Bot: ", width=600)
+            bot_reply = pn.pane.Markdown("Bot: ", width=widget_width)
             chat_messages.append(bot_reply)
             chat_history.objects = chat_messages
             markdown_handler = PanelMarkdownCallbackHandler(bot_reply)
@@ -147,14 +158,14 @@ class ChatBot:
 
         send_button.on_click(b)
         input_pane = pn.Row(text_input, send_button)
-        output_pane = pn.Column(chat_history, scroll=True, height=500, width=700)
+        output_pane = pn.Column(chat_history, scroll=False, height=500)
 
         main = pn.Row(input_pane, output_pane)
         app = pn.template.FastListTemplate(
-            site="ChatBot",
-            title="ChatBot",
+            site=site,
+            title=title,
             main=main,
-            main_max_width="768px",
+            main_max_width=f"{width}px",
         )
         if show:
             return app.show()
