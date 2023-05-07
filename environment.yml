@@ -43,6 +43,6 @@ dependencies:
       # Place packages that cannot be installed by conda in this section.
       - openai
       - langchain
-      - llama_index
+      - llama_index<=0.5.27
       - mknotebooks
       - wget
