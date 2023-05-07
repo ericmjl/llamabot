@@ -89,7 +89,9 @@ class QueryBot:
         self.chat_history = [
             SystemMessage(content=system_message),
             SystemMessage(
-                content="Do not hallucinate content. If you cannot answer something, respond by saying that you don't know."
+                content="""Do not hallucinate content.
+If you cannot answer something, respond by saying that you don't know.
+"""
             ),
         ]
         # Store a mapping of query to source nodes.
