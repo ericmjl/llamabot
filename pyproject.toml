@@ -67,7 +67,8 @@ dependencies = [
     "langchain",
     "llama_index<=0.5.27",
     "panel",
-    "jupyter_bokeh",
+    "jupyter_bokeh<=3.0.5",
+    "bokeh<=2.4.3",
     "loguru",
 ]
 
