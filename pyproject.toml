@@ -66,9 +66,9 @@ dependencies = [
     "openai",
     "langchain",
     "llama_index<=0.5.27",
-    "panel<=0.14.4",
-    "jupyter_bokeh<=3.0.5",
-    "bokeh<=2.4.3",
+    "panel",
+    "jupyter_bokeh",
+    "bokeh<=3.1.0",
     "loguru",
 ]
 
