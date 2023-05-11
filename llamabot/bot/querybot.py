@@ -7,7 +7,7 @@ from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
-from llama_index import Document, GPTSimpleVectorIndex, LLMPredictor, ServiceContext
+from llama_index import GPTSimpleVectorIndex, LLMPredictor, ServiceContext
 from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
@@ -61,18 +61,17 @@ class QueryBot:
         llm_predictor = LLMPredictor(llm=chat)
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
-        # Build index
+        # Initialize index or load it from disk.
+        index = GPTSimpleVectorIndex(nodes=[], service_context=service_context)
         if saved_index_path is not None:
-            index = load_index(
-                index_path=saved_index_path, service_context=service_context
+            index = GPTSimpleVectorIndex.load_from_disk(
+                saved_index_path, service_context=service_context
             )
 
-        elif doc_paths is not None:
-            index = load_docs_to_index(
-                doc_paths,
-                service_context,
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
+        # Update index with new documents.
+        if doc_paths is not None:
+            index = insert_documents_into_index(
+                doc_paths, index, chunk_size, chunk_overlap
             )
 
         else:
@@ -96,6 +95,8 @@ If you cannot answer something, respond by saying that you don't know.
         ]
         # Store a mapping of query to source nodes.
         self.source_nodes: dict = {}
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
 
     def __call__(
         self,
@@ -161,55 +162,35 @@ If you cannot answer something, respond by saying that you don't know.
             path = path.with_suffix(".json")
         self.index.save_to_disk(path)
 
+    def insert(self, file: Path):
+        """Insert a document into the index.
 
-def load_index(
-    index_path: Union[str, Path], service_context: ServiceContext
-) -> GPTSimpleVectorIndex:
-    """Load the QueryBot index from disk.
+        :param file: The path to the document to insert.
+        """
 
-    :param index_path: The path to the index to load.
-    :param service_context: The service context to use for loading the index.
-    :return: The loaded index.
-    """
-    index_path = Path(index_path)
-
-    index = GPTSimpleVectorIndex.load_from_disk(
-        index_path, service_context=service_context
-    )
-    return index
-
-
-def load_docs_to_index(
-    doc_paths: Union[str, Path],
-    service_context: ServiceContext,
-    chunk_size: int = 2000,
-    chunk_overlap: int = 0,
-) -> GPTSimpleVectorIndex:
-    """Load documents to the QueryBot index.
-
-    :param doc_paths: A list of paths to the documents to load.
-    :param service_context: The service context to use for loading the documents.
-    :param chunk_size: The chunk size to use for the langchain TokenTextSplitter.
-    :param chunk_overlap: The chunk overlap to use for the langchain TokenTextSplitter.
-    :return: The loaded index.
-    """
-    # Step 1: Use the appropriate document loader to load the document.
-    # loaded_docs are named as such because they are loaded from llamahub loaders.
-    # however, we still will need to split them up further into chunks of 2,000 tokens,
-    # which will be done later to give us `final_docs`.
-    raw_docs = []
-    for file in doc_paths:
-        raw_docs.extend(magic_load_doc(file))
-
-    # Step 2: Ensure each doc is 2000 tokens long maximum.
-    documents: List[Document] = []
-    for doc in raw_docs:
-        documents.extend(
-            split_document(doc, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        self.index = insert_documents_into_index(
+            [file], self.index, self.chunk_size, self.chunk_overlap
         )
 
-    # Step 3: Generate the index from the documents.
-    index = GPTSimpleVectorIndex.from_documents(
-        documents, service_context=service_context
-    )
+
+def insert_documents_into_index(
+    doc_paths: List[Union[str, Path]],
+    index: GPTSimpleVectorIndex,
+    chunk_size: int,
+    chunk_overlap: int,
+):
+    """Insert documents into the index.
+
+    :param doc_paths: A list of paths to the documents to insert.
+    :param index: The index to insert the documents into.
+    :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
+    :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
+    :returns: The updated index.
+    """
+    for path in doc_paths:
+        logger.info(f"Inserting {path} into the index...")
+        document = magic_load_doc(path)
+        docs = split_document(document, chunk_size, chunk_overlap)
+        for doc in docs:
+            index.insert(doc)
     return index
