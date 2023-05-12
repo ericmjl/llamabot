@@ -189,8 +189,9 @@ def insert_documents_into_index(
     """
     for path in doc_paths:
         logger.info(f"Inserting {path} into the index...")
-        document = magic_load_doc(path)
-        docs = split_document(document, chunk_size, chunk_overlap)
-        for doc in docs:
-            index.insert(doc)
+        documents = magic_load_doc(path)
+        for document in documents:
+            chunks = split_document(document, chunk_size, chunk_overlap)
+            for chunk in chunks:
+                index.insert(chunk)
     return index
