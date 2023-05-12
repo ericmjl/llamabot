@@ -62,8 +62,9 @@ class QueryBot:
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
         # Initialize index or load it from disk.
-        index = GPTSimpleVectorIndex(nodes=[], service_context=service_context)
-        if saved_index_path is not None:
+        if saved_index_path is None:
+            index = GPTSimpleVectorIndex(nodes=[], service_context=service_context)
+        else:
             index = GPTSimpleVectorIndex.load_from_disk(
                 saved_index_path, service_context=service_context
             )
@@ -73,12 +74,6 @@ class QueryBot:
             index = insert_documents_into_index(
                 doc_paths, index, chunk_size, chunk_overlap
             )
-
-        else:
-            logger.warning(
-                "You've not provided any documents to index! Please be sure to do so later."
-            )
-            index = None
 
         # Set object attributes.
         self.system_message = system_message
