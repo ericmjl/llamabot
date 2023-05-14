@@ -12,6 +12,8 @@ EXTENSION_LOADER_MAPPING = {
     ".docx": "DocxReader",
     ".pptx": "PptxReader",
     ".xlsx": "PandasExcelReader",
+    ".md": "MarkdownReader",
+    ".ipynb": "IPYNBReader",
 }
 
 
