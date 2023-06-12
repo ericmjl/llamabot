@@ -61,7 +61,8 @@ def summarize(diff: str) -> str:
     Focus on summarizing what was added, removed, and changed at a conceptual level.
 
     {{ diff }}
-    """  # noqa: DAR101
+    # noqa: DAR101
+    """
 
 
 @text.prompt
@@ -69,6 +70,7 @@ def describe_advantages(diff: str) -> str:
     """Postulate how the how the following code changes provides an advantage over the existing codebase.
 
     {{ diff }}
+    # noqa: DAR101
     """
 
 
@@ -82,4 +84,5 @@ def suggest_improvements(diff: str) -> str:
 
     1. Modularity of the function.
     2. Readability of the function.
-    """  # noqa: DAR101
+    # noqa: DAR101
+    """
