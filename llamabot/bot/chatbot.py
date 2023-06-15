@@ -4,7 +4,7 @@ import contextvars
 
 import panel as pn
 import tiktoken
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
@@ -38,7 +38,7 @@ class ChatBot:
             temperature=temperature,
             streaming=True,
             verbose=True,
-            callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+            callback_manager=BaseCallbackManager([StreamingStdOutCallbackHandler()]),
         )
         self.chat_history = [
             SystemMessage(content="Always return Markdown-compatible text."),

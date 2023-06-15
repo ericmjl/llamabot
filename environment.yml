@@ -39,6 +39,7 @@ dependencies:
   - panel
   - jupyter_bokeh
   - bokeh<=3.1.0
+  - pyzotero
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
@@ -47,3 +48,4 @@ dependencies:
       - llama_index<=0.5.27
       - mknotebooks
       - wget
+      - outlines
