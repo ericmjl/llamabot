@@ -1,4 +1,20 @@
-"""Prompts and bots for coding."""
+"""Prompts and bots for coding.
+
+codebot is an instance of SimpleBot.
+The way to use codebot is as follows:
+
+```python
+prompt = "..." # some string
+output = codebot(prompt)
+```
+
+Prompts are composed from the python functions that are inside here.
+So we can do something like:
+
+```python
+output = codebot(one_of_these_functions(argument))
+```
+"""
 
 import outlines.text as text
 
@@ -38,15 +54,29 @@ def ghostwriter(desired_functionality):
     {{ desired_functionality }}
 
     How do I write the code for this? Please return only the code without explaining it.
-    """  # noqa: DAR101
+
+    Ensure that there are type hints in the function.
+
+    # noqa: DAR101
+    """
 
 
 @text.prompt
 def docstring(code):
     """Please help me write docstrings for the following code.
 
+    Ensure that you use Markdown Python block(s) to showcase how the code should be used.
+    The code usage example should be before the parameter/argument documentation.
+    Do not use sphinx-style directives,
+    but instead use Markdown-style triple back-ticks to house the code block.
+
+    Do not include :type: or :rtype: in the docstring
+    as they should be covered by the type hints.
+
     {{ code }}
-    """  # noqa: DAR101
+
+    # noqa: DAR101
+    """
 
 
 @text.prompt
@@ -54,4 +84,6 @@ def tests(code):
     """Please help me write unit tests for the following code.
 
     {{ code }}
-    """  # noqa: DAR101
+
+    # noqa: DAR101
+    """
