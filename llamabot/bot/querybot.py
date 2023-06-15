@@ -3,11 +3,11 @@ import contextvars
 from pathlib import Path
 from typing import List, Union
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
-from llama_index import GPTSimpleVectorIndex, LLMPredictor, ServiceContext
+from llama_index import GPTVectorStoreIndex, LLMPredictor, ServiceContext
 from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
@@ -36,7 +36,7 @@ class QueryBot:
         NOTE: QueryBot is not designed to have memory!
 
         The default text splitter is the TokenTextSplitter from LangChain.
-        The default index that we use is the GPTSimpleVectorIndex from LlamaIndex.
+        The default index that we use is the GPTVectorStoreIndex from LlamaIndex.
         We also default to using GPT4 with temperature 0.0.
 
         :param system_message: The system message to send to the chatbot.
@@ -56,16 +56,16 @@ class QueryBot:
             temperature=temperature,
             streaming=True,
             verbose=True,
-            callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+            callback_manager=BaseCallbackManager([StreamingStdOutCallbackHandler()]),
         )
         llm_predictor = LLMPredictor(llm=chat)
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
         # Initialize index or load it from disk.
         if saved_index_path is None:
-            index = GPTSimpleVectorIndex(nodes=[], service_context=service_context)
+            index = GPTVectorStoreIndex(nodes=[], service_context=service_context)
         else:
-            index = GPTSimpleVectorIndex.load_from_disk(
+            index = GPTVectorStoreIndex.load_from_disk(
                 saved_index_path, service_context=service_context
             )
 
@@ -170,7 +170,7 @@ If you cannot answer something, respond by saying that you don't know.
 
 def insert_documents_into_index(
     doc_paths: List[Union[str, Path]],
-    index: GPTSimpleVectorIndex,
+    index: GPTVectorStoreIndex,
     chunk_size: int,
     chunk_overlap: int,
 ):

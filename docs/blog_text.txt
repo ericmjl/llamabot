@@ -449,15 +449,15 @@ and then query it with a prompt for our LLM. Here is how it looks:
 
 ### Embed Text
 
-To do this, we use the `GPTSimpleVectorIndex` provided by LlamaIndex:
+To do this, we use the `GPTVectorStoreIndex` provided by LlamaIndex:
 
 ```python
-from llama_index import Document, GPTSimpleVectorIndex, LLMPredictor
+from llama_index import Document, GPTVectorStoreIndex, LLMPredictor
 
 # Index documents using GPT4
 llm_predictor = LLMPredictor(llm=chat)
 documents = [Document(blog_text)]
-index = GPTSimpleVectorIndex(documents=documents, llm_predictor=llm_predictor)
+index = GPTVectorStoreIndex(documents=documents, llm_predictor=llm_predictor)
 ```
 
 Thanks to the built-in token accounting capabilities of LlamaIndex, we can see that building the index costed us 1637 tokens.
@@ -643,7 +643,7 @@ That's because I needed the fewest lines of code to reach my desired endpoints.
 It is easy to remember the API as well - you only need to remember the pattern:
 
 1. `Document` to wrap the text that we imported,
-2. `GPTSimpleVectorIndex` (or more generically `<some>Index`), and
+2. `GPTVectorStoreIndex` (or more generically `<some>Index`), and
 3. `LLMPredictor` to wrap around LangChain's LLMs.
 4. `<Index>.query(prompt)`
 
