@@ -38,7 +38,9 @@ class ChatBot:
             temperature=temperature,
             streaming=True,
             verbose=True,
-            callback_manager=BaseCallbackManager([StreamingStdOutCallbackHandler()]),
+            callback_manager=BaseCallbackManager(
+                handlers=[StreamingStdOutCallbackHandler()]
+            ),
         )
         self.chat_history = [
             SystemMessage(content="Always return Markdown-compatible text."),

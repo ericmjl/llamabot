@@ -56,7 +56,9 @@ class QueryBot:
             temperature=temperature,
             streaming=True,
             verbose=True,
-            callback_manager=BaseCallbackManager([StreamingStdOutCallbackHandler()]),
+            callback_manager=BaseCallbackManager(
+                handlers=[StreamingStdOutCallbackHandler()]
+            ),
         )
         llm_predictor = LLMPredictor(llm=chat)
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
