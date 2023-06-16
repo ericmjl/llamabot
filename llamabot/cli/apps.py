@@ -18,7 +18,7 @@ def codebot(port: int = 5050, address: str = "0.0.0.0"):
 
     codebot_app = coding.create_panel_app()
     os.environ["BOKEH_ALLOW_WS_ORIGIN"] = f"{address}:{port}"
-    codebot_app.show(title="Codebot", port=port, address=address)
+    codebot_app.show(title="Codebot", port=port, address=address, open=False)
 
 
 if __name__ == "__main__":
