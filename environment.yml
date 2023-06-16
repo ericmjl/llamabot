@@ -44,8 +44,8 @@ dependencies:
   - pip:
       # Place packages that cannot be installed by conda in this section.
       - openai
-      - langchain==0.0.189
-      - llama_index<=0.5.27
+      - langchain>=0.0.189
+      - llama_index>=0.6.0
       - mknotebooks
       - wget
       - outlines
