@@ -8,6 +8,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from llama_index import GPTVectorStoreIndex, LLMPredictor, ServiceContext
+from llama_index.retrievers import VectorIndexRetriever
 from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
@@ -115,10 +116,14 @@ If you cannot answer something, respond by saying that you don't know.
             )
         # Step 1: Get documents from the index that are deemed to be matching the query.
         logger.info(f"Querying index for top {similarity_top_k} documents...")
-        init_response = self.index.query(
-            query, similarity_top_k=similarity_top_k, response_mode="no_text"
+
+        retriever = VectorIndexRetriever(
+            index=self.index,
+            similarity_top_k=10,
         )
-        source_texts = [n.node.text for n in init_response.source_nodes]
+
+        source_nodes = retriever.retrieve(query)
+        source_texts = [n.node.text for n in source_nodes]
 
         # Step 2: Construct a faux message history to work with.
         faux_chat_history = [SystemMessage(content=self.system_message)]
@@ -142,7 +147,7 @@ If you cannot answer something, respond by saying that you don't know.
         self.chat_history.append(response)
 
         # Step 5: Record the source nodes of the query.
-        self.source_nodes[query] = init_response.source_nodes
+        self.source_nodes[query] = source_nodes
 
         autorecord(query, response.content)
 
