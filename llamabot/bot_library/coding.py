@@ -143,29 +143,31 @@ def create_panel_app() -> pn.Column:
         placeholder="Please write me a function that generates Fibonacci numbers.",
     )
     code_output = pn.pane.Markdown()
-    code_output.object = "```python\n"
+    code_output.object = "_Generated code will show up here._"
     test_output = pn.pane.Markdown()
-    test_output.object = "```python\n"
+    test_output.object = "_Generated unit tests will show up here._"
 
     def generate_code(event):
         """Callback for the code generator button.
 
         :param event: The button click event.
         """
+        code_output.object = f"```{language.value}\n"
         markdown_handler = PanelMarkdownCallbackHandler(code_output)
         codebot.model.callbacks.set_handler(markdown_handler)
         code_text = codebot(ghostwriter(user_specification.value, language.value))
-        code_output.object = f"```python\n{code_text.content}\n```"
+        code_output.object = f"```{language.value}\n{code_text.content}\n```"
 
     def generate_tests(event):
         """Callback for the test generator button.
 
         :param event: The button click event.
         """
+        test_output.object = f"```{language.value}\n"
         markdown_handler = PanelMarkdownCallbackHandler(test_output)
         codebot.model.callbacks.set_handler(markdown_handler)
         test_text = codebot(tests(code_output.object, language.value))
-        test_output.object = f"```python\n{test_text.content}\n```"
+        test_output.object = f"```{language.value}\n{test_text.content}\n```"
 
     generate_button = pn.widgets.Button(name="Generate Code")
     generate_button.on_click(generate_code)
