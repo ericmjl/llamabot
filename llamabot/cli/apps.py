@@ -17,7 +17,7 @@ def codebot(port: int = 5050, address: str = "0.0.0.0"):
     """
 
     codebot_app = coding.create_panel_app()
-    os.environ["BOKEH_ALLOW_WS_ORIGIN"] = f"{address}:{port}"
+    os.environ["BOKEH_ALLOW_WS_ORIGIN"] = "*"
     codebot_app.show(title="Codebot", port=port, address=address, open=False)
 
 
