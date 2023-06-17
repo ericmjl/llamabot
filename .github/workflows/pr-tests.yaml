@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.10]
+        python-version: [3.11]
         environment-type: ['miniconda', 'bare']
 
     # https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
