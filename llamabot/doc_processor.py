@@ -1,4 +1,26 @@
-"""Code for document preprocessing."""
+"""
+Code for document preprocessing.
+
+This module provides functions for loading and splitting documents.
+It supports various file formats, including PDF, DOCX, PPTX, XLSX, Markdown, and IPython Notebook.
+
+Functions:
+    - magic_load_doc(file_path: str) -> List[Document]:
+        Load a document from a file, inferring the file format from the file extension.
+    - split_document(doc: Document, chunk_size: int = 2000, chunk_overlap: int = 0) -> List[Document]:
+        Split a document into sub-documents using token text splitter, with a maximum length of `chunk_size` tokens
+        and `chunk_overlap` tokens overlap.
+
+Classes:
+    - Document: Represents a document with text content.
+
+Exceptions:
+    - None
+
+Dependencies:
+    - langchain.text_splitter: Provides the TokenTextSplitter class for splitting text.
+    - llama_index: Provides the Document class and download_loader function.
+"""
 
 
 from pathlib import Path
