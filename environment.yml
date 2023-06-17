@@ -41,6 +41,7 @@ dependencies:
   - bokeh<=3.1.0
   - pyzotero
   - pyperclip
+  - astunparse
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.

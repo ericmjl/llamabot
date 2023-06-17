@@ -29,7 +29,7 @@ from typer import Typer
 from llamabot.bot_library.coding import (
     codebot,
     docstring,
-    get_function_source,
+    get_object_source_code,
     ghostwriter,
     module_doc,
 )
@@ -72,7 +72,7 @@ def function_docstrings(module_fpath: Path, function_name: str, style: str = "sp
     accepted = False
     while not accepted:
         # source_code = read_file(module_fpath)
-        function_source = get_function_source(module_fpath, function_name)
+        function_source = get_object_source_code(module_fpath, function_name)
         function_docstring = codebot(docstring(function_source, style=style))
         print("\n\n")
         user_response = get_valid_input("Do you accept this docstring? (y/n) ")

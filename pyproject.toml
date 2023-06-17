@@ -72,6 +72,7 @@ dependencies = [
     "loguru",
     "outlines",
     "pyperclip",
+    "astunparse>=1.6.3",
 ]
 
 [project.optional-dependencies]

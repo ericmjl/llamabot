@@ -11,11 +11,13 @@ Functions:
     - create_panel_app()
 """
 
+import ast
 import inspect
 import sys
 from pathlib import Path
 from typing import Union
 
+import astunparse
 import outlines.text as text
 import panel as pn
 
@@ -162,6 +164,40 @@ def get_function_source(file_path: Union[str, Path], function_name: str) -> str:
         )
 
     return inspect.getsource(function)
+
+
+def get_object_source_code(source_file: str, object_name: str) -> Union[str, None]:
+    """
+    Get the source code of a specific object (function, async function, or class) from a source file.
+
+    .. code-block:: python
+
+        source_code = get_object_source_code("example.py", "my_function")
+
+    :param source_file: The path to the source file containing the object.
+    :param object_name: The name of the object to get the source code for.
+    :return: The source code of the specified object as a string, or None if the object is not found.
+    :raises SyntaxError: If there is a syntax error in the source file.
+    :raises NameError: If the specified object is not found in the source file.
+    """
+    with open(source_file, "r+") as file:
+        source_code = file.read()
+
+    try:
+        parsed_ast = ast.parse(source_code)
+    except SyntaxError as e:
+        raise SyntaxError(f"Please fix the syntax error in the source file: {e}")
+
+    for node in parsed_ast.body:
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.name == object_name
+        ):
+            return astunparse.unparse(node)
+
+    raise NameError(
+        f"Please ensure the object '{object_name}' exists in the source file '{source_file}'."
+    )
 
 
 def create_panel_app() -> pn.Column:
