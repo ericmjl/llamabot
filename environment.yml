@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   # Core stack
-  - python=3.9
+  - python=3.11
   - build
   - bump2version
   - ipykernel
