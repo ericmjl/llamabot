@@ -1,4 +1,14 @@
-"""Functions for file-handling."""
+"""
+This module provides functions for file-handling.
+
+Functions:
+    - recursive_find(root_dir: Path, file_extension: str) -> List[Path]:
+        Find all files in a given path with a given extension.
+    - check_in_git_repo(path) -> bool:
+        Check if a given path is in a git repository.
+    - read_file(path: Path) -> str:
+        Read a file.
+"""
 import fnmatch
 import os
 import subprocess
@@ -33,3 +43,13 @@ def check_in_git_repo(path) -> bool:
         ["git", "rev-parse", "--is-inside-work-tree"], cwd=path
     )
     return git_check.decode("utf-8").strip() == "true"
+
+
+def read_file(path: Path) -> str:
+    """Read a file.
+
+    :param path: Path to the file to be read.
+    :return: Contents of the file.
+    """
+    with open(path, "r") as f:
+        return f.read()
