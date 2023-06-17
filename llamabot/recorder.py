@@ -131,6 +131,11 @@ class PromptRecorder:
 def autorecord(prompt: str, response: str):
     """Record a prompt and response.
 
+    This is intended to be called within every bot.
+    If we are within a prompt recorder context,
+    then the prompt recorder will record the prompt and response
+    as specified in the function.
+
     :param prompt: The human prompt.
     :param response: A the response from the bot.
     """
