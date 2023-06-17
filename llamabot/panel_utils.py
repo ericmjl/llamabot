@@ -20,7 +20,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 class PanelMarkdownCallbackHandler(BaseCallbackHandler):
     """Callback handler for streaming. Only works with LLMs that support streaming."""
 
-    def __init__(self, markdown_object: pn.pane.Pane):
+    def __init__(self, markdown_object: pn.pane.Markdown):
         self.md = markdown_object
 
     def on_llm_start(
