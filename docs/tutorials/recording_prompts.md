@@ -1,4 +1,7 @@
-# Tutorial: Automatically Record QueryBot Calls with PromptRecorder
+# Automatically Record QueryBot Calls with PromptRecorder
+
+!!! note
+    This tutorial was written by GPT4 and edited by a human.
 
 In this tutorial, we will learn how to use the `PromptRecorder` class to automatically record calls made to the `QueryBot`. The `PromptRecorder` class is designed to record prompts and responses, making it a perfect fit for logging interactions with the `QueryBot`.
 

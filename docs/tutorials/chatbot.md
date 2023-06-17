@@ -1,6 +1,7 @@
 # ChatBot Tutorial
 
-> NOTE: This tutorial was written by GPT4 and edited by a human.
+!!! note
+    This tutorial was written by GPT4 and edited by a human.
 
 In this tutorial, we will learn how to use the `ChatBot` class to create a simple chatbot that can interact with users. The chatbot is built using the OpenAI GPT-4 model and can be used in a Panel app.
 

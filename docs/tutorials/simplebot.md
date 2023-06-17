@@ -1,33 +1,30 @@
 # SimpleBot Tutorial
 
-> NOTE: This tutorial was written by GPT4 and edited by a human.
+!!! note
+    This tutorial was written by GPT4 and edited by a human.
 
-In this tutorial, we will explore the `SimpleBot` class,
-which is a basic chatbot that can be primed with a system prompt,
-accept a human message, and send back a single response.
-The bot does not retain chat history.
-We will also learn how to create a Panel app that wraps the `SimpleBot`.
+In this tutorial, we will learn how to use the `SimpleBot` class, a Python implementation of a chatbot that interacts with OpenAI's GPT-4 model. The `SimpleBot` class is designed to be simple and easy to use, allowing you to create a chatbot that can respond to human messages based on a given system prompt.
 
-## SimpleBot Class
+## Getting Started
 
-The `SimpleBot` class is initialized with a system prompt,
-a model temperature, and a model name.
-The system prompt is used to prime the bot,
-while the model temperature and model name are used to configure
-the underlying OpenAI model.
+First, let's import the `SimpleBot` class:
 
-### Initialization
+```python
+from llamabot import SimpleBot
+```
 
-To initialize a `SimpleBot` instance, you can use the following code:
+### Initializing the SimpleBot
+
+To create a new instance of `SimpleBot`, you need to provide a system prompt. The system prompt is used to prime the GPT-4 model, giving it context for generating responses. You can also optionally set the `temperature` and `model_name` parameters.
 
 ```python
 system_prompt = "You are an AI assistant that helps users with their questions."
-bot = SimpleBot(system_prompt, temperature=0.5, model_name="gpt-4")
+bot = SimpleBot(system_prompt)
 ```
 
-### Calling the SimpleBot
+### Interacting with the SimpleBot
 
-To call the `SimpleBot` with a human message, you can use the following code:
+To interact with the `SimpleBot`, simply call the instance with a human message as a parameter. The bot will return an `AIMessage` object containing the generated response.
 
 ```python
 human_message = "What is the capital of France?"
@@ -35,46 +32,43 @@ response = bot(human_message)
 print(response.content)
 ```
 
-This will return the AI's response to the human message, primed by the system prompt.
+### Using the Panel App
 
-### Creating a Panel App
-
-The `SimpleBot` class also provides a `panel` method
-that creates a Panel app to interact with the bot.
-The method accepts several optional parameters
-to customize the appearance and behavior of the app:
-
-- `input_text_label`: The label for the input text area.
-- `output_text_label`: The label for the output text area.
-- `submit_button_label`: The label for the submit button.
-- `site_name`: The name of the site.
-- `title`: The title of the site.
-- `show`: Whether to show the app. If `False`, the method returns the Panel app directly. If `True`, the method calls `.show()` on the app.
-
-To create a Panel app for the `SimpleBot`, you can use the following code:
+`SimpleBot` also comes with a built-in Panel app that provides a graphical user interface for interacting with the chatbot. To create the app, call the `panel()` method on your `SimpleBot` instance:
 
 ```python
-app = bot.panel(
-    input_text_label="Input",
-    output_text_label="Output",
-    submit_button_label="Submit",
-    site_name="SimpleBot",
-    title="SimpleBot",
-    show=False,
-)
+app = bot.panel()
 ```
 
-To show the app, you can either set the `show` parameter to `True`
-or call the `.show()` method on the returned app:
+You can customize the appearance of the app by providing optional parameters such as `input_text_label`, `output_text_label`, `submit_button_label`, `site_name`, and `title`.
+
+To display the app in your browser, call the `show()` method on the app:
 
 ```python
 app.show()
 ```
 
-This will launch a web server and display the Panel app in your web browser,
-allowing you to interact with the `SimpleBot`.
+## Example
 
-In summary, the `SimpleBot` class provides a simple way
-to create a chatbot that can be primed with a system prompt and accept human messages.
-The class also allows you to create a Panel app
-to interact with the bot in a user-friendly manner.
+Here's a complete example of how to create and interact with a `SimpleBot`:
+
+```python
+from simple_bot import SimpleBot
+
+# Initialize the SimpleBot
+system_prompt = "You are an AI assistant that helps users with their questions."
+bot = SimpleBot(system_prompt)
+
+# Interact with the SimpleBot
+human_message = "What is the capital of France?"
+response = bot(human_message)
+print(response.content)
+
+# Create and display the Panel app
+app = bot.panel()
+app.show()
+```
+
+## Conclusion
+
+In this tutorial, we learned how to use the `SimpleBot` class to create a simple chatbot that interacts with OpenAI's GPT-4 model. We also learned how to create a Panel app for a more user-friendly interface. With this knowledge, you can now create your own chatbots and experiment with different system prompts and settings.

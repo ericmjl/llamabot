@@ -1,6 +1,7 @@
 # QueryBot Tutorial
 
-> NOTE: This tutorial was written by GPT4 and edited by a human.
+!!! note
+    This tutorial was written by GPT4 and edited by a human.
 
 In this tutorial, we will learn how to use the `QueryBot` class to create a chatbot that can query documents using GPT-4. The `QueryBot` class allows us to index documents and use GPT-4 to generate responses based on the indexed documents.
 
@@ -12,7 +13,7 @@ Here's an example of how to initialize a `QueryBot`:
 
 ```python
 from pathlib import Path
-from llamabot.query_bot import QueryBot
+from llamabot import QueryBot
 
 system_message = "You are a helpful assistant that can answer questions based on the provided documents."
 doc_paths = [Path("document1.txt"), Path("document2.txt")]
