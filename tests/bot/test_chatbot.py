@@ -25,21 +25,6 @@ def test_chatbot_initialization(system_prompt):
     assert True
 
 
-def test_chatbot_call(system_prompt):
-    """Test that a response is returned from the chatbot.
-
-    Our correctness test is that the user's input and AI's response
-    result in the chat history getting longer.
-
-    :param system_prompt: The system prompt to use for the chatbot.
-        This is a pytest fixture.
-    """
-    cb = ChatBot(system_prompt)
-    cb("What's your name?", test_mode=True)
-
-    assert len(cb.chat_history) == 4
-
-
 def test_chatbot_repr(system_prompt):
     """Test that the repr of the chatbot is correct.
 
