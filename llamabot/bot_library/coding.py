@@ -1,19 +1,14 @@
 """Prompts and bots for coding.
 
-codebot is an instance of SimpleBot.
-The way to use codebot is as follows:
+This module provides a codebot instance and several functions for generating code, docstrings, and tests.
+It also includes a function to create a panel app for codebot.
 
-```python
-prompt = "..." # some string
-output = codebot(prompt)
-```
-
-Prompts are composed from the python functions that are inside here.
-So we can do something like:
-
-```python
-output = codebot(one_of_these_functions(argument))
-```
+Functions:
+    - ghostwriter(desired_functionality, language)
+    - docstring(code)
+    - module_doc(source_file)
+    - tests(code, language)
+    - create_panel_app()
 """
 
 import outlines.text as text
@@ -30,8 +25,6 @@ but can also suggest in other programming languages when prompted.
 
 Please write code without explaining it.
 Do not explain your code, only provide code.
-
-
 """
 )
 
@@ -72,6 +65,27 @@ def docstring(code):
     as they should be covered by the type hints.
 
     {{ code }}
+
+    # noqa: DAR101
+    """
+
+
+@text.prompt
+def module_doc(source_file):
+    """Please help me write module-level docstrings for the following code.
+
+    {{ source_file }}
+
+    Module-level docstrings have the following specification:
+
+    The docstring for a module should generally list the classes,
+    exceptions and functions (and any other objects)
+    that are exported by the module, with a one-line summary of each.
+    (These summaries generally give less detail
+    than the summary line in the object's docstring.)
+    The docstring for a package
+    (i.e., the docstring of the package's __init__.py module)
+    should also list the modules and subpackages exported by the package.
 
     # noqa: DAR101
     """
