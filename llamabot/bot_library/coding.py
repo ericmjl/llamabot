@@ -11,6 +11,11 @@ Functions:
     - create_panel_app()
 """
 
+import inspect
+import sys
+from pathlib import Path
+from typing import Union
+
 import outlines.text as text
 import panel as pn
 
@@ -51,20 +56,24 @@ def ghostwriter(desired_functionality, language):
 
 
 @text.prompt
-def docstring(code):
+def docstring(code, style="sphinx"):
     """Please help me write docstrings for the following code.
 
-    Always use the sphinx-style docstrings if coding in Python.
+    {{ code }}
 
-    Ensure that you use Markdown Python block(s) to showcase how the code should be used.
-    The code usage example should be before the parameter/argument documentation.
-    Do not use sphinx-style directives,
-    but instead use Markdown-style triple back-ticks to house the code block.
+    Ensure that the docstring is written in {{ style }} style.
 
-    Do not include :type: or :rtype: in the docstring
+    Ensure that the code usage example is located before the arguments documentation.
+    Ensure that the code usage example is renderable using Markdown directives.
+
+    Do not include any typing information in the docstring
     as they should be covered by the type hints.
 
-    {{ code }}
+    Do not include the original source code in your output,
+    return only the docstring starting from the triple quotes
+    and ending at the triple quotes.
+    Do not include the original function signature either.
+    Write only the docstring and nothing else.
 
     # noqa: DAR101
     """
@@ -110,6 +119,49 @@ def tests(code, language):
 
     # noqa: DAR101
     """
+
+
+def get_function_source(file_path: Union[str, Path], function_name: str) -> str:
+    """
+    Get the source code of a function from a specified Python file.
+
+    .. code-block:: python
+
+        source_code = get_function_source("path/to/your/file.py", "function_name")
+
+    :param file_path: The path to the Python file containing the function.
+    :param function_name: The name of the function to get the source code from.
+    :raises FileNotFoundError: If the provided file path is not found.
+    :raises ValueError: If the provided file is not a .py file.
+    :raises AttributeError: If the specified function is not found in the file.
+    :raises TypeError: If the specified name is not a function.
+    :return: The source code of the specified function as a string.
+    """
+    file_path = Path(file_path)
+    if not file_path.exists():
+        raise FileNotFoundError(
+            f"File not found. Please provide a valid file path: {file_path}"
+        )
+
+    if not file_path.suffix == ".py":
+        raise ValueError(f"Invalid file type. Please provide a .py file: {file_path}")
+
+    sys.path.insert(0, str(file_path.parent))
+    module_name = file_path.stem
+    module = __import__(module_name)
+
+    function = getattr(module, function_name, None)
+    if function is None:
+        raise AttributeError(
+            f"Function '{function_name}' not found in {file_path}. Please provide a valid function name."
+        )
+
+    if not inspect.isfunction(function):
+        raise TypeError(
+            f"'{function_name}' is not a function. Please provide a valid function name."
+        )
+
+    return inspect.getsource(function)
 
 
 def create_panel_app() -> pn.Column:
