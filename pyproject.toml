@@ -73,6 +73,7 @@ dependencies = [
     "outlines",
     "pyperclip",
     "astunparse>=1.6.3",
+    "python-dotenv",
 ]
 
 [project.optional-dependencies]
