@@ -1,7 +1,5 @@
 # Doc Processor
 
-How does the doc processor work?
-
 The doc processor is a Python script designed to preprocess documents
 by loading them from various file formats
 and splitting them into smaller sub-documents.
