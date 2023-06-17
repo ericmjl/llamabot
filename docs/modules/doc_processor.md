@@ -1,5 +1,8 @@
 # Doc Processor
 
+!!! note
+    This tutorial was written by GPT4 and edited by a human.
+
 The doc processor is a Python script designed to preprocess documents
 by loading them from various file formats
 and splitting them into smaller sub-documents.
