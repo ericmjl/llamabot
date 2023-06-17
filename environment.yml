@@ -40,6 +40,7 @@ dependencies:
   - jupyter_bokeh
   - bokeh<=3.1.0
   - pyzotero
+  - pyperclip
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
