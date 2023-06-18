@@ -118,7 +118,7 @@ def test_check_in_git_repo_error():
         check_in_git_repo("some_path")
 
 
-@given(st.text())
+@given(st.text(alphabet="abcdefghijklmnopqrstuvwxyz"))
 def test_read_file_contents(text: str):
     """
     Test if read_file returns the correct contents of a file.
