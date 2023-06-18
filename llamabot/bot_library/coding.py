@@ -76,6 +76,7 @@ def docstring(code, style="sphinx"):
     and ending at the triple quotes.
     Do not include the original function signature either.
     Write only the docstring and nothing else.
+    Ensure that the docstring indentation is correct for the object.
 
     # noqa: DAR101
     """
