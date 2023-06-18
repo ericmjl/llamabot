@@ -18,8 +18,7 @@ dependencies:
   - pyprojroot
   - python-dotenv
   # CLI development
-  - typer
-  - typer-cli
+  - typer>=0.4.0
   # Software testing
   - hypothesis
   - pytest
