@@ -32,6 +32,7 @@ from llamabot.bot_library.coding import (
     get_object_source_code,
     ghostwriter,
     module_doc,
+    tests,
 )
 from llamabot.file_finder import read_file
 from llamabot.utils import get_valid_input
@@ -93,4 +94,21 @@ def code_generator(request: str):
         if user_response == "y":
             break
     pyperclip.copy(code.content)
+    print("Copied to clipboard!")
+
+
+@app.command()
+def test_writer(module_fpath: str, object_name: str):
+    """Write tests for a given object.
+
+    :param module_fpath: Path to the module to generate tests for.
+    :param object_name: Name of the object to generate tests for.
+    """
+    while True:
+        function_source = get_object_source_code(module_fpath, object_name)
+        test_code = codebot(tests(function_source))
+        user_response = get_valid_input("Do you accept this test? (y/n) ")
+        if user_response == "y":
+            break
+    pyperclip.copy(test_code.content)
     print("Copied to clipboard!")
