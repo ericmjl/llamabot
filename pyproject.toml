@@ -51,6 +51,7 @@ testpaths = [
 
 [tool.isort]
 profile = "black"
+float_to_top = true
 
 [tool.setuptools]
 include-package-data = true
