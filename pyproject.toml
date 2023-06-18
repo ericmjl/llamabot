@@ -74,6 +74,7 @@ dependencies = [
     "pyperclip",
     "astunparse>=1.6.3",
     "python-dotenv",
+    "typer>=0.4.0",
 ]
 
 [project.optional-dependencies]
