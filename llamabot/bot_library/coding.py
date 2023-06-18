@@ -7,7 +7,7 @@ Functions:
     - ghostwriter(desired_functionality, language)
     - docstring(code)
     - module_doc(source_file)
-    - tests(code, language)
+    - tests(code, source_file)
     - create_panel_app()
 """
 
@@ -105,10 +105,14 @@ def module_doc(source_file):
 
 
 @text.prompt
-def tests(code):
+def tests(code, source_file_txt: str):
     """Please help me write unit tests for the following code.
 
     {{ code }}
+
+    For context, here is the broader source file in which it is defined:
+
+    {{ source_file_txt }}
 
     Prefer the use of property-based tests over example-based tests.
     Only suggest example-based tests

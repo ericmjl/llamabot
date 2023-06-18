@@ -105,8 +105,9 @@ def test_writer(module_fpath: str, object_name: str):
     :param object_name: Name of the object to generate tests for.
     """
     while True:
+        file_source = read_file(module_fpath)
         function_source = get_object_source_code(module_fpath, object_name)
-        test_code = codebot(tests(function_source))
+        test_code = codebot(tests(function_source, file_source))
         user_response = get_valid_input("Do you accept this test? (y/n) ")
         if user_response == "y":
             break
