@@ -98,6 +98,8 @@ def module_doc(source_file):
     (i.e., the docstring of the package's __init__.py module)
     should also list the modules and subpackages exported by the package.
 
+    Ensure that you never spit out the original source code.
+
     # noqa: DAR101
     """
 
@@ -111,8 +113,8 @@ def tests(code):
     Prefer the use of property-based tests over example-based tests.
     Only suggest example-based tests
     if it is too difficult to generate property-based tests.
-    For each test, please ensure that there is documentation
-    that explains what the test is testing.
+    For each test function,
+    ensure that there is a docstring that explains what the test is testing.
 
     Use pytest-style test functions and not Unittest-style test classes.
 
