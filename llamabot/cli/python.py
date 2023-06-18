@@ -45,20 +45,15 @@ def module_docstrings(module_fpath: Path):
 
     :param module_fpath: Path to the module to generate docstrings for.
     """
-    accepted = False
-    while not accepted:
+    while True:
         source_code = read_file(module_fpath)
         module_docstring = codebot(module_doc(source_code))
         print("\n\n")
         user_response = get_valid_input("Do you accept this docstring? (y/n) ")
         if user_response == "y":
-            accepted = True
             break
-        elif user_response == "n":
-            continue
-    if accepted:
-        pyperclip.copy(module_docstring.content)
-        print("Copied to clipboard!")
+    pyperclip.copy(module_docstring.content)
+    print("Copied to clipboard!")
 
 
 @app.command()
@@ -69,38 +64,33 @@ def function_docstrings(module_fpath: Path, function_name: str, style: str = "sp
     :param function_name: Name of the function to generate docstrings for.
     :param style: Style of docstring to generate.
     """
-    accepted = False
-    while not accepted:
+    while True:
         # source_code = read_file(module_fpath)
         function_source = get_object_source_code(module_fpath, function_name)
         function_docstring = codebot(docstring(function_source, style=style))
         print("\n\n")
         user_response = get_valid_input("Do you accept this docstring? (y/n) ")
         if user_response == "y":
-            accepted = True
             break
-        elif user_response == "n":
-            continue
-    if accepted:
-        pyperclip.copy(function_docstring.content)
-        print("Copied to clipboard!")
+    pyperclip.copy(function_docstring.content)
+    print("Copied to clipboard!")
 
 
 @app.command()
 def code_generator(request: str):
-    """Generate code.
+    """
+    Generate code.
+
+    .. code-block:: python
+
+        code_generator("Create a function that adds two numbers")
 
     :param request: A description of what the code should do.
     """
-    accepted = False
-    while not accepted:
+    while True:
         code = codebot(ghostwriter(request, "Python"))
         user_response = get_valid_input("Do you accept this code? (y/n) ")
         if user_response == "y":
-            accepted = True
             break
-        elif user_response == "n":
-            continue
-    if accepted:
-        pyperclip.copy(code.content)
-        print("Copied to clipboard!")
+    pyperclip.copy(code.content)
+    print("Copied to clipboard!")
