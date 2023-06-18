@@ -58,22 +58,23 @@ def module_docstrings(module_fpath: Path):
 
 
 @app.command()
-def function_docstrings(module_fpath: Path, function_name: str, style: str = "sphinx"):
+def generate_docstrings(module_fpath: Path, object_name: str, style: str = "sphinx"):
     """Generate function docstrings.
 
     :param module_fpath: Path to the module to generate docstrings for.
-    :param function_name: Name of the function to generate docstrings for.
+    :param object_name: Name of the object to generate docstrings for.
     :param style: Style of docstring to generate.
     """
     while True:
         # source_code = read_file(module_fpath)
-        function_source = get_object_source_code(module_fpath, function_name)
-        function_docstring = codebot(docstring(function_source, style=style))
+        object_source = get_object_source_code(module_fpath, object_name)
+        object_docstring = codebot(docstring(object_source, style=style))
         print("\n\n")
         user_response = get_valid_input("Do you accept this docstring? (y/n) ")
         if user_response == "y":
             break
-    pyperclip.copy(function_docstring.content)
+
+    pyperclip.copy(object_docstring.content)
     print("Copied to clipboard!")
 
 
@@ -90,6 +91,7 @@ def code_generator(request: str):
     """
     while True:
         code = codebot(ghostwriter(request, "Python"))
+        print("\n\n")
         user_response = get_valid_input("Do you accept this code? (y/n) ")
         if user_response == "y":
             break
@@ -108,6 +110,7 @@ def test_writer(module_fpath: str, object_name: str):
         file_source = read_file(module_fpath)
         function_source = get_object_source_code(module_fpath, object_name)
         test_code = codebot(tests(function_source, file_source))
+        print("\n\n")
         user_response = get_valid_input("Do you accept this test? (y/n) ")
         if user_response == "y":
             break
