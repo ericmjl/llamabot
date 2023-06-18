@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+env:
+  OPENAI_API_KEY: dummy_key
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
