@@ -9,7 +9,7 @@ Functions:
 """
 from unittest.mock import patch
 
-from llamabot.utils import get_valid_input
+from llamabot.cli.utils import get_valid_input
 
 
 def test_get_valid_input_y():

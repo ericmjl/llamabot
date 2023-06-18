@@ -1,5 +1,5 @@
 """
-This module contains tests for the get_function_source function in the llamabot.bot_library.coding module.
+This module contains tests for the get_function_source function in the llamabot.code_manipulation module.
 
 Functions:
 - test_get_function_source_file_not_found: Test that a FileNotFoundError is raised if the specified file is not found.
@@ -10,7 +10,7 @@ Functions:
 """
 import pytest
 
-from llamabot.bot_library.coding import get_function_source
+from llamabot.code_manipulation import get_function_source
 
 
 def test_get_function_source_file_not_found():

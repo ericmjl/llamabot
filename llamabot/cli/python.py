@@ -26,16 +26,17 @@ from pathlib import Path
 import pyperclip
 from typer import Typer
 
-from llamabot.bot_library.coding import (
+from llamabot.code_manipulation import get_object_source_code
+from llamabot.file_finder import read_file
+from llamabot.prompt_library.coding import (
     codebot,
     docstring,
-    get_object_source_code,
     ghostwriter,
     module_doc,
     tests,
 )
-from llamabot.file_finder import read_file
-from llamabot.utils import get_valid_input
+
+from .utils import get_valid_input
 
 app = Typer()
 

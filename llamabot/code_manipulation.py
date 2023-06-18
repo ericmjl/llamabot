@@ -1,28 +1,12 @@
 """Utilities for llamabot."""
 
 import ast
+import inspect
+import sys
+from pathlib import Path
 from typing import Any, Union
 
 import astor
-
-
-def get_valid_input(prompt):
-    """
-    This function prompts the user for input and validates it.
-
-    .. code-block:: python
-
-        user_choice = get_valid_input("Enter 'y' for yes or 'n' for no: ")
-
-    :param prompt: The prompt to display to the user.
-    :return: The validated user input, either 'y' or 'n'.
-    """
-    while True:
-        user_input = input(prompt).lower()
-        if user_input == "y" or user_input == "n":
-            return user_input
-        else:
-            print("Invalid input. Please enter 'y' or 'n'.")
 
 
 def replace_object_in_file(
@@ -161,3 +145,80 @@ def insert_docstring(source_file_path: str, object_name: str, new_docstring: str
 
     with open(source_file_path, "w") as source_file:
         source_file.write(new_source_code)
+
+
+def get_object_source_code(source_file: str, object_name: str) -> Union[str, None]:
+    """
+    Get the source code of a specific object (function, async function, or class) from a source file.
+
+    .. code-block:: python
+
+        source_code = get_object_source_code("example.py", "my_function")
+
+    :param source_file: The path to the source file containing the object.
+    :param object_name: The name of the object to get the source code for.
+    :return: The source code of the specified object as a string, or None if the object is not found.
+    :raises SyntaxError: If there is a syntax error in the source file.
+    :raises NameError: If the specified object is not found in the source file.
+    """
+    with open(source_file, "r+") as file:
+        source_code = file.read()
+
+    try:
+        parsed_ast = ast.parse(source_code)
+    except SyntaxError as e:
+        raise SyntaxError(f"Please fix the syntax error in the source file: {e}")
+
+    for node in parsed_ast.body:
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.name == object_name
+        ):
+            return astor.to_source(node)
+
+    raise NameError(
+        f"Please ensure the object '{object_name}' exists in the source file '{source_file}'."
+    )
+
+
+def get_function_source(file_path: Union[str, Path], function_name: str) -> str:
+    """
+    Get the source code of a function from a specified Python file.
+
+    .. code-block:: python
+
+        source_code = get_function_source("path/to/your/file.py", "function_name")
+
+    :param file_path: The path to the Python file containing the function.
+    :param function_name: The name of the function to get the source code from.
+    :raises FileNotFoundError: If the provided file path is not found.
+    :raises ValueError: If the provided file is not a .py file.
+    :raises AttributeError: If the specified function is not found in the file.
+    :raises TypeError: If the specified name is not a function.
+    :return: The source code of the specified function as a string.
+    """
+    file_path = Path(file_path)
+    if not file_path.exists():
+        raise FileNotFoundError(
+            f"File not found. Please provide a valid file path: {file_path}"
+        )
+
+    if not file_path.suffix == ".py":
+        raise ValueError(f"Invalid file type. Please provide a .py file: {file_path}")
+
+    sys.path.insert(0, str(file_path.parent))
+    module_name = file_path.stem
+    module = __import__(module_name)
+
+    function = getattr(module, function_name, None)
+    if function is None:
+        raise AttributeError(
+            f"Function '{function_name}' not found in {file_path}. Please provide a valid function name."
+        )
+
+    if not inspect.isfunction(function):
+        raise TypeError(
+            f"'{function_name}' is not a function. Please provide a valid function name."
+        )
+
+    return inspect.getsource(function)

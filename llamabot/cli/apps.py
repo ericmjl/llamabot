@@ -3,7 +3,7 @@ import os
 
 import typer
 
-from llamabot.bot_library import coding
+from llamabot.prompt_library import coding
 
 app = typer.Typer()
 

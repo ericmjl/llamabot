@@ -83,6 +83,7 @@ tests = [
     "pytest",
     "hypothesis",
     "pytest-cov",
+    "pytest-mock",
 ]
 docs = [
     "mkdocs-material",

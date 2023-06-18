@@ -41,6 +41,7 @@ dependencies:
   - pyzotero
   - pyperclip
   - astunparse
+  - pytest-mock
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
