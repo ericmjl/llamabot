@@ -103,12 +103,10 @@ def module_doc(source_file):
 
 
 @text.prompt
-def tests(code, language):
+def tests(code):
     """Please help me write unit tests for the following code.
 
     {{ code }}
-
-    Ensure that the tests are written in the {{ language }} programming language.
 
     Prefer the use of property-based tests over example-based tests.
     Only suggest example-based tests
@@ -116,8 +114,7 @@ def tests(code, language):
     For each test, please ensure that there is documentation
     that explains what the test is testing.
 
-    If testing in Python,
-    use pytest-style test functions and not Unittest-style test classes.
+    Use pytest-style test functions and not Unittest-style test classes.
 
     # noqa: DAR101
     """
