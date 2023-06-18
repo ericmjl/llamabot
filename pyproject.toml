@@ -80,6 +80,8 @@ dependencies = [
 [project.optional-dependencies]
 tests = [
     "pytest",
+    "hypothesis",
+    "pytest-cov",
 ]
 docs = [
     "mkdocs-material",
