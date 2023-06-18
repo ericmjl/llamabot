@@ -61,6 +61,11 @@ jobs:
           pip install -e .
           pytest
 
+      - name: Test CLI
+        run: |
+          pip install -e .
+          llamabot --help
+
       # https://github.com/codecov/codecov-action
       - name: Upload code coverage
         uses: codecov/codecov-action@v2
