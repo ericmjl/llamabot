@@ -49,6 +49,7 @@ jobs:
 
       - name: Install dependencies
         if: matrix.environment-type == 'bare'
+        # 17 June 2023: Figure out a way to move testing deps to the `pip install -e .` step below.
         run: |
           python -m pip install --upgrade pip pytest hypothesis pytest-cov
 
