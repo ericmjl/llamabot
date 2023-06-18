@@ -80,8 +80,11 @@ def split_document(
     :param doc: Document to be split.
     :param chunk_size: Maximum length of each sub-document.
     :param chunk_overlap: Number of tokens to overlap between each sub-document.
+    :raises ValueError: If `chunk_overlap` is negative.
     :return: A list of sub-documents.
     """
+    if chunk_overlap < 0:
+        raise ValueError("chunk_overlap must be non-negative.")
     splitter = TokenTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
     sub_texts = splitter.split_text(doc.text)
