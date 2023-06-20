@@ -42,6 +42,7 @@ dependencies:
   - pyperclip
   - astunparse
   - pytest-mock
+  - gitpython
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
