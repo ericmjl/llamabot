@@ -64,5 +64,15 @@ def configure(
             file.write(api_key_line + "\n")
 
 
+@app.command()
+def version():
+    """
+    Print the version of llamabot.
+    """
+    from llamabot.version import version
+
+    typer.echo(version)
+
+
 if __name__ == "__main__":
     app()
