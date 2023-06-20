@@ -73,7 +73,7 @@ dependencies = [
     "loguru",
     "outlines",
     "pyperclip",
-    "astunparse>=1.6.3",
+    "astor>=0.8.1",
     "python-dotenv",
     "typer>=0.4.0",
 ]
