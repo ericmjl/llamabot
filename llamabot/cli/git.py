@@ -24,6 +24,7 @@ def commit_message():
             )
             return
         message = bot(write_commit_message(diff))
+        print("\n\n")
         user_response = get_valid_input("Do you accept this commit message? (y/n) ")
         if user_response == "y":
             break
