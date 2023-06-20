@@ -36,4 +36,6 @@ def commit(autocommit: bool = True):
             break
     if autocommit:
         repo.index.commit(message.content)
+        origin = repo.remote(name="origin")
+        origin.push()
     pyperclip.copy(message.content)
