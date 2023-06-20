@@ -17,3 +17,10 @@ class Dummy:
 
     well: int
     done: bool
+
+    def __repr__(self):
+        """Return a string representation of the object.
+
+        :return: A string representation of the object.
+        """
+        return f"Dummy(well={self.well}, done={self.done})"
