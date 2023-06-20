@@ -78,6 +78,7 @@ dependencies = [
     "typer>=0.4.0",
     "gitpython",
     "pyprojroot",
+    "frozenlist",
 ]
 
 [project.optional-dependencies]
