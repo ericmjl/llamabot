@@ -28,7 +28,7 @@ from . import apps, git, python
 app = typer.Typer()
 app.add_typer(apps.app, name="apps")
 app.add_typer(python.app, name="python")
-app.add_typer(git.app, name="git")
+app.add_typer(git.gitapp, name="git")
 
 
 @app.command()
