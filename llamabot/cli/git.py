@@ -12,12 +12,6 @@ gitapp = Typer()
 
 
 @gitapp.command()
-def hello():
-    """Say hello."""
-    print("Hello!")
-
-
-@gitapp.command()
 def commit_message():
     """Generate a commit message."""
     bot = commitbot()
