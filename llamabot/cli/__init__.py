@@ -23,11 +23,12 @@ from pathlib import Path
 
 import typer
 
-from . import apps, python
+from . import apps, git, python
 
 app = typer.Typer()
 app.add_typer(apps.app, name="apps")
 app.add_typer(python.app, name="python")
+app.add_typer(git.app, name="git")
 
 
 @app.command()

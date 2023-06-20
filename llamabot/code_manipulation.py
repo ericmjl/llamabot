@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, Union
 
 import astor
+from git import GitCommandError, Repo
+from pyprojroot import here
 
 
 def replace_object_in_file(
@@ -308,3 +310,34 @@ def show_directory_tree(
             )
 
     return printed_text
+
+
+def get_git_diff(repo_path: Union[str, Path] = here()) -> str:
+    """Get the git diff of a repository.
+
+    :param repo_path: The path to the git repository.
+    :raises ValueError: If the provided path is not a git repository.
+    :raises ValueError: If the provided git repository has no staged or unstaged changes.
+    :return: The git diff as a string.
+    """
+    try:
+        repo = Repo(repo_path)
+    except GitCommandError as e:
+        raise ValueError("Please provide a valid path to a git repository.") from e
+
+    if repo.is_dirty():
+        try:
+            diff = repo.git.diff("--cached")
+        except GitCommandError as e:
+            raise ValueError(
+                "Please ensure that the git repository has staged changes."
+            ) from e
+    else:
+        try:
+            diff = repo.git.diff()
+        except GitCommandError as e:
+            raise ValueError(
+                "Please ensure that the git repository has unstaged changes."
+            ) from e
+
+    return diff
