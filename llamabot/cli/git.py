@@ -23,7 +23,13 @@ def commit_message():
     bot = commitbot()
 
     while True:
-        message = bot(write_commit_message(get_git_diff()))
+        diff = get_git_diff()
+        if not diff:
+            print(
+                "I don't see any staged changes to commit! Please stage some files before running me again."
+            )
+            return
+        message = bot(write_commit_message(diff))
         user_response = get_valid_input("Do you accept this commit message? (y/n) ")
         if user_response == "y":
             break
