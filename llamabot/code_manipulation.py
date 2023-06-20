@@ -1,6 +1,7 @@
 """Utilities for llamabot."""
 
 import ast
+import fnmatch
 import inspect
 import sys
 from pathlib import Path
@@ -222,3 +223,88 @@ def get_function_source(file_path: Union[str, Path], function_name: str) -> str:
         )
 
     return inspect.getsource(function)
+
+
+def should_ignore_file(file_path: Path, gitignore_patterns: list[str]) -> bool:
+    """Check if a file should be ignored.
+
+    :param file_path: The path to the file to check.
+    :param gitignore_patterns: A list of patterns to ignore.
+    :return: True if the file should be ignored, False otherwise.
+    """
+    for pattern in gitignore_patterns:
+        if fnmatch.fnmatch(file_path.name, pattern):
+            return True
+    return False
+
+
+def show_directory_tree(
+    directory: str,
+    depth: int = float("inf"),
+    indent: int = 0,
+    ignore_gitignore: bool = False,
+) -> str:
+    """Show directory tree from a directory.
+
+    .. code-block:: python
+
+        from pathlib import Path
+        show_directory_tree(Path.home(), depth=1, ignore_gitignore=True)
+
+    This function prints a directory tree of the specified directory.
+
+    :param directory: The directory to display the tree for.
+    :param depth: The maximum depth to display the tree, default is infinity.
+    :param indent: The indentation level for the tree, default is 0.
+    :param ignore_gitignore: If True, ignores files and folders specified in .gitignore, default is False.
+    :raises NotADirectoryError: If the specified path is not a directory.
+    :returns: A string representation of the directory tree.
+    """
+    directory_path = Path(directory)
+    if not directory_path.is_dir():
+        raise NotADirectoryError(
+            f"The specified path '{directory}' is not a directory."
+        )
+
+    if depth < 0:
+        return ""
+
+    files = []
+    folders = []
+
+    # Collect files and folders
+    for entry in directory_path.iterdir():
+        if entry.is_file():
+            files.append(entry)
+        elif entry.is_dir():
+            folders.append(entry)
+
+    # Sort files and folders alphabetically
+    files.sort()
+    folders.sort()
+
+    # Read gitignore patterns
+    gitignore_patterns = []
+    gitignore_path = directory_path / ".gitignore"
+    if ignore_gitignore and gitignore_path.is_file():
+        with gitignore_path.open("r") as gitignore_file:
+            gitignore_patterns = gitignore_file.read().splitlines()
+
+    # Prepare the printed text
+    printed_text = ""
+
+    # Print files
+    for file in files:
+        if ignore_gitignore and should_ignore_file(file, gitignore_patterns):
+            continue
+        printed_text += "|" + "    " * indent + "|-- " + file.name + "\n"
+
+    # Recursively print subdirectories
+    for folder in folders:
+        printed_text += "|" + "    " * indent + "|-- " + folder.name + "/" + "\n"
+        if depth > 0:
+            printed_text += show_directory_tree(
+                folder, depth - 1, indent + 1, ignore_gitignore
+            )
+
+    return printed_text

@@ -78,10 +78,18 @@ def docstring(code, style="sphinx"):
 
 
 @text.prompt
-def module_doc(source_file):
+def module_doc(source_file_contents, source_file_fpath=None, file_tree=None):
     """Please help me write module-level docstrings for the following code.
 
-    {{ source_file }}
+    {{ source_file_contents }}
+
+    For context, this is the source file's path:
+
+    {{ source_file_fpath }}
+
+    And this is the file tree of the source file's directory:
+
+    {{ file_tree }}
 
     Module-level docstrings have the following specification:
 

@@ -26,7 +26,7 @@ from pathlib import Path
 import pyperclip
 from typer import Typer
 
-from llamabot.code_manipulation import get_object_source_code
+from llamabot.code_manipulation import get_object_source_code, show_directory_tree
 from llamabot.file_finder import read_file
 from llamabot.prompt_library.coding import (
     codebot,
@@ -49,7 +49,10 @@ def module_docstrings(module_fpath: Path):
     """
     while True:
         source_code = read_file(module_fpath)
-        module_docstring = codebot(module_doc(source_code))
+        tree_structure = show_directory_tree(module_fpath.parent)
+        module_docstring = codebot(
+            module_doc(source_code, module_fpath, tree_structure)
+        )
         print("\n\n")
         user_response = get_valid_input("Do you accept this docstring? (y/n) ")
         if user_response == "y":
