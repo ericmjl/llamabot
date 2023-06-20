@@ -42,14 +42,19 @@ app = Typer()
 
 
 @app.command()
-def module_docstrings(module_fpath: Path):
+def module_docstrings(module_fpath: Path, dirtree_context_path: Path = None):
     """Generate module-level docstrings.
 
     :param module_fpath: Path to the module to generate docstrings for.
+    :param dirtree_context_path: Path to the directory to use as the context for the
+        directory tree.
+        Defaults to the parent directory of the module file.
     """
     while True:
         source_code = read_file(module_fpath)
-        tree_structure = show_directory_tree(module_fpath.parent)
+        tree_structure = show_directory_tree(
+            dirtree_context_path if dirtree_context_path else module_fpath.parent
+        )
         module_docstring = codebot(
             module_doc(source_code, module_fpath, tree_structure)
         )
