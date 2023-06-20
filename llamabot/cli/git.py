@@ -8,16 +8,16 @@ from llamabot.prompt_library.git import commitbot, write_commit_message
 
 from .utils import get_valid_input
 
-app = Typer()
+gitapp = Typer()
 
 
-@app.command
+@gitapp.command
 def hello():
     """Say hello."""
     print("Hello!")
 
 
-@app.command
+@gitapp.command
 def commit_message():
     """Generate a commit message."""
     bot = commitbot()
