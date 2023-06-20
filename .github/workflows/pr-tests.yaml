@@ -51,7 +51,7 @@ jobs:
         if: matrix.environment-type == 'bare'
         # 17 June 2023: Figure out a way to move testing deps to the `pip install -e .` step below.
         run: |
-          python -m pip install --upgrade pip pytest hypothesis pytest-cov
+          python -m pip install --upgrade pip pytest hypothesis pytest-cov pytest-mock
 
       - name: Run tests
         run: |
