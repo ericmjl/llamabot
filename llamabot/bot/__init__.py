@@ -1,6 +1,7 @@
 """Bot abstractions that let me quickly build new GPT-based applications."""
 
 import os
+import warnings
 from pathlib import Path
 
 import openai
@@ -20,7 +21,10 @@ if config_path.exists():
 
 api_key = os.getenv("OPENAI_API_KEY", None)
 if api_key is None:
-    raise ValueError("OPENAI_API_KEY environment variable must be set.")
+    warnings.warn(
+        "No OpenAI API key found. Please set OPENAI_API_KEY in your environment.",
+        category=RuntimeWarning,
+    )
 openai.api_key = api_key
 
 
