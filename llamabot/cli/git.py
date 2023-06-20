@@ -13,8 +13,8 @@ gitapp = Typer()
 
 
 @gitapp.command()
-def commit_message(autocommit: bool = True):
-    """Generate a commit message.
+def commit(autocommit: bool = True):
+    """Commit staged changes.
 
     :param autocommit: Whether to automatically commit the changes.
     """
