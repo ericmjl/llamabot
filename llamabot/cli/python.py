@@ -50,14 +50,13 @@ def module_docstrings(module_fpath: Path, dirtree_context_path: Path = None):
         directory tree.
         Defaults to the parent directory of the module file.
     """
+    cb = codebot()
     while True:
         source_code = read_file(module_fpath)
         tree_structure = show_directory_tree(
             dirtree_context_path if dirtree_context_path else module_fpath.parent
         )
-        module_docstring = codebot(
-            module_doc(source_code, module_fpath, tree_structure)
-        )
+        module_docstring = cb(module_doc(source_code, module_fpath, tree_structure))
         print("\n\n")
         user_response = get_valid_input("Do you accept this docstring? (y/n) ")
         if user_response == "y":
@@ -74,10 +73,11 @@ def generate_docstrings(module_fpath: Path, object_name: str, style: str = "sphi
     :param object_name: Name of the object to generate docstrings for.
     :param style: Style of docstring to generate.
     """
+    cb = codebot()
     while True:
         # source_code = read_file(module_fpath)
         object_source = get_object_source_code(module_fpath, object_name)
-        object_docstring = codebot(docstring(object_source, style=style))
+        object_docstring = cb(docstring(object_source, style=style))
         print("\n\n")
         user_response = get_valid_input("Do you accept this docstring? (y/n) ")
         if user_response == "y":
@@ -98,8 +98,9 @@ def code_generator(request: str):
 
     :param request: A description of what the code should do.
     """
+    cb = codebot()
     while True:
-        code = codebot(ghostwriter(request, "Python"))
+        code = cb(ghostwriter(request, "Python"))
         print("\n\n")
         user_response = get_valid_input("Do you accept this code? (y/n) ")
         if user_response == "y":
@@ -115,10 +116,11 @@ def test_writer(module_fpath: str, object_name: str):
     :param module_fpath: Path to the module to generate tests for.
     :param object_name: Name of the object to generate tests for.
     """
+    cb = codebot()
     while True:
         file_source = read_file(module_fpath)
         function_source = get_object_source_code(module_fpath, object_name)
-        test_code = codebot(tests(function_source, file_source))
+        test_code = cb(tests(function_source, file_source))
         print("\n\n")
         user_response = get_valid_input("Do you accept this test? (y/n) ")
         if user_response == "y":

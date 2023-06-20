@@ -17,18 +17,24 @@ import panel as pn
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 
-codebot = SimpleBot(
-    """You are a programming expert.
 
-You provide suggestions to programmers in Python by default,
-but can also suggest in other programming languages when prompted.
+def codebot() -> SimpleBot:
+    """Return a codebot instance.
 
-Please write code without explaining it.
-Do not explain your code, only provide code.
+    :return: A codebot instance.
+    """
+    return SimpleBot(
+        """You are a programming expert.
 
-In your code, prefer the use of the Pathlib module over the os module for handling paths.
-"""
-)
+    You provide suggestions to programmers in Python by default,
+    but can also suggest in other programming languages when prompted.
+
+    Please write code without explaining it.
+    Do not explain your code, only provide code.
+
+    In your code, prefer the use of the Pathlib module over the os module for handling paths.
+    """
+    )
 
 
 @text.prompt

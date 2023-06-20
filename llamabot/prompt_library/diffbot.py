@@ -6,11 +6,17 @@ import requests
 
 from llamabot.bot.simplebot import SimpleBot
 
-diffbot = SimpleBot(
+
+def diffbot() -> SimpleBot:
+    """Return a diffbot instance.
+
+    :return: A diffbot instance.
     """
+    return SimpleBot(
+        """
 You are a GitHub PR Diff Expert.
 """
-)
+    )
 
 
 def is_valid_github_url(pr_url: str) -> bool:
