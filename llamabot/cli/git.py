@@ -1,5 +1,6 @@
 """Git subcommand for LlamaBot CLI."""
 
+import git
 import pyperclip
 from typer import Typer
 
@@ -12,8 +13,13 @@ gitapp = Typer()
 
 
 @gitapp.command()
-def commit_message():
-    """Generate a commit message."""
+def commit_message(autocommit: bool = True):
+    """Generate a commit message.
+
+    :param autocommit: Whether to automatically commit the changes.
+    """
+    repo = git.Repo(search_parent_directories=True)
+
     bot = commitbot()
 
     while True:
@@ -28,4 +34,6 @@ def commit_message():
         user_response = get_valid_input("Do you accept this commit message? (y/n) ")
         if user_response == "y":
             break
+    if autocommit:
+        repo.index.commit(message.content)
     pyperclip.copy(message.content)
