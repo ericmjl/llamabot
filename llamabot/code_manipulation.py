@@ -312,7 +312,7 @@ def show_directory_tree(
     return printed_text
 
 
-def get_git_diff(repo_path: Union[str, Path] = here()) -> Union[str]:
+def get_git_diff(repo_path: Union[str, Path] = here()) -> str:
     """Get the git diff of a repository.
 
     :param repo_path: The path to the git repository.
@@ -344,3 +344,53 @@ def get_git_diff(repo_path: Union[str, Path] = here()) -> Union[str]:
             ) from e
 
     return diff
+
+
+def get_dependencies(source_file: str, object_name: str) -> list:
+    """
+    Get a list of paths to other source files within the library that the specified object depends on.
+
+    :param source_file: The path to the source file containing the object.
+    :param object_name: The name of the object to get the dependencies for.
+    :return: A list of paths to other source files.
+    """
+    dependencies = set()
+
+    # Get the source code of the specified object
+    object_source_code = get_object_source_code(source_file, object_name)
+
+    # Collect imports from the object's source code
+    parsed_ast = ast.parse(object_source_code)
+    for node in ast.walk(parsed_ast):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                dependencies.add(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                dependencies.add(node.module)
+            for alias in node.names:
+                if alias.name != "*":
+                    dependencies.add(alias.name)
+
+    # Search for other source files in the library that contain the dependencies
+    library_path = Path(source_file).parent
+    for path in library_path.glob("**/*.py"):
+        if path == source_file:
+            continue
+        with open(path, "r") as file:
+            source_code = file.read()
+        parsed_ast = ast.parse(source_code)
+        for node in ast.walk(parsed_ast):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                for decorator in node.decorator_list:
+                    if isinstance(decorator, ast.Name) and decorator.id in dependencies:
+                        dependencies.remove(decorator.id)
+                if node.name in dependencies:
+                    dependencies.remove(node.name)
+                for child in ast.walk(node):
+                    if isinstance(child, ast.Name) and child.id in dependencies:
+                        dependencies.remove(child.id)
+        if not dependencies:
+            break
+
+    return list(map(str, library_path.glob("**/*.py")))

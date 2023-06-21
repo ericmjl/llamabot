@@ -1,10 +1,13 @@
 """Tests for the code_manipulation module."""
+
+import os
 import tempfile
 from pathlib import Path
 
 import pytest
 
 from llamabot.code_manipulation import (
+    get_dependencies,
     get_object_source_code,
     insert_docstring,
     replace_object_in_file,
@@ -212,3 +215,71 @@ def foo():
             pass
         else:
             assert False, "Expected a ValueError to be raised."
+
+
+def test_get_dependencies():
+    """Test the get_dependencies function.
+
+    This test tests that the get_dependencies function returns a list of dependencies.
+    """
+    # Create a temporary directory
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create a temporary source file
+        source_code = """
+import module1
+from module2 import function2
+from module3 import Class3
+
+def function1():
+    pass
+        """
+        source_file = os.path.join(temp_dir, "source_file.py")
+        with open(source_file, "w") as file:
+            file.write(source_code)
+
+        # Create temporary dependency files
+        module1_code = """
+def function_module1():
+    pass
+        """
+        module1_file = os.path.join(temp_dir, "module1.py")
+        with open(module1_file, "w") as file:
+            file.write(module1_code)
+
+        module2_code = """
+def function2():
+    pass
+        """
+        module2_file = os.path.join(temp_dir, "module2.py")
+        with open(module2_file, "w") as file:
+            file.write(module2_code)
+
+        module3_code = """
+class Class3:
+    pass
+        """
+        module3_file = os.path.join(temp_dir, "module3.py")
+        with open(module3_file, "w") as file:
+            file.write(module3_code)
+
+        # Test get_dependencies function
+        object_name = "function1"
+        dependencies = get_dependencies(source_file, object_name)
+
+        assert isinstance(dependencies, list)
+        for dependency in dependencies:
+            assert isinstance(dependency, str)
+            assert os.path.isfile(dependency)
+            assert os.path.splitext(dependency)[1] == ".py"
+
+        # Additional assertions based on the specific dependencies
+        assert module1_file in dependencies
+        assert module2_file in dependencies
+        assert module3_file in dependencies
+
+        # Clean up temporary files and directory (optional)
+        # You can comment out the following lines if you want to inspect the temporary files manually
+        os.remove(source_file)
+        os.remove(module1_file)
+        os.remove(module2_file)
+        os.remove(module3_file)
