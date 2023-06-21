@@ -26,7 +26,11 @@ from pathlib import Path
 import pyperclip
 from typer import Typer
 
-from llamabot.code_manipulation import get_object_source_code, show_directory_tree
+from llamabot.code_manipulation import (
+    get_dependencies,
+    get_object_source_code,
+    show_directory_tree,
+)
 from llamabot.file_finder import read_file
 from llamabot.prompt_library.coding import (
     codebot,
@@ -120,7 +124,15 @@ def test_writer(module_fpath: str, object_name: str):
     while True:
         file_source = read_file(module_fpath)
         function_source = get_object_source_code(module_fpath, object_name)
-        test_code = cb(tests(function_source, file_source))
+
+        # Get other source files.
+        other_source_files = ""
+        for file in get_dependencies(module_fpath, object_name):
+            if file != module_fpath:
+                other_source_files += f"# {file}"
+                other_source_files += read_file(file) + "\n\n"
+
+        test_code = cb(tests(function_source, file_source, other_source_files))
         print("\n\n")
         user_response = get_valid_input("Do you accept this test? (y/n) ")
         if user_response == "y":

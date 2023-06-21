@@ -6,10 +6,9 @@ from tempfile import NamedTemporaryFile
 import git
 from typer import Typer
 
+from llamabot.cli.utils import get_valid_input
 from llamabot.code_manipulation import get_git_diff
 from llamabot.prompt_library.git import commitbot, write_commit_message
-
-from .utils import get_valid_input
 
 gitapp = Typer()
 

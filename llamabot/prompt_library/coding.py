@@ -115,14 +115,21 @@ def module_doc(source_file_contents, source_file_fpath=None, file_tree=None):
 
 
 @text.prompt
-def tests(code, source_file_txt: str):
-    """Please help me write unit tests for the following code.
+def tests(code, source_file_txt: str, dependent_source_files: str):
+    """I need help writing unit tests.
 
-    {{ code }}
-
-    For context, here is the broader source file in which it is defined:
+    For context, here is the broader source file in which the code is defined:
 
     {{ source_file_txt }}
+
+    Then, there are other source files that this function depends on,
+    from which you can import objects.
+
+    {{ dependent_source_files }}
+
+    Here is the actual thing for which I need a test:
+
+    {{ code }}
 
     Prefer the use of property-based tests over example-based tests.
     Only suggest example-based tests
