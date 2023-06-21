@@ -20,7 +20,7 @@ class SimpleBot:
     This bot does not retain chat history.
     """
 
-    def __init__(self, system_prompt, temperature=0.0, model_name="gpt-4"):
+    def __init__(self, system_prompt, temperature=0.0, model_name="gpt-4-32k"):
         """Initialize the SimpleBot.
 
         :param system_prompt: The system prompt to use.

@@ -23,7 +23,7 @@ class QueryBot:
     def __init__(
         self,
         system_message: str,
-        model_name="gpt-4",
+        model_name="gpt-4-32k",
         temperature=0.0,
         doc_paths: List[Union[str, Path]] = None,
         saved_index_path: Union[str, Path] = None,

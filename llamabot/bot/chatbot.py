@@ -24,7 +24,7 @@ class ChatBot:
     h/t Andrew Giessel/GPT4 for the idea.
     """
 
-    def __init__(self, system_prompt, temperature=0.0, model_name="gpt-4"):
+    def __init__(self, system_prompt, temperature=0.0, model_name="gpt-4-32k"):
         """Initialize the ChatBot.
 
         :param system_prompt: The system prompt to use.
