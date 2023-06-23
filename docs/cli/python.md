@@ -7,7 +7,7 @@ Welcome to the Llamabot Python CLI tutorial! In this tutorial, we will explore t
 Before we begin, make sure you have the Llamabot Python CLI installed on your system. You can install it using pip:
 
 ```bash
-pip install llamabot
+pip install -U llamabot
 ```
 
 Once installed, you can access the CLI using the `llamabot python` command.
