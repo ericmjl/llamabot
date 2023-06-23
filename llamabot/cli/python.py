@@ -139,12 +139,3 @@ def test_writer(module_fpath: str, object_name: str):
             break
     pyperclip.copy(test_code.content)
     print("Copied to clipboard!")
-
-
-@app.command()
-def tutorial_writer(source_file: Path):
-    """Write a tutorial for a given source file.
-
-    :param source_file: Path to the source file to write a tutorial for.
-    """
-    # cb = codebot()
