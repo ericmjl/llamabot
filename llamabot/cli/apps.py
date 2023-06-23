@@ -3,7 +3,7 @@ import os
 
 import typer
 
-from llamabot.prompt_library import coding
+from llamabot.prompt_library import python
 
 app = typer.Typer()
 
@@ -16,7 +16,7 @@ def codebot(port: int = 5050, address: str = "0.0.0.0"):
     :param address: Address to run the app on.
     """
 
-    codebot_app = coding.create_panel_app()
+    codebot_app = python.create_panel_app()
     os.environ["BOKEH_ALLOW_WS_ORIGIN"] = "*"
     codebot_app.show(title="Codebot", port=port, address=address, open=False)
 
