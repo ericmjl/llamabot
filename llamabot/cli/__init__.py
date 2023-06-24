@@ -17,7 +17,6 @@ Modules:
     - apps: A module for managing apps-related commands.
     - python: A module for managing python-related commands.
 """
-import os
 import re
 from pathlib import Path
 
@@ -47,7 +46,7 @@ def configure(
 
     :param api_key: The API key to be used for authentication.
     """
-    config_file = Path(os.path.expanduser("~/.llamabotrc"))
+    config_file = Path.home() / ".llamabotrc"
     api_key_line = f'export OPENAI_API_KEY="{api_key}"'
 
     if config_file.exists():
