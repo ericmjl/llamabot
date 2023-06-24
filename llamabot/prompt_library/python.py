@@ -127,10 +127,6 @@ def tests(code, source_file_txt: str, dependent_source_files: str):
 
     {{ dependent_source_files }}
 
-    Here is the actual thing for which I need a test:
-
-    {{ code }}
-
     Prefer the use of property-based tests over example-based tests.
     Only suggest example-based tests
     if it is too difficult to generate property-based tests.
@@ -138,6 +134,12 @@ def tests(code, source_file_txt: str, dependent_source_files: str):
     ensure that there is a docstring that explains what the test is testing.
 
     Use pytest-style test functions and not Unittest-style test classes.
+
+    Here is the actual thing for which I need a test:
+
+    {{ code }}
+
+    Please write me tests for that code.
 
     # noqa: DAR101
     """
