@@ -79,6 +79,7 @@ dependencies = [
     "gitpython",
     "pyprojroot",
     "frozenlist",
+    "beautifulsoup4",
 ]
 
 [project.optional-dependencies]
