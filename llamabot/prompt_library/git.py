@@ -50,8 +50,8 @@ def write_commit_message(diff: str):
     A scope may be provided to a commit's type,
     to provide additional contextual information and is contained within parenthesis,
     e.g., feat(parser): add ability to parse arrays.
+    Within the optional body section, prefer the use of bullet points.
 
-    Ensure that commit message lines do not exceed 79 characters.
 
     # noqa: DAR101
     """
