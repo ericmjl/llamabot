@@ -1,5 +1,6 @@
 """Convenience wrappers around the Google API."""
 import pickle
+from hashlib import sha256
 
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -17,10 +18,24 @@ def load_credentials(credentials_file: str, scopes: list):
     """
     creds = None
 
+    # sha256-hash the scopes so that we can use them in the filename.
+    scopes_hash = sha256(str(scopes).encode("utf-8")).hexdigest()
+
+    # sha256-hash the contents of credentials_file so that we can use them in the filename.
+    with open(credentials_file, "r+") as f:
+        credentials_file_contents = f.read()
+        # credentials_file_hash = sha256(credentials_file_contents)
+        credentials_file_hash = sha256(
+            credentials_file_contents.encode("utf-8")
+        ).hexdigest()
+
+    token_pickle_path = (
+        llamabot_config_dir / f"token-{scopes_hash}-{credentials_file_hash}.pickle"
+    )
+
     # The file token.pickle stores the user's access and refresh tokens,
     # and is created automatically when the authorization flow
     # completes for the first time.
-    token_pickle_path = llamabot_config_dir / "token.pickle"
     if token_pickle_path:
         with open(token_pickle_path, "rb") as token:
             creds = pickle.load(token)
