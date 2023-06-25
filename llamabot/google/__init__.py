@@ -8,12 +8,12 @@ from googleapiclient.discovery import build
 from llamabot.config import llamabot_config_dir
 
 
-def get_calendar_service(credentials_file: str, scopes: list):
-    """Get a Google Calendar service object.
+def load_credentials(credentials_file: str, scopes: list):
+    """Load credentials for a Google API.
 
     :param credentials_file: Path to the credentials file.
     :param scopes: List of scopes to request access to.
-    :return: Google Calendar service object.
+    :return: Google API credentials.
     """
     creds = None
 
@@ -36,6 +36,16 @@ def get_calendar_service(credentials_file: str, scopes: list):
         # Save the credentials for the next run
         with open(token_pickle_path, "wb") as token:
             pickle.dump(creds, token)
+    return creds
 
+
+def get_calendar_service(credentials_file: str, scopes: list):
+    """Get a Google Calendar service object.
+
+    :param credentials_file: Path to the credentials file.
+    :param scopes: List of scopes to request access to.
+    :return: Google Calendar service object.
+    """
+    creds = load_credentials(credentials_file, scopes)
     service = build("calendar", "v3", credentials=creds)
     return service
