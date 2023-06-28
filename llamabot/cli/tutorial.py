@@ -20,7 +20,8 @@ def writer(source_file: Path, tutorial_path: Path = None):
     """
     while True:
         source_code = source_file.read_text()
-        tutorial = tutorialbot(module_tutorial_writer(source_code))
+        bot = tutorialbot()
+        tutorial = bot(module_tutorial_writer(source_code))
         print("\n\n")
         user_response = input("Do you accept this tutorial? (y/n) ")
         if user_response == "y":
