@@ -17,18 +17,18 @@ Modules:
     - apps: A module for managing apps-related commands.
     - python: A module for managing python-related commands.
 """
-import re
-from pathlib import Path
 
 import typer
 
-from . import apps, git, python, tutorial
+from . import apps, git, python, tutorial, zotero
+from .utils import configure_environment_variable
 
 app = typer.Typer()
 app.add_typer(apps.app, name="apps")
 app.add_typer(python.app, name="python")
 app.add_typer(git.gitapp, name="git")
 app.add_typer(tutorial.app, name="tutorial")
+app.add_typer(zotero.app, name="zotero")
 
 
 @app.command()
@@ -46,22 +46,7 @@ def configure(
 
     :param api_key: The API key to be used for authentication.
     """
-    config_file = Path.home() / ".llamabotrc"
-    api_key_line = f'export OPENAI_API_KEY="{api_key}"'
-
-    if config_file.exists():
-        with open(config_file, "r") as file:
-            content = file.readlines()
-
-        with open(config_file, "w") as file:
-            for line in content:
-                if re.match(r"export OPENAI_API_KEY=.*", line):
-                    file.write(api_key_line + "\n")
-                else:
-                    file.write(line)
-    else:
-        with open(config_file, "w") as file:
-            file.write(api_key_line + "\n")
+    configure_environment_variable(env_var="OPENAI_API_KEY", env_value=api_key)
 
 
 @app.command()
