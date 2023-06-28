@@ -1,5 +1,6 @@
 """Class definition for QueryBot."""
 import contextvars
+import hashlib
 from pathlib import Path
 from typing import List, Union
 
@@ -7,12 +8,24 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
-from llama_index import GPTVectorStoreIndex, LLMPredictor, ServiceContext
+from llama_index import (
+    GPTVectorStoreIndex,
+    LLMPredictor,
+    ServiceContext,
+    load_index_from_storage,
+)
+from llama_index.node_parser import SimpleNodeParser
 from llama_index.retrievers import VectorIndexRetriever
-from loguru import logger
+from llama_index.storage.docstore import SimpleDocumentStore
+from llama_index.storage.index_store import SimpleIndexStore
+from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores import SimpleVectorStore
 
 from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.recorder import autorecord
+
+# from loguru import logger
+
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -25,14 +38,14 @@ class QueryBot:
         system_message: str,
         model_name="gpt-4-32k",
         temperature=0.0,
-        doc_paths: List[Union[str, Path]] = None,
+        doc_path: Union[str, Path] = None,
         saved_index_path: Union[str, Path] = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
     ):
         """Initialize QueryBot.
 
-        Pass in either the doc_paths or saved_index_path to initialize the QueryBot.
+        Pass in either the doc_path or saved_index_path to initialize the QueryBot.
 
         NOTE: QueryBot is not designed to have memory!
 
@@ -45,8 +58,7 @@ class QueryBot:
         :param temperature: The model temperature to use.
             See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
             for more information.
-        :param doc_paths: A list of paths to the documents to use for the chatbot.
-            These are assumed to be plain text files.
+        :param doc_path: A path to document to use for the chatbot.
         :param saved_index_path: The path to the saved index to use for the chatbot.
         :param chunk_size: The chunk size to use for the LlamaIndex TokenTextSplitter.
         :param chunk_overlap: The chunk overlap to use for the LlamaIndex TokenTextSplitter.
@@ -73,15 +85,13 @@ class QueryBot:
             )
 
         # Update index with new documents.
-        if doc_paths is not None:
-            index = insert_documents_into_index(
-                doc_paths, index, chunk_size, chunk_overlap
-            )
+        if doc_path is not None:
+            index = make_or_load_index(doc_path, chunk_size, chunk_overlap)
 
         # Set object attributes.
         self.system_message = system_message
         self.index = index
-        self.doc_paths = doc_paths
+        self.doc_path = doc_path
         self.chat = chat
         self.chat_history = [
             SystemMessage(content=system_message),
@@ -99,7 +109,7 @@ If you cannot answer something, respond by saying that you don't know.
     def __call__(
         self,
         query: str,
-        similarity_top_k=3,
+        similarity_top_k=10,
     ) -> AIMessage:
         """Call the QueryBot.
 
@@ -115,11 +125,11 @@ If you cannot answer something, respond by saying that you don't know.
                 "You need to provide a document for querybot to index against!"
             )
         # Step 1: Get documents from the index that are deemed to be matching the query.
-        logger.info(f"Querying index for top {similarity_top_k} documents...")
+        # logger.info(f"Querying index for top {similarity_top_k} documents...")
 
         retriever = VectorIndexRetriever(
             index=self.index,
-            similarity_top_k=10,
+            similarity_top_k=similarity_top_k,
         )
 
         source_nodes = retriever.retrieve(query)
@@ -176,24 +186,133 @@ If you cannot answer something, respond by saying that you don't know.
 
 
 def insert_documents_into_index(
-    doc_paths: List[Union[str, Path]],
+    doc_path: List[Union[str, Path]],
     index: GPTVectorStoreIndex,
     chunk_size: int,
     chunk_overlap: int,
 ):
     """Insert documents into the index.
 
-    :param doc_paths: A list of paths to the documents to insert.
+    :param doc_path: A list of paths to the documents to insert.
     :param index: The index to insert the documents into.
     :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
     :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
     :returns: The updated index.
     """
-    for path in doc_paths:
-        logger.info(f"Inserting {path} into the index...")
-        documents = magic_load_doc(path)
-        for document in documents:
-            chunks = split_document(document, chunk_size, chunk_overlap)
-            for chunk in chunks:
-                index.insert(chunk)
+    # logger.info(f"Inserting {path} into the index...")
+    documents = magic_load_doc(doc_path)
+    for document in documents:
+        chunks = split_document(document, chunk_size, chunk_overlap)
+        for chunk in chunks:
+            index.insert(chunk)
+    return index
+
+
+def compute_file_hash(fpath: Path) -> str:
+    """Compute the hash of a file.
+
+    :param fpath: The path to the file to compute the hash of.
+    :returns: The hash of the file.
+    """
+    file_content = fpath.read_bytes()
+    return hashlib.sha256(file_content).hexdigest()
+
+
+def make_service_context():
+    """Make a service context for the QueryBot.
+
+    :returns: A service context.
+    """
+    chat = ChatOpenAI(
+        model_name="gpt-4-32k",
+        temperature=0.0,
+        streaming=True,
+        verbose=True,
+        callback_manager=BaseCallbackManager([StreamingStdOutCallbackHandler()]),
+    )
+    llm_predictor = LLMPredictor(llm=chat)
+    service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+    return service_context
+
+
+def get_persist_dir(file_hash: str):
+    """Get the persist directory for a given file hash.
+
+    :param file_hash: The file hash to use for the persist directory.
+    :returns: The persist directory.
+    """
+    persist_dir = Path.home() / ".llamabot" / "cache" / file_hash
+    persist_dir.mkdir(parents=True, exist_ok=True)
+    return persist_dir
+
+
+def load_index(persist_dir, service_context):
+    """Load an index from disk.
+
+    :param persist_dir: The directory to load the index from.
+    :param service_context: The service context to use for the index.
+    :returns: The index.
+    """
+    storage_context = StorageContext.from_defaults(
+        docstore=SimpleDocumentStore.from_persist_dir(persist_dir=persist_dir),
+        vector_store=SimpleVectorStore.from_persist_dir(persist_dir=persist_dir),
+        index_store=SimpleIndexStore.from_persist_dir(persist_dir=persist_dir),
+    )
+    index = load_index_from_storage(storage_context, service_context=service_context)
+    return index
+
+
+def make_index(docs, file_hash, persist_dir, service_context):
+    """Make an index from a list of documents.
+
+    :param docs: A list of documents to index.
+    :param file_hash: The hash of the file to use as the index id.
+    :param persist_dir: The directory to persist the index to.
+    :param service_context: The service context to use for the index.
+    :returns: The index.
+    """
+    # create parser and parse document into nodes
+    parser = SimpleNodeParser()
+    nodes = parser.get_nodes_from_documents(docs)
+
+    # create (or load) docstore and add nodes
+    storage_context = StorageContext.from_defaults(
+        docstore=SimpleDocumentStore(),
+        vector_store=SimpleVectorStore(),
+        index_store=SimpleIndexStore(),
+    )
+    storage_context.docstore.add_documents(nodes)
+
+    index = GPTVectorStoreIndex(
+        nodes,
+        storage_context=storage_context,
+        index_id=file_hash,
+        service_context=service_context,
+    )
+    index.storage_context.persist(persist_dir=persist_dir)
+    return index
+
+
+def make_or_load_index(doc_path, chunk_size, chunk_overlap):
+    """Make or load an index for a document.
+
+    :param doc_path: The path to the document to make or load an index for.
+    :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
+    :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
+    :returns: The index.
+    """
+    file_hash = compute_file_hash(doc_path)
+    service_context = make_service_context()
+    persist_dir = get_persist_dir(file_hash)
+
+    document = magic_load_doc(doc_path)
+    split_docs = split_document(document[0], chunk_size, chunk_overlap)
+
+    if persist_dir.exists() and (persist_dir / "docstore.json").exists():
+        index = load_index(persist_dir, service_context=service_context)
+    else:
+        persist_dir.mkdir(exist_ok=True, parents=True)
+        index = make_index(
+            split_docs, file_hash, persist_dir, service_context=service_context
+        )
     return index
