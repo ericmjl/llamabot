@@ -18,10 +18,10 @@ def docbot_sysprompt():
 
 
 @text.prompt
-def get_key(title: str = "", author: str = ""):
-    """Return for me the key of Zotero library entry associated with {{ title }}.
+def get_key(query: str = ""):
+    """Return for me the key of Zotero library entry associated with the query:
 
-    The associated author(s) is: {{ author }}
+    {{ query }}
 
     Return this as JSON formatted as:
 

@@ -58,11 +58,10 @@ def sync():
 
 
 @app.command()
-def chat_paper(title: str = typer.Option(""), author: str = typer.Option("")):
+def chat_paper(query: str = ""):
     """Chat with a paper.
 
-    :param title: Paper title
-    :param author: Paper author
+    :param query: A paper to search for, whether by title, author, or other metadata.
     """
     typer.echo("Llamabot Zotero Chatbot initializing...")
     typer.echo("Use Ctrl+C to exit.")
@@ -72,9 +71,9 @@ def chat_paper(title: str = typer.Option(""), author: str = typer.Option("")):
     with progress:
         retrieverbot = QueryBot(
             retrieverbot_sysprompt(),
-            doc_paths=[ZOTERO_JSON_PATH],
+            doc_path=ZOTERO_JSON_PATH,
         )
-        response = retrieverbot(get_key(title, author))
+        response = retrieverbot(get_key(query))
         paper_key = json.loads(response.content)["key"]
         typer.echo(f"Retrieved key: {paper_key}")
         typer.echo(f"Paper title: {library[paper_key]['data.title']}")
@@ -85,7 +84,7 @@ def chat_paper(title: str = typer.Option(""), author: str = typer.Option("")):
 
     docbot = QueryBot(
         "You are an expert in answering questions about a paper.",
-        doc_paths=[fpath],
+        doc_path=fpath,
         temperature=0.3,
     )
 
