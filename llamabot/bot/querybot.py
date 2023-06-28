@@ -84,7 +84,7 @@ class QueryBot:
                 saved_index_path, service_context=service_context
             )
 
-        # Update index with new documents.
+        # Update index with a new document.
         if doc_path is not None:
             index = make_or_load_index(doc_path, chunk_size, chunk_overlap)
 
@@ -293,7 +293,7 @@ def make_index(docs, file_hash, persist_dir, service_context):
     return index
 
 
-def make_or_load_index(doc_path, chunk_size, chunk_overlap):
+def make_or_load_index(doc_path, chunk_size=2000, chunk_overlap=0):
     """Make or load an index for a document.
 
     :param doc_path: The path to the document to make or load an index for.
@@ -308,6 +308,8 @@ def make_or_load_index(doc_path, chunk_size, chunk_overlap):
     document = magic_load_doc(doc_path)
     split_docs = split_document(document[0], chunk_size, chunk_overlap)
 
+    # Check that the persist directory exists and that we have made a docstore,
+    # which is a sentinel test for the rest of the index.
     if persist_dir.exists() and (persist_dir / "docstore.json").exists():
         index = load_index(persist_dir, service_context=service_context)
     else:
