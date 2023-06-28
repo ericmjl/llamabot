@@ -80,6 +80,7 @@ dependencies = [
     "pyprojroot",
     "frozenlist",
     "beautifulsoup4",
+    "rich",
 ]
 
 [project.optional-dependencies]
