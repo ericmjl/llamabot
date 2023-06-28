@@ -8,6 +8,16 @@ def retrieverbot_sysprompt():
 
 
 @text.prompt
+def docbot_sysprompt():
+    """You are an expert in answering questions about any paper.
+
+    Your responses are like how Richard Feynman would answer questions.
+    That is to say, you will explain yourself and the paper (where relevant)
+    at a level that an undergraduate student would understand.
+    """
+
+
+@text.prompt
 def get_key(title: str = "", author: str = ""):
     """Return for me the key of Zotero library entry associated with {{ title }}.
 
