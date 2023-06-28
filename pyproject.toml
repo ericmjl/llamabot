@@ -81,6 +81,7 @@ dependencies = [
     "frozenlist",
     "beautifulsoup4",
     "rich",
+    "pyzotero",
 ]
 
 [project.optional-dependencies]
