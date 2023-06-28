@@ -5,7 +5,7 @@ import fnmatch
 import inspect
 import sys
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import astor
 from git import GitCommandError, Repo
@@ -312,7 +312,7 @@ def show_directory_tree(
     return printed_text
 
 
-def get_git_diff(repo_path: Union[str, Path] = here()) -> str:
+def get_git_diff(repo_path: Optional[Union[str, Path]] = None) -> str:
     """Get the git diff of a repository.
 
     :param repo_path: The path to the git repository.
@@ -320,6 +320,8 @@ def get_git_diff(repo_path: Union[str, Path] = here()) -> str:
     :raises ValueError: If the provided git repository has no staged or unstaged changes.
     :return: The git diff as a string, or None if there are no staged changes.
     """
+    if repo_path is None:
+        repo_path = here()
     try:
         repo = Repo(repo_path)
     except GitCommandError as e:
