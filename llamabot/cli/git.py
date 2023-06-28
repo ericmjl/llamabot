@@ -22,41 +22,43 @@ def commit(autocommit: bool = True):
     """
     repo = git.Repo(search_parent_directories=True)
     bot = commitbot()
-    with Progress(
+    progress = Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         transient=True,
-    ) as progress:
-        while True:
-            diff = get_git_diff()
-            if not diff:
-                print(
-                    "I don't see any staged changes to commit! Please stage some files before running me again."
-                )
-                return
+    )
 
-            message = bot(write_commit_message(diff))
-            print("\n\n")
-            user_response = get_valid_input(
-                "Do you accept this commit message?", ("y", "n", "m")
+    while True:
+        diff = get_git_diff()
+        if not diff:
+            print(
+                "I don't see any staged changes to commit! Please stage some files before running me again."
             )
-            if user_response == "y":
-                break
-            elif user_response == "m":
-                # Provide option to edit the commit message
-                with NamedTemporaryFile(mode="w+", delete=False) as temp_file:
-                    temp_file.write(message.content)
-                    temp_file.flush()
-                    editor = os.getenv(
-                        "EDITOR", "nano"
-                    )  # Use the system's default text editor
-                    os.system(f"{editor} {temp_file.name}")
-                    temp_file.seek(0)
-                    edited_message = temp_file.read().strip()
-                    message.content = edited_message
-                    break
+            return
 
-        if autocommit:
+        message = bot(write_commit_message(diff))
+        print("\n\n")
+        user_response = get_valid_input(
+            "Do you accept this commit message?", ("y", "n", "m")
+        )
+        if user_response == "y":
+            break
+        elif user_response == "m":
+            # Provide option to edit the commit message
+            with NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+                temp_file.write(message.content)
+                temp_file.flush()
+                editor = os.getenv(
+                    "EDITOR", "nano"
+                )  # Use the system's default text editor
+                os.system(f"{editor} {temp_file.name}")
+                temp_file.seek(0)
+                edited_message = temp_file.read().strip()
+                message.content = edited_message
+                break
+
+    if autocommit:
+        with progress:
             progress.add_task("Committing changes", total=None)
             repo.index.commit(message.content)
             progress.add_task("Pushing changes", total=None)
