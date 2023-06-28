@@ -126,7 +126,7 @@ class GoogleCalendar(GoogleApi):
         }
         event = (
             self.service.events()
-            .insert(calendarId=self.calendar_id, body=event)
+            .insert(calendarId=self.calendar_id, body=event, sendUpdates="all")
             .execute()
         )
         return Event(event, self)
@@ -172,7 +172,10 @@ class Event:
         self.event = (
             self.calendar.service.events()
             .update(
-                calendarId=self.calendar.calendar_id, eventId=self.id, body=self.event
+                calendarId=self.calendar.calendar_id,
+                eventId=self.id,
+                body=self.event,
+                sendUpdates="all",
             )
             .execute()
         )
