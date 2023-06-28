@@ -23,7 +23,12 @@ def tutorialbot_system_prompt():
     """
 
 
-tutorialbot = SimpleBot(tutorialbot_system_prompt())
+def tutorialbot() -> SimpleBot:
+    """Return a tutorial bot.
+
+    :return: Tutorial bot
+    """
+    return SimpleBot(tutorialbot_system_prompt())
 
 
 @text.prompt
