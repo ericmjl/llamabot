@@ -69,24 +69,29 @@ def chat_paper(query: str = ""):
     library = ZoteroLibrary()
 
     with progress:
+        progress.add_task("Embedding Zotero library...")
         retrieverbot = QueryBot(
             retrieverbot_sysprompt(),
             doc_path=ZOTERO_JSON_PATH,
         )
-        response = retrieverbot(get_key(query))
-        paper_key = json.loads(response.content)["key"]
-        typer.echo(f"Retrieved key: {paper_key}")
-        typer.echo(f"Paper title: {library[paper_key]['data.title']}")
+    response = retrieverbot(get_key(query))
+    paper_key = json.loads(response.content)["key"]
+    typer.echo(f"Retrieved key: {paper_key}")
+    typer.echo(f"Paper title: {library[paper_key]['data.title']}")
 
     # Retrieve paper from library
-    fpath = library[paper_key].download_pdf(Path("/tmp"))
+    with progress:
+        progress.add_task("Downloading paper...")
+        fpath = library[paper_key].download_pdf(Path("/tmp"))
     typer.echo(f"Downloaded paper to {fpath}")
 
-    docbot = QueryBot(
-        "You are an expert in answering questions about a paper.",
-        doc_path=fpath,
-        temperature=0.3,
-    )
+    with progress:
+        progress.add_task("Embedding paper and initializing bot...")
+        docbot = QueryBot(
+            "You are an expert in answering questions about a paper.",
+            doc_path=fpath,
+            temperature=0.3,
+        )
 
     while True:
         query = input("Ask me a question: ")
