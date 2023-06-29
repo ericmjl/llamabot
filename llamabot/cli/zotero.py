@@ -4,6 +4,8 @@ from pathlib import Path
 
 import typer
 from dotenv import load_dotenv
+from prompt_toolkit import prompt
+from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from llamabot import QueryBot
@@ -24,6 +26,9 @@ progress = Progress(
     TextColumn("[progress.description]{task.description}"),
     transient=True,
 )
+
+
+console = Console()
 
 
 @app.command()
@@ -73,11 +78,27 @@ def chat_paper(query: str = ""):
         retrieverbot = QueryBot(
             retrieverbot_sysprompt(),
             doc_path=ZOTERO_JSON_PATH,
+            stream=False,
         )
     response = retrieverbot(get_key(query))
-    paper_key = json.loads(response.content)["key"]
-    typer.echo(f"Retrieved key: {paper_key}")
-    typer.echo(f"Paper title: {library[paper_key]['data.title']}")
+    paper_keys = json.loads(response.content)["key"]
+    typer.echo(f"Retrieved key: {paper_keys}")
+
+    key_title_maps = {}
+    for key in paper_keys:
+        key_title_maps[key] = library[key]["data.title"]
+        typer.echo(f"Paper title: {key_title_maps[key]}")
+    # Invert mapping:
+    title_key_maps = {v: k for k, v in key_title_maps.items()}
+
+    from prompt_toolkit.completion import WordCompleter
+
+    completer = WordCompleter(list(title_key_maps.keys()))
+    user_choice = prompt(
+        "Please choose an option: ", completer=completer, complete_while_typing=True
+    )
+    typer.echo(f"Awesome! You have chosen the paper: {user_choice}")
+    paper_key = title_key_maps[user_choice.strip(" ")]
 
     # Retrieve paper from library
     with progress:
@@ -92,8 +113,12 @@ def chat_paper(query: str = ""):
             doc_path=fpath,
             temperature=0.3,
         )
+    typer.echo("\n\n")
+    typer.echo("Here is a summary of the paper for you to get going:")
+    docbot("What is the summary of the paper?")
+    typer.echo("\n\n")
 
     while True:
-        query = input("Ask me a question: ")
+        query = prompt("Ask me a question: ")
         response = docbot(query)
         print("\n\n")

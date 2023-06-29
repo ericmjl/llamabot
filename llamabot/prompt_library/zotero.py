@@ -19,14 +19,14 @@ def docbot_sysprompt():
 
 @text.prompt
 def get_key(query: str = ""):
-    """Return for me the key of Zotero library entry associated with the query:
+    """Return for me keys that correspond to my Zotero library entry associated with the query:
 
     {{ query }}
 
-    Return this as JSON formatted as:
+    Return this as JSON:
 
     {
-        "key": <key>
+        "key": [<key1>, <key2>, ...]
     }
 
     # noqa: DAR101
