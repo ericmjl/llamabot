@@ -68,7 +68,6 @@ def magic_load_doc(file_path) -> List[Document]:
         # Treat this as a plain text file.
         with open(file_path, "r+") as f:
             documents = [Document(text=str(file_path) + f.read())]
-    print(len(documents))
     return documents
 
 
