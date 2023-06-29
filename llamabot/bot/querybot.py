@@ -42,6 +42,7 @@ class QueryBot:
         saved_index_path: Union[str, Path] = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
+        stream=True,
     ):
         """Initialize QueryBot.
 
@@ -62,6 +63,7 @@ class QueryBot:
         :param saved_index_path: The path to the saved index to use for the chatbot.
         :param chunk_size: The chunk size to use for the LlamaIndex TokenTextSplitter.
         :param chunk_overlap: The chunk overlap to use for the LlamaIndex TokenTextSplitter.
+        :param stream: Whether to stream the chatbot or not.
         """
 
         chat = ChatOpenAI(
@@ -70,7 +72,7 @@ class QueryBot:
             streaming=True,
             verbose=True,
             callback_manager=BaseCallbackManager(
-                handlers=[StreamingStdOutCallbackHandler()]
+                handlers=[StreamingStdOutCallbackHandler()] if stream else []
             ),
         )
         llm_predictor = LLMPredictor(llm=chat)
