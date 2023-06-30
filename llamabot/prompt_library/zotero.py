@@ -29,5 +29,7 @@ def get_key(query: str = ""):
         "key": [<key1>, <key2>, ...]
     }
 
+    Do not return anything else except JSON.
+
     # noqa: DAR101
     """
