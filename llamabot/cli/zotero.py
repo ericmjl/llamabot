@@ -10,7 +10,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from llamabot import QueryBot
 from llamabot.prompt_library.zotero import get_key, retrieverbot_sysprompt
-from llamabot.zotero.library import ZoteroLibrary
+from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
 from llamabot.zotero.utils import load_zotero
 
 from .utils import configure_environment_variable
@@ -24,7 +24,7 @@ ZOTERO_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
 progress = Progress(
     SpinnerColumn(),
     TextColumn("[progress.description]{task.description}"),
-    transient=True,
+    transient=False,
 )
 
 
@@ -54,8 +54,11 @@ def sync():
 
     zot = load_zotero()
     with progress:
-        progress.add_task("Syncing Zotero items...")
+        task = progress.add_task("Syncing Zotero items...")
         items = zot.everything(zot.items())
+        progress.stop_task(task)
+
+    # Filter items for only things with PDFs.
 
     with open(ZOTERO_JSON_PATH, "w+") as f:
         for item in items:
@@ -63,7 +66,7 @@ def sync():
 
 
 @app.command()
-def chat_paper(query: str = ""):
+def chat(query: str):
     """Chat with a paper.
 
     :param query: A paper to search for, whether by title, author, or other metadata.
@@ -74,19 +77,22 @@ def chat_paper(query: str = ""):
     library = ZoteroLibrary()
 
     with progress:
-        progress.add_task("Embedding Zotero library...")
+        task = progress.add_task("Embedding Zotero library...")
         retrieverbot = QueryBot(
             retrieverbot_sysprompt(),
             doc_path=ZOTERO_JSON_PATH,
-            stream=False,
+            stream=True,
         )
+        progress.stop_task(task)
+
     response = retrieverbot(get_key(query))
     paper_keys = json.loads(response.content)["key"]
     typer.echo(f"Retrieved key: {paper_keys}")
 
     key_title_maps = {}
     for key in paper_keys:
-        key_title_maps[key] = library[key]["data.title"]
+        entry: ZoteroItem = library[key]
+        key_title_maps[key] = entry["data.title"]
         typer.echo(f"Paper title: {key_title_maps[key]}")
     # Invert mapping:
     title_key_maps = {v: k for k, v in key_title_maps.items()}
@@ -94,31 +100,43 @@ def chat_paper(query: str = ""):
     from prompt_toolkit.completion import WordCompleter
 
     completer = WordCompleter(list(title_key_maps.keys()))
-    user_choice = prompt(
-        "Please choose an option: ", completer=completer, complete_while_typing=True
-    )
+    while True:
+        user_choice = prompt(
+            "Please choose an option: ", completer=completer, complete_while_typing=True
+        )
+        if user_choice in title_key_maps.keys():
+            break
     typer.echo(f"Awesome! You have chosen the paper: {user_choice}")
     paper_key = title_key_maps[user_choice.strip(" ")]
 
     # Retrieve paper from library
     with progress:
-        progress.add_task("Downloading paper...")
-        fpath = library[paper_key].download_pdf(Path("/tmp"))
+        task = progress.add_task("Downloading paper...")
+        entry: ZoteroItem = library[paper_key]
+        fpath = entry.download_pdf(Path("/tmp"))
+        progress.stop_task(task)
     typer.echo(f"Downloaded paper to {fpath}")
 
     with progress:
-        progress.add_task("Embedding paper and initializing bot...")
+        task = progress.add_task("Embedding paper and initializing bot...")
         docbot = QueryBot(
             "You are an expert in answering questions about a paper.",
             doc_path=fpath,
             temperature=0.3,
         )
-    typer.echo("\n\n")
-    typer.echo("Here is a summary of the paper for you to get going:")
-    docbot("What is the summary of the paper?")
-    typer.echo("\n\n")
+        progress.stop_task(task)
+
+    with progress:
+        typer.echo("\n\n")
+        typer.echo("Here is a summary of the paper for you to get going:")
+        task = progress.add_task("Summarizing paper...")
+        docbot("What is the summary of the paper?")
+        progress.stop_task(task)
+        typer.echo("\n\n")
 
     while True:
         query = prompt("Ask me a question: ")
+        task = progress.add_task("Sending query...")
         response = docbot(query)
+        progress.stop_task(task)
         print("\n\n")
