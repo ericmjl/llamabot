@@ -23,13 +23,22 @@ class ZoteroLibrary:
     """
 
     zot: Zotero = field(default=load_zotero())
+    jsonl_path: Path = field(default=None)
 
     def __post_init__(self):
-        """Post-initialization hook"""
-        with progress:
-            task = progress.add_task("Synchronizing your Zotero library...")
-            items = self.zot.everything(self.zot.items())
-            progress.remove_task(task)
+        """Post-initialization hook
+
+        If jsonl_path is set, load the library from the JSONL file
+        and skip querying zotero for everything.
+        """
+        if self.jsonl_path is not None:
+            with open(self.jsonl_path, "r") as f:
+                self.items = [json.loads(line) for line in f]
+        else:
+            with progress:
+                task = progress.add_task("Synchronizing your Zotero library...")
+                items = self.zot.everything(self.zot.items())
+                progress.remove_task(task)
         library = [ZoteroItem(i, library=self) for i in items]
         self.library = {i["key"]: i for i in library}
 

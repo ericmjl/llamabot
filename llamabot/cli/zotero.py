@@ -69,8 +69,11 @@ def chat(
     typer.echo("Llamabot Zotero Chatbot initializing...")
     typer.echo("Use Ctrl+C to exit anytime.")
 
-    library = ZoteroLibrary()
-    library.to_jsonl(ZOTERO_JSON_PATH)
+    if sync:
+        library = ZoteroLibrary(ZOTERO_JSON_PATH)
+    else:
+        library = ZoteroLibrary()
+        library.to_jsonl(ZOTERO_JSON_PATH)
 
     with progress:
         task = progress.add_task("Embedding Zotero library...", total=None)
