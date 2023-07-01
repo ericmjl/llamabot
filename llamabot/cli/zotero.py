@@ -12,7 +12,6 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from llamabot import QueryBot
 from llamabot.prompt_library.zotero import get_key, retrieverbot_sysprompt
 from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
-from llamabot.zotero.utils import load_zotero
 
 from .utils import configure_environment_variable
 
@@ -50,26 +49,14 @@ def configure(
 
 
 @app.command()
-def sync():
-    """Sync Zotero items to a local JSON file."""
-
-    zot = load_zotero()
-    with progress:
-        progress.add_task("Syncing Zotero items...")
-        items = zot.everything(zot.items())
-
-    # Filter items for only things with PDFs.
-
-    with open(ZOTERO_JSON_PATH, "w+") as f:
-        for item in items:
-            f.write(json.dumps(item) + "\n")
-
-
-@app.command()
-def chat(query: str = typer.Argument("", help="The thing you want to chat about.")):
+def chat(
+    query: str = typer.Argument("", help="The thing you want to chat about."),
+    sync: bool = False,
+):
     """Chat with a paper.
 
     :param query: A paper to search for, whether by title, author, or other metadata.
+    :param sync: Whether or not to synchronize the Zotero library.
     :raises Exit: If the user types "exit".
     """
     if query == "":
@@ -80,9 +67,10 @@ def chat(query: str = typer.Argument("", help="The thing you want to chat about.
             if query:
                 break
     typer.echo("Llamabot Zotero Chatbot initializing...")
-    typer.echo("Use Ctrl+C to exit.")
+    typer.echo("Use Ctrl+C to exit anytime.")
 
     library = ZoteroLibrary()
+    library.to_jsonl(ZOTERO_JSON_PATH)
 
     with progress:
         task = progress.add_task("Embedding Zotero library...", total=None)

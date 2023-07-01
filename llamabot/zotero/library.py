@@ -2,25 +2,35 @@
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+
+from pyzotero.zotero import Zotero
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from .utils import load_zotero
+
+progress = Progress(
+    SpinnerColumn(),
+    TextColumn("[progress.description]{task.description}"),
+    transient=False,
+)
 
 
 @dataclass
 class ZoteroLibrary:
-    """Zotero library."""
+    """Zotero library object.
 
-    library_path: Path = field(
-        default=Path.home() / ".llamabot/zotero/zotero_index.json"
-    )
+    Stores a list of Zotero items.
+    """
+
+    zot: Zotero = field(default=load_zotero())
 
     def __post_init__(self):
         """Post-initialization hook"""
-        library = [
-            ZoteroItem(json.loads(line), library=self)
-            for line in open(self.library_path, "r")
-        ]
+        with progress:
+            task = progress.add_task("Synchronizing your Zotero library...")
+            items = self.zot.everything(self.zot.items())
+            progress.remove_task(task)
+        library = [ZoteroItem(i, library=self) for i in items]
         self.library = {i["key"]: i for i in library}
 
     def __getitem__(self, key):
@@ -38,13 +48,23 @@ class ZoteroLibrary:
         """
         return [i["key"] for i in self.library]
 
+    def to_jsonl(self, path: Path):
+        """Save the library to a JSONL file.
+
+        :param path: Path to save the JSONL file to.
+
+        """
+        with path.open("w") as f:
+            for item in self.library.values():
+                f.write(json.dumps(item.info) + "\n")
+
 
 @dataclass
 class ZoteroItem:
     """Zotero item."""
 
     info: dict
-    library: Optional[ZoteroLibrary]
+    library: ZoteroLibrary
 
     def __getitem__(self, key):
         """Get item by key.
@@ -120,17 +140,20 @@ class ZoteroItem:
         :param directory: Directory to download the PDF to.
         :return: Path to the downloaded PDF.
         """
-        if self.has_pdf():
-            pdf = self.pdf()
-            zot = load_zotero()
-            key = pdf["href"].split("/")[-1]
-            fpath = directory / f"{key}.pdf"
-            with open(fpath, "wb") as f:
-                f.write(zot.file(key))
-            return fpath
-        else:
-            fpath = directory / "abstract.txt"
-            with fpath.open("w+") as f:
-                f.write(self["data"]["abstractNote"])
+        pdf = self.pdf()
+        key = pdf["href"].split("/")[-1]
+        fpath = directory / f"{key}.pdf"
+        with fpath.open("wb") as f:
+            f.write(self.library.zot.file(key))
+        return fpath
 
-            return fpath
+    def download_abstract(self, directory: Path) -> Path:
+        """Download the abstract for this item.
+
+        :param directory: Directory to download the abstract to.
+        :return: Path to the downloaded abstract.
+        """
+        fpath = directory / "abstract.txt"
+        with fpath.open("w+") as f:
+            f.write(self["data"]["abstractNote"])
+        return fpath
