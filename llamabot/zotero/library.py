@@ -49,6 +49,8 @@ class ZoteroItem:
     def __getitem__(self, key):
         """Get item by key.
 
+        Allows for accessing nested keys via a "."-delimited string.
+
         :param key: Key to get.
         :return: Value for key.
         :raises KeyError: If key is not found.
