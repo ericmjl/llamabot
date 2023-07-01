@@ -51,7 +51,7 @@ def write_commit_message(diff: str):
     to provide additional contextual information and is contained within parenthesis,
     e.g., feat(parser): add ability to parse arrays.
     Within the optional body section, prefer the use of bullet points.
-
+    Do not include triple back-ticks (```) surrounding the commit message.
 
     # noqa: DAR101
     """
