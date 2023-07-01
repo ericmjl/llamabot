@@ -1,67 +1,61 @@
 # Llamabot Zotero CLI Tutorial
 
-In this tutorial, we will learn how to use the Llamabot Zotero CLI, a command-line interface for interacting with your Zotero library. The CLI allows you to sync your Zotero items to a local JSON file, chat with a paper, and configure the environment variables for the CLI.
+In this tutorial, we will walk through the Llamabot Zotero CLI, a command-line interface for interacting with your Zotero library. This tool allows you to chat with a paper, retrieve keys, and download papers from your Zotero library.
 
 ## Prerequisites
 
-We assume that you have `llamabot` installed:
+Before we start, make sure you have `llamabot` installed in your environment:
 
 ```bash
 pip install -U llamabot
 ```
 
-This will install the necessary packages and dependencies.
+## Getting Started
 
-## Configuration
-
-Before using the CLI, you need to configure the environment variables for your Zotero library. To do this, run the following command:
+First, we need to configure the Llamabot Zotero CLI environment variables. This is done using the `configure` command. You will be prompted to enter your Zotero library ID, API key, and library type.
 
 ```bash
 llamabot zotero configure
 ```
 
-You will be prompted to enter your Zotero library ID, API key, and library type. The library type can be either "user" or "group".
+## Chatting with a Paper
 
-```plaintext
-Library ID: <your_library_id>
-API Key: <your_api_key>
-Library Type: user
-```
-
-This will set the environment variables for the CLI.
-
-## Syncing Zotero Items
-
-To sync your Zotero items to a local JSON file, run the following command:
+To chat with a paper, use the `chat` command. You can specify the paper you want to chat about as an argument. If you don't provide a paper, you will be prompted to enter one.
 
 ```bash
-llamabot zotero sync
+llamabot zotero chat "The title of the paper"
 ```
 
-This will download all your Zotero items and save them to a JSON file located at `~/.llamabot/zotero/zotero_index.json`.
-
-## Chat with a Paper
-
-To chat with a paper from your Zotero library, run the following command:
+If you want to synchronize your Zotero library before chatting, you can use the `--sync` option.
 
 ```bash
-llamabot zotero chat-paper "<query>"
+llamabot zotero chat "The title of the paper" --sync
 ```
 
-Replace `<query>` with a search term related to the paper, such as the title, author, or other metadata. For example:
+## Retrieving Keys
+
+When you chat with a paper, the Llamabot Zotero CLI will retrieve the keys for the paper. These keys are unique identifiers for each paper in your Zotero library. The keys are displayed in the console.
+
+## Downloading Papers
+
+After retrieving the keys, you can choose a paper to download. You will be prompted to choose a paper from the list of keys. The paper will be downloaded to a temporary directory.
 
 ```bash
-llamabot zotero chat-paper "Deep Learning"
+Please choose an option: The title of the paper
 ```
 
-The CLI will search your Zotero library for the most relevant paper, download the PDF, and initialize a chatbot that can answer questions about the paper. You can ask questions by typing them in the command prompt:
+## Asking Questions
 
-```plaintext
-Ask me a question: What is the main contribution of this paper?
+Once the paper is downloaded, you can start asking questions about the paper. The Llamabot Zotero CLI uses a QueryBot to answer your questions. Simply type your question at the prompt.
+
+```bash
+Ask me a question: What is the main argument of the paper?
 ```
 
-To exit the chat, press `Ctrl+C`.
+To exit the chat, type `exit`.
 
-## Conclusion
+```bash
+Ask me a question: exit
+```
 
-In this tutorial, we learned how to use the Llamabot Zotero CLI to configure environment variables, sync Zotero items to a local JSON file, and chat with a paper from your Zotero library. This powerful tool can help you better understand and interact with your research papers, making it an invaluable resource for researchers and students alike.
+And that's it! You now know how to use the Llamabot Zotero CLI to chat with a paper, retrieve keys, download papers, and ask questions about a paper. Happy chatting!
