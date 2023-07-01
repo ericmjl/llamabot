@@ -5,6 +5,7 @@ from pathlib import Path
 import typer
 from dotenv import load_dotenv
 from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -65,7 +66,7 @@ def sync():
 
 
 @app.command()
-def chat(query: str = ""):
+def chat(query: str = typer.Argument("", help="The thing you want to chat about.")):
     """Chat with a paper.
 
     :param query: A paper to search for, whether by title, author, or other metadata.
@@ -84,12 +85,13 @@ def chat(query: str = ""):
     library = ZoteroLibrary()
 
     with progress:
-        progress.add_task("Embedding Zotero library...")
+        task = progress.add_task("Embedding Zotero library...", total=None)
         retrieverbot = QueryBot(
             retrieverbot_sysprompt(),
             doc_path=ZOTERO_JSON_PATH,
             stream=True,
         )
+        progress.remove_task(task)
 
     response = retrieverbot(get_key(query))
     paper_keys = json.loads(response.content)["key"]
@@ -104,8 +106,6 @@ def chat(query: str = ""):
     # Invert mapping:
     title_key_maps = {v: k for k, v in key_title_maps.items()}
 
-    from prompt_toolkit.completion import WordCompleter
-
     completer = WordCompleter(list(title_key_maps.keys()))
     while True:
         user_choice = prompt(
@@ -118,25 +118,29 @@ def chat(query: str = ""):
 
     # Retrieve paper from library
     with progress:
-        progress.add_task("Downloading paper...")
+        task = progress.add_task("Downloading paper...")
         entry: ZoteroItem = library[paper_key]
         fpath = entry.download_pdf(Path("/tmp"))
+        progress.remove_task(task)
+
     typer.echo(f"Downloaded paper to {fpath}")
 
     with progress:
-        progress.add_task("Embedding paper and initializing bot...")
+        task = progress.add_task("Embedding paper and initializing bot...")
         docbot = QueryBot(
             "You are an expert in answering questions about a paper.",
             doc_path=fpath,
             temperature=0.3,
         )
+        progress.remove_task(task)
 
     with progress:
         typer.echo("\n\n")
         typer.echo("Here is a summary of the paper for you to get going:")
-        progress.add_task("Summarizing paper...")
+        task = progress.add_task("Summarizing paper...")
         docbot("What is the summary of the paper?")
         typer.echo("\n\n")
+        progress.remove_task(task)
 
     while True:
         query = prompt("Ask me a question: ")
