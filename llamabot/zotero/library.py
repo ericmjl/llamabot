@@ -22,7 +22,7 @@ class ZoteroLibrary:
     Stores a list of Zotero items.
     """
 
-    zot: Zotero = field(default=load_zotero())
+    zot: Zotero = field(default_factory=load_zotero)
     jsonl_path: Path = field(default=None)
 
     def __post_init__(self):
