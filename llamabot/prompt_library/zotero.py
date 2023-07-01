@@ -30,6 +30,7 @@ def get_key(query: str = ""):
     }
 
     Do not return anything else except JSON.
+    Ensure that you do not return any explanations of your response.
 
     # noqa: DAR101
     """
