@@ -129,4 +129,6 @@ class ZoteroItem:
         else:
             fpath = directory / "abstract.txt"
             with fpath.open("w+") as f:
-                f.write()
+                f.write(self["data"]["abstractNote"])
+
+            return fpath
