@@ -65,11 +65,19 @@ def sync():
 
 
 @app.command()
-def chat(query: str):
+def chat(query: str = ""):
     """Chat with a paper.
 
     :param query: A paper to search for, whether by title, author, or other metadata.
+    :raises Exit: If the user types "exit".
     """
+    if query == "":
+        while True:
+            query = prompt(
+                "What paper are you searching for? ",
+            )
+            if query:
+                break
     typer.echo("Llamabot Zotero Chatbot initializing...")
     typer.echo("Use Ctrl+C to exit.")
 
@@ -132,6 +140,10 @@ def chat(query: str):
 
     while True:
         query = prompt("Ask me a question: ")
+        if query == "exit":
+            print("Exiting! Having fun!")
+            raise typer.Exit(code=0)
+
         progress.add_task("Sending query...")
         response = docbot(query)
         print("\n\n")
