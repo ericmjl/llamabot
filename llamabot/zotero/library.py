@@ -121,7 +121,12 @@ class ZoteroItem:
         if self.has_pdf():
             pdf = self.pdf()
             zot = load_zotero()
-            fpath = directory / f"{pdf['key']}.pdf"
+            key = pdf["href"].split("/")[-1]
+            fpath = directory / f"{key}.pdf"
             with open(fpath, "wb") as f:
-                f.write(zot.file(pdf["key"]))
+                f.write(zot.file(key))
             return fpath
+        else:
+            fpath = directory / "abstract.txt"
+            with fpath.oepn("w+") as f:
+                f.write()
