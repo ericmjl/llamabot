@@ -131,6 +131,9 @@ def chat(
 
     # From this point onwards, we need to record the chat.
     pr = PromptRecorder()
+    date_str = date.today().strftime("%Y%m%d")
+    snaked_user_choice = f"{snakecase(user_choice)}"
+    save_path = Path(f"{date_str}_{snaked_user_choice}.md")
     with progress, pr:
         typer.echo("\n\n")
         typer.echo("Here is a summary of the paper for you to get going:")
@@ -138,20 +141,19 @@ def chat(
         docbot("What is the summary of the paper?")
         typer.echo("\n\n")
         progress.remove_task(task)
+        pr.save(save_path)
 
     while True:
         with pr:
             query = prompt("Ask me a question: ")
             if query == "exit":
                 print("Exiting! Having fun!")
+                print(f"Your chat has been saved to: {save_path.resolve()}")
                 raise typer.Exit(code=0)
 
             progress.add_task("Sending query...")
             response = docbot(query)
             print("\n\n")
 
-            snaked_user_choice = f"{snakecase(user_choice)}"
-
             # Want to append YYYYMMDD before filename.
-            date_str = date.today().strftime("%Y%m%d")
-            pr.save(f"{date_str}_{snaked_user_choice}.md")
+            pr.save(save_path)

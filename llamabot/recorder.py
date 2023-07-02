@@ -68,6 +68,7 @@ class PromptRecorder:
 
         :param path: The path to save the prompt recorder to.
         """
+        path = Path(path)  # coerce to pathlib.Path
         with path.open("w+") as f:
             for prompt_and_response in self.prompts_and_responses:
                 f.write(
