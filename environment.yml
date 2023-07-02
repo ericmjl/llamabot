@@ -54,3 +54,4 @@ dependencies:
       - outlines
       - rich
       - pyzotero
+      - case-converter

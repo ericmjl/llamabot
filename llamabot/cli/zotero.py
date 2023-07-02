@@ -1,8 +1,10 @@
 """Llamabot Zotero CLI."""
 import json
+from datetime import date
 from pathlib import Path
 
 import typer
+from caseconverter import snakecase
 from dotenv import load_dotenv
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
@@ -11,6 +13,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from llamabot import QueryBot
 from llamabot.prompt_library.zotero import get_key, retrieverbot_sysprompt
+from llamabot.recorder import PromptRecorder
 from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
 
 from .utils import configure_environment_variable
@@ -51,7 +54,9 @@ def configure(
 @app.command()
 def chat(
     query: str = typer.Argument("", help="The thing you want to chat about."),
-    sync: bool = False,
+    sync: bool = typer.Option(
+        False, help="Whether or not to synchronize the Zotero library."
+    ),
 ):
     """Chat with a paper.
 
@@ -124,7 +129,9 @@ def chat(
         )
         progress.remove_task(task)
 
-    with progress:
+    # From this point onwards, we need to record the chat.
+    pr = PromptRecorder()
+    with progress, pr:
         typer.echo("\n\n")
         typer.echo("Here is a summary of the paper for you to get going:")
         task = progress.add_task("Summarizing paper...")
@@ -133,11 +140,18 @@ def chat(
         progress.remove_task(task)
 
     while True:
-        query = prompt("Ask me a question: ")
-        if query == "exit":
-            print("Exiting! Having fun!")
-            raise typer.Exit(code=0)
+        with pr:
+            query = prompt("Ask me a question: ")
+            if query == "exit":
+                print("Exiting! Having fun!")
+                raise typer.Exit(code=0)
 
-        progress.add_task("Sending query...")
-        response = docbot(query)
-        print("\n\n")
+            progress.add_task("Sending query...")
+            response = docbot(query)
+            print("\n\n")
+
+            snaked_user_choice = f"{snakecase(user_choice)}"
+
+            # Want to append YYYYMMDD before filename.
+            date_str = date.today().strftime("%Y%m%d")
+            pr.save(f"{date_str}_{snaked_user_choice}.md")

@@ -1,5 +1,6 @@
 """Prompt recorder class definition."""
 import contextvars
+from pathlib import Path
 from typing import Optional
 
 import pandas as pd
@@ -61,6 +62,17 @@ class PromptRecorder:
         :return: A pandas DataFrame representation of the prompt recorder.
         """
         return pd.DataFrame(self.prompts_and_responses)
+
+    def save(self, path: Path):
+        """Save the prompt recorder to a path.
+
+        :param path: The path to save the prompt recorder to.
+        """
+        with path.open("w+") as f:
+            for prompt_and_response in self.prompts_and_responses:
+                f.write(
+                    f"**{prompt_and_response['prompt']}**\n\n{prompt_and_response['response']}\n\n"
+                )
 
     def panel(self):
         """Return a panel representation of the prompt recorder.

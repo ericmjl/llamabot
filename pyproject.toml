@@ -82,6 +82,7 @@ dependencies = [
     "beautifulsoup4",
     "rich",
     "pyzotero",
+    "case-converter",
 ]
 
 [project.optional-dependencies]
