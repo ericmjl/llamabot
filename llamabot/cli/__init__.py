@@ -18,7 +18,12 @@ Modules:
     - python: A module for managing python-related commands.
 """
 
+from datetime import datetime
+
 import typer
+from prompt_toolkit import prompt
+
+from llamabot import ChatBot, PromptRecorder
 
 from . import apps, git, python, tutorial, zotero
 from .utils import configure_environment_variable
@@ -57,6 +62,36 @@ def version():
     from llamabot.version import version
 
     typer.echo(version)
+
+
+@app.command()
+def chat(save: bool = typer.Option(True, "--save", "-s")):
+    """Chat with LlamaBot's ChatBot.
+
+    :param save: Whether to save the chat to a file.
+    :raises Exit: If the user types "exit" or "quit".
+    """
+    pr = PromptRecorder()
+
+    bot = ChatBot(
+        "You are a chatbot. Respond to the user. Ensure your responses are Markdown compatible."
+    )
+
+    # Save chat to file
+    save_filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat.md"
+
+    typer.echo("Tell me something!")
+    while True:
+        with pr:
+            input = prompt("[You]: ")
+            if input in ["exit", "quit"]:
+                typer.echo("It was fun chatting! Have a great day!")
+                raise typer.Exit(0)
+            bot(input)
+            typer.echo("\n\n")
+
+            if save:
+                pr.save(save_filename)
 
 
 if __name__ == "__main__":
