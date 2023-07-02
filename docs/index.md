@@ -95,6 +95,15 @@ result = bot("Do you have any advice for me on career development?", similarity
 display(Markdown(result.response))
 ```
 
+## CLI Demos
+
+Llamabot comes with CLI demos of what can be built with it and a bit of supporting code.
+
+Here is one where Llamabot is used as part of the backend of a CLI app
+to chat with one's Zotero library.
+
+<script async id="asciicast-594326" src="https://asciinema.org/a/594326.js"></script>
+
 ## Contributing
 
 ### New features
