@@ -32,7 +32,6 @@ class PromptRecorder:
         :param exc_tb: The exception traceback.
         """
         prompt_recorder_var.set(None)
-        print("Recording complete!🎉")
 
     def log(self, prompt: str, response: str):
         """Log the prompt and response in chat history.

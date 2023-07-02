@@ -134,13 +134,11 @@ def chat(
     date_str = date.today().strftime("%Y%m%d")
     snaked_user_choice = f"{snakecase(user_choice)}"
     save_path = Path(f"{date_str}_{snaked_user_choice}.md")
-    with progress, pr:
+    with pr:
         typer.echo("\n\n")
         typer.echo("Here is a summary of the paper for you to get going:")
-        task = progress.add_task("Summarizing paper...")
         docbot("What is the summary of the paper?")
         typer.echo("\n\n")
-        progress.remove_task(task)
         pr.save(save_path)
 
     while True:
