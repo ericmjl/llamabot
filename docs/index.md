@@ -111,6 +111,8 @@ to chat with one's Zotero library using `llamabot zotero chat`:
 And finally, here is one where I use `llamabot`'s `SimpleBot` to create a bot
 that automatically writes commit messages for me.
 
+<script async id="asciicast-594334" src="https://asciinema.org/a/594334.js"></script>
+
 ## Contributing
 
 ### New features
