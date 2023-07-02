@@ -121,7 +121,6 @@ def chat(
         docbot = QueryBot(
             "You are an expert in answering questions about a paper.",
             doc_path=fpath,
-            temperature=0.3,
         )
         progress.remove_task(task)
 
