@@ -24,7 +24,9 @@ class ChatBot:
     h/t Andrew Giessel/GPT4 for the idea.
     """
 
-    def __init__(self, system_prompt, temperature=0.0, model_name="gpt-4-32k"):
+    def __init__(
+        self, system_prompt, temperature=0.0, model_name="gpt-4-32k", logging=False
+    ):
         """Initialize the ChatBot.
 
         :param system_prompt: The system prompt to use.
@@ -32,6 +34,7 @@ class ChatBot:
             See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
             for more information.
         :param model_name: The name of the OpenAI model to use.
+        :param logging: Whether to log the chat history.
         """
         self.model = ChatOpenAI(
             model_name=model_name,
@@ -46,6 +49,7 @@ class ChatBot:
             SystemMessage(content="Always return Markdown-compatible text."),
             SystemMessage(content=system_prompt),
         ]
+        self.logging = logging
 
     def __call__(self, human_message) -> AIMessage:
         """Call the ChatBot.
@@ -71,13 +75,15 @@ class ChatBot:
         faux_chat_history = []
         for message in self.chat_history[::-1]:
             if token_budget > 0:
-                logger.info(f"Token budget: {token_budget}")
+                if self.logging:
+                    logger.info(f"Token budget: {token_budget}")
                 faux_chat_history.append(message)
                 tokens = enc.encode(message.content)
                 token_budget -= len(tokens)
 
         messages = system_messages + faux_chat_history[::-1]
-        logger.info(messages)
+        if self.logging:
+            logger.info(messages)
 
         response = self.model(messages)
         self.chat_history.append(response)
