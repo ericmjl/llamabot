@@ -42,6 +42,7 @@ dependencies:
   - astunparse
   - pytest-mock
   - gitpython
+  - textual
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
