@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   # Core stack
-  - python=3.11
+  - python=3.9
   - build
   - bump2version
   - ipykernel
@@ -37,7 +37,7 @@ dependencies:
   - mkdocstrings
   - panel
   - jupyter_bokeh
-  - bokeh<=3.1.0
+  - bokeh
   - pyzotero
   - pyperclip
   - astunparse
