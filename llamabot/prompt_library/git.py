@@ -18,15 +18,17 @@ def write_commit_message(diff: str):
 
     {{ diff }}
 
+    # noqa: DAR101
+
     Use the Conventional Commits specification to write the diff.
 
-    ```
+    [COMMIT MESSAGE BEGIN]
     <type>[optional scope]: <description>
 
     [optional body]
 
     [optional footer(s)]
-    ```
+    [COMMIT MESSAGE END]
 
     The commit contains the following structural elements, to communicate intent to the consumers of your library:
 
@@ -51,7 +53,12 @@ def write_commit_message(diff: str):
     to provide additional contextual information and is contained within parenthesis,
     e.g., feat(parser): add ability to parse arrays.
     Within the optional body section, prefer the use of bullet points.
-    Do not include triple back-ticks (```) surrounding the commit message.
 
-    # noqa: DAR101
+    Final instructions:
+
+    1. Do not fence the commit message with back-ticks or quotation marks.
+    2. Do not add any other text except the commit message itself.
+    3. Only write out the commit message.
+
+    [BEGIN COMMIT MESSAGE]
     """
