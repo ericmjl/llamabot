@@ -25,7 +25,7 @@ from prompt_toolkit import prompt
 
 from llamabot import ChatBot, PromptRecorder
 
-from . import apps, git, python, tutorial, zotero
+from . import apps, doc, git, python, tutorial, zotero
 from .utils import configure_environment_variable
 
 app = typer.Typer()
@@ -34,6 +34,7 @@ app.add_typer(python.app, name="python")
 app.add_typer(git.gitapp, name="git")
 app.add_typer(tutorial.app, name="tutorial")
 app.add_typer(zotero.app, name="zotero")
+app.add_typer(doc.app, name="doc")
 
 
 @app.command()

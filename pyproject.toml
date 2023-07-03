@@ -83,6 +83,7 @@ dependencies = [
     "rich",
     "pyzotero",
     "case-converter",
+    "prompt-toolkit",
 ]
 
 [project.optional-dependencies]

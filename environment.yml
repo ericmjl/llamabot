@@ -43,6 +43,7 @@ dependencies:
   - pytest-mock
   - gitpython
   - textual
+  - prompt-toolkit
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
