@@ -47,7 +47,7 @@ def version():
 
 
 @app.command()
-def chat(save: bool = typer.Option(True, "--save", "-s")):
+def chat(save: bool = typer.Option(True, help="Whether to save the chat to a file.")):
     """Chat with LlamaBot's ChatBot.
 
     :param save: Whether to save the chat to a file.
@@ -61,9 +61,6 @@ def chat(save: bool = typer.Option(True, "--save", "-s")):
     # Save chat to file
     save_filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat.md"
 
-    typer.echo(
-        "Multi-line input is enabled. Use Meta+Enter or Escape->Enter to submit."
-    )
     while True:
         with pr:
             input = uniform_prompt()

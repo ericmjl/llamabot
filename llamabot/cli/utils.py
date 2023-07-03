@@ -72,7 +72,7 @@ def uniform_prompt():
         :return: The bottom toolbar.
         """
         return HTML(
-            "Multi-line input is enabled. Use Meta+Enter or Escape->Enter to submit."
+            " Multi-line input is enabled. Use Meta+Enter or Escape->Enter to submit. Type 'exit' or 'quit' to exit, or else use Ctrl+C. "
         )
 
     return prompt(

@@ -33,7 +33,7 @@ class ZoteroLibrary:
         """
         if self.jsonl_path is not None:
             with open(self.jsonl_path, "r") as f:
-                self.items = [json.loads(line) for line in f]
+                items = [json.loads(line) for line in f]
         else:
             with progress:
                 task = progress.add_task("Synchronizing your Zotero library...")

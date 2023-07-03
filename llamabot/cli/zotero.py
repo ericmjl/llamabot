@@ -1,5 +1,4 @@
 """Llamabot Zotero CLI."""
-import getpass
 import json
 from datetime import date
 from pathlib import Path
@@ -17,7 +16,7 @@ from llamabot.prompt_library.zotero import get_key, retrieverbot_sysprompt
 from llamabot.recorder import PromptRecorder
 from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
 
-from .utils import configure_environment_variable
+from .utils import configure_environment_variable, exit_if_asked, uniform_prompt
 
 load_dotenv()
 
@@ -63,7 +62,6 @@ def chat(
 
     :param query: A paper to search for, whether by title, author, or other metadata.
     :param sync: Whether or not to synchronize the Zotero library.
-    :raises Exit: If the user types "exit".
     """
     if query == "":
         while True:
@@ -76,10 +74,10 @@ def chat(
     typer.echo("Use Ctrl+C to exit anytime.")
 
     if sync:
-        library = ZoteroLibrary(ZOTERO_JSON_PATH)
-    else:
         library = ZoteroLibrary()
         library.to_jsonl(ZOTERO_JSON_PATH)
+    else:
+        library = ZoteroLibrary(jsonl_path=ZOTERO_JSON_PATH)
 
     with progress:
         task = progress.add_task("Embedding Zotero library...", total=None)
@@ -142,20 +140,12 @@ def chat(
         typer.echo("\n\n")
         pr.save(save_path)
 
-    typer.echo(
-        "Multi-line input is enabled. Use Meta+Enter or Escape->Enter to submit."
-    )
-
     while True:
         with pr:
-            query = prompt(f"[{getpass.getuser()}]: ", multiline=True)
-            if query == "exit":
-                print("Exiting! Having fun!")
-                print(f"Your chat has been saved to: {save_path.resolve()}")
-                raise typer.Exit(code=0)
-
+            query = uniform_prompt()
+            exit_if_asked(query)
             response = docbot(query)
-            print("\n\n")
+            typer.echo("\n\n")
 
             # Want to append YYYYMMDD before filename.
             pr.save(save_path)
