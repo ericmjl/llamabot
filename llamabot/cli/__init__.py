@@ -1,32 +1,13 @@
-"""
-This module provides a top-level command line interface for interacting with apps and python.
-
-Classes:
-    - None
-
-Exceptions:
-    - None
-
-Functions:
-    - None
-
-Objects:
-    - app: A Typer instance for managing command line interface.
-
-Modules:
-    - apps: A module for managing apps-related commands.
-    - python: A module for managing python-related commands.
-"""
+"""Top-level command line interface for llamabot."""
 
 from datetime import datetime
 
 import typer
-from prompt_toolkit import prompt
 
 from llamabot import ChatBot, PromptRecorder
 
 from . import apps, doc, git, python, tutorial, zotero
-from .utils import configure_environment_variable
+from .utils import configure_environment_variable, exit_if_asked, uniform_prompt
 
 app = typer.Typer()
 app.add_typer(apps.app, name="apps")
@@ -70,7 +51,6 @@ def chat(save: bool = typer.Option(True, "--save", "-s")):
     """Chat with LlamaBot's ChatBot.
 
     :param save: Whether to save the chat to a file.
-    :raises Exit: If the user types "exit" or "quit".
     """
     pr = PromptRecorder()
 
@@ -81,13 +61,13 @@ def chat(save: bool = typer.Option(True, "--save", "-s")):
     # Save chat to file
     save_filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat.md"
 
-    typer.echo("Tell me something!")
+    typer.echo(
+        "Multi-line input is enabled. Use Meta+Enter or Escape->Enter to submit."
+    )
     while True:
         with pr:
-            input = prompt("[You]: ")
-            if input in ["exit", "quit"]:
-                typer.echo("It was fun chatting! Have a great day!")
-                raise typer.Exit(0)
+            input = uniform_prompt()
+            exit_if_asked(input)
             bot(input)
             typer.echo("\n\n")
 

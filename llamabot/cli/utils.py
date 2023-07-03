@@ -1,6 +1,11 @@
 """CLI utility functions."""
 
+import getpass
 from pathlib import Path
+
+import typer
+from prompt_toolkit import prompt
+from prompt_toolkit.formatted_text import HTML
 
 
 def get_valid_input(prompt, valid_inputs=("y", "n")):
@@ -54,3 +59,36 @@ def configure_environment_variable(env_var: str, env_value: str):
     else:
         with open(config_file, "w") as file:
             file.write(env_var_line + "\n")
+
+
+def uniform_prompt():
+    """The uniform prompt for all llamabot commands.
+
+    :return: The prompt, partialled out and ready to accept user input."""
+
+    def bottom_toolbar():
+        """The bottom toolbar for the prompt.
+
+        :return: The bottom toolbar.
+        """
+        return HTML(
+            "Multi-line input is enabled. Use Meta+Enter or Escape->Enter to submit."
+        )
+
+    return prompt(
+        f"[{getpass.getuser()}]: ", multiline=True, bottom_toolbar=bottom_toolbar
+    )
+
+
+def exit_if_asked(query: str):
+    """Check if the user wants to exit.
+
+    If yes, exit the program.
+
+    :param query: The user's query.
+    :raises Exit: If the user types "exit" or "quit".
+    """
+    query = query.strip(" ").lower()
+    if query in ["exit", "quit"]:
+        print("It was fun chatting! Have a great day!")
+        raise typer.Exit(0)

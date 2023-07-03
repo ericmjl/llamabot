@@ -1,4 +1,5 @@
 """Llamabot Zotero CLI."""
+import getpass
 import json
 from datetime import date
 from pathlib import Path
@@ -141,15 +142,18 @@ def chat(
         typer.echo("\n\n")
         pr.save(save_path)
 
+    typer.echo(
+        "Multi-line input is enabled. Use Meta+Enter or Escape->Enter to submit."
+    )
+
     while True:
         with pr:
-            query = prompt("Ask me a question: ")
+            query = prompt(f"[{getpass.getuser()}]: ", multiline=True)
             if query == "exit":
                 print("Exiting! Having fun!")
                 print(f"Your chat has been saved to: {save_path.resolve()}")
                 raise typer.Exit(code=0)
 
-            progress.add_task("Sending query...")
             response = docbot(query)
             print("\n\n")
 

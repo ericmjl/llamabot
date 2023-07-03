@@ -2,9 +2,10 @@
 from pathlib import Path
 
 import typer
-from prompt_toolkit import prompt
 
 from llamabot import QueryBot
+
+from .utils import exit_if_asked, uniform_prompt
 
 app = typer.Typer()
 
@@ -18,7 +19,6 @@ def chat(
     """Chat with your document.
 
     :param doc_path: Path to the document you wish to chat with.
-    :raises Exit: If the user quits.
     """
     bot = QueryBot(
         system_message="You are a bot that can answer questions about a document provided to you.",
@@ -29,9 +29,7 @@ def chat(
     )
 
     while True:
-        query = prompt(">> ")
-        if query in ["exit", "quit"]:
-            typer.echo("Have a great day!")
-            raise typer.Exit(0)
+        query = uniform_prompt()
+        exit_if_asked(query)
         bot(query)
         typer.echo("\n\n")
