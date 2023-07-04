@@ -244,21 +244,23 @@ def show_directory_tree(
     directory: str,
     depth: int = float("inf"),
     indent: int = 0,
-    ignore_gitignore: bool = False,
+    ignore_gitignore: bool = True,
+    ignore_dirs: list = None,
 ) -> str:
     """Show directory tree from a directory.
 
     .. code-block:: python
 
         from pathlib import Path
-        show_directory_tree(Path.home(), depth=1, ignore_gitignore=True)
+        show_directory_tree(Path.home(), depth=1, ignore_gitignore=True, ignore_dirs=['.git', '__pycache__'])
 
     This function prints a directory tree of the specified directory.
 
     :param directory: The directory to display the tree for.
     :param depth: The maximum depth to display the tree, default is infinity.
     :param indent: The indentation level for the tree, default is 0.
-    :param ignore_gitignore: If True, ignores files and folders specified in .gitignore, default is False.
+    :param ignore_gitignore: If True, ignores files and folders specified in .gitignore, default is True.
+    :param ignore_dirs: A list of directory names to ignore, default is None.
     :raises NotADirectoryError: If the specified path is not a directory.
     :returns: A string representation of the directory tree.
     """
@@ -303,10 +305,14 @@ def show_directory_tree(
 
     # Recursively print subdirectories
     for folder in folders:
+        if ignore_dirs is not None and any(
+            fnmatch.fnmatch(folder.name, pattern) for pattern in ignore_dirs
+        ):
+            continue
         printed_text += "|" + "    " * indent + "|-- " + folder.name + "/" + "\n"
         if depth > 0:
             printed_text += show_directory_tree(
-                folder, depth - 1, indent + 1, ignore_gitignore
+                folder, depth - 1, indent + 1, ignore_gitignore, ignore_dirs
             )
 
     return printed_text
