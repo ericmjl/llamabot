@@ -39,7 +39,7 @@ EXTENSION_LOADER_MAPPING = {
 }
 
 
-def magic_load_doc(file_path) -> List[Document]:
+def magic_load_doc(file_path: Path) -> List[Document]:
     """Load a document from a file.
 
     This function is used to magically load a document from a file.

@@ -38,8 +38,8 @@ class QueryBot:
         system_message: str,
         model_name="gpt-4-32k",
         temperature=0.0,
-        doc_path: Union[str, Path] = None,
-        saved_index_path: Union[str, Path] = None,
+        doc_paths: List[str] | List[Path] | str | Path = None,
+        saved_index_path: str | Path = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
         stream=True,
@@ -59,7 +59,8 @@ class QueryBot:
         :param temperature: The model temperature to use.
             See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
             for more information.
-        :param doc_path: A path to document to use for the chatbot.
+        :param doc_paths: A path to a document, or a list of paths to multiple documents,
+            to use for the chatbot.
         :param saved_index_path: The path to the saved index to use for the chatbot.
         :param chunk_size: The chunk size to use for the LlamaIndex TokenTextSplitter.
         :param chunk_overlap: The chunk overlap to use for the LlamaIndex TokenTextSplitter.
@@ -87,13 +88,13 @@ class QueryBot:
             )
 
         # Update index with a new document.
-        if doc_path is not None:
-            index = make_or_load_index(doc_path, chunk_size, chunk_overlap)
+        if doc_paths is not None:
+            index = make_or_load_index(doc_paths, chunk_size, chunk_overlap)
 
         # Set object attributes.
         self.system_message = system_message
         self.index = index
-        self.doc_path = doc_path
+        self.doc_paths = doc_paths
         self.chat = chat
         self.chat_history = [
             SystemMessage(content=system_message),
@@ -176,48 +177,48 @@ If you cannot answer something, respond by saying that you don't know.
             path = path.with_suffix(".json")
         self.index.save_to_disk(path)
 
-    def insert(self, file: Path):
-        """Insert a document into the index.
+    # def insert(self, file: Path):
+    #     """Insert a document into the index.
 
-        :param file: The path to the document to insert.
-        """
+    #     :param file: The path to the document to insert.
+    #     """
 
-        self.index = insert_documents_into_index(
-            [file], self.index, self.chunk_size, self.chunk_overlap
-        )
-
-
-def insert_documents_into_index(
-    doc_path: List[Union[str, Path]],
-    index: GPTVectorStoreIndex,
-    chunk_size: int,
-    chunk_overlap: int,
-):
-    """Insert documents into the index.
-
-    :param doc_path: A list of paths to the documents to insert.
-    :param index: The index to insert the documents into.
-    :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
-    :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
-    :returns: The updated index.
-    """
-    # logger.info(f"Inserting {path} into the index...")
-    documents = magic_load_doc(doc_path)
-    for document in documents:
-        chunks = split_document(document, chunk_size, chunk_overlap)
-        for chunk in chunks:
-            index.insert(chunk)
-    return index
+    #     self.index = insert_documents_into_index(
+    #         file, self.index, self.chunk_size, self.chunk_overlap
+    #     )
 
 
-def compute_file_hash(fpath: Path) -> str:
-    """Compute the hash of a file.
+# def insert_documents_into_index(
+#     doc_path: Union[str, Path],
+#     index: GPTVectorStoreIndex,
+#     chunk_size: int,
+#     chunk_overlap: int,
+# ):
+#     """Insert documents into the index.
 
-    :param fpath: The path to the file to compute the hash of.
-    :returns: The hash of the file.
-    """
-    file_content = fpath.read_bytes()
-    return hashlib.sha256(file_content).hexdigest()
+#     :param doc_path: A list of paths to the documents to insert.
+#     :param index: The index to insert the documents into.
+#     :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
+#     :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
+#     :returns: The updated index.
+#     """
+#     # logger.info(f"Inserting {path} into the index...")
+#     documents = magic_load_doc(doc_path)
+#     for document in documents:
+#         chunks = split_document(document, chunk_size, chunk_overlap)
+#         for chunk in chunks:
+#             index.insert(chunk)
+#     return index
+
+
+# def compute_file_hash(fpath: Path) -> str:
+#     """Compute the hash of a file.
+
+#     :param fpath: The path to the file to compute the hash of.
+#     :returns: The hash of the file.
+#     """
+#     file_content = fpath.read_bytes()
+#     return hashlib.sha256(file_content).hexdigest()
 
 
 def make_service_context():
@@ -295,20 +296,33 @@ def make_index(docs, file_hash, persist_dir, service_context):
     return index
 
 
-def make_or_load_index(doc_path, chunk_size=2000, chunk_overlap=0):
-    """Make or load an index for a document.
+def make_or_load_index(
+    doc_paths: List[Path] | List[str], chunk_size=2000, chunk_overlap=0
+):
+    """Make or load an index for a collection of documents.
 
-    :param doc_path: The path to the document to make or load an index for.
+    :param doc_paths: The path to the document to make or load an index for.
     :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
     :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
     :returns: The index.
     """
-    file_hash = compute_file_hash(doc_path)
-    service_context = make_service_context()
-    persist_dir = get_persist_dir(file_hash)
+    # An index is constructed over a collection of documents.
+    # As such, we construct a mapping of a hash of the collection of documents to the index.
 
-    document = magic_load_doc(doc_path)
-    split_docs = split_document(document[0], chunk_size, chunk_overlap)
+    # Step 1: Compute file hash for all of the documents.
+    file_hash = hashlib.sha256()
+    for doc_path in doc_paths:
+        file_hash.update(Path(doc_path).read_bytes())
+    file_hash_hexdigest = file_hash.hexdigest()
+
+    service_context = make_service_context()
+    persist_dir = get_persist_dir(file_hash_hexdigest)
+
+    # Step 2: Create the index's split documents.
+    split_docs = []
+    for doc_path in doc_paths:
+        document = magic_load_doc(doc_path)
+        split_docs.extend(split_document(document[0], chunk_size, chunk_overlap))
 
     # Check that the persist directory exists and that we have made a docstore,
     # which is a sentinel test for the rest of the index.
@@ -317,6 +331,9 @@ def make_or_load_index(doc_path, chunk_size=2000, chunk_overlap=0):
     else:
         persist_dir.mkdir(exist_ok=True, parents=True)
         index = make_index(
-            split_docs, file_hash, persist_dir, service_context=service_context
+            split_docs,
+            file_hash_hexdigest,
+            persist_dir,
+            service_context=service_context,
         )
     return index
