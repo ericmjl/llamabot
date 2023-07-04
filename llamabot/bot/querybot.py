@@ -311,7 +311,9 @@ def make_or_load_index(
 
     # Step 1: Compute file hash for all of the documents.
     file_hash = hashlib.sha256()
-    for doc_path in doc_paths:
+    from tqdm.auto import tqdm
+
+    for doc_path in tqdm(doc_paths, desc="hash files"):
         file_hash.update(Path(doc_path).read_bytes())
     file_hash_hexdigest = file_hash.hexdigest()
 
@@ -320,7 +322,7 @@ def make_or_load_index(
 
     # Step 2: Create the index's split documents.
     split_docs = []
-    for doc_path in doc_paths:
+    for doc_path in tqdm(doc_paths, desc="split documents"):
         document = magic_load_doc(doc_path)
         split_docs.extend(split_document(document[0], chunk_size, chunk_overlap))
 
