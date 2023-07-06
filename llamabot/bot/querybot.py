@@ -15,7 +15,6 @@ from llama_index import (
     load_index_from_storage,
 )
 from llama_index.node_parser import SimpleNodeParser
-from llama_index.retrievers import VectorIndexRetriever
 from llama_index.storage.docstore import SimpleDocumentStore
 from llama_index.storage.index_store import SimpleIndexStore
 from llama_index.storage.storage_context import StorageContext
@@ -26,7 +25,7 @@ from llamabot.recorder import autorecord
 
 # from loguru import logger
 
-
+CACHE_DIR = Path.home() / ".llamabot" / "cache"
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
@@ -132,10 +131,11 @@ If you cannot answer something, respond by saying that you don't know.
         # Step 1: Get documents from the index that are deemed to be matching the query.
         # logger.info(f"Querying index for top {similarity_top_k} documents...")
 
-        retriever = VectorIndexRetriever(
-            index=self.index,
-            similarity_top_k=similarity_top_k,
-        )
+        # retriever = VectorIndexRetriever(
+        #     index=self.index,
+        #     similarity_top_k=similarity_top_k,
+        # )
+        retriever = self.index.as_retriever(similarity_top_k=similarity_top_k)
 
         source_nodes = retriever.retrieve(query)
         source_texts = [n.node.text for n in source_nodes]
@@ -246,7 +246,7 @@ def get_persist_dir(file_hash: str):
     :param file_hash: The file hash to use for the persist directory.
     :returns: The persist directory.
     """
-    persist_dir = Path.home() / ".llamabot" / "cache" / file_hash
+    persist_dir = CACHE_DIR / file_hash
     persist_dir.mkdir(parents=True, exist_ok=True)
     return persist_dir
 

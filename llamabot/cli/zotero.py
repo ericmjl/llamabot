@@ -55,7 +55,7 @@ def configure(
 def chat(
     query: str = typer.Argument("", help="The thing you want to chat about."),
     sync: bool = typer.Option(
-        False, help="Whether or not to synchronize the Zotero library."
+        True, help="Whether or not to synchronize the Zotero library."
     ),
 ):
     """Chat with a paper.
@@ -83,8 +83,9 @@ def chat(
         task = progress.add_task("Embedding Zotero library...", total=None)
         retrieverbot = QueryBot(
             retrieverbot_sysprompt(),
-            doc_paths=ZOTERO_JSON_DIR.glob("*.json"),
+            doc_paths=list(ZOTERO_JSON_DIR.glob("*.json")),
             stream=True,
+            use_cache=False,
         )
         progress.remove_task(task)
 

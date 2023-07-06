@@ -1,6 +1,8 @@
 """Top-level command line interface for llamabot."""
 
+import os
 from datetime import datetime
+from pathlib import Path
 
 import typer
 
@@ -70,6 +72,13 @@ def chat(save: bool = typer.Option(True, help="Whether to save the chat to a fil
 
             if save:
                 pr.save(save_filename)
+
+
+@app.command()
+def clear_cache():
+    """Clear the Llamabot cache."""
+    CACHE_DIR = Path.home() / ".llamabot" / "cache"
+    os.system("rm -rf {}".format(CACHE_DIR))
 
 
 if __name__ == "__main__":
