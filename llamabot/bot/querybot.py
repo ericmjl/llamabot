@@ -43,6 +43,7 @@ class QueryBot:
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
         stream=True,
+        use_cache=True,
     ):
         """Initialize QueryBot.
 
@@ -65,6 +66,7 @@ class QueryBot:
         :param chunk_size: The chunk size to use for the LlamaIndex TokenTextSplitter.
         :param chunk_overlap: The chunk overlap to use for the LlamaIndex TokenTextSplitter.
         :param stream: Whether to stream the chatbot or not.
+        :param use_cache: Whether to use the cache or not.
         """
 
         chat = ChatOpenAI(
@@ -89,7 +91,7 @@ class QueryBot:
 
         # Update index with a new document.
         if doc_paths is not None:
-            index = make_or_load_index(doc_paths, chunk_size, chunk_overlap)
+            index = make_or_load_index(doc_paths, chunk_size, chunk_overlap, use_cache)
 
         # Set object attributes.
         self.system_message = system_message
@@ -297,13 +299,14 @@ def make_index(docs, file_hash, persist_dir, service_context):
 
 
 def make_or_load_index(
-    doc_paths: List[Path] | List[str], chunk_size=2000, chunk_overlap=0
+    doc_paths: List[Path] | List[str], chunk_size=2000, chunk_overlap=0, use_cache=True
 ):
     """Make or load an index for a collection of documents.
 
     :param doc_paths: The path to the document to make or load an index for.
     :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
     :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
+    :param use_cache: Whether to use the cache.
     :returns: The index.
     """
     # An index is constructed over a collection of documents.
@@ -328,14 +331,14 @@ def make_or_load_index(
 
     # Check that the persist directory exists and that we have made a docstore,
     # which is a sentinel test for the rest of the index.
-    if persist_dir.exists() and (persist_dir / "docstore.json").exists():
-        index = load_index(persist_dir, service_context=service_context)
-    else:
-        persist_dir.mkdir(exist_ok=True, parents=True)
-        index = make_index(
-            split_docs,
-            file_hash_hexdigest,
-            persist_dir,
-            service_context=service_context,
-        )
+    if persist_dir.exists() and (persist_dir / "docstore.json").exists() and use_cache:
+        return load_index(persist_dir, service_context=service_context)
+
+    persist_dir.mkdir(exist_ok=True, parents=True)
+    index = make_index(
+        split_docs,
+        file_hash_hexdigest,
+        persist_dir,
+        service_context=service_context,
+    )
     return index

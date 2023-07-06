@@ -23,17 +23,20 @@ class ZoteroLibrary:
     """
 
     zot: Zotero = field(default_factory=load_zotero)
-    jsonl_path: Path = field(default=None)
+    json_dir: Path = field(default=None)
 
     def __post_init__(self):
         """Post-initialization hook
 
-        If jsonl_path is set, load the library from the JSONL file
+        If json_dir is set, load the library from the JSON files in that directory
         and skip querying zotero for everything.
         """
-        if self.jsonl_path is not None:
-            with open(self.jsonl_path, "r") as f:
-                items = [json.loads(line) for line in f]
+        if self.json_dir is not None:
+            # Load the library from the JSON files.
+            items = []
+            for json_file in self.json_dir.glob("*.json"):
+                with json_file.open("r+") as f:
+                    items.append(json.loads(f.read()))
         else:
             with progress:
                 task = progress.add_task("Synchronizing your Zotero library...")
@@ -57,15 +60,16 @@ class ZoteroLibrary:
         """
         return [i["key"] for i in self.library]
 
-    def to_jsonl(self, path: Path):
-        """Save the library to a JSONL file.
+    def to_json(self, dir: Path, has_pdf=True):
+        """Save the library to a JSON file.
 
-        :param path: Path to save the JSONL file to.
-
+        :param dir: Directory in which to save the JSONs.
+        :param has_pdf: Whether to save only items with PDFs.
         """
-        with path.open("w") as f:
-            for item in self.library.values():
-                f.write(json.dumps(item.info) + "\n")
+        for key, item in self.library.items():
+            if has_pdf and item.has_pdf():
+                with open((dir / f"{key}.json"), "w+") as f:
+                    f.write(json.dumps(item.info) + "\n")
 
 
 @dataclass

@@ -58,11 +58,7 @@ def magic_load_doc(file_path: Path) -> List[Document]:
 
         # Concatenate the documents if there are more than 1 document in documents:
         if len(documents) > 1:
-            documents = [
-                Document(
-                    text=str(file_path) + " ".join([doc.text for doc in documents])
-                )
-            ]
+            documents = [Document(text=" ".join([doc.text for doc in documents]))]
 
     else:
         # Treat this as a plain text file.

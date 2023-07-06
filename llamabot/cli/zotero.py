@@ -22,8 +22,8 @@ load_dotenv()
 
 app = typer.Typer()
 
-ZOTERO_JSON_PATH = Path.home() / ".llamabot/zotero/zotero_index.json"
-ZOTERO_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+ZOTERO_JSON_DIR = Path.home() / ".llamabot/zotero/zotero_index/"
+ZOTERO_JSON_DIR.parent.mkdir(parents=True, exist_ok=True)
 progress = Progress(
     SpinnerColumn(),
     TextColumn("[progress.description]{task.description}"),
@@ -75,15 +75,15 @@ def chat(
 
     if sync:
         library = ZoteroLibrary()
-        library.to_jsonl(ZOTERO_JSON_PATH)
+        library.to_jsonl(ZOTERO_JSON_DIR)
     else:
-        library = ZoteroLibrary(jsonl_path=ZOTERO_JSON_PATH)
+        library = ZoteroLibrary(json_dir=ZOTERO_JSON_DIR)
 
     with progress:
         task = progress.add_task("Embedding Zotero library...", total=None)
         retrieverbot = QueryBot(
             retrieverbot_sysprompt(),
-            doc_path=ZOTERO_JSON_PATH,
+            doc_paths=ZOTERO_JSON_DIR.glob("*.json"),
             stream=True,
         )
         progress.remove_task(task)
@@ -124,7 +124,7 @@ def chat(
         task = progress.add_task("Embedding paper and initializing bot...")
         docbot = QueryBot(
             "You are an expert in answering questions about a paper.",
-            doc_path=fpath,
+            doc_paths=[fpath],
         )
         progress.remove_task(task)
 
