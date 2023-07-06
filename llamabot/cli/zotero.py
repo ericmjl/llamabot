@@ -23,7 +23,7 @@ load_dotenv()
 app = typer.Typer()
 
 ZOTERO_JSON_DIR = Path.home() / ".llamabot/zotero/zotero_index/"
-ZOTERO_JSON_DIR.parent.mkdir(parents=True, exist_ok=True)
+ZOTERO_JSON_DIR.mkdir(parents=True, exist_ok=True)
 progress = Progress(
     SpinnerColumn(),
     TextColumn("[progress.description]{task.description}"),
