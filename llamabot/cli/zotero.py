@@ -85,7 +85,7 @@ def chat(
             retrieverbot_sysprompt(),
             doc_paths=list(ZOTERO_JSON_DIR.glob("*.json")),
             stream=True,
-            use_cache=False,
+            use_cache=True,
         )
         progress.remove_task(task)
 
@@ -101,15 +101,21 @@ def chat(
         typer.echo(f"Paper title: {key_title_maps[key]}")
     # Invert mapping:
     title_key_maps = {v: k for k, v in key_title_maps.items()}
+    if len(paper_keys) > 1:
+        completer = WordCompleter(list(title_key_maps.keys()))
+        while True:
+            user_choice = prompt(
+                "Please choose an option: ",
+                completer=completer,
+                complete_while_typing=True,
+            )
+            if user_choice in title_key_maps.keys():
+                break
+        typer.echo(f"Awesome! You have chosen the paper: {user_choice}")
+    else:
+        user_choice = list(title_key_maps.keys())[0]
+        typer.echo("Looks like there's only one paper, so we'll choose that one!")
 
-    completer = WordCompleter(list(title_key_maps.keys()))
-    while True:
-        user_choice = prompt(
-            "Please choose an option: ", completer=completer, complete_while_typing=True
-        )
-        if user_choice in title_key_maps.keys():
-            break
-    typer.echo(f"Awesome! You have chosen the paper: {user_choice}")
     paper_key = title_key_maps[user_choice.strip(" ")]
 
     # Retrieve paper from library
