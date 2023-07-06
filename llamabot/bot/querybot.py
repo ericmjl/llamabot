@@ -131,17 +131,18 @@ If you cannot answer something, respond by saying that you don't know.
         # Step 1: Get documents from the index that are deemed to be matching the query.
         # logger.info(f"Querying index for top {similarity_top_k} documents...")
 
-        # retriever = VectorIndexRetriever(
-        #     index=self.index,
-        #     similarity_top_k=similarity_top_k,
-        # )
         retriever = self.index.as_retriever(similarity_top_k=similarity_top_k)
 
         source_nodes = retriever.retrieve(query)
         source_texts = [n.node.text for n in source_nodes]
 
+        faux_chat_history = []
+        faux_chat_history.append(SystemMessage(content=self.system_message))
+
+        # Step 2: Grab the last four responses from the chat history.
+        faux_chat_history.extend(self.chat_history[-4:])
+
         # Step 2: Construct a faux message history to work with.
-        faux_chat_history = [SystemMessage(content=self.system_message)]
         faux_chat_history.append(
             SystemMessage(content="Here is the context you will be working with:")
         )
