@@ -75,7 +75,7 @@ def chat(
 
     if sync:
         library = ZoteroLibrary()
-        library.to_jsonl(ZOTERO_JSON_DIR)
+        library.to_json(ZOTERO_JSON_DIR)
     else:
         library = ZoteroLibrary(json_dir=ZOTERO_JSON_DIR)
 
