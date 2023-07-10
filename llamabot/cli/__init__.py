@@ -8,7 +8,7 @@ import typer
 
 from llamabot import ChatBot, PromptRecorder
 
-from . import apps, doc, git, python, tutorial, zotero
+from . import apps, blog, doc, git, python, tutorial, zotero
 from .utils import configure_environment_variable, exit_if_asked, uniform_prompt
 
 app = typer.Typer()
@@ -18,6 +18,7 @@ app.add_typer(git.gitapp, name="git")
 app.add_typer(tutorial.app, name="tutorial")
 app.add_typer(zotero.app, name="zotero")
 app.add_typer(doc.app, name="doc")
+app.add_typer(blog.app, name="blog")
 
 
 @app.command()
