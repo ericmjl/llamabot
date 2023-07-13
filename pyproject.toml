@@ -85,6 +85,7 @@ dependencies = [
     "case-converter",
     "prompt-toolkit",
 ]
+requires-python = ">3.10"
 
 [project.optional-dependencies]
 tests = [
