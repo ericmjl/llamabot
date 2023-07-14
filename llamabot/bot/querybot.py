@@ -20,6 +20,7 @@ from llama_index.storage.index_store import SimpleIndexStore
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores import SimpleVectorStore
 
+from llamabot.config import default_language_model
 from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.recorder import autorecord
 
@@ -35,7 +36,7 @@ class QueryBot:
     def __init__(
         self,
         system_message: str,
-        model_name="gpt-4-32k",
+        model_name=default_language_model(),
         temperature=0.0,
         doc_paths: List[str] | List[Path] | str | Path = None,
         saved_index_path: str | Path = None,
@@ -230,7 +231,7 @@ def make_service_context():
     :returns: A service context.
     """
     chat = ChatOpenAI(
-        model_name="gpt-4-32k",
+        model_name=default_language_model(),
         temperature=0.0,
         streaming=True,
         verbose=True,

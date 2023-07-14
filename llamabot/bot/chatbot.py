@@ -10,6 +10,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 
+from llamabot.config import default_language_model
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
 
@@ -25,7 +26,11 @@ class ChatBot:
     """
 
     def __init__(
-        self, system_prompt, temperature=0.0, model_name="gpt-4-32k", logging=False
+        self,
+        system_prompt,
+        temperature=0.0,
+        model_name=default_language_model(),
+        logging=False,
     ):
         """Initialize the ChatBot.
 
