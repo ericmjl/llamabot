@@ -1,47 +1,31 @@
-# LlamaBot Tutorial
+# LlamaBot Configuration Tutorial
 
-Welcome to the LlamaBot tutorial. LlamaBot is a command-line interface (CLI) tool that allows you to interact with various applications, Python scripts, Git repositories, tutorials, Zotero references, and documentation.
-This tutorial will guide you through the process of setting up and using LlamaBot.
+In this tutorial, we will walk through the configuration process for LlamaBot, a Python-based bot that uses the OpenAI API. The configuration process involves setting up the API key and selecting the default model for the bot.
 
-## Installation
+## Setting up the API Key
 
-Before we start, ensure that you have LlamaBot installed. If not, you can install it using pip:
-
-```bash
-pip install -U llamabot
-```
-
-## Configuring LlamaBot
-
-Before you can use LlamaBot, you need to configure it with your OpenAI API key. This is done using the `configure` command. The API key is passed as an argument, and it is hidden from the console for security reasons.
-If you run:
+The first step in configuring LlamaBot is to set up the API key. This is done by invoking:
 
 ```bash
-llamabot configure
+llamabot configure api-key
 ```
 
-You will be prompted to enter your API key.
+The user will be prompted to enter their OpenAI API key. The key will be hidden as you type it, and you will be asked to confirm it. Once confirmed, the key will be stored as an environment variable, `OPENAI_API_KEY`.
 
-## Checking the Version
+## Configuring the Default Model
 
-You can check the version of LlamaBot using the `version` command.
+The next step in the configuration process is to select the default model for LlamaBot. This is done by invoking:
 
 ```bash
-llamabot version
+llamabot configure default-model
 ```
 
-## Chatting with LlamaBot
+LlamaBot will first load the environment variables from the `.env` file located at `llamabotrc_path`. It then retrieves a list of available models from the OpenAI API, filtering for those that include 'gpt' in their ID. **For this reason, it is important to set your OpenAI API key before configuring the default model.**
 
-LlamaBot includes a chatbot that you can interact with. To start a chat, use the `chat` command. By default, the chat will be saved to a file. If you don't want to save the chat, you can pass `--no-save` as an argument.
+The function then displays the list of available models and prompts you to select one. As you type, the function will suggest completions based on the available models. The last model in the list is provided as the default option.
 
-```bash
-llamabot chat
-# OR
-llamabot chat --no-save
-```
-
-The chatbot uses a `PromptRecorder` to record the chat. The chat is saved in a Markdown file with the current date and time as the filename.
+Once you have entered a valid model ID, the function stores it as an environment variable, `OPENAI_DEFAULT_MODEL`.
 
 ## Conclusion
 
-That's it! You now know how to use LlamaBot. Remember, you can always get help on the command line by typing `llamabot --help`. Happy coding!
+By following these steps, you can easily configure LlamaBot to use your OpenAI API key and your chosen default model. Remember to keep your API key secure, and to choose a model that best suits your needs. Happy coding!
