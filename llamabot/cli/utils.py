@@ -47,7 +47,6 @@ def configure_environment_variable(env_var: str, env_value: str):
         with open(config_file, "w") as file:
             for line in content:
                 if f"export {env_var.upper()}=" in line:
-                    print(f"found env var line {env_var_line}")
                     file.write(env_var_line + "\n")
                     found_env_var = True
                 else:
