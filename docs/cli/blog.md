@@ -20,7 +20,7 @@ and provide you with relevant tags.
 
 The output will look something like this:
 
-```
+```text
 Here is your blog title:
 [Generated Blog Title]
 
