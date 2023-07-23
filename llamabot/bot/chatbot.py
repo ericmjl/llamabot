@@ -16,6 +16,11 @@ from llamabot.recorder import autorecord
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
+model_chat_token_budgets = {
+    "gpt-4-32k": 32_000,
+    "gpt-4": 8_000,
+}
+
 
 class ChatBot:
     """Chat Bot that is primed with a system prompt, accepts a human message.
@@ -31,6 +36,7 @@ class ChatBot:
         temperature=0.0,
         model_name=default_language_model(),
         logging=False,
+        response_budget=2_000,
     ):
         """Initialize the ChatBot.
 
@@ -40,6 +46,7 @@ class ChatBot:
             for more information.
         :param model_name: The name of the OpenAI model to use.
         :param logging: Whether to log the chat history.
+        :param response_budget: The number of tokens to budget for the response.
         """
         self.model = ChatOpenAI(
             model_name=model_name,
@@ -55,6 +62,8 @@ class ChatBot:
             SystemMessage(content=system_prompt),
         ]
         self.logging = logging
+        self.model_name = model_name
+        self.response_budget = response_budget
 
     def __call__(self, human_message) -> AIMessage:
         """Call the ChatBot.
@@ -67,7 +76,7 @@ class ChatBot:
         # Get out the last 6000 tokens of chat history.
         faux_chat_history = []
         enc = tiktoken.encoding_for_model("gpt-4")
-        token_budget = 6_000
+        token_budget = model_chat_token_budgets[self.model_name] - self.response_budget
 
         # Put the system message into the faux chat history.
         system_messages = []
