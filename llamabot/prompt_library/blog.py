@@ -66,6 +66,11 @@ def compose_linkedin_post(blog_post):
     and to support my work on Patreon.
     My Patreon link is https://patreon.com/ericmjl/
     Include hashtags inline with the LinkedIn post and at the end of the post too.
+    Please return this for me in JSON format using the following schema:
+
+    {
+        "post_text": <post_text>
+    }
 
     #noqa: DAR101
     """
@@ -82,6 +87,16 @@ def compose_patreon_post(blog_post):
     Ensure that there is a call to action to interact with the post after reading it,
     such as asking a question, or suggesting ideas that I did not write about.
     Please use emojis where appropriate as well!
+    Based on the content of the blog post, I also need a title for the Patreon post,
+    a 140 character text preview, and tags for the post.
+    Please return this for me in JSON format using the following schema:
+
+    {
+        "title": <title>,
+        "text_preview": <text_preview>,
+        "post_text": <post_text>,
+        "tags": [<tag1>, <tag2>, ...],
+    }
 
     #noqa: DAR101
     """
@@ -100,6 +115,12 @@ def compose_twitter_post(blog_post):
     and to support my work on Patreon.
     My Patreon link is https://patreon.com/ericmjl/
     Include hashtags inline with the Twitter post.
+
+    Please return this for me in JSON format using the following schema:
+
+    {
+        "post_text": <post_text>
+    }
 
     #noqa: DAR101
     """

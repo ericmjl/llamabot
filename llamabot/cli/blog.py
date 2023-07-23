@@ -70,10 +70,20 @@ def social_media(platform: str):
 
     compose_func = platform_to_compose_mapping[platform]
 
-    patreon_post = bot(compose_func(query)).content
-    pyperclip.copy(patreon_post)
-    typer.echo("\n\n")
-    typer.echo(f"Your {platform} post has been copied to your clipboard! 🎉")
+    social_media_content = bot(compose_func(query)).content
+    social_media_content = coerce_dict(social_media_content)
+
+    if platform == "patreon":
+        typer.echo("\n\n")
+        for k, v in social_media_content.items():
+            typer.echo("\n\n")
+            typer.echo(f"Here is the patreon {k}:")
+            typer.echo(v)
+
+    else:
+        pyperclip.copy(social_media_content["post_text"])
+        typer.echo("\n\n")
+        typer.echo(f"Your {platform} post has been copied to your clipboard! 🎉")
 
 
 @app.command()
