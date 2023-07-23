@@ -12,6 +12,8 @@ from llamabot.prompt_library.blog import (
     compose_twitter_post,
 )
 from llamabot.prompt_library.output_formatter import coerce_dict
+from llamabot.prompt_library.sembr import sembr as sembr_prompt
+from llamabot.prompt_library.sembr import sembr_bot
 
 from .utils import uniform_prompt
 
@@ -33,8 +35,13 @@ def summarize():
     typer.echo(parsed_response["title"])
 
     typer.echo("\n\n")
+    typer.echo("Applying SEMBR to your summary...")
+    bot = sembr_bot()
+    summary_sembr = bot(sembr_prompt(parsed_response["summary"]))
+
+    typer.echo("\n\n")
     typer.echo("Here is your blog summary:")
-    typer.echo(parsed_response["summary"])
+    typer.echo(summary_sembr)
 
     typer.echo("\n\n")
     typer.echo("Here are your blog tags:")
@@ -67,3 +74,16 @@ def social_media(platform: str):
     pyperclip.copy(patreon_post)
     typer.echo("\n\n")
     typer.echo(f"Your {platform} post has been copied to your clipboard! 🎉")
+
+
+@app.command()
+def sembr():
+    """Apply semantic line breaks to a blog post."""
+    bot = sembr_bot()
+    typer.echo("Please paste your blog post below.")
+    query = uniform_prompt()
+
+    response = bot(sembr_prompt(query)).content
+    pyperclip.copy(response)
+    typer.echo("\n\n")
+    typer.echo("Your sembr post has been copied to your clipboard! 🎉")
