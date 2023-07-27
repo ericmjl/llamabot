@@ -30,6 +30,8 @@ From there, `llamabot` will automagically load the environment variable for you.
 
 The simplest use case of LLaMaBot
 is to create a simple bot that keeps no record of chat history.
+This is effectively the same as a _stateless function_
+that you program with natural language instructions rather than code.
 This is useful for prompt experimentation,
 or for creating simple bots that are preconditioned on an instruction to handle texts
 and are then called upon repeatedly with different texts.
