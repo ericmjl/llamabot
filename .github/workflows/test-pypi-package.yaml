@@ -2,7 +2,7 @@ name: Daily test of the latest PyPI packages
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '14 3 * * *'
   push:
     branches:
       - main
