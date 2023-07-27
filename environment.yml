@@ -31,7 +31,7 @@ dependencies:
   - interrogate
   - pylint
   # Documentation
-  - mkdocs
+  - mkdocs=1.4.3
   - mkdocs-material
   - mkdocstrings
   - panel
