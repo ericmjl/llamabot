@@ -24,7 +24,8 @@ from llamabot.config import default_language_model
 from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.recorder import autorecord
 
-# from loguru import logger
+# from pydantic import validate_call
+
 
 CACHE_DIR = Path.home() / ".llamabot" / "cache"
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
@@ -36,14 +37,14 @@ class QueryBot:
     def __init__(
         self,
         system_message: str,
-        model_name=default_language_model(),
-        temperature=0.0,
+        model_name: str = default_language_model(),
+        temperature: float = 0.0,
         doc_paths: List[str] | List[Path] | str | Path = None,
         saved_index_path: str | Path = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
-        stream=True,
-        use_cache=True,
+        stream: bool = True,
+        use_cache: bool = True,
     ):
         """Initialize QueryBot.
 
@@ -82,14 +83,13 @@ class QueryBot:
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
         # Initialize index or load it from disk.
-        if saved_index_path is None:
-            index = GPTVectorStoreIndex(nodes=[], service_context=service_context)
-        else:
+        index = GPTVectorStoreIndex(nodes=[], service_context=service_context)
+        if saved_index_path is not None:
             index = GPTVectorStoreIndex.load_from_disk(
                 saved_index_path, service_context=service_context
             )
 
-        # Update index with a new document.
+        # Make or load the index.
         if doc_paths is not None:
             index = make_or_load_index(doc_paths, chunk_size, chunk_overlap, use_cache)
 
@@ -111,10 +111,11 @@ If you cannot answer something, respond by saying that you don't know.
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
 
+    # @validate_call
     def __call__(
         self,
         query: str,
-        similarity_top_k=10,
+        similarity_top_k: int = 10,
     ) -> AIMessage:
         """Call the QueryBot.
 
@@ -171,6 +172,7 @@ If you cannot answer something, respond by saying that you don't know.
         # Step 6: Return the response.
         return response
 
+    # @validate_call
     def save(self, path: Union[str, Path]):
         """Save the QueryBot index to disk.
 
@@ -180,49 +182,6 @@ If you cannot answer something, respond by saying that you don't know.
         if not path.suffix == ".json":
             path = path.with_suffix(".json")
         self.index.save_to_disk(path)
-
-    # def insert(self, file: Path):
-    #     """Insert a document into the index.
-
-    #     :param file: The path to the document to insert.
-    #     """
-
-    #     self.index = insert_documents_into_index(
-    #         file, self.index, self.chunk_size, self.chunk_overlap
-    #     )
-
-
-# def insert_documents_into_index(
-#     doc_path: Union[str, Path],
-#     index: GPTVectorStoreIndex,
-#     chunk_size: int,
-#     chunk_overlap: int,
-# ):
-#     """Insert documents into the index.
-
-#     :param doc_path: A list of paths to the documents to insert.
-#     :param index: The index to insert the documents into.
-#     :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
-#     :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
-#     :returns: The updated index.
-#     """
-#     # logger.info(f"Inserting {path} into the index...")
-#     documents = magic_load_doc(doc_path)
-#     for document in documents:
-#         chunks = split_document(document, chunk_size, chunk_overlap)
-#         for chunk in chunks:
-#             index.insert(chunk)
-#     return index
-
-
-# def compute_file_hash(fpath: Path) -> str:
-#     """Compute the hash of a file.
-
-#     :param fpath: The path to the file to compute the hash of.
-#     :returns: The hash of the file.
-#     """
-#     file_content = fpath.read_bytes()
-#     return hashlib.sha256(file_content).hexdigest()
 
 
 def make_service_context():
@@ -242,18 +201,8 @@ def make_service_context():
     return service_context
 
 
-def get_persist_dir(file_hash: str):
-    """Get the persist directory for a given file hash.
-
-    :param file_hash: The file hash to use for the persist directory.
-    :returns: The persist directory.
-    """
-    persist_dir = CACHE_DIR / file_hash
-    persist_dir.mkdir(parents=True, exist_ok=True)
-    return persist_dir
-
-
-def load_index(persist_dir, service_context):
+# @validate_call
+def load_index(persist_dir: Path, service_context: ServiceContext):
     """Load an index from disk.
 
     :param persist_dir: The directory to load the index from.
@@ -269,7 +218,9 @@ def load_index(persist_dir, service_context):
     return index
 
 
-def make_index(docs, file_hash, persist_dir, service_context):
+def make_index(
+    docs: List[Path], file_hash: str, persist_dir: Path, service_context: ServiceContext
+):
     """Make an index from a list of documents.
 
     :param docs: A list of documents to index.
@@ -300,8 +251,12 @@ def make_index(docs, file_hash, persist_dir, service_context):
     return index
 
 
+# @validate_call
 def make_or_load_index(
-    doc_paths: List[Path] | List[str], chunk_size=2000, chunk_overlap=0, use_cache=True
+    doc_paths: List[Path] | List[str],
+    chunk_size: int = 2000,
+    chunk_overlap: int = 0,
+    use_cache: bool = True,
 ):
     """Make or load an index for a collection of documents.
 
@@ -314,16 +269,20 @@ def make_or_load_index(
     # An index is constructed over a collection of documents.
     # As such, we construct a mapping of a hash of the collection of documents to the index.
 
-    # Step 1: Compute file hash for all of the documents.
+    # Step 1: Compute file hash for all of the documents + the chunk size and chunk overlap.
     file_hash = hashlib.sha256()
     from tqdm.auto import tqdm
 
     for doc_path in tqdm(doc_paths, desc="hash files"):
         file_hash.update(Path(doc_path).read_bytes())
+    file_hash.update(str(chunk_size).encode())
+    file_hash.update(str(chunk_overlap).encode())
     file_hash_hexdigest = file_hash.hexdigest()
 
+    # Make persist_dir based on the file hash's hexdigest.
+    persist_dir = CACHE_DIR / file_hash_hexdigest
+    persist_dir.mkdir(parents=True, exist_ok=True)
     service_context = make_service_context()
-    persist_dir = get_persist_dir(file_hash_hexdigest)
 
     # Step 2: Create the index's split documents.
     split_docs = []
@@ -336,7 +295,6 @@ def make_or_load_index(
     if persist_dir.exists() and (persist_dir / "docstore.json").exists() and use_cache:
         return load_index(persist_dir, service_context=service_context)
 
-    persist_dir.mkdir(exist_ok=True, parents=True)
     index = make_index(
         split_docs,
         file_hash_hexdigest,

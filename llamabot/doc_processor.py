@@ -90,9 +90,7 @@ def split_document(
     if chunk_overlap < 0:
         raise ValueError("chunk_overlap must be non-negative.")
     splitter = TokenTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-
     sub_texts = splitter.split_text(doc.text)
-    sub_texts
 
     sub_docs = [Document(text=t) for t in sub_texts]
     return sub_docs
