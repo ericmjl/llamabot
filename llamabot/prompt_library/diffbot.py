@@ -1,10 +1,18 @@
 """PR Diff Bot and Prompts."""
 from urllib.parse import urlparse
 
-import outlines.text as text
 import requests
 
 from llamabot.bot.simplebot import SimpleBot
+
+try:
+    from outlines import text
+except ImportError:
+    import warnings
+
+    warnings.warn(
+        "Please install the `outlines` package to use the llamabot prompt library."
+    )
 
 
 def diffbot() -> SimpleBot:

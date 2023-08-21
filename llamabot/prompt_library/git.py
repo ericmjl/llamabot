@@ -1,7 +1,14 @@
 """Prompts for writing git stuff."""
-from outlines import text
-
 from llamabot import SimpleBot
+
+try:
+    from outlines import text
+except ImportError:
+    import warnings
+
+    warnings.warn(
+        "Please install the `outlines` package to use the llamabot prompt library."
+    )
 
 
 def commitbot():

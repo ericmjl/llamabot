@@ -1,5 +1,12 @@
 """Zotero prompt library."""
-from outlines import text
+try:
+    from outlines import text
+except ImportError:
+    import warnings
+
+    warnings.warn(
+        "Please install the `outlines` package to use the llamabot prompt library."
+    )
 
 
 @text.prompt

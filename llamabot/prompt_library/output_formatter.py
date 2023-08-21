@@ -1,9 +1,16 @@
 """Prompts and bots for validating outputs."""
 import json
 
-from outlines import text
-
 from llamabot import SimpleBot
+
+try:
+    from outlines import text
+except ImportError:
+    import warnings
+
+    warnings.warn(
+        "Please install the `outlines` package to use the llamabot prompt library."
+    )
 
 
 @text.prompt

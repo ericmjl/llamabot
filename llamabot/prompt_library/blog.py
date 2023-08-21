@@ -1,8 +1,16 @@
 """Blogging prompts."""
-from outlines import text
 from pydantic import BaseModel
 
 from llamabot import SimpleBot
+
+try:
+    from outlines import text
+except ImportError:
+    import warnings
+
+    warnings.warn(
+        "Please install the `outlines` package to use the llamabot prompt library."
+    )
 
 
 class BlogInformation(BaseModel):

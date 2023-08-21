@@ -10,12 +10,19 @@ Functions:
     - tests(code, source_file)
     - create_panel_app()
 """
-
-import outlines.text as text
 import panel as pn
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
+
+try:
+    from outlines import text
+except ImportError:
+    import warnings
+
+    warnings.warn(
+        "Please install the `outlines` package to use the llamabot prompt library."
+    )
 
 
 def codebot() -> SimpleBot:
