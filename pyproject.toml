@@ -97,6 +97,9 @@ docs = [
     "mkdocs-material",
     "mkdocs",
 ]
+prompts = [
+    "outlines",
+]
 
 [project.scripts]
 llamabot = "llamabot.cli:app"
