@@ -101,5 +101,9 @@ prompts = [
     "outlines",
 ]
 
+all = [
+    "llamabot[tests,docs,prompts]",
+]
+
 [project.scripts]
 llamabot = "llamabot.cli:app"
