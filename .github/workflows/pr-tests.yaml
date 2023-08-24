@@ -51,19 +51,19 @@ jobs:
         if: matrix.environment-type == 'bare'
         # 17 June 2023: Figure out a way to move testing deps to the `pip install -e .` step below.
         run: |
-          python -m pip install --upgrade pip pytest hypothesis pytest-cov pytest-mock
+          python -m pip install -e ".[all]"
 
       - name: Run tests
         run: |
           if [ "${{ matrix.environment-type }}" == "miniconda" ]; then
             conda activate llamabot
           fi
-          pip install -e .
+          pip install -e ".[all]"
           pytest
 
       - name: Test CLI
         run: |
-          pip install -e .
+          pip install -e ".[all]"
           llamabot --help
 
       # https://github.com/codecov/codecov-action
