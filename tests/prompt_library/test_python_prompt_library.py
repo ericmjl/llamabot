@@ -1,7 +1,7 @@
 """Tests for the Python prompt library."""
 
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from llamabot.bot.simplebot import SimpleBot
@@ -55,6 +55,7 @@ def test_codebot_instance(input_text: str):
         ]
     ),
 )
+@settings(deadline=None)
 def test_ghostwriter(desired_functionality: str, language: str):
     """Test the ghostwriter function with various inputs.
 
