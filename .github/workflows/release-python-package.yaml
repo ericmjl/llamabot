@@ -1,0 +1,87 @@
+name: Release Python Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "One of major, minor, or patch"
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    name: Run test suite (Python ${{ matrix.python-version }})
+
+    strategy:
+      matrix:
+        python-version: [3.10.12, 3.11.4]
+
+    # https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install bump2version and wheel
+        run: python -m pip install bumpversion wheel # "bumpversion" installs bump2version
+
+      - name: Dry run bumpversion
+        run: |
+          bumpversion --dry-run ${{ github.event.inputs.version_name }} --allow-dirty --verbose
+
+      # This is lifted directly from the bump2version docs.
+      # Version number will be saved in `env` section of each consecutive stage
+      - name: Store new version number
+        run: echo "version_number=`bumpversion --dry-run --list ${{ github.event.inputs.version_name }} | grep new_version | sed -r s,"^.*=",,`" >> $GITHUB_ENV
+
+      - name: Display new version number
+        run: |
+          echo "version_name: ${{ github.event.inputs.version_name }}"
+          echo "version_number: v${{ env.version_number }}"
+
+      - name: Ensure repo status is clean
+        run: git status
+
+      - name: Run bumpversion
+        run: bumpversion ${{ github.event.inputs.version_name }} --verbose
+
+      - name: Ensure tag creation
+        run: git tag | grep ${{ env.version_number }}
+
+      - name: Build package
+        run: |
+          rm -f dist/*
+          python setup.py sdist bdist_wheel
+
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Push changes with tags
+        run: git push && git push --tags
+
+      # This will create an actual pointer in the "Release" section of the GitHub repo
+      # The intent is to always have "latest" point to <this> release
+      - name: Create release in GitHub repo
+        uses: ncipollo/release-action@v1
+        with:
+          body: "Contribution details can be found in CHANGELOG.md"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ env.version_number}}
+
+      - name: Ensure complete
+        run: echo "Auto-release complete!"
