@@ -183,6 +183,26 @@ If you cannot answer something, respond by saying that you don't know.
             path = path.with_suffix(".json")
         self.index.save_to_disk(path)
 
+    def retrieve(
+        self,
+        query: str,
+        similarity_top_k: int = 10,
+    ):
+        """Retrieve the source nodes associated with a query using similarity search.
+
+        :param query: The query to send to the document index.
+        :param similarity_top_k: The number of documents to return from the index.
+        :raises ValueError: if the index is not initialized.
+        :return: The source nodes associated with the query.
+        """
+        if self.index is None:
+            raise ValueError(
+                "You need to provide a document for querybot to index against!"
+            )
+        retriever = self.index.as_retriever(similarity_top_k=similarity_top_k)
+        source_nodes = retriever.retrieve(query)
+        return source_nodes
+
 
 def make_service_context():
     """Make a service context for the QueryBot.
