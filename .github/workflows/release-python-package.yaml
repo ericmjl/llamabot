@@ -49,6 +49,11 @@ jobs:
       - name: Ensure repo status is clean
         run: git status
 
+      - name: Configure Git
+        run: |
+          git config --global user.email "git@github.com"
+          git config --global user.name "GitHub Bot"
+
       - name: Run bumpversion
         run: bumpversion ${{ github.event.inputs.version_name }} --verbose
 
