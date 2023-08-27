@@ -57,7 +57,7 @@ jobs:
           git config --global user.email "git@github.com"
           git config --global user.name "GitHub Bot"
           git config --global credential.helper store
-          git config --global user.password ${{ secrets.GITHUB_TOKEN }}
+          git config --global user.password ${{ secrets.GHPAGES_DEPLOY_KEY }}
 
       - name: Run bumpversion
         run: bumpversion ${{ github.event.inputs.version_name }} --verbose
