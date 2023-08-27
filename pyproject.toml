@@ -85,6 +85,8 @@ dependencies = [
     "prompt-toolkit",
 ]
 requires-python = ">3.10"
+description = "A Pythonic interface to LLMs."
+readme = "README.md"
 
 [project.optional-dependencies]
 tests = [
