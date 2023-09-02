@@ -14,6 +14,7 @@ dependencies:
   - pip
   - twine
   - loguru
+  - pydantic>=2.0
   # Utilities
   - pyprojroot
   - python-dotenv
@@ -44,15 +45,15 @@ dependencies:
   - gitpython
   - textual
   - prompt-toolkit
+  - openai
+  - wget
+  - rich
+  - pyzotero
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
-      - openai
-      - langchain>=0.0.189
       - llama_index>=0.6.0
+      - langchain>=0.0.189
       - mknotebooks
-      - wget
       - outlines
-      - rich
-      - pyzotero
       - case-converter
