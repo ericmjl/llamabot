@@ -24,8 +24,11 @@ class ZoteroLibrary:
 
     zot: Zotero = field(default_factory=load_zotero)
     json_dir: Path = field(default=None)
+    articles_only: bool = False
 
-    def __post_init__(self):
+    def __post_init__(
+        self,
+    ):
         """Post-initialization hook
 
         If json_dir is set, load the library from the JSON files in that directory
@@ -42,7 +45,13 @@ class ZoteroLibrary:
                 task = progress.add_task("Synchronizing your Zotero library...")
                 items = self.zot.everything(self.zot.items())
                 progress.remove_task(task)
+
+        condition = lambda i: True  # noqa: E731
+        if self.articles_only:
+            condition = lambda i: i.has_pdf()  # noqa: E731
         library = [ZoteroItem(i, library=self) for i in items]
+        # Filter for the condition using the ZoteroItem.has_pdf() method.
+        library = [i for i in library if condition(i)]
         self.library = {i["key"]: i for i in library}
 
     def __getitem__(self, key):
@@ -58,7 +67,7 @@ class ZoteroLibrary:
 
         :return: A list of keys.
         """
-        return [i["key"] for i in self.library]
+        return [i for i in self.library]
 
     def to_json(self, dir: Path, has_pdf=True):
         """Save the library to a JSON file.
@@ -70,6 +79,25 @@ class ZoteroLibrary:
             if has_pdf and item.has_pdf():
                 with open((dir / f"{key}.json"), "w+") as f:
                     f.write(json.dumps(item.info) + "\n")
+
+    def key_title_map(self, inverse=False) -> dict[str, str]:
+        """Return the paper titles from the library.
+
+        :param inverse: Whether to invert the mapping.
+        :return: A list of paper titles.
+        """
+        mapping = {}
+        for k, v in self.library.items():
+            data = v.info["data"]
+            title = data["title"] if "title" in data.keys() else None
+            if title is None:
+                continue
+            title = v.info["data"]["title"]
+            mapping[k] = title
+
+        if inverse:
+            return {v: k for k, v in mapping.items()}
+        return mapping
 
 
 @dataclass
