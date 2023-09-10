@@ -29,4 +29,4 @@ repos:
       hooks:
           - id: ruff
             args: [--fix, --exit-non-zero-on-fix]
-            types_or: [python, jupyter]
+            types_or: [python]
