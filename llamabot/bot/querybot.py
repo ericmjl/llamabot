@@ -1,6 +1,7 @@
 """Class definition for QueryBot."""
 import contextvars
 import hashlib
+import os
 from pathlib import Path
 from typing import List, Union
 
@@ -26,12 +27,20 @@ from llamabot.config import default_language_model
 from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.recorder import autorecord
 
+DEFAULT_SIMILARITY_TOP_KS = {
+    "gpt-3.5-turbo": 2,
+    "gpt-3.5-turbo-0301": 2,
+    "gpt-3.5-turbo-0613": 2,
+    "gpt-3.5-turbo-16k": 5,
+    "gpt-3.5-turbo-16k-0613": 5,
+    "gpt-4": 3,
+    "gpt-4-0314": 3,
+    "gpt-4-0613": 3,
+    "gpt-4-32k": 10,
+}
 
-import os
 
-SIMILARITY_TOP_K = 3
-if "32k" in os.getenv("OPENAI_DEFAULT_MODEL"):
-    SIMILARITY_TOP_K = 10
+SIMILARITY_TOP_K = DEFAULT_SIMILARITY_TOP_KS.get(os.getenv("OPENAI_DEFAULT_MODEL"), 3)
 
 
 CACHE_DIR = Path.home() / ".llamabot" / "cache"
