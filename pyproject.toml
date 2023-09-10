@@ -83,6 +83,7 @@ dependencies = [
     "pyzotero",
     "case-converter",
     "prompt-toolkit",
+    "sh",
 ]
 requires-python = ">3.10"
 description = "A Pythonic interface to LLMs."
