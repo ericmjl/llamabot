@@ -1,26 +1,4 @@
-"""
-Code for document preprocessing.
-
-This module provides functions for loading and splitting documents.
-It supports various file formats, including PDF, DOCX, PPTX, XLSX, Markdown, and IPython Notebook.
-
-Functions:
-    - magic_load_doc(file_path: str) -> List[Document]:
-        Load a document from a file, inferring the file format from the file extension.
-    - split_document(doc: Document, chunk_size: int = 2000, chunk_overlap: int = 0) -> List[Document]:
-        Split a document into sub-documents using token text splitter, with a maximum length of `chunk_size` tokens
-        and `chunk_overlap` tokens overlap.
-
-Classes:
-    - Document: Represents a document with text content.
-
-Exceptions:
-    - None
-
-Dependencies:
-    - langchain.text_splitter: Provides the TokenTextSplitter class for splitting text.
-    - llama_index: Provides the Document class and download_loader function.
-"""
+"""Code for document preprocessing."""
 
 
 from pathlib import Path
@@ -63,11 +41,8 @@ def magic_load_doc(file_path: Path) -> List[Document]:
     else:
         # Treat this as a plain text file.
         with open(file_path, "r+") as f:
-            documents = [Document(text=str(file_path) + f.read())]
+            documents = [Document(text=f.read())]
     return documents
-
-
-# Split a document into sub-documents using token text splitter, with maximum length of 2000 tokens.
 
 
 def split_document(
@@ -77,7 +52,8 @@ def split_document(
 ) -> List[Document]:
     """Split a document into sub-documents using token text splitter.
 
-    This function is used to split a document into sub-documents using token text splitter,
+    This function is used to split a document
+    into sub-documents using token text splitter,
     such that each sub-document has a maximum length of `chunk_size` tokens
     with `chunk_overlap` tokens overlap.
 
