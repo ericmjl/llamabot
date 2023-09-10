@@ -4,6 +4,7 @@ import os
 from tempfile import NamedTemporaryFile
 
 import git
+from sh import pre_commit
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from typer import Typer
 
@@ -20,6 +21,7 @@ def commit(autocommit: bool = True):
 
     :param autocommit: Whether to automatically commit the changes.
     """
+    # Run pre-commit hooks first so that we don't waste tokens if hooks fail.
     repo = git.Repo(search_parent_directories=True)
     bot = commitbot()
     progress = Progress(
@@ -32,9 +34,11 @@ def commit(autocommit: bool = True):
         diff = get_git_diff()
         if not diff:
             print(
-                "I don't see any staged changes to commit! Please stage some files before running me again."
+                "I don't see any staged changes to commit! "
+                "Please stage some files before running me again."
             )
             return
+        pre_commit("run")
 
         message = bot(write_commit_message(diff))
         print("\n\n")
