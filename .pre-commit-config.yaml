@@ -6,7 +6,7 @@ repos:
           - id: end-of-file-fixer
           - id: trailing-whitespace
     - repo: https://github.com/psf/black
-      rev: 23.3.0
+      rev: 23.9.0
       hooks:
           - id: black
     - repo: https://github.com/kynan/nbstripout
@@ -23,16 +23,6 @@ repos:
       hooks:
           - id: darglint
             args: [-v 2] # this config makes the error messages a bit less cryptic.
-    - repo: https://github.com/PyCQA/flake8
-      rev: 6.0.0
-      hooks:
-          - id: flake8
-            args: [--exclude, nbconvert_config.py]
-    - repo: https://github.com/pycqa/isort
-      rev: 5.12.0
-      hooks:
-          - id: isort
-            name: isort (python)
     - repo: https://github.com/astral-sh/ruff-pre-commit
       # Ruff version.
       rev: v0.0.287
