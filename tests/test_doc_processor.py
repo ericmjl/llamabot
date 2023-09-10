@@ -47,7 +47,7 @@ def test_magic_load_doc_txt(txt_file: Path):
     result = magic_load_doc(txt_file)
     assert len(result) == 1
     assert isinstance(result[0], Document)
-    assert result[0].text == str(txt_file) + "This is a test text file."
+    assert result[0].text == "This is a test text file."
 
 
 def test_magic_load_doc_unknown(unknown_file: Path):
@@ -61,14 +61,14 @@ def test_magic_load_doc_unknown(unknown_file: Path):
     result = magic_load_doc(unknown_file)
     assert len(result) == 1
     assert isinstance(result[0], Document)
-    assert (
-        result[0].text
-        == str(unknown_file) + "This is a test file with an unknown extension."
-    )
+    assert result[0].text == "This is a test file with an unknown extension."
 
 
 @pytest.mark.xfail(
-    reason="18 June 2023 - The test text file provided in the test below needs to be changed to create special files of each type."
+    reason=(
+        "18 June 2023 - The test text file provided in the test below "
+        "needs to be changed to create special files of each type."
+    )
 )
 @pytest.mark.parametrize("ext,loader", EXTENSION_LOADER_MAPPING.items())
 def test_magic_load_doc_extensions(
