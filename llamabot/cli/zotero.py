@@ -1,5 +1,4 @@
 """Llamabot Zotero CLI."""
-import json
 from datetime import date
 from pathlib import Path
 
@@ -7,15 +6,13 @@ import typer
 from caseconverter import snakecase
 from dotenv import load_dotenv
 from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from llamabot import QueryBot
-from llamabot.prompt_library.zotero import get_key, retrieverbot_sysprompt
 from llamabot.recorder import PromptRecorder
 from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
-
+from llamabot.zotero.completer import PaperTitleCompleter
 from .utils import configure_environment_variable, exit_if_asked, uniform_prompt
 
 load_dotenv()
@@ -63,13 +60,6 @@ def chat(
     :param query: A paper to search for, whether by title, author, or other metadata.
     :param sync: Whether or not to synchronize the Zotero library.
     """
-    if query == "":
-        while True:
-            query = prompt(
-                "What paper are you searching for? ",
-            )
-            if query:
-                break
     typer.echo("Llamabot Zotero Chatbot initializing...")
     typer.echo("Use Ctrl+C to exit anytime.")
 
@@ -79,44 +69,18 @@ def chat(
     else:
         library = ZoteroLibrary(json_dir=ZOTERO_JSON_DIR)
 
-    with progress:
-        task = progress.add_task("Embedding Zotero library...", total=None)
-        retrieverbot = QueryBot(
-            retrieverbot_sysprompt(),
-            doc_paths=list(ZOTERO_JSON_DIR.glob("*.json")),
-            stream=True,
-            use_cache=True,
+    completer = PaperTitleCompleter(library.key_title_map().values())
+    while True:
+        user_choice = prompt(
+            "Please choose an paper: ",
+            completer=completer,
+            complete_while_typing=True,
         )
-        progress.remove_task(task)
+        if user_choice in library.key_title_map().values():
+            break
+    typer.echo(f"Awesome! You have chosen the paper: {user_choice}")
 
-    response = retrieverbot(get_key(query))
-    paper_keys = json.loads(response.content)["key"]
-    typer.echo("\n\n")
-    typer.echo(f"Retrieved key: {paper_keys}")
-
-    key_title_maps = {}
-    for key in paper_keys:
-        entry: ZoteroItem = library[key]
-        key_title_maps[key] = entry["data.title"]
-        typer.echo(f"Paper title: {key_title_maps[key]}")
-    # Invert mapping:
-    title_key_maps = {v: k for k, v in key_title_maps.items()}
-    if len(paper_keys) > 1:
-        completer = WordCompleter(list(title_key_maps.keys()))
-        while True:
-            user_choice = prompt(
-                "Please choose an option: ",
-                completer=completer,
-                complete_while_typing=True,
-            )
-            if user_choice in title_key_maps.keys():
-                break
-        typer.echo(f"Awesome! You have chosen the paper: {user_choice}")
-    else:
-        user_choice = list(title_key_maps.keys())[0]
-        typer.echo("Looks like there's only one paper, so we'll choose that one!")
-
-    paper_key = title_key_maps[user_choice.strip(" ")]
+    paper_key = library.key_title_map(inverse=True)[user_choice.strip(" ")]
 
     # Retrieve paper from library
     with progress:
@@ -151,7 +115,7 @@ def chat(
         with pr:
             query = uniform_prompt()
             exit_if_asked(query)
-            response = docbot(query)
+            docbot(query)
             typer.echo("\n\n")
 
             # Want to append YYYYMMDD before filename.
