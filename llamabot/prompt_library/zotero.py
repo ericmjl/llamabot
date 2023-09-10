@@ -26,7 +26,10 @@ def docbot_sysprompt():
 
 @text.prompt
 def get_key(query: str = ""):
-    """Return for me keys that correspond to my Zotero library entry associated with the query:
+    """Based on the context provided,
+    return for me all of the keys that were provided for the query.
+
+    Ensure that you're using the titles and abstracts.
 
     {{ query }}
 
@@ -36,8 +39,11 @@ def get_key(query: str = ""):
         "key": [<key1>, <key2>, ...]
     }
 
+    The list should include only the keys for the papers that are relevant to the query.
+
     Do not return anything else except JSON.
     Ensure that you do not return any explanations of your response.
+    If you cannot help with the request, return an empty list.
 
     # noqa: DAR101
     """
