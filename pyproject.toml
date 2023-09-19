@@ -85,6 +85,7 @@ dependencies = [
     "prompt-toolkit",
     "sh",
     "pre-commit",
+    "beartype==0.15.0",
 ]
 requires-python = ">3.10"
 description = "A Pythonic interface to LLMs."
