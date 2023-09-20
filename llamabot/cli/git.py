@@ -102,3 +102,6 @@ def autowrite_commit_message():
     message = bot(write_commit_message(diff))
     with open(".git/COMMIT_EDITMSG", "w+") as commit_msg_file:
         commit_msg_file.write(message.content)
+
+
+# Putting more comments here.
