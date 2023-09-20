@@ -1,5 +1,5 @@
 """Git subcommand for LlamaBot CLI."""
-
+from pathlib import Path
 import os
 from tempfile import NamedTemporaryFile
 
@@ -68,3 +68,37 @@ def commit(autocommit: bool = True):
             progress.add_task("Pushing changes", total=None)
             origin = repo.remote(name="origin")
             origin.push()
+
+
+@gitapp.command()
+def install_commit_message_hook():
+    """Install a commit message hook that runs the commit message through the bot.
+
+    :raises RuntimeError: If the current directory is not a git repository root.
+    """
+    # Check that we are in a repository's root. There should be a ".git" folder.
+    # Use pathlib to verify.
+    if not Path(".git").exists():
+        raise RuntimeError(
+            "You must be in a git repository root folder to use this command. "
+            "Please `cd` into your git repo's root folder and try again, "
+            "or use `git init` to create a new repository (if you haven't already)."
+        )
+
+    with open(".git/hooks/prepare-commit-msg", "w+") as f:
+        contents = """#!/bin/sh
+llamabot git autowrite-commit-message
+"""
+        f.write(contents)
+    os.chmod(".git/hooks/prepare-commit-msg", 0o755)
+    print("Commit message hook successfully installed!")
+
+
+@gitapp.command()
+def autowrite_commit_message():
+    """Autowrite commit message based on the diff."""
+    diff = get_git_diff()
+    bot = commitbot()
+    message = bot(write_commit_message(diff))
+    with open(".git/COMMIT_EDITMSG", "w+") as commit_msg_file:
+        commit_msg_file.write(message.content)
