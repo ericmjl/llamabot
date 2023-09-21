@@ -97,11 +97,15 @@ llamabot git autowrite-commit-message
 @gitapp.command()
 def autowrite_commit_message():
     """Autowrite commit message based on the diff."""
-    diff = get_git_diff()
-    bot = commitbot()
-    message = bot(write_commit_message(diff))
-    with open(".git/COMMIT_EDITMSG", "w+") as commit_msg_file:
-        commit_msg_file.write(message.content)
+    try:
+        diff = get_git_diff()
+        bot = commitbot()
+        message = bot(write_commit_message(diff))
+        with open(".git/COMMIT_EDITMSG", "w+") as commit_msg_file:
+            commit_msg_file.write(message.content)
+    except Exception as e:
+        print(f"Error encountered: {e}")
+        print("Please write your own commit message.")
 
 
 # Putting more comments here.
