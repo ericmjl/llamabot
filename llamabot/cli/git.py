@@ -106,6 +106,3 @@ def autowrite_commit_message():
     except Exception as e:
         print(f"Error encountered: {e}")
         print("Please write your own commit message.")
-
-
-# Putting more comments here.
