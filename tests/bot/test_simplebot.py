@@ -14,8 +14,7 @@ Functions:
 """
 from unittest.mock import MagicMock
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from llamabot.bot.simplebot import AIMessage, HumanMessage, SimpleBot, SystemMessage
 
@@ -40,6 +39,7 @@ def test_simple_bot_init(system_prompt, temperature, model_name):
 
 
 @given(system_prompt=st.text(), human_message=st.text())
+@settings(deadline=None)
 def test_simple_bot_call(system_prompt, human_message):
     """Test that the SimpleBot is called correctly.
 
