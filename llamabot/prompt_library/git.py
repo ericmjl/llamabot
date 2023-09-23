@@ -1,5 +1,6 @@
 """Prompts for writing git stuff."""
 from llamabot import SimpleBot
+import os
 
 try:
     from outlines import text
@@ -21,7 +22,8 @@ def commitbot():
     :return: A commitbot instance.
     """
     return SimpleBot(
-        "You are an expert user of Git.", model_name="gpt-3.5-turbo-16k-0613"
+        "You are an expert user of Git.",
+        model_name=os.getenv("OPENAI_DEFAULT_MODEL", "gpt-3.5-turbo-16k-0613"),
     )
 
 
