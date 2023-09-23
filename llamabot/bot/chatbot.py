@@ -16,9 +16,20 @@ from llamabot.recorder import autorecord
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
+# Reference: https://platform.openai.com/docs/models
 model_chat_token_budgets = {
-    "gpt-4-32k": 32_000,
-    "gpt-4": 8_000,
+    "gpt-3.5-turbo-0301": 4_097,
+    "gpt-3.5-turbo-0613": 4_097,
+    "gpt-3.5-turbo-16k-0613": 16_385,
+    "gpt-3.5-turbo-16k": 16_385,
+    "gpt-3.5-turbo-instruct-0914": 4_097,
+    "gpt-3.5-turbo-instruct": 4_097,
+    "gpt-3.5-turbo": 4_097,
+    "gpt-4-0314": 8_192,
+    "gpt-4-0613": 8_192,
+    "gpt-4-32k": 32_768,
+    "gpt-4-32k-0613": 32_768,
+    "gpt-4": 8_192,
 }
 
 
