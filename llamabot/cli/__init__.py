@@ -8,11 +8,10 @@ import typer
 
 from llamabot import ChatBot, PromptRecorder
 
-from . import apps, blog, configure, doc, git, python, tutorial, zotero
+from . import blog, configure, doc, git, python, tutorial, zotero
 from .utils import exit_if_asked, uniform_prompt
 
 app = typer.Typer()
-app.add_typer(apps.app, name="apps")
 app.add_typer(python.app, name="python")
 app.add_typer(git.gitapp, name="git")
 app.add_typer(tutorial.app, name="tutorial")
@@ -41,7 +40,8 @@ def chat(save: bool = typer.Option(True, help="Whether to save the chat to a fil
     pr = PromptRecorder()
 
     bot = ChatBot(
-        "You are a chatbot. Respond to the user. Ensure your responses are Markdown compatible."
+        "You are a chatbot. Respond to the user. "
+        "Ensure your responses are Markdown compatible."
     )
 
     # Save chat to file
