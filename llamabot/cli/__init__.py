@@ -12,13 +12,32 @@ from . import blog, configure, doc, git, python, tutorial, zotero
 from .utils import exit_if_asked, uniform_prompt
 
 app = typer.Typer()
-app.add_typer(python.app, name="python")
-app.add_typer(git.gitapp, name="git")
-app.add_typer(tutorial.app, name="tutorial")
-app.add_typer(zotero.app, name="zotero")
-app.add_typer(doc.app, name="doc")
-app.add_typer(blog.app, name="blog")
-app.add_typer(configure.app, name="configure")
+app.add_typer(
+    python.app,
+    name="python",
+    help="Python bot for generating docstrings, code, and tests.",
+)
+app.add_typer(
+    git.gitapp,
+    name="git",
+    help="Automatic commit message generation and pre-commit hook installation.",
+)
+app.add_typer(
+    tutorial.app,
+    name="tutorial",
+    help="Automatically generate tutorials for given source files.",
+)
+app.add_typer(zotero.app, name="zotero", help="Chat with your Zotero library.")
+app.add_typer(doc.app, name="doc", help="Chat with your documents.")
+app.add_typer(
+    blog.app,
+    name="blog",
+    help=(
+        "Summarize blog posts, generate social media posts, "
+        "and apply SEMBR to blog posts in a chat UI."
+    ),
+)
+app.add_typer(configure.app, name="configure", help="Configure LlamaBot.")
 
 
 @app.command()
