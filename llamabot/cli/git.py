@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import git
 from sh import pre_commit
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from typer import Typer
+from typer import Typer, echo
 
 from llamabot.cli.utils import get_valid_input
 from llamabot.code_manipulation import get_git_diff
@@ -87,22 +87,20 @@ def install_commit_message_hook():
 
     with open(".git/hooks/prepare-commit-msg", "w+") as f:
         contents = """#!/bin/sh
-llamabot git autowrite-commit-message
+llamabot git compose-commit > .git/COMMIT_EDITMSG
 """
         f.write(contents)
     os.chmod(".git/hooks/prepare-commit-msg", 0o755)
-    print("Commit message hook successfully installed!")
+    echo("Commit message hook successfully installed! 🎉")
 
 
 @gitapp.command()
-def autowrite_commit_message():
+def compose_commit():
     """Autowrite commit message based on the diff."""
     try:
         diff = get_git_diff()
         bot = commitbot()
-        message = bot(write_commit_message(diff))
-        with open(".git/COMMIT_EDITMSG", "w+") as commit_msg_file:
-            commit_msg_file.write(message.content)
+        bot(write_commit_message(diff))
     except Exception as e:
-        print(f"Error encountered: {e}")
-        print("Please write your own commit message.")
+        echo(f"Error encountered: {e}", err=True)
+        echo("Please write your own commit message.", err=True)
