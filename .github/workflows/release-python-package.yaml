@@ -66,6 +66,7 @@ jobs:
       - name: Write release notes
         run: |
           python -m pip install -e .[all]
+          llamabot configure api-key --api-key="${{ secrets.OPENAI_API_KEY }}"
           llamabot configure default-model --model-name="${{ secrets.OPENAI_DEFAULT_MODEL }}"
           llamabot git write-release-notes
           echo "release_notes=`cat ./docs/releases/${{ env.version_number }}.md`" >> $GITHUB_ENV
