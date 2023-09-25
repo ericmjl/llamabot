@@ -28,8 +28,15 @@ def api_key(
 
 
 @app.command()
-def default_model():
-    """Configure the default model for llamabot."""
+def default_model(model_name=None):
+    """Configure the default model for llamabot.
+
+    If no model name is provided,
+    or if the model name is not one of those that the user's API key has access to,
+    then the user will be prompted for a model name.
+
+    :param model_name: The name of the model to be used for default
+    """
     from dotenv import load_dotenv
 
     from llamabot.config import llamabotrc_path
@@ -39,6 +46,12 @@ def default_model():
     model_list = openai.Model.list()["data"]
     available_models = [x["id"] for x in model_list if "gpt" in x["id"]]
     available_models.sort()
+
+    if model_name in available_models:
+        configure_environment_variable(
+            env_var="OPENAI_DEFAULT_MODEL", env_value=model_name
+        )
+        return
 
     completer = WordCompleter(available_models)
 
