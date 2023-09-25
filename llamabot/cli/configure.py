@@ -3,7 +3,7 @@ import openai
 import typer
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
-
+import os
 from .utils import configure_environment_variable
 
 app = typer.Typer()
@@ -42,6 +42,8 @@ def default_model(model_name=None):
     from llamabot.config import llamabotrc_path
 
     load_dotenv(llamabotrc_path)
+
+    openai.api_key = os.getenv("OPENAI_API_KEY")
 
     model_list = openai.Model.list()["data"]
     available_models = [x["id"] for x in model_list if "gpt" in x["id"]]
