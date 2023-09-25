@@ -4,13 +4,19 @@ import os
 from tempfile import NamedTemporaryFile
 
 import git
+from pyprojroot import here
 from sh import pre_commit
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from typer import Typer, echo
 
+from llamabot import SimpleBot
 from llamabot.cli.utils import get_valid_input
 from llamabot.code_manipulation import get_git_diff
-from llamabot.prompt_library.git import commitbot, write_commit_message
+from llamabot.prompt_library.git import (
+    commitbot,
+    write_commit_message,
+    compose_release_notes,
+)
 
 gitapp = Typer()
 
@@ -104,3 +110,35 @@ def compose_commit():
     except Exception as e:
         echo(f"Error encountered: {e}", err=True)
         echo("Please write your own commit message.", err=True)
+
+
+@gitapp.command()
+def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
+    """Write release notes for the latest two tags to the release notes directory.
+
+    :param release_notes_dir: The directory to write the release notes to.
+        Defaults to "./docs/releases".
+    """
+    repo = git.Repo(here())
+    tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+    tag1, tag2 = tags[-2], tags[-1]
+    log_info = repo.git.log(f"{tag1.commit.hexsha}..{tag2.commit.hexsha}")
+
+    bot = SimpleBot(
+        "You are an expert software developer "
+        "who knows how to write excellent release notes based on git commit logs."
+    )
+    response = bot(
+        "Please change the following git remote URL into its most probable HTTPS URL: "
+        "{repo.remotes.origin.url}. Return only the URL and nothing else."
+    )
+    repo_url = response.content
+
+    notes = bot(compose_release_notes(log_info, repo_url))
+
+    # Create release_notes_dir if it doesn't exist:
+    release_notes_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write release notes to the file:
+    with open(release_notes_dir / f"{tag2.name}.md", "w+") as f:
+        f.write(notes.content)
