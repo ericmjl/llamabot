@@ -74,7 +74,7 @@ jobs:
           llamabot git write-release-notes
           echo "release_notes=`cat docs/releases/v${{ env.version_number }}.md`" >> $GITHUB_ENV
           # Copy release notes for use with ncipollo/release-action@v1
-          cp cat docs/releases/v${{ env.version_number }}.md /tmp/release-notes.md
+          cp docs/releases/v${{ env.version_number }}.md /tmp/release-notes.md
           git add .
           git commit -m "Add release notes for ${{ env.version_number }}"
 
