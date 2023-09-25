@@ -68,6 +68,7 @@ jobs:
           python -m pip install -e .[all]
           llamabot configure default-model --model-name="${{ secrets.OPENAI_DEFAULT_MODEL }}"
           llamabot git write-release-notes
+          echo "release_notes=`cat ./docs/releases/${{ env.version_number }}.md`" >> $GITHUB_ENV
           git add .
           git commit -m "Add release notes for ${{ env.version_number }}"
 
@@ -92,7 +93,7 @@ jobs:
       - name: Create release in GitHub repo
         uses: ncipollo/release-action@v1
         with:
-          body: "Contribution details can be found in CHANGELOG.md"
+          body: "${{ env.release_notes }}"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ env.version_number}}
 
