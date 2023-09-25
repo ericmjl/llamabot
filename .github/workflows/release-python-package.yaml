@@ -97,7 +97,7 @@ jobs:
       - name: Create release in GitHub repo
         uses: ncipollo/release-action@v1
         with:
-          body: "${{ env.release_notes }}"
+          bodyFile: "docs/releases/v${{ env.version_number }}.md"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ env.version_number}}
 
