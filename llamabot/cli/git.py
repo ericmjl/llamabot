@@ -128,13 +128,7 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
         "You are an expert software developer "
         "who knows how to write excellent release notes based on git commit logs."
     )
-    response = bot(
-        "Please change the following git remote URL into its most probable HTTPS URL: "
-        "{repo.remotes.origin.url}. Return only the URL and nothing else."
-    )
-    repo_url = response.content
-
-    notes = bot(compose_release_notes(log_info, repo_url))
+    notes = bot(compose_release_notes(log_info))
 
     # Create release_notes_dir if it doesn't exist:
     release_notes_dir.mkdir(parents=True, exist_ok=True)

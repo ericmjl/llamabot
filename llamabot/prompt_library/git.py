@@ -85,16 +85,12 @@ def write_commit_message(diff: str):
 
 
 @text.prompt
-def compose_release_notes(commit_log, repo_url):
+def compose_release_notes(commit_log):
     """Here is a commit log:
 
     # noqa: DAR101
 
     {{ commit_log }}
-
-    These come from the following repo:
-
-    {{ repo_url }}
 
     Please write for me the release notes.
     The notes should contain a human-readable summary
