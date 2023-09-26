@@ -102,12 +102,9 @@ docs = [
     "mkdocs-material",
     "mkdocs",
 ]
-prompts = [
-    "outlines",
-]
 
 all = [
-    "llamabot[tests,docs,prompts]",
+    "llamabot[tests,docs]",
 ]
 
 [project.scripts]
