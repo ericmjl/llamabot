@@ -4,15 +4,7 @@ from urllib.parse import urlparse
 import requests
 
 from llamabot.bot.simplebot import SimpleBot
-
-try:
-    from outlines import text
-except ImportError:
-    import warnings
-
-    warnings.warn(
-        "Please install the `outlines` package to use the llamabot prompt library."
-    )
+from llamabot.prompt_manager import prompt
 
 
 def diffbot() -> SimpleBot:
@@ -66,7 +58,7 @@ def get_github_diff(pr_url: str):
     return content
 
 
-@text.prompt
+@prompt
 def summarize(diff: str) -> str:
     """Please provide a summary of the diff.
 
@@ -79,16 +71,17 @@ def summarize(diff: str) -> str:
     """
 
 
-@text.prompt
+@prompt
 def describe_advantages(diff: str) -> str:
-    """Postulate how the how the following code changes provides an advantage over the existing codebase.
+    """Postulate how the how the following code changes
+    provides an advantage over the existing codebase.
 
     {{ diff }}
     # noqa: DAR101
     """
 
 
-@text.prompt
+@prompt
 def suggest_improvements(diff: str) -> str:
     """Suggest improvements to the following code changes.
 

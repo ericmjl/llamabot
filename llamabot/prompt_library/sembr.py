@@ -1,33 +1,32 @@
 """Bots and prompts for semantic line breaks."""
 from llamabot import SimpleBot
-
-try:
-    from outlines import text
-except ImportError:
-    import warnings
-
-    warnings.warn(
-        "Please install the `outlines` package to use the llamabot prompt library."
-    )
+from llamabot.prompt_manager import prompt
 
 
-@text.prompt
+@prompt
 def sembr_bot_system_prompt():
     """You are a SEMBR (semantic line breaks) bot. These are the SEMBR specification:
 
-    Text written as plain text or a compatible markup language may use semantic line breaks.
+    Text written as plain text or a compatible markup language
+    may use semantic line breaks.
     A semantic line break must not alter the final rendered output of the document.
     A semantic line break should not alter the intended meaning of the text.
-    A semantic line break must occur after a sentence, as punctuated by a period (.), exclamation mark (!), or question mark (?).
-    A semantic line break should occur after an independent clause as punctuated by a comma (,), semicolon (;), colon (:), or em dash (—).
-    A semantic line break may occur after a dependent clause in order to clarify grammatical structure or satisfy line length constraints.
+    A semantic line break must occur after a sentence, as punctuated by a period (.),
+    exclamation mark (!), or question mark (?).
+    A semantic line break should occur after an independent clause
+    as punctuated by a comma (,), semicolon (;), colon (:), or em dash (—).
+    A semantic line break may occur after a dependent clause
+    in order to clarify grammatical structure or satisfy line length constraints.
     A semantic line break is recommended before an enumerated or itemized list.
-    A semantic line break may be used after one or more items in a list in order to logically group related items or satisfy line length constraints.
+    A semantic line break may be used after one or more items
+    in a list in order to logically group related items
+    or satisfy line length constraints.
     A semantic line break must not occur within a hyphenated word.
     A semantic line break may occur before and after a hyperlink.
     A semantic line break may occur before inline markup.
     A maximum line length of 80 characters is recommended.
-    A line may exceed the maximum line length if necessary, such as to accommodate hyperlinks, code elements, or other markup.
+    A line may exceed the maximum line length if necessary,
+    such as to accommodate hyperlinks, code elements, or other markup.
     """
 
 
@@ -40,7 +39,7 @@ def sembr_bot():
     return bot
 
 
-@text.prompt
+@prompt
 def sembr(text):
     """Here is some text:
 

@@ -1,6 +1,7 @@
 """Prompts and bots for coding.
 
-This module provides a codebot instance and several functions for generating code, docstrings, and tests.
+This module provides a codebot instance and several functions
+for generating code, docstrings, and tests.
 It also includes a function to create a panel app for codebot.
 
 Functions:
@@ -14,15 +15,7 @@ import panel as pn
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
-
-try:
-    from outlines import text
-except ImportError:
-    import warnings
-
-    warnings.warn(
-        "Please install the `outlines` package to use the llamabot prompt library."
-    )
+from llamabot.prompt_manager import prompt
 
 
 def codebot() -> SimpleBot:
@@ -39,12 +32,13 @@ def codebot() -> SimpleBot:
     Please write code without explaining it.
     Do not explain your code, only provide code.
 
-    In your code, prefer the use of the Pathlib module over the os module for handling paths.
+    In your code, prefer the use of the Pathlib module
+    over the os module for handling paths.
     """
     )
 
 
-@text.prompt
+@prompt
 def ghostwriter(desired_functionality, language):
     """I would like to accomplish the following.
 
@@ -65,7 +59,7 @@ def ghostwriter(desired_functionality, language):
     """
 
 
-@text.prompt
+@prompt
 def docstring(code, style="sphinx"):
     """Please help me write docstrings for the following code.
 
@@ -90,7 +84,7 @@ def docstring(code, style="sphinx"):
     """
 
 
-@text.prompt
+@prompt
 def module_doc(source_file_contents, source_file_fpath=None, file_tree=None):
     """Please help me write module-level docstrings for the following code.
 
@@ -121,7 +115,7 @@ def module_doc(source_file_contents, source_file_fpath=None, file_tree=None):
     """
 
 
-@text.prompt
+@prompt
 def tests(code, source_file_txt: str, dependent_source_files: str):
     """I need help writing unit tests.
 

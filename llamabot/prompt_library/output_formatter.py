@@ -2,18 +2,10 @@
 import json
 
 from llamabot import SimpleBot
-
-try:
-    from outlines import text
-except ImportError:
-    import warnings
-
-    warnings.warn(
-        "Please install the `outlines` package to use the llamabot prompt library."
-    )
+from llamabot.prompt_manager import prompt
 
 
-@text.prompt
+@prompt
 def output_formatter_sysprompt():
     """You are an output formatter.
 

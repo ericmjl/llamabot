@@ -1,15 +1,7 @@
 """Prompts for writing git stuff."""
 from llamabot import SimpleBot
 import os
-
-try:
-    from outlines import text
-except ImportError:
-    import warnings
-
-    warnings.warn(
-        "Please install the `outlines` package to use the llamabot prompt library."
-    )
+from llamabot.prompt_manager import prompt
 
 
 def commitbot():
@@ -27,7 +19,7 @@ def commitbot():
     )
 
 
-@text.prompt
+@prompt
 def write_commit_message(diff: str):
     """Please write a commit message for the following diff.
 
@@ -84,7 +76,7 @@ def write_commit_message(diff: str):
     """
 
 
-@text.prompt
+@prompt
 def compose_release_notes(commit_log):
     """Here is a commit log:
 

@@ -2,15 +2,7 @@
 from pydantic import BaseModel
 
 from llamabot import SimpleBot
-
-try:
-    from outlines import text
-except ImportError:
-    import warnings
-
-    warnings.warn(
-        "Please install the `outlines` package to use the llamabot prompt library."
-    )
+from llamabot.prompt_manager import prompt
 
 
 class BlogInformation(BaseModel):
@@ -27,13 +19,14 @@ def blogging_bot():
     :return: The blogging bot.
     """
     bot = SimpleBot(
-        "You are an expert blogger. Whenever you use hashtags, they are always lowercase.",
+        "You are an expert blogger. Whenever you use hashtags, "
+        "they are always lowercase.",
         temperature=0.3,
     )
     return bot
 
 
-@text.prompt
+@prompt
 def blog_title_tags_summary(blog_post, blog_info_model):
     """This is a blog post that I just wrote.
 
@@ -61,7 +54,7 @@ def blog_title_tags_summary(blog_post, blog_info_model):
     """
 
 
-@text.prompt
+@prompt
 def compose_linkedin_post(blog_post):
     """This is a blog post that I just wrote:
 
@@ -84,7 +77,7 @@ def compose_linkedin_post(blog_post):
     """
 
 
-@text.prompt
+@prompt
 def compose_patreon_post(blog_post):
     """This is a blog post that I just wrote:
 
@@ -110,7 +103,7 @@ def compose_patreon_post(blog_post):
     """
 
 
-@text.prompt
+@prompt
 def compose_twitter_post(blog_post):
     """This is a blog post that I just wrote:
 

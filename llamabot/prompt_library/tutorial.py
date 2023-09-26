@@ -1,17 +1,9 @@
 """Tutorial bot and prompts."""
 from llamabot import SimpleBot
-
-try:
-    from outlines import text
-except ImportError:
-    import warnings
-
-    warnings.warn(
-        "Please install the `outlines` package to use the llamabot prompt library."
-    )
+from llamabot.prompt_manager import prompt
 
 
-@text.prompt
+@prompt
 def tutorialbot_system_prompt():
     """
     You are an expert python tutorial writer.
@@ -38,7 +30,7 @@ def tutorialbot() -> SimpleBot:
     return SimpleBot(tutorialbot_system_prompt())
 
 
-@text.prompt
+@prompt
 def module_tutorial_writer(source_file):
     """Please help me write a tutorial for the following code.
 
@@ -50,7 +42,7 @@ def module_tutorial_writer(source_file):
     """
 
 
-@text.prompt
+@prompt
 def typer_cli_tutorial(source_file, additional_notes):
     """I have the following CLI source file.
 
