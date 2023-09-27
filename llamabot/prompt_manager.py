@@ -57,32 +57,3 @@ def prompt(func):
         return template.render(**kwargs)
 
     return wrapper
-
-
-# def prompt(func):
-#     """Wrap a Python function into a Jinja2-templated prompt.
-
-#     :param func: The function to wrap.
-#     :return: The wrapped function.
-#     """
-
-#     @wraps(func)
-#     def wrapper(*args, **kwargs):
-#         """Wrapper function.
-
-#         :param args: Positional arguments to the function.
-#         :param kwargs: Keyword arguments to the function.
-#         :return: The Jinja2-templated docstring.
-#         """
-#         # get the function's docstring.
-#         docstring = func.__doc__
-
-#         # map args and kwargs onto func's signature.
-#         signature = inspect.signature(func)
-#         kwargs = signature.bind(*args, **kwargs).arguments
-
-#         # interploate docstring with args and kwargs
-#         template = jinja2.Template(docstring)
-#         return template.render(**kwargs)
-
-#     return wrapper
