@@ -59,7 +59,7 @@ class QueryBot:
         saved_index_path: str | Path = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
-        stream: bool = True,
+        streaming: bool = True,
         use_cache: bool = True,
     ):
         """Initialize QueryBot.
@@ -84,17 +84,17 @@ class QueryBot:
         :param chunk_size: The chunk size to use for the LlamaIndex TokenTextSplitter.
         :param chunk_overlap: The chunk overlap to use
             for the LlamaIndex TokenTextSplitter.
-        :param stream: Whether to stream the chatbot or not.
+        :param streaming: Whether to stream the chatbot or not.
         :param use_cache: Whether to use the cache or not.
         """
 
         chat = ChatOpenAI(
             model_name=model_name,
             temperature=temperature,
-            streaming=True,
+            streaming=streaming,
             verbose=True,
             callback_manager=BaseCallbackManager(
-                handlers=[StreamingStdOutCallbackHandler()] if stream else []
+                handlers=[StreamingStdOutCallbackHandler()] if streaming else []
             ),
         )
         llm_predictor = LLMPredictor(llm=chat)

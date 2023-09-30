@@ -16,13 +16,19 @@ prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
 class SimpleBot:
-    """Simple Bot that is primed with a system prompt, accepts a human message, and sends back a single response.
+    """Simple Bot that is primed with a system prompt, accepts a human message,
+    and sends back a single response.
 
     This bot does not retain chat history.
     """
 
     def __init__(
-        self, system_prompt, temperature=0.0, model_name=default_language_model()
+        self,
+        system_prompt,
+        temperature=0.0,
+        model_name=default_language_model(),
+        streaming=True,
+        verbose=True,
     ):
         """Initialize the SimpleBot.
 
@@ -31,15 +37,17 @@ class SimpleBot:
             See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
             for more information.
         :param model_name: The name of the OpenAI model to use.
+        :param streaming: (LangChain config) Whether to stream the output to stdout.
+        :param verbose: (LangChain config) Whether to print debug messages.
         """
         self.system_prompt = system_prompt
         self.model = ChatOpenAI(
             model_name=model_name,
             temperature=temperature,
-            streaming=True,
-            verbose=True,
+            streaming=streaming,
+            verbose=verbose,
             callback_manager=BaseCallbackManager(
-                handlers=[StreamingStdOutCallbackHandler()]
+                handlers=[StreamingStdOutCallbackHandler()] if streaming else []
             ),
         )
         self.chat_history = []

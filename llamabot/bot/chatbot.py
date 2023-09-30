@@ -59,9 +59,10 @@ class ChatBot:
             for more information.
         :param model_name: The name of the OpenAI model to use.
         :param logging: Whether to log the chat history.
-        :param streaming: Whether to stream the chat history.
-        :param verbose: Whether to print the chat history.
-        :param response_budget: The number of tokens to budget for the response.
+        :param streaming: (LangChain config) Whether to stream the output to stdout.
+        :param verbose: (LangChain config) Whether to print debug messages.
+        :param response_budget: (LangChain config) The maximum number of tokens
+            to use for the response.
         """
         self.model = ChatOpenAI(
             model_name=model_name,
@@ -69,7 +70,7 @@ class ChatBot:
             streaming=streaming,
             verbose=verbose,
             callback_manager=BaseCallbackManager(
-                handlers=[StreamingStdOutCallbackHandler()]
+                handlers=[StreamingStdOutCallbackHandler()] if streaming else []
             ),
         )
         self.chat_history = [
