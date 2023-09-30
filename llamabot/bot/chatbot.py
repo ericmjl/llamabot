@@ -47,6 +47,8 @@ class ChatBot:
         temperature=0.0,
         model_name=default_language_model(),
         logging=False,
+        streaming=True,
+        verbose=True,
         response_budget=2_000,
     ):
         """Initialize the ChatBot.
@@ -57,13 +59,15 @@ class ChatBot:
             for more information.
         :param model_name: The name of the OpenAI model to use.
         :param logging: Whether to log the chat history.
+        :param streaming: Whether to stream the chat history.
+        :param verbose: Whether to print the chat history.
         :param response_budget: The number of tokens to budget for the response.
         """
         self.model = ChatOpenAI(
             model_name=model_name,
             temperature=temperature,
-            streaming=True,
-            verbose=True,
+            streaming=streaming,
+            verbose=verbose,
             callback_manager=BaseCallbackManager(
                 handlers=[StreamingStdOutCallbackHandler()]
             ),
@@ -84,7 +88,7 @@ class ChatBot:
         """
         self.chat_history.append(HumanMessage(content=human_message))
 
-        # Get out the last 6000 tokens of chat history.
+        # Calculate the token budget that will be used for context.
         faux_chat_history = []
         enc = tiktoken.encoding_for_model("gpt-4")
         token_budget = model_chat_token_budgets[self.model_name] - self.response_budget
