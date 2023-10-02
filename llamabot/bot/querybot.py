@@ -60,6 +60,7 @@ class QueryBot:
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
         streaming: bool = True,
+        verbose: bool = True,
         use_cache: bool = True,
     ):
         """Initialize QueryBot.
@@ -85,6 +86,7 @@ class QueryBot:
         :param chunk_overlap: The chunk overlap to use
             for the LlamaIndex TokenTextSplitter.
         :param streaming: Whether to stream the chatbot or not.
+        :param verbose: (LangChain config) Whether to print debug messages.
         :param use_cache: Whether to use the cache or not.
         """
 
@@ -92,7 +94,7 @@ class QueryBot:
             model_name=model_name,
             temperature=temperature,
             streaming=streaming,
-            verbose=True,
+            verbose=verbose,
             callback_manager=BaseCallbackManager(
                 handlers=[StreamingStdOutCallbackHandler()] if streaming else []
             ),
