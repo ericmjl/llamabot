@@ -1,14 +1,6 @@
 """
-This module provides a set of tests for the PromptRecorder and autorecord functions in the llamabot.recorder module.
-
-Functions:
-- test_init: Test that the PromptRecorder is initialized correctly.
-- test_log: Test that the PromptRecorder logs prompts and responses correctly.
-- test_repr: Test that the PromptRecorder is represented correctly.
-- test_dataframe: Test that the PromptRecorder is represented correctly as a dataframe.
-- test_autorecord_no_context: Test that autorecord works without a context.
-- test_autorecord_with_context: Test that autorecord works with a context.
-- test_autorecord_multiple_with_context: Test that autorecord works with a context multiple times.
+This module provides a set of tests for the PromptRecorder
+and autorecord functions in the llamabot.recorder module.
 """
 import pandas as pd
 

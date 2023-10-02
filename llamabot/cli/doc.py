@@ -21,11 +21,17 @@ def chat(
     :param doc_path: Path to the document you wish to chat with.
     """
     bot = QueryBot(
-        system_message="You are a bot that can answer questions about a document provided to you.",
+        system_message=(
+            "You are a bot that can answer questions about a document provided to you."
+        ),
         doc_path=doc_path,
     )
     typer.echo(
-        "I've embedded your document. Ask me anything! Otherwise, type 'exit' or 'quit' at anytime to exit."
+        (
+            "I've embedded your document. "
+            "Ask me anything! "
+            "Otherwise, type 'exit' or 'quit' at anytime to exit."
+        )
     )
 
     while True:

@@ -6,7 +6,8 @@ docstrings, as well as generating code based on a given description. It exports 
 following commands:
 
 - module_docstrings: Generate module-level docstrings for a given module file.
-- function_docstrings: Generate function docstrings for a specific function in a module file.
+- function_docstrings: Generate function docstrings
+  for a specific function in a module file.
 - code_generator: Generate code based on a given description.
 
 Classes:

@@ -39,7 +39,8 @@ def test_recursive_find_empty_directory(extension):
     st.text(min_size=1, max_size=5, alphabet="abcdefghijklmnopqrstuvwxyz"),
 )
 def test_recursive_find_single_file(extension, file_name):
-    """Test that recursive_find returns a single file when given a directory with a single file.
+    """Test that recursive_find returns a single file
+    when given a directory with a single file.
 
     :param extension: The extension to search for.
     :param file_name: The name of the file to create.
@@ -56,7 +57,8 @@ def test_recursive_find_single_file(extension, file_name):
     st.text(min_size=1, max_size=5, alphabet="abcdefghijklmnopqrstuvwxyz"),
 )
 def test_recursive_find_nested_file(extension, file_name):
-    """Test that recursive_find returns a single file when given a directory with a single file.
+    """Test that recursive_find returns a single file
+    when given a directory with a single file.
 
     :param extension: The extension to search for.
     :param file_name: The name of the file to create.
@@ -75,7 +77,8 @@ def test_recursive_find_nested_file(extension, file_name):
     st.text(min_size=1, max_size=5, alphabet="abcdefghijklmnopqrstuvwxyz"),
 )
 def test_recursive_find_multiple_files(extension, file_name):
-    """Test that recursive_find returns multiple files when given a directory with multiple files.
+    """Test that recursive_find returns multiple files
+    when given a directory with multiple files.
 
     :param extension: The extension to search for.
     :param file_name: The name of the file to create.
