@@ -1,14 +1,5 @@
 """
 This module provides a Panel Markdown callback handler for streaming.
-
-Classes:
-    - PanelMarkdownCallbackHandler: Callback handler for streaming. Only works with LLMs that support streaming.
-
-Exceptions:
-    - None
-
-Functions:
-    - None
 """
 from typing import Any, Dict, List, Union
 

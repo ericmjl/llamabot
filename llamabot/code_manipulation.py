@@ -16,7 +16,8 @@ def replace_object_in_file(
     source_file_path: str, object_name: str, new_object_definition: str
 ) -> None:
     """
-    Replace an object (function or class) in a Python source file with a new object definition.
+    Replace an object (function or class)
+    in a Python source file with a new object definition.
 
     .. code-block:: python
 
@@ -25,11 +26,13 @@ def replace_object_in_file(
         new_object_definition = "def new_function():\\n    pass"
         replace_object_in_file(source_file_path, object_name, new_object_definition)
 
-    :param source_file_path: The path to the source file containing the object to be replaced.
+    :param source_file_path: The path to the source file
+        containing the object to be replaced.
     :param object_name: The name of the object (function or class) to be replaced.
     :param new_object_definition: The new object definition as a string.
     :raises SyntaxError: If the source file has invalid Python syntax.
-    :raises ValueError: If the object with the specified name does not exist in the source file.
+    :raises ValueError: If the object with the specified name
+        does not exist in the source file.
     """
     with open(source_file_path, "r") as source_file:
         source_code = source_file.read()
@@ -91,10 +94,17 @@ def insert_docstring(source_file_path: str, object_name: str, new_docstring: str
 
     Usage example:
 
-        insert_docstring("path/to/source_file.py", "function_name", "This is the new docstring.")
+    ```python
+    insert_docstring(
+        "path/to/source_file.py",
+        "function_name",
+        "This is the new docstring."
+    )
+    ```
 
     :param source_file_path: The path to the source file containing the object.
-    :param object_name: The name of the object (function or class) to insert the docstring for.
+    :param object_name: The name of the object (function or class)
+        to insert the docstring for.
     :param new_docstring: The new docstring to insert.
     :raises SyntaxError: If the source code is not valid Python code.
     :raises ValueError: If the specified object does not exist in the source code.
@@ -113,7 +123,8 @@ def insert_docstring(source_file_path: str, object_name: str, new_docstring: str
         def visit_FunctionDef(
             self, node: ast.FunctionDef
         ) -> Union[ast.FunctionDef, None]:
-            """Visit a function definition node and insert a docstring if the function name matches the specified name.
+            """Visit a function definition node and insert a docstring
+            if the function name matches the specified name.
 
             :param node: The function definition node.
             :return: The modified function definition node.
@@ -125,7 +136,8 @@ def insert_docstring(source_file_path: str, object_name: str, new_docstring: str
             return self.generic_visit(node)
 
         def visit_ClassDef(self, node: ast.ClassDef) -> Union[ast.ClassDef, None]:
-            """Visit a class definition node and insert a docstring if the class name matches the specified name.
+            """Visit a class definition node and insert a docstring
+            if the class name matches the specified name.
 
             :param node: The class definition node.
             :return: The modified class definition node.
@@ -152,7 +164,8 @@ def insert_docstring(source_file_path: str, object_name: str, new_docstring: str
 
 def get_object_source_code(source_file: str, object_name: str) -> Union[str, None]:
     """
-    Get the source code of a specific object (function, async function, or class) from a source file.
+    Get the source code of a specific object (function, async function, or class)
+    from a source file.
 
     .. code-block:: python
 
@@ -160,7 +173,8 @@ def get_object_source_code(source_file: str, object_name: str) -> Union[str, Non
 
     :param source_file: The path to the source file containing the object.
     :param object_name: The name of the object to get the source code for.
-    :return: The source code of the specified object as a string, or None if the object is not found.
+    :return: The source code of the specified object as a string,
+        or None if the object is not found.
     :raises SyntaxError: If there is a syntax error in the source file.
     :raises NameError: If the specified object is not found in the source file.
     """
@@ -180,7 +194,8 @@ def get_object_source_code(source_file: str, object_name: str) -> Union[str, Non
             return astor.to_source(node)
 
     raise NameError(
-        f"Please ensure the object '{object_name}' exists in the source file '{source_file}'."
+        f"Please ensure the object '{object_name}' "
+        f"exists in the source file '{source_file}'."
     )
 
 
@@ -216,12 +231,14 @@ def get_function_source(file_path: Union[str, Path], function_name: str) -> str:
     function = getattr(module, function_name, None)
     if function is None:
         raise AttributeError(
-            f"Function '{function_name}' not found in {file_path}. Please provide a valid function name."
+            f"Function '{function_name}' not found in {file_path}. "
+            "Please provide a valid function name."
         )
 
     if not inspect.isfunction(function):
         raise TypeError(
-            f"'{function_name}' is not a function. Please provide a valid function name."
+            f"'{function_name}' is not a function. "
+            "Please provide a valid function name."
         )
 
     return inspect.getsource(function)
@@ -249,17 +266,25 @@ def show_directory_tree(
 ) -> str:
     """Show directory tree from a directory.
 
-    .. code-block:: python
+    Example:
 
-        from pathlib import Path
-        show_directory_tree(Path.home(), depth=1, ignore_gitignore=True, ignore_dirs=['.git', '__pycache__'])
+    ```python
+    from pathlib import Path
+    show_directory_tree(
+        Path.home(),
+        depth=1,
+        ignore_gitignore=True,
+        ignore_dirs=['.git', '__pycache__']
+    )
+    ```
 
     This function prints a directory tree of the specified directory.
 
     :param directory: The directory to display the tree for.
     :param depth: The maximum depth to display the tree, default is infinity.
     :param indent: The indentation level for the tree, default is 0.
-    :param ignore_gitignore: If True, ignores files and folders specified in .gitignore, default is True.
+    :param ignore_gitignore: If True, ignores files and folders specified in .gitignore,
+        default is True.
     :param ignore_dirs: A list of directory names to ignore, default is None.
     :raises NotADirectoryError: If the specified path is not a directory.
     :returns: A string representation of the directory tree.
@@ -323,7 +348,8 @@ def get_git_diff(repo_path: Optional[Union[str, Path]] = None) -> str:
 
     :param repo_path: The path to the git repository.
     :raises ValueError: If the provided path is not a git repository.
-    :raises ValueError: If the provided git repository has no staged or unstaged changes.
+    :raises ValueError: If the provided git repository
+        has no staged or unstaged changes.
     :return: The git diff as a string, or None if there are no staged changes.
     """
     if repo_path is None:
@@ -356,7 +382,8 @@ def get_git_diff(repo_path: Optional[Union[str, Path]] = None) -> str:
 
 def get_dependencies(source_file: str, object_name: str) -> list:
     """
-    Get a list of paths to other source files within the library that the specified object depends on.
+    Get a list of paths to other source files
+    within the library that the specified object depends on.
 
     :param source_file: The path to the source file containing the object.
     :param object_name: The name of the object to get the dependencies for.

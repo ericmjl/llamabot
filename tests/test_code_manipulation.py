@@ -108,7 +108,9 @@ def test_function():
 
 
 def test_get_object_source_code_syntax_error():
-    """Test that a SyntaxError is raised when the source code has invalid Python syntax."""
+    """Test that a SyntaxError is raised
+    when the source code has invalid Python syntax.
+    """
     source_code = """
 def test_function()
     return "Hello, World!"
@@ -176,7 +178,8 @@ class Foo:
 
 def test_replace_object_in_file_syntax_error():
     """
-    Test that replace_object_in_file raises a SyntaxError when the source file has invalid Python syntax.
+    Test that replace_object_in_file raises a SyntaxError
+    when the source file has invalid Python syntax.
     """
     source_code = """
 def foo():
@@ -198,7 +201,8 @@ invalid_syntax
 
 def test_replace_object_in_file_value_error():
     """
-    Test that replace_object_in_file raises a ValueError when the specified object does not exist in the source file.
+    Test that replace_object_in_file raises a ValueError
+    when the specified object does not exist in the source file.
     """
     source_code = """
 def foo():
@@ -278,7 +282,8 @@ class Class3:
         assert module3_file in dependencies
 
         # Clean up temporary files and directory (optional)
-        # You can comment out the following lines if you want to inspect the temporary files manually
+        # You can comment out the following lines
+        # if you want to inspect the temporary files manually
         os.remove(source_file)
         os.remove(module1_file)
         os.remove(module2_file)
