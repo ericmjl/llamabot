@@ -121,8 +121,17 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
     """
     repo = git.Repo(here())
     tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-    tag1, tag2 = tags[-2], tags[-1]
-    log_info = repo.git.log(f"{tag1.commit.hexsha}..{tag2.commit.hexsha}")
+    if len(tags) == 0:
+        # No tags, get all commit messages from the very first commit
+        log_info = repo.git.log()
+    elif len(tags) == 1:
+        # Only one tag, get all commit messages from that tag to the current commit
+        tag = tags[0]
+        log_info = repo.git.log(f"{tag.commit.hexsha}..HEAD")
+    else:
+        # More than one tag, get all commit messages between the last two tags
+        tag1, tag2 = tags[-2], tags[-1]
+        log_info = repo.git.log(f"{tag1.commit.hexsha}..{tag2.commit.hexsha}")
 
     bot = SimpleBot(
         "You are an expert software developer "
