@@ -24,7 +24,7 @@ def chat(
         system_message=(
             "You are a bot that can answer questions about a document provided to you."
         ),
-        doc_paths=doc_path,
+        doc_paths=[doc_path],
     )
     typer.echo(
         (
