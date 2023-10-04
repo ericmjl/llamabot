@@ -116,6 +116,7 @@ class QueryBot:
             )
 
         # Set object attributes.
+        self.model_name = model_name
         self.system_message = system_message
         self.vector_index = vector_index
         self.doc_paths = doc_paths

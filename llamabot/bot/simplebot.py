@@ -51,6 +51,7 @@ class SimpleBot:
             ),
         )
         self.chat_history = []
+        self.model_name = model_name
 
     def __call__(self, human_message: str) -> AIMessage:
         """Call the SimpleBot.
