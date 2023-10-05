@@ -4,7 +4,9 @@ import hashlib
 import os
 from pathlib import Path
 from typing import List, Union
-
+import tiktoken
+from copy import deepcopy
+from dotenv import load_dotenv
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOpenAI
@@ -22,10 +24,14 @@ from llama_index.node_parser import SimpleNodeParser
 from llama_index.storage.docstore import SimpleDocumentStore
 from llama_index.storage.index_store import SimpleIndexStore
 from llama_index.vector_stores import SimpleVectorStore
+from loguru import logger
 
 from llamabot.config import default_language_model
 from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.recorder import autorecord
+from llamabot.bot.chatbot import model_chat_token_budgets
+
+load_dotenv()
 
 DEFAULT_SIMILARITY_TOP_KS = {
     "gpt-3.5-turbo": 2,
@@ -57,8 +63,9 @@ class QueryBot:
         temperature: float = 0.0,
         doc_paths: List[str] | List[Path] | str | Path = None,
         saved_index_path: str | Path = None,
-        chunk_size: int = 2000,
-        chunk_overlap: int = 0,
+        response_tokens: int = 2000,
+        history_tokens: int = 2000,
+        chunk_sizes: list[int] = [200, 500, 1000, 2000, 5000],
         streaming: bool = True,
         verbose: bool = True,
         use_cache: bool = True,
@@ -82,9 +89,9 @@ class QueryBot:
             or a list of paths to multiple documents,
             to use for the chatbot.
         :param saved_index_path: The path to the saved index to use for the chatbot.
-        :param chunk_size: The chunk size to use for the LlamaIndex TokenTextSplitter.
-        :param chunk_overlap: The chunk overlap to use
-            for the LlamaIndex TokenTextSplitter.
+        :param response_tokens: The number of tokens to use for responses.
+        :param history_tokens: The number of tokens to use for history.
+        :param chunk_sizes: The chunk sizes to use for the LlamaIndex TokenTextSplitter.
         :param streaming: Whether to stream the chatbot or not.
         :param verbose: (LangChain config) Whether to print debug messages.
         :param use_cache: Whether to use the cache or not.
@@ -112,7 +119,7 @@ class QueryBot:
         # Override vector_index if doc_paths is specified.
         if doc_paths is not None:
             vector_index = make_or_load_vector_index(
-                doc_paths, chunk_size, chunk_overlap, use_cache
+                doc_paths, chunk_sizes=chunk_sizes, use_cache=use_cache
             )
 
         # Set object attributes.
@@ -131,14 +138,15 @@ If you cannot answer something, respond by saying that you don't know.
         ]
         # Store a mapping of query to source nodes.
         self.source_nodes: dict = {}
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
+        self.chunk_sizes = chunk_sizes
+        self.response_tokens = response_tokens
+        self.history_tokens = history_tokens
 
     # @validate_call
     def __call__(
         self,
         query: str,
-        similarity_top_k: int = SIMILARITY_TOP_K,
+        similarity_top_k: int = 20,
     ) -> AIMessage:
         """Call the QueryBot.
 
@@ -155,10 +163,14 @@ If you cannot answer something, respond by saying that you don't know.
                 "You need to provide a document for querybot to index against!"
             )
         # Step 1: Get documents from the index that are deemed to be matching the query.
-        # logger.info(f"Querying index for top {similarity_top_k} documents...")
+        logger.info(f"Querying index for top {similarity_top_k} documents...")
         retriever = VectorIndexRetriever(
             index=self.vector_index, similarity_top_k=similarity_top_k
         )
+
+        # Get source nodes to include in faux chat history,
+        # whose token budget is determined by
+        # the maximum number of tokens - the response and history tokens.
         source_nodes = retriever.retrieve(query)
         source_texts = [n.node.text for n in source_nodes]
 
@@ -166,14 +178,28 @@ If you cannot answer something, respond by saying that you don't know.
         faux_chat_history.append(SystemMessage(content=self.system_message))
 
         # Step 2: Grab the last four responses from the chat history.
-        faux_chat_history.extend(self.chat_history[-4:])
+        enc = tiktoken.encoding_for_model("gpt-4")
+        token_budget = deepcopy(self.history_tokens)
+        for message in self.chat_history[::-1]:
+            if token_budget > 0:
+                faux_chat_history.append(message)
+                tokens = enc.encode(message.content)
+                token_budget -= len(tokens)
 
-        # Step 2: Construct a faux message history to work with.
+        # Step 3: Stuff in as many source nodes as are permitted by the response token
         faux_chat_history.append(
             SystemMessage(content="Here is the context you will be working with:")
         )
+        token_budget = (
+            model_chat_token_budgets[self.model_name]
+            - self.response_tokens
+            - self.history_tokens
+        )
         for text in source_texts:
-            faux_chat_history.append(SystemMessage(content=text))
+            if token_budget > 0:
+                faux_chat_history.append(SystemMessage(content=text))
+                tokens = enc.encode(text)
+                token_budget -= len(tokens)
 
         faux_chat_history.append(
             SystemMessage(content="Based on this context, answer the following query:")
@@ -181,20 +207,20 @@ If you cannot answer something, respond by saying that you don't know.
 
         faux_chat_history.append(HumanMessage(content=query))
 
-        # Step 3: Send the chat history through the model
+        # Step 4: Send the chat history through the model
         response = self.chat(faux_chat_history)
 
-        # Step 4: Record only the human response
+        # Step 5: Record only the human response
         # and the GPT response but not the original.
         self.chat_history.append(HumanMessage(content=query))
         self.chat_history.append(response)
 
-        # Step 5: Record the source nodes of the query.
+        # Step 6: Record the source nodes of the query.
         self.source_nodes[query] = source_nodes
 
         autorecord(query, response.content)
 
-        # Step 6: Return the response.
+        # Step 7: Return the response.
         return response
 
     # @validate_call
@@ -316,17 +342,16 @@ def make_vector_index(
     return vector_index
 
 
-# @validate_call
 def make_or_load_vector_index(
     doc_paths: List[Path] | List[str],
-    chunk_size: int = 2000,
+    chunk_sizes: list[int] = [200, 500, 1000, 2000],
     chunk_overlap: int = 0,
     use_cache: bool = True,
 ) -> GPTVectorStoreIndex:
     """Make or load an index for a collection of documents.
 
     :param doc_paths: The path to the document to make or load an index for.
-    :param chunk_size: The chunk size to use for the LangChain TokenTextSplitter.
+    :param chunk_sizes: The chunk sizes to use for the LangChain TokenTextSplitter.
     :param chunk_overlap: The chunk overlap to use for the LangChain TokenTextSplitter.
     :param use_cache: Whether to use the cache.
     :returns: The index.
@@ -342,7 +367,7 @@ def make_or_load_vector_index(
 
     for doc_path in tqdm(doc_paths, desc="hash files"):
         file_hash.update(Path(doc_path).read_bytes())
-    file_hash.update(str(chunk_size).encode())
+    file_hash.update(str(chunk_sizes).encode())
     file_hash.update(str(chunk_overlap).encode())
     file_hash_hexdigest = file_hash.hexdigest()
 
@@ -355,8 +380,9 @@ def make_or_load_vector_index(
     split_docs = []
     for doc_path in tqdm(doc_paths, desc="split documents"):
         document = magic_load_doc(doc_path)
-        splitted_document = split_document(document[0], chunk_size, chunk_overlap)
-        split_docs.extend(splitted_document)
+        for chunk_size in chunk_sizes:
+            splitted_document = split_document(document[0], chunk_size, chunk_overlap=0)
+            split_docs.extend(splitted_document)
 
     # Check that the persist directory exists and that we have made a docstore,
     # which is a sentinel test for the rest of the index.
