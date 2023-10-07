@@ -65,7 +65,7 @@ class QueryBot:
         saved_index_path: str | Path = None,
         response_tokens: int = 2000,
         history_tokens: int = 2000,
-        chunk_sizes: list[int] = [200, 500, 1000, 2000, 5000],
+        chunk_sizes: list[int] = [2000],
         streaming: bool = True,
         verbose: bool = True,
         use_cache: bool = True,
@@ -92,6 +92,7 @@ class QueryBot:
         :param response_tokens: The number of tokens to use for responses.
         :param history_tokens: The number of tokens to use for history.
         :param chunk_sizes: The chunk sizes to use for the LlamaIndex TokenTextSplitter.
+            Defaults to [2000], but can be a list of integers.
         :param streaming: Whether to stream the chatbot or not.
         :param verbose: (LangChain config) Whether to print debug messages.
         :param use_cache: Whether to use the cache or not.
@@ -172,12 +173,12 @@ If you cannot answer something, respond by saying that you don't know.
         # whose token budget is determined by
         # the maximum number of tokens - the response and history tokens.
         source_nodes = retriever.retrieve(query)
-        source_texts = [n.node.text for n in source_nodes]
 
         faux_chat_history = []
         faux_chat_history.append(SystemMessage(content=self.system_message))
 
-        # Step 2: Grab the last four responses from the chat history.
+        # Step 2: Grab as many messages from chat history
+        # as permissible by the history_tokens budget,
         enc = tiktoken.encoding_for_model("gpt-4")
         token_budget = deepcopy(self.history_tokens)
         for message in self.chat_history[::-1]:
@@ -195,11 +196,13 @@ If you cannot answer something, respond by saying that you don't know.
             - self.response_tokens
             - self.history_tokens
         )
-        for text in source_texts:
+        actual_source_nodes = []  # the actual source nodes that were stuffed in
+        for n in source_nodes:
             if token_budget > 0:
-                faux_chat_history.append(SystemMessage(content=text))
-                tokens = enc.encode(text)
+                faux_chat_history.append(SystemMessage(content=n.node.text))
+                tokens = enc.encode(n.node.text)
                 token_budget -= len(tokens)
+                actual_source_nodes.append(n)
 
         faux_chat_history.append(
             SystemMessage(content="Based on this context, answer the following query:")
@@ -216,7 +219,7 @@ If you cannot answer something, respond by saying that you don't know.
         self.chat_history.append(response)
 
         # Step 6: Record the source nodes of the query.
-        self.source_nodes[query] = source_nodes
+        self.source_nodes[query] = actual_source_nodes
 
         autorecord(query, response.content)
 
@@ -370,6 +373,7 @@ def make_or_load_vector_index(
     file_hash.update(str(chunk_sizes).encode())
     file_hash.update(str(chunk_overlap).encode())
     file_hash_hexdigest = file_hash.hexdigest()
+    logger.info(f"File hash: {file_hash_hexdigest[0:8]}")
 
     # Make persist_dir based on the file hash's hexdigest.
     persist_dir = CACHE_DIR / file_hash_hexdigest
