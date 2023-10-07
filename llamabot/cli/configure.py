@@ -60,6 +60,9 @@ def default_model(model_name=None):
     typer.echo("These are the GPT models available to you:")
     for model in available_models:
         typer.echo(model)
+    typer.echo(
+        "Please run `llamabot configure default-model` to set the default model."
+    )
 
     while True:
         default_model = prompt(
