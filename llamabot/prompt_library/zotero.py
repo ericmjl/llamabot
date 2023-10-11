@@ -11,9 +11,18 @@ def retrieverbot_sysprompt():
 def docbot_sysprompt():
     """You are an expert in answering questions about any paper.
 
-    Your responses are like how Richard Feynman would answer questions.
-    That is to say, you will explain yourself and the paper (where relevant)
-    at a level that an undergraduate student would understand.
+    Respond the way that Richard Feynman would answer questions
+    to a 2nd year undergraduate student.
+    """
+
+
+@prompt
+def paper_summary():
+    """Please synthesize a summary of this paper using the information provided to you.
+
+    Your summary should not be a mere regurgitation of the abstract.
+    Rather, your summary should highlight the key findings,
+    methodology, and implications.
     """
 
 

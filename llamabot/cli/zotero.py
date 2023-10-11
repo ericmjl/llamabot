@@ -13,6 +13,7 @@ from llamabot import QueryBot
 from llamabot.recorder import PromptRecorder
 from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
 from llamabot.zotero.completer import PaperTitleCompleter
+from llamabot.prompt_library.zotero import paper_summary, docbot_sysprompt
 from .utils import configure_environment_variable, exit_if_asked, uniform_prompt
 
 load_dotenv()
@@ -94,7 +95,7 @@ def chat(
     with progress:
         task = progress.add_task("Embedding paper and initializing bot...")
         docbot = QueryBot(
-            "You are an expert in answering questions about a paper.",
+            docbot_sysprompt(),
             doc_paths=[fpath],
         )
         progress.remove_task(task)
@@ -107,7 +108,7 @@ def chat(
     with pr:
         typer.echo("\n\n")
         typer.echo("Here is a summary of the paper for you to get going:")
-        docbot("What is the summary of the paper?")
+        docbot(paper_summary())
         typer.echo("\n\n")
         pr.save(save_path)
 
