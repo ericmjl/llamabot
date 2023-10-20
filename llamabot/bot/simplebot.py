@@ -8,6 +8,7 @@ from loguru import logger
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
 from llamabot.bot.model_dispatcher import create_model
+from llamabot.config import default_language_model
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -23,7 +24,7 @@ class SimpleBot:
         self,
         system_prompt,
         temperature=0.0,
-        model_name="codellama",
+        model_name=default_language_model(),
         streaming=True,
         verbose=True,
     ):
