@@ -26,6 +26,12 @@ To chat with a paper, use the `chat` command. You can specify the paper you want
 llamabot zotero chat "The title of the paper"
 ```
 
+If you want to specify a model, such as an Ollama model, you can do so directly at the command line too:
+
+```bash
+llamabot zotero chat "The title of the paper" --model vicuna:7b-16k
+```
+
 If you want to synchronize your Zotero library before chatting, you can use the `--sync` option.
 
 ```bash
