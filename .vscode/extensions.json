@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "github.vscode-github-actions",
+        "eamodio.gitlens",
+        "arcticicestudio.nord-visual-studio-code"
+    ]
+}

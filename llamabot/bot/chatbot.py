@@ -4,33 +4,16 @@ import contextvars
 
 import panel as pn
 import tiktoken
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 
 from llamabot.config import default_language_model
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
+from llamabot.bot.model_tokens import model_chat_token_budgets, DEFAULT_TOKEN_BUDGET
+from llamabot.bot.model_dispatcher import create_model
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
-
-# Reference: https://platform.openai.com/docs/models
-model_chat_token_budgets = {
-    "gpt-3.5-turbo-0301": 4_097,
-    "gpt-3.5-turbo-0613": 4_097,
-    "gpt-3.5-turbo-16k-0613": 16_385,
-    "gpt-3.5-turbo-16k": 16_385,
-    "gpt-3.5-turbo-instruct-0914": 4_097,
-    "gpt-3.5-turbo-instruct": 4_097,
-    "gpt-3.5-turbo": 4_097,
-    "gpt-4-0314": 8_192,
-    "gpt-4-0613": 8_192,
-    "gpt-4-32k": 32_768,
-    "gpt-4-32k-0613": 32_768,
-    "gpt-4": 8_192,
-}
 
 
 class ChatBot:
@@ -64,14 +47,11 @@ class ChatBot:
         :param response_budget: (LangChain config) The maximum number of tokens
             to use for the response.
         """
-        self.model = ChatOpenAI(
+        self.model = create_model(
             model_name=model_name,
             temperature=temperature,
             streaming=streaming,
             verbose=verbose,
-            callback_manager=BaseCallbackManager(
-                handlers=[StreamingStdOutCallbackHandler()] if streaming else []
-            ),
         )
         self.chat_history = [
             SystemMessage(content="Always return Markdown-compatible text."),
@@ -92,7 +72,10 @@ class ChatBot:
         # Calculate the token budget that will be used for context.
         faux_chat_history = []
         enc = tiktoken.encoding_for_model("gpt-4")
-        token_budget = model_chat_token_budgets[self.model_name] - self.response_budget
+        token_budget = (
+            model_chat_token_budgets.get(self.model_name, DEFAULT_TOKEN_BUDGET)
+            - self.response_budget
+        )
 
         # Put the system message into the faux chat history.
         system_messages = []
