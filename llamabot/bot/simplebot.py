@@ -2,15 +2,12 @@
 import contextvars
 
 import panel as pn
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 
-from llamabot.config import default_language_model
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
+from llamabot.bot.model_dispatcher import create_model
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -26,7 +23,7 @@ class SimpleBot:
         self,
         system_prompt,
         temperature=0.0,
-        model_name=default_language_model(),
+        model_name="codellama",
         streaming=True,
         verbose=True,
     ):
@@ -41,14 +38,11 @@ class SimpleBot:
         :param verbose: (LangChain config) Whether to print debug messages.
         """
         self.system_prompt = system_prompt
-        self.model = ChatOpenAI(
+        self.model = create_model(
             model_name=model_name,
             temperature=temperature,
             streaming=streaming,
             verbose=verbose,
-            callback_manager=BaseCallbackManager(
-                handlers=[StreamingStdOutCallbackHandler()] if streaming else []
-            ),
         )
         self.chat_history = []
         self.model_name = model_name
