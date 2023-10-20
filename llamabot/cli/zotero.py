@@ -14,6 +14,7 @@ from llamabot.recorder import PromptRecorder
 from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
 from llamabot.zotero.completer import PaperTitleCompleter
 from llamabot.prompt_library.zotero import paper_summary, docbot_sysprompt
+from llamabot.config import default_language_model
 from .utils import configure_environment_variable, exit_if_asked, uniform_prompt
 
 load_dotenv()
@@ -55,11 +56,13 @@ def chat(
     sync: bool = typer.Option(
         True, help="Whether or not to synchronize the Zotero library."
     ),
+    model_name: str = default_language_model(),
 ):
     """Chat with a paper.
 
     :param query: A paper to search for, whether by title, author, or other metadata.
     :param sync: Whether or not to synchronize the Zotero library.
+    :param model_name: The name of the model to use.
     """
     typer.echo("Llamabot Zotero Chatbot initializing...")
     typer.echo("Use Ctrl+C to exit anytime.")
@@ -94,10 +97,7 @@ def chat(
 
     with progress:
         task = progress.add_task("Embedding paper and initializing bot...")
-        docbot = QueryBot(
-            docbot_sysprompt(),
-            doc_paths=[fpath],
-        )
+        docbot = QueryBot(docbot_sysprompt(), doc_paths=[fpath], model_name=model_name)
         progress.remove_task(task)
 
     # From this point onwards, we need to record the chat.
