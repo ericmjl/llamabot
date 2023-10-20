@@ -29,7 +29,8 @@ from loguru import logger
 from llamabot.config import default_language_model
 from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.recorder import autorecord
-from llamabot.bot.chatbot import model_chat_token_budgets
+from llamabot.bot.model_tokens import model_chat_token_budgets
+from llamabot.bot.model_dispatcher import create_model
 
 load_dotenv()
 
@@ -98,14 +99,11 @@ class QueryBot:
         :param use_cache: Whether to use the cache or not.
         """
 
-        chat = ChatOpenAI(
+        chat = create_model(
             model_name=model_name,
             temperature=temperature,
             streaming=streaming,
             verbose=verbose,
-            callback_manager=BaseCallbackManager(
-                handlers=[StreamingStdOutCallbackHandler()] if streaming else []
-            ),
         )
         llm_predictor = LLMPredictor(llm=chat)
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
