@@ -3,13 +3,11 @@ from prompt_toolkit.completion import Completer, Completion
 
 
 class PaperTitleCompleter(Completer):
-    """Completer class for paper titles."""
+    """Completer class for paper titles.
+
+    :param paper_titles: A list of paper titles to choose from."""
 
     def __init__(self, paper_titles):
-        """Initialize the completer.
-
-        :param paper_titles: A list of paper titles to choose from.
-        """
         self.paper_titles = paper_titles
 
     def get_completions(self, document, complete_event) -> list:
