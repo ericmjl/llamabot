@@ -3,7 +3,9 @@
 LLaMaBot implements a Pythonic interface to LLMs,
 making it much easier to experiment with LLMs in a Jupyter notebook
 and build simple utility apps that utilize LLMs.
-The model that we default to using is OpenAI's largest GPT-4 model.
+The model that we default to using is OpenAI's largest GPT-4 model
+(via an API key);
+local models through Ollama are also supported.
 
 ## Install LLaMaBot
 
