@@ -13,7 +13,6 @@ class PromptRecorder:
     """Prompt recorder to support recording of prompts and responses."""
 
     def __init__(self):
-        """Initialize prompt recorder."""
         self.prompts_and_responses = []
 
     def __enter__(self):

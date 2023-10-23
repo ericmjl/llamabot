@@ -18,6 +18,14 @@ class SimpleBot:
     and sends back a single response.
 
     This bot does not retain chat history.
+
+    :param system_prompt: The system prompt to use.
+    :param temperature: The model temperature to use.
+        See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
+        for more information.
+    :param model_name: The name of the OpenAI model to use.
+    :param streaming: (LangChain config) Whether to stream the output to stdout.
+    :param verbose: (LangChain config) Whether to print debug messages.
     """
 
     def __init__(
@@ -28,16 +36,6 @@ class SimpleBot:
         streaming=True,
         verbose=True,
     ):
-        """Initialize the SimpleBot.
-
-        :param system_prompt: The system prompt to use.
-        :param temperature: The model temperature to use.
-            See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
-            for more information.
-        :param model_name: The name of the OpenAI model to use.
-        :param streaming: (LangChain config) Whether to stream the output to stdout.
-        :param verbose: (LangChain config) Whether to print debug messages.
-        """
         self.system_prompt = system_prompt
         self.model = create_model(
             model_name=model_name,

@@ -55,7 +55,33 @@ prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
 class QueryBot:
-    """QueryBot is a bot that lets us use GPT4 to query documents."""
+    """QueryBot is a bot that lets us use GPT4 to query documents.
+
+    Pass in either the doc_path or saved_index_path to initialize the QueryBot.
+
+    NOTE: QueryBot is not designed to have memory!
+
+    The default text splitter is the TokenTextSplitter from LangChain.
+    The default index that we use is the GPTVectorStoreIndex from LlamaIndex.
+    We also default to using GPT4 with temperature 0.0.
+
+    :param system_message: The system message to send to the chatbot.
+    :param model_name: The name of the OpenAI model to use.
+    :param temperature: The model temperature to use.
+        See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
+        for more information.
+    :param doc_paths: A path to a document,
+        or a list of paths to multiple documents,
+        to use for the chatbot.
+    :param saved_index_path: The path to the saved index to use for the chatbot.
+    :param response_tokens: The number of tokens to use for responses.
+    :param history_tokens: The number of tokens to use for history.
+    :param chunk_sizes: The chunk sizes to use for the LlamaIndex TokenTextSplitter.
+        Defaults to [2000], but can be a list of integers.
+    :param streaming: Whether to stream the chatbot or not.
+    :param verbose: (LangChain config) Whether to print debug messages.
+    :param use_cache: Whether to use the cache or not.
+    """
 
     def __init__(
         self,
@@ -71,34 +97,6 @@ class QueryBot:
         verbose: bool = True,
         use_cache: bool = True,
     ):
-        """Initialize QueryBot.
-
-        Pass in either the doc_path or saved_index_path to initialize the QueryBot.
-
-        NOTE: QueryBot is not designed to have memory!
-
-        The default text splitter is the TokenTextSplitter from LangChain.
-        The default index that we use is the GPTVectorStoreIndex from LlamaIndex.
-        We also default to using GPT4 with temperature 0.0.
-
-        :param system_message: The system message to send to the chatbot.
-        :param model_name: The name of the OpenAI model to use.
-        :param temperature: The model temperature to use.
-            See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
-            for more information.
-        :param doc_paths: A path to a document,
-            or a list of paths to multiple documents,
-            to use for the chatbot.
-        :param saved_index_path: The path to the saved index to use for the chatbot.
-        :param response_tokens: The number of tokens to use for responses.
-        :param history_tokens: The number of tokens to use for history.
-        :param chunk_sizes: The chunk sizes to use for the LlamaIndex TokenTextSplitter.
-            Defaults to [2000], but can be a list of integers.
-        :param streaming: Whether to stream the chatbot or not.
-        :param verbose: (LangChain config) Whether to print debug messages.
-        :param use_cache: Whether to use the cache or not.
-        """
-
         chat = create_model(
             model_name=model_name,
             temperature=temperature,
