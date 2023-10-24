@@ -12,6 +12,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.base import BaseCallbackManager
 from time import sleep
 from loguru import logger
+from functools import partial
 
 # get this list from: https://ollama.ai/library
 ollama_model_keywords = [
@@ -62,13 +63,14 @@ def create_model(
     :param verbose: (LangChain config) Whether to print debug messages.
     :return: The model.
     """
-    ModelClass = ChatOpenAI
+    # We use a `partial` here to ensure that we have the correct way of specifying
+    # a model name between ChatOpenAI and ChatOllama.
+    ModelClass = partial(ChatOpenAI, model_name=model_name)
     if model_name.split(":")[0] in ollama_model_keywords:
-        ModelClass = ChatOllama
+        ModelClass = partial(ChatOllama, model=model_name)
         launch_ollama(model_name, verbose=verbose)
 
     return ModelClass(
-        model_name=model_name,
         temperature=temperature,
         streaming=streaming,
         verbose=verbose,
