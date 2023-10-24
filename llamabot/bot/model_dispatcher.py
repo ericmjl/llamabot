@@ -57,6 +57,19 @@ def create_model(
 
     This is necessary to validate b/c LangChain doesn't do the validation for us.
 
+    Example usage:
+
+    ```python
+    # use the vicuna model
+    model = create_model(model_name="vicuna")
+
+    # use the llama2 model
+    model = create_model("llama2")
+
+    # use codellama with a temperature of 0.5
+    model = create_model("codellama:13b", temperature=0.5)
+    ```
+
     :param model_name: The name of the model to use.
     :param temperature: The model temperature to use.
     :param streaming: (LangChain config) Whether to stream the output to stdout.
@@ -68,7 +81,6 @@ def create_model(
     ModelClass = partial(ChatOpenAI, model_name=model_name)
     if model_name.split(":")[0] in ollama_model_keywords:
         ModelClass = partial(ChatOllama, model=model_name)
-        launch_ollama(model_name, verbose=verbose)
 
     return ModelClass(
         temperature=temperature,
