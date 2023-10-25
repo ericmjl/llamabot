@@ -92,6 +92,21 @@ enzymes. This could have big implications for fields like genomics, synthetic bi
 and biocatalysis, which all rely on understanding how enzymes work.
 ```
 
+LlamaBot defaults to using the OpenAI API for convenience.
+However, if you'd like to use an Ollama local model instead:
+
+```python
+from llamabot import SimpleBot
+bot = SimpleBot(
+    "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.",
+    model_name="llama2:13b"
+)
+```
+
+Simply specify the `model_name` keyword argument
+and provide a model name from the [Ollama library of models](https://ollama.ai/library).
+(The same can be done for the `ChatBot` and `QueryBot` classes below!)
+
 ### Chat Bot
 
 To experiment with a Chat Bot in the Jupyter notebook,
