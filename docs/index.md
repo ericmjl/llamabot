@@ -15,23 +15,28 @@ To install LLaMaBot:
 pip install llamabot
 ```
 
+## Get access to LLMs
+
+### Option 1: Using local models with Ollama
+
+LlamaBot supports using local models through Ollama.
+To do so, head over to the [Ollama website](https://ollama.ai) and install Ollama.
+Then follow the instructions below.
+
+### Option 2: Use the OpenAI API
+
+Obtain an OpenAI API key, then configure LlamaBot to use the API key by running:
+
+```bash
+llamabot configure
+```
+
 ## How to use
 
-### Obtain an OpenAI API key
-
-Obtain an OpenAI API key and set it as the environment variable `OPENAI_API_KEY`.
-(Here's a [reference][envvar] on what an environment variable is, if you're not sure.)
-
-[envvar]: https://ericmjl.github.io/essays-on-data-science/software-skills/environment-variables/
-
-We recommend setting the environment variable in a `.env` file
-in the root of your project repository.
-From there, `llamabot` will automagically load the environment variable for you.
-
-### Simple Bot
+### SimpleBot
 
 The simplest use case of LLaMaBot
-is to create a simple bot that keeps no record of chat history.
+is to create a `SimpleBot` that keeps no record of chat history.
 This is effectively the same as a _stateless function_
 that you program with natural language instructions rather than code.
 This is useful for prompt experimentation,
@@ -51,6 +56,40 @@ For example:
 
 ```python
 feynman("Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed. However, most of these tools cannot accurately predict functional annotations, such as enzyme commission (EC) number, for less-studied proteins or those with previously uncharacterized functions or multiple activities. We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation) to assign EC numbers to enzymes with better accuracy, reliability, and sensitivity compared with the state-of-the-art tool BLASTp. The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes, (ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions that we demonstrate by systematic in silico and in vitro experiments. We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes, thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.")
+```
+
+This will return something that looks like:
+
+```text
+Alright, let's break this down.
+
+Enzymes are like little biological machines that help speed up chemical reactions in our
+bodies. Each enzyme has a specific job, or function, and we use something called an
+Enzyme Commission (EC) number to categorize these functions.
+
+Now, the problem is that we don't always know what function an enzyme has, especially if
+it's a less-studied or new enzyme. This is where computational tools come in. They try
+to predict the function of these enzymes, but they often struggle to do so accurately.
+
+So, the folks here have developed a new tool called CLEAN, which stands for contrastive
+learning–enabled enzyme annotation. This tool uses a machine learning algorithm, which
+is a type of artificial intelligence that learns from data to make predictions or
+decisions.
+
+CLEAN uses a method called contrastive learning. Imagine you have a bunch of pictures of
+cats and dogs, and you want to teach a machine to tell the difference. You'd show it
+pairs of pictures, some of the same animal (two cats or two dogs) and some of different
+animals (a cat and a dog). The machine would learn to tell the difference by contrasting
+the features of the two pictures. That's the basic idea behind contrastive learning.
+
+CLEAN uses this method to predict the EC numbers of enzymes more accurately than
+previous tools. It can confidently annotate understudied enzymes, correct mislabeled
+enzymes, and even identify enzymes that have more than one function.
+
+The creators of CLEAN have tested it with both computer simulations and lab experiments,
+and they believe it will be a valuable tool for predicting the functions of unknown
+enzymes. This could have big implications for fields like genomics, synthetic biology,
+and biocatalysis, which all rely on understanding how enzymes work.
 ```
 
 ### Chat Bot
