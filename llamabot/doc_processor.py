@@ -14,6 +14,7 @@ EXTENSION_LOADER_MAPPING = {
     ".xlsx": "PandasExcelReader",
     ".md": "MarkdownReader",
     ".ipynb": "IPYNBReader",
+    ".html": "UnstructuredReader",
 }
 
 

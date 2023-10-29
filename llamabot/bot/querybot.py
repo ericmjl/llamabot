@@ -139,7 +139,6 @@ If you cannot answer something, respond by saying that you don't know.
         self.response_tokens = response_tokens
         self.history_tokens = history_tokens
 
-    # @validate_call
     def __call__(
         self,
         query: str,

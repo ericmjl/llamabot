@@ -12,6 +12,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.base import BaseCallbackManager
 from time import sleep
 from loguru import logger
+from functools import partial
 
 # get this list from: https://ollama.ai/library
 ollama_model_keywords = [
@@ -56,19 +57,32 @@ def create_model(
 
     This is necessary to validate b/c LangChain doesn't do the validation for us.
 
+    Example usage:
+
+    ```python
+    # use the vicuna model
+    model = create_model(model_name="vicuna")
+
+    # use the llama2 model
+    model = create_model("llama2")
+
+    # use codellama with a temperature of 0.5
+    model = create_model("codellama:13b", temperature=0.5)
+    ```
+
     :param model_name: The name of the model to use.
     :param temperature: The model temperature to use.
     :param streaming: (LangChain config) Whether to stream the output to stdout.
     :param verbose: (LangChain config) Whether to print debug messages.
     :return: The model.
     """
-    ModelClass = ChatOpenAI
+    # We use a `partial` here to ensure that we have the correct way of specifying
+    # a model name between ChatOpenAI and ChatOllama.
+    ModelClass = partial(ChatOpenAI, model_name=model_name)
     if model_name.split(":")[0] in ollama_model_keywords:
-        ModelClass = ChatOllama
-        launch_ollama(model_name, verbose=verbose)
+        ModelClass = partial(ChatOllama, model=model_name)
 
     return ModelClass(
-        model_name=model_name,
         temperature=temperature,
         streaming=streaming,
         verbose=verbose,
