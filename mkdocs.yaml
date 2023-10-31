@@ -11,6 +11,7 @@ theme:
   features:
     - instant
     - tabs
+    - content.code.copy
   language: en
 
 # We customize the navigation by hand to control the order
