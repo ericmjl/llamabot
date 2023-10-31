@@ -13,41 +13,39 @@ from langchain.callbacks.base import BaseCallbackManager
 from time import sleep
 from loguru import logger
 from functools import partial
+from pathlib import Path
+from bs4 import BeautifulSoup
+import requests
+from functools import lru_cache
 
-# get this list from: https://ollama.ai/library
-ollama_model_keywords = [
-    "mistral",
-    "llama2",
-    "codellama",
-    "vicuna",
-    "orca-mini",
-    "llama2-uncensored",
-    "wizard-vicuna-uncensored",
-    "nous-hermes",
-    "phind-codellama",
-    "mistral-openorca",
-    "wizardcoder",
-    "wizard-math",
-    "llama2-chinese",
-    "stable-beluga",
-    "codeup",
-    "everythinglm",
-    "medllama2",
-    "wizardlm-uncensored",
-    "zephyr",
-    "falcon",
-    "wizard-vicuna",
-    "open-orca-platypus2",
-    "starcoder",
-    "samantha-mistral",
-    "openhermes2-mistral",
-    "wizardlm",
-    "sqlcoder",
-    "dolphin2.1-mistral",
-    "nexusraven",
-    "dolphin2.2-mistral",
-    "codebooga",
-]
+
+@lru_cache(maxsize=128)
+def ollama_model_keywords() -> list:
+    """Return ollama model keywords.
+
+    This list is dynamically scraped from the Ollama website.
+    As a fallback, we also have a static list of model names.
+
+    :returns: The list of model names.
+    """
+    response = requests.get("https://ollama.ai/library")
+
+    # If we can successfully get the page, then scrape the model names
+    if response.status_code == 200:
+        html_content = response.text
+
+        # Parse the HTML snippet with BeautifulSoup
+        soup = BeautifulSoup(html_content, "lxml")
+
+        # Find all h2 tags that contain the model names
+        return [
+            h2.text.strip("\n").strip(" ").strip("\n") for h2 in soup.find_all("h2")
+        ]
+
+    # Otherwise, return the static list of model names.
+    else:
+        with open(Path(__file__).parent / "ollama_model_names.txt") as f:
+            return [line.strip() for line in f.readlines()]
 
 
 def create_model(
@@ -82,7 +80,7 @@ def create_model(
     # We use a `partial` here to ensure that we have the correct way of specifying
     # a model name between ChatOpenAI and ChatOllama.
     ModelClass = partial(ChatOpenAI, model_name=model_name)
-    if model_name.split(":")[0] in ollama_model_keywords:
+    if model_name.split(":")[0] in ollama_model_keywords():
         ModelClass = partial(ChatOllama, model=model_name)
 
     return ModelClass(
