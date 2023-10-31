@@ -14,8 +14,6 @@ from time import sleep
 from loguru import logger
 from functools import partial
 from pathlib import Path
-from bs4 import BeautifulSoup
-import requests
 from functools import lru_cache
 
 
@@ -23,29 +21,13 @@ from functools import lru_cache
 def ollama_model_keywords() -> list:
     """Return ollama model keywords.
 
-    This list is dynamically scraped from the Ollama website.
-    As a fallback, we also have a static list of model names.
+    This is stored within a the `ollama_model_names.txt` file
+    that is distributed with this package.
 
     :returns: The list of model names.
     """
-    response = requests.get("https://ollama.ai/library")
-
-    # If we can successfully get the page, then scrape the model names
-    if response.status_code == 200:
-        html_content = response.text
-
-        # Parse the HTML snippet with BeautifulSoup
-        soup = BeautifulSoup(html_content, "lxml")
-
-        # Find all h2 tags that contain the model names
-        return [
-            h2.text.strip("\n").strip(" ").strip("\n") for h2 in soup.find_all("h2")
-        ]
-
-    # Otherwise, return the static list of model names.
-    else:
-        with open(Path(__file__).parent / "ollama_model_names.txt") as f:
-            return [line.strip() for line in f.readlines()]
+    with open(Path(__file__).parent / "ollama_model_names.txt") as f:
+        return [line.strip() for line in f.readlines()]
 
 
 def create_model(
