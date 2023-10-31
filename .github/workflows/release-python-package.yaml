@@ -71,10 +71,13 @@ jobs:
       - name: Write release notes
         run: |
           python -m pip install -e .
-          python -m pip install pre-commit
           llamabot configure api-key --api-key="${{ secrets.OPENAI_API_KEY }}"
           llamabot configure default-model --model-name="${{ secrets.OPENAI_DEFAULT_MODEL }}"
           llamabot git write-release-notes
+
+      - name: Commit release notes
+        run: |
+          python -m pip install pre-commit
           pre-commit run --all-files || true
           git add .
           git commit -m "Add release notes for ${{ env.version_number }}"
