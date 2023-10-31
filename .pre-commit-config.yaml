@@ -31,3 +31,11 @@ repos:
           - id: ruff
             args: [--fix, --exit-non-zero-on-fix]
             types_or: [python]
+    - repo: local
+      hooks:
+      - id: autoupdate-ollama-models
+        name: Autoupdate Ollama Models
+        entry: python scripts/autoupdate_ollama_models.py
+        language: python
+        additional_dependencies: ["beautifulsoup4", "lxml", "requests"]
+        pass_filenames: false

@@ -50,10 +50,6 @@ dependencies:
   - rich
   - pyzotero
   - nltk # transitive dependency by way of llama_index
-  # The next two are needed for automatic scraping of ollama models.
-  - beautifulsoup4
-  - lxml
-  - requests
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
