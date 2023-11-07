@@ -64,7 +64,7 @@ namespaces = false
 name = "llamabot"
 version = "0.0.87"
 dependencies = [
-    "openai",
+    "openai<=0.28.1",
     "langchain",
     "llama_index",
     "panel>=1.1.0",

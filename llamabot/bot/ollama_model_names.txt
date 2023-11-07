@@ -27,9 +27,9 @@ wizardlm
 sqlcoder
 dolphin2.1-mistral
 dolphin2.2-mistral
+yarn-mistral
 codebooga
 nexusraven
-yarn-mistral
 mistrallite
 openhermes2.5-mistral
 yarn-llama2
