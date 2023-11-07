@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import requests
 
 # Your HTML snippet
-response = requests.get("https://ollama.ai/library")
+response = requests.get("https://ollama.ai/library?sort=newest")
 if response.status_code == 200:
     html_content = response.text
 
