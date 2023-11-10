@@ -34,18 +34,28 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # See: https://github.com/marketplace/actions/setup-miniconda
-      - name: Setup miniconda
-        if: matrix.environment-type == 'miniconda'
-        uses: conda-incubator/setup-miniconda@v2
+      # # See: https://github.com/marketplace/actions/setup-miniconda
+      # - name: Setup miniconda
+      #   if: matrix.environment-type == 'miniconda'
+      #   uses: conda-incubator/setup-miniconda@v2
+      #   with:
+      #     auto-update-conda: true
+      #     miniforge-variant: Mambaforge
+      #     channels: conda-forge
+      #     activate-environment: llamabot
+      #     environment-file: environment.yml
+      #     use-mamba: true
+      #     python-version: ${{ matrix.python-version }}
+
+      - uses: mamba-org/setup-micromamba@v1
         with:
-          auto-update-conda: true
-          miniforge-variant: Mambaforge
-          channels: conda-forge
-          activate-environment: llamabot
+          micromamba-version: '1.3.1-0'
           environment-file: environment.yml
-          use-mamba: true
-          python-version: ${{ matrix.python-version }}
+          init-shell: >-
+            bash
+          cache-environment: true
+          post-cleanup: 'all'
+
 
       - name: Install dependencies
         if: matrix.environment-type == 'bare'
