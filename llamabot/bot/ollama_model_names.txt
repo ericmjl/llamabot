@@ -1,3 +1,4 @@
+yi
 openhermes2.5-mistral
 yarn-mistral
 yarn-llama2
