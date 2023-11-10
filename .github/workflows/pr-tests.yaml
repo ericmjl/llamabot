@@ -56,7 +56,7 @@ jobs:
             bash
           cache-environment: true
           cache-environment-key: environment-${{ steps.date.outputs.date }}-${{ hashFiles('environment.yml') }}
-          cache-downloads-key: downloads-${{ steps.date.outputs.date }}
+          cache-downloads-key: downloads-${{ steps.date.outputs.date }}-${{ hashFiles('environment.yml') }}
           post-cleanup: 'all'
 
 
