@@ -7,8 +7,6 @@ from prompt_toolkit.completion import WordCompleter
 from .utils import configure_environment_variable
 
 
-client = OpenAI()
-
 app = typer.Typer()
 
 
@@ -45,6 +43,8 @@ def default_model(model_name=None):
     from llamabot.config import llamabotrc_path
 
     load_dotenv(llamabotrc_path)
+
+    client = OpenAI()
 
     model_list = client.models.list()
     available_models = [x.id for x in model_list if "gpt" in x.id]
