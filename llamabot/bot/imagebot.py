@@ -47,18 +47,18 @@ class ImageBot:
 
         image_data = requests.get(image_url).content
 
-        from llamabot import SimpleBot
-
-        bot = SimpleBot(
-            "You are a helpful filenaming assistant. "
-            "Filenames should use underscores instead of spaces, "
-            "and should be all lowercase. "
-            "Exclude the file extension. "
-            "Give me a compact filename for the following prompt:"
-        )
-        response = bot(prompt)
-        filename = response.message
         if not save_path:
+            from llamabot import SimpleBot
+
+            bot = SimpleBot(
+                "You are a helpful filenaming assistant. "
+                "Filenames should use underscores instead of spaces, "
+                "and should be all lowercase. "
+                "Exclude the file extension. "
+                "Give me a compact filename for the following prompt:"
+            )
+            response = bot(prompt)
+            filename = response.message
             save_path = Path(f"{filename}.jpg")
         with open(save_path, "wb") as file:
             file.write(image_data)
