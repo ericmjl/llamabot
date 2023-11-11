@@ -1,6 +1,8 @@
 """Test the ImageBot class."""
 from llamabot import ImageBot, SimpleBot
 import requests
+from langchain.schema import AIMessage
+from pathlib import Path
 
 
 def test_initialization_defaults():
@@ -80,3 +82,48 @@ def test_call_outside_jupyter(mocker, tmp_path):
     result = bot("test prompt", tmp_path / "test_prompt.jpg")
     assert result == tmp_path / "test_prompt.jpg"
     requests.get.assert_called_with("http://image.url")
+
+
+def test_call_outside_jupyter_no_save_path(mocker, tmp_path):
+    """Test the call method when not running in a Jupyter notebook
+    and no save path is provided.
+
+    This test checks that the call method
+    saves the image to a generated filename based on the prompt
+    when not running in a Jupyter notebook and no save path is provided.
+
+    :param mocker: The pytest-mock fixture.
+    """
+    # Mock the is_running_in_jupyter method
+    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
+
+    # Instantiate ImageBot
+    bot = ImageBot()
+
+    # Mock the client's generate method on the instance to return the desired URL
+    mock_response = mocker.MagicMock()
+    mock_response.data = [mocker.MagicMock(url="http://image.url")]
+    bot.client = mocker.MagicMock()
+    bot.client.images.generate.return_value = mock_response
+
+    # Mock requests.get to return a mock response with content
+    mock_get_response = mocker.MagicMock()
+    mock_get_response.content = b"image_data"
+    mocker.patch("requests.get", return_value=mock_get_response)
+
+    # Mock the filename_bot method to return a generated filename
+    generated_filename = str(tmp_path / "generated_filename")
+    mocker.patch(
+        "llamabot.bot.imagebot.filename_bot",
+        return_value=AIMessage(content=generated_filename),
+    )
+
+    # Call the method and perform the assertion
+    result = bot("test prompt")
+    assert result == Path(f"{generated_filename}.jpg")
+    requests.get.assert_called_with("http://image.url")
+
+    # Check if the file was saved correctly
+    with open(result, "rb") as file:
+        saved_content = file.read()
+    assert saved_content == b"image_data"

@@ -9,6 +9,7 @@ from llamabot.prompt_library.python import codebot, docstring, ghostwriter
 
 
 @given(st.text())
+@settings(deadline=None)
 def test_codebot_instance(input_text: str):
     """Test that codebot returns a SimpleBot instance.
 

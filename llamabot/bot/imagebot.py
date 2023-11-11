@@ -5,6 +5,7 @@ from IPython.display import display, Image
 import requests
 from pathlib import Path
 from typing import Union
+from langchain.schema import AIMessage
 
 
 class ImageBot:
@@ -47,18 +48,8 @@ class ImageBot:
 
         image_data = requests.get(image_url).content
 
-        from llamabot import SimpleBot
-
-        bot = SimpleBot(
-            "You are a helpful filenaming assistant. "
-            "Filenames should use underscores instead of spaces, "
-            "and should be all lowercase. "
-            "Exclude the file extension. "
-            "Give me a compact filename for the following prompt:"
-        )
-        response = bot(prompt)
-        filename = response.message
         if not save_path:
+            filename = filename_bot(prompt).content
             save_path = Path(f"{filename}.jpg")
         with open(save_path, "wb") as file:
             file.write(image_data)
@@ -75,3 +66,22 @@ def is_running_in_jupyter() -> bool:
         return True
     except NameError:
         return False
+
+
+def filename_bot(image_prompt: str) -> AIMessage:
+    """Generate a filename from an image prompt.
+
+    :param image_prompt: The image prompt to generate a filename from.
+    :return: The filename generated from the image prompt within an AIMessage object.
+    """
+    from llamabot import SimpleBot
+
+    bot = SimpleBot(
+        "You are a helpful filenaming assistant. "
+        "Filenames should use underscores instead of spaces, "
+        "and should be all lowercase. "
+        "Exclude the file extension. "
+        "Give me a compact filename for the following prompt:"
+    )
+    response = bot(image_prompt)
+    return response
