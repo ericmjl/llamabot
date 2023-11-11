@@ -12,6 +12,7 @@ from llamabot.config import llamabotrc_path
 from .chatbot import ChatBot
 from .querybot import QueryBot
 from .simplebot import SimpleBot
+from .imagebot import ImageBot
 
 pn.extension()
 load_dotenv()
@@ -28,4 +29,4 @@ if api_key is None:
 openai.api_key = api_key
 
 
-__all__ = ["SimpleBot", "ChatBot", "QueryBot"]
+__all__ = ["SimpleBot", "ChatBot", "QueryBot", "ImageBot"]
