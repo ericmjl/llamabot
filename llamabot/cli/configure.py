@@ -46,8 +46,8 @@ def default_model(model_name=None):
 
     load_dotenv(llamabotrc_path)
 
-    model_list = client.models.list()["data"]
-    available_models = [x["id"] for x in model_list if "gpt" in x["id"]]
+    model_list = client.models.list()
+    available_models = [x.id for x in model_list if "gpt" in x.id]
     available_models.sort()
 
     if model_name in available_models:
