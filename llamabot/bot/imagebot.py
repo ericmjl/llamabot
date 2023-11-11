@@ -69,7 +69,11 @@ def is_running_in_jupyter() -> bool:
 
 
 def filename_bot(image_prompt: str) -> AIMessage:
-    """Generate a filename from an image prompt."""
+    """Generate a filename from an image prompt.
+
+    :param image_prompt: The image prompt to generate a filename from.
+    :return: The filename generated from the image prompt within an AIMessage object.
+    """
     from llamabot import SimpleBot
 
     bot = SimpleBot(
