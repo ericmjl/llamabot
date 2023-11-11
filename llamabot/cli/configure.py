@@ -1,10 +1,13 @@
 """LlamaBot configuration."""
-import openai
+from openai import OpenAI
+import os
+
 import typer
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
-import os
 from .utils import configure_environment_variable
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = typer.Typer()
 
@@ -43,9 +46,7 @@ def default_model(model_name=None):
 
     load_dotenv(llamabotrc_path)
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
-    model_list = openai.Model.list()["data"]
+    model_list = client.models.list()["data"]
     available_models = [x["id"] for x in model_list if "gpt" in x["id"]]
     available_models.sort()
 

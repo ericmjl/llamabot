@@ -3,7 +3,6 @@
 import os
 import warnings
 
-import openai
 import panel as pn
 from dotenv import load_dotenv
 
@@ -26,7 +25,6 @@ if api_key is None:
         "No OpenAI API key found. Please set OPENAI_API_KEY in your environment.",
         category=RuntimeWarning,
     )
-openai.api_key = api_key
 
 
 __all__ = ["SimpleBot", "ChatBot", "QueryBot", "ImageBot"]
