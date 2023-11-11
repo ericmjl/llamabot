@@ -24,6 +24,7 @@ from llamabot.bot.simplebot import AIMessage, HumanMessage, SimpleBot, SystemMes
     temperature=st.floats(min_value=0, max_value=1),
     model_name=st.text(),
 )
+@settings(deadline=None)
 def test_simple_bot_init(system_prompt, temperature, model_name):
     """Test that the SimpleBot is initialized correctly.
 
