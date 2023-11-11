@@ -1,7 +1,5 @@
 """Constants for model tokens and token budgets."""
-DEFAULT_TOKEN_BUDGET = 2048
-
-#
+DEFAULT_TOKEN_BUDGET = 4_096
 
 # Reference: https://platform.openai.com/docs/models
 # For the Ollama models, refer to individual model documentation page: https://ollama.ai/library
@@ -21,4 +19,5 @@ model_chat_token_budgets = {
     "gpt-4": 8_192,
     "llama2": 4_096,
     "vicuna:7b-16k": 16_385,
+    "mistral": 8_192,
 }
