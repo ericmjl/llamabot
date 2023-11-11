@@ -1,13 +1,13 @@
 """LlamaBot configuration."""
 from openai import OpenAI
-import os
 
 import typer
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from .utils import configure_environment_variable
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+client = OpenAI()
 
 app = typer.Typer()
 
