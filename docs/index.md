@@ -109,11 +109,11 @@ and provide a model name from the [Ollama library of models](https://ollama.ai/l
 
 ### Chat Bot
 
-To experiment with a Chat Bot in the Jupyter notebook,
+To experiment with a Chat Bot in the Jupyter Notebook,
 we also provide the ChatBot interface.
 This interface automagically keeps track of chat history
 for as long as your Jupyter session is alive.
-Doing so allows you to use your own local Jupyter notebook as a chat interface.
+Doing so allows you to use your own local Jupyter Notebook as a chat interface.
 
 For example:
 
@@ -152,6 +152,28 @@ bot = QueryBot(system_message="You are a Q&A bot.", saved_index_path=blog_index)
 result = bot("Do you have any advice for me on career development?", similarity_top_k=5)
 display(Markdown(result.response))
 ```
+
+### ImageBot
+
+With the release of the OpenAI API updates,
+as long as you have an OpenAI API key,
+you can generate images with LlamaBot:
+
+```python
+from llamabot import ImageBot
+
+bot = ImageBot()
+# Within a Jupyter notebook:
+url = bot("A painting of a dog.")
+
+# Or within a Python script
+filepath = bot("A painting of a dog.")
+
+# Now, you can do whatever you need with the url or file path.
+```
+
+If you're in a Jupyter Notebook,
+you'll see the image show up magically as part of the output cell as well.
 
 ## CLI Demos
 
