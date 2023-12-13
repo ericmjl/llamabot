@@ -1,3 +1,16 @@
+bakllava
+llava
+stablelm-zephyr
+magicoder
+deepseek-llm
+meditron
+starling-lm
+orca2
+deepseek-coder
+alfred
+goliath
+neural-chat
+openchat
 yi
 openhermes2.5-mistral
 yarn-mistral

@@ -189,3 +189,7 @@ class ChatBot:
         if show:
             return app.show()
         return app
+
+
+class FunctionMessage:
+    """A message that instructs us to call a function."""
