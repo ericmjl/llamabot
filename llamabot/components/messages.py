@@ -44,3 +44,10 @@ class ToolMessage(BaseMessage):
 
     content: str
     role: str = "tool"
+
+
+class RetrievedMessage(BaseMessage):
+    """A message retrieved from the history."""
+
+    content: str
+    role: str = "assistant"
