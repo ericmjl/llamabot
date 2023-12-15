@@ -25,7 +25,7 @@ class ChatBot:
 
     def __init__(
         self,
-        system_prompt,
+        system_prompt: str,
         session_name: str,
         temperature=0.0,
         model_name=default_language_model(),

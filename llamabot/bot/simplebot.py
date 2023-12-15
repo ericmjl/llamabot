@@ -37,7 +37,7 @@ class SimpleBot:
 
     def __init__(
         self,
-        system_prompt,
+        system_prompt: str,
         temperature=0.0,
         model_name=default_language_model(),
         stream=True,
