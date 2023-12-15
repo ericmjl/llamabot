@@ -14,8 +14,8 @@ from llamabot.components.messages import (
 )
 from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
-from llamabot.bot.model_dispatcher import make_client
 from llamabot.config import default_language_model
+from litellm import completion
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -40,13 +40,12 @@ class SimpleBot:
         system_prompt,
         temperature=0.0,
         model_name=default_language_model(),
-        streaming=True,
+        stream=True,
     ):
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
-        self.client = make_client(model_name)
         self.model_name = model_name
         self.temperature = temperature
-        self.streaming = streaming
+        self.stream = stream
 
     def __call__(self, human_message: str) -> AIMessage:
         """Call the SimpleBot.
@@ -67,19 +66,24 @@ class SimpleBot:
         """Generate a response from the given messages."""
 
         messages: list[dict] = [m.model_dump() for m in messages]
-        response = self.client.chat.completions.create(
+        # response = self.client.chat.completions.create(
+        #     model=self.model_name,
+        #     messages=messages,
+        #     temperature=self.temperature,
+        #     stream=self.streaming,
+        # )
+        response = completion(
             model=self.model_name,
             messages=messages,
             temperature=self.temperature,
-            stream=self.streaming,
+            stream=self.stream,
         )
-        if self.streaming:
+        if self.stream:
             ai_message = ""
             for chunk in response:
                 if chunk.choices[0].delta.content is not None:
                     print(chunk.choices[0].delta.content, end="")
                     ai_message += chunk.choices[0].delta.content
-            ai_message = AIMessage(content=ai_message)
             return ai_message
 
         return response.choices[0].text
