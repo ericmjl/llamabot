@@ -15,6 +15,7 @@ from loguru import logger
 from functools import partial
 from pathlib import Path
 from functools import lru_cache
+from openai import OpenAI
 
 
 @lru_cache(maxsize=128)
@@ -28,6 +29,17 @@ def ollama_model_keywords() -> list:
     """
     with open(Path(__file__).parent / "ollama_model_names.txt") as f:
         return [line.strip() for line in f.readlines()]
+
+
+def make_client(model_name):
+    """Use OpenAI, or else use LiteLLM to interface with local LLMs.
+
+    You will need to install LiteLLM in order to access local LLMs.
+    """
+    client = OpenAI()
+    if model_name.split(":")[0] in ollama_model_keywords():
+        client = OpenAI(base_url="http://0.0.0.0:8000", api_key="dummy")
+    return client
 
 
 def create_model(
