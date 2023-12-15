@@ -13,6 +13,10 @@ class BaseMessage(BaseModel):
         """Get the content of the message at the given index."""
         return self.__class__(content=self.content[index], role=self.role)
 
+    def __len__(self):
+        """Get the length of the message."""
+        return len(self.content)
+
 
 class SystemMessage(BaseMessage):
     """A message from the system."""
