@@ -12,15 +12,28 @@ from llamabot.components.messages import (
     SystemMessage,
 )
 from llamabot.components.history import History
-from uuid import uuid4
+from functools import partial
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
 class ChatBot:
     """ChatBot that is primed with a system prompt, accepts a human message,
-    and sends back a single response. It is essentially SimpleBot composed with History.
+    and sends back a single response.
 
+    It is essentially SimpleBot composed with History.
+
+    :param system_prompt: The system prompt to use.
+    :param session_name: The name of the session to use.
+        This is used in the chat history class.
+    :param temperature: The temperature to use.
+    :param model_name: The model name to use.
+    :param stream: Whether to stream the output to stdout.
+    :param response_budget: The response budget to use, in terms of number of characters.
+    :param chat_history_class: The chat history class to use.
+        Should be a callable that returns an object
+        that follows the History API.
+        Defaults to History from `llamabot.components.history`.
     """
 
     def __init__(
@@ -31,8 +44,11 @@ class ChatBot:
         model_name=default_language_model(),
         stream=True,
         response_budget=2_000,
-        chat_history=History(session_name=uuid4()),
+        chat_history_class: callable = partial(History),
     ):
+        chat_history_class_kwargs = {
+            "session_name": session_name,
+        }
         self.bot = SimpleBot(
             system_prompt=system_prompt,
             temperature=temperature,
@@ -40,7 +56,7 @@ class ChatBot:
             stream=stream,
         )
         self.model_name = model_name
-        self.chat_history = chat_history
+        self.chat_history = chat_history_class(**chat_history_class_kwargs)
         self.response_budget = response_budget
         self.session_name = session_name
 
