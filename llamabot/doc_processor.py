@@ -18,7 +18,7 @@ EXTENSION_LOADER_MAPPING = {
 }
 
 
-def magic_load_doc(file_path: Path) -> List[Document]:
+def magic_load_doc(file_path: Path) -> Document:
     """Load a document from a file.
 
     This function is used to magically load a document from a file.
@@ -28,6 +28,7 @@ def magic_load_doc(file_path: Path) -> List[Document]:
     :param file_path: Path to the file to be loaded.
     :return: A list of documents.
     """
+    doc = Document(text="")
     loader_string: str = EXTENSION_LOADER_MAPPING.get(Path(file_path).suffix, None)
     if loader_string is not None:
         # Treat this as a document that needs special processing.
@@ -37,13 +38,13 @@ def magic_load_doc(file_path: Path) -> List[Document]:
 
         # Concatenate the documents if there are more than 1 document in documents:
         if len(documents) > 1:
-            documents = [Document(text=" ".join([doc.text for doc in documents]))]
+            doc = Document(text=" ".join([doc.text for doc in documents]))
 
     else:
         # Treat this as a plain text file.
         with open(file_path, "r+") as f:
-            documents = [Document(text=f.read())]
-    return documents
+            doc = Document(text=f.read())
+    return doc
 
 
 def split_document(
