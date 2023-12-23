@@ -1,3 +1,5 @@
+phi
+solar
 dolphin-mixtral
 mixtral
 bakllava
