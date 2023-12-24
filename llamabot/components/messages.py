@@ -50,4 +50,29 @@ class RetrievedMessage(BaseMessage):
     """A message retrieved from the history."""
 
     content: str
-    role: str = "assistant"
+    role: str = "system"
+
+
+def retrieve_messages_up_to_budget(
+    messages: list[BaseMessage], character_budget: int
+) -> list[BaseMessage]:
+    """Retrieve messages up to the character budget.
+
+    :param messages: The messages to retrieve.
+    :param character_budget: The character budget to use.
+    :returns: The retrieved messages.
+    """
+    used_chars = 0
+    retrieved_messages = []
+    for message in messages:
+        if not isinstance(message, (BaseMessage, str)):
+            raise ValueError(
+                f"Expected message to be of type BaseMessage or str, got {type(message)}"
+            )
+        used_chars += len(message)
+        if used_chars > character_budget:
+            # append whatever is left
+            retrieved_messages.append(message[: used_chars - character_budget])
+            break
+        retrieved_messages.append(message)
+    return retrieved_messages

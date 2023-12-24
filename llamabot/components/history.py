@@ -7,7 +7,11 @@ or use vector similarity search to identify similar messages to retrieve.
 from pathlib import Path
 import chromadb
 from hashlib import sha256
-from llamabot.components.messages import BaseMessage, RetrievedMessage
+from llamabot.components.messages import (
+    BaseMessage,
+    RetrievedMessage,
+    retrieve_messages_up_to_budget,
+)
 
 
 class History:
@@ -87,24 +91,3 @@ class RAGHistory:
         documents = self.collection.get()["documents"]
         document = RetrievedMessage(content=documents[index])
         return document
-
-
-def retrieve_messages_up_to_budget(
-    messages: list[BaseMessage], character_budget: int
-) -> list[BaseMessage]:
-    """Retrieve messages up to the character budget.
-
-    :param messages: The messages to retrieve.
-    :param character_budget: The character budget to use.
-    :returns: The retrieved messages.
-    """
-    used_chars = 0
-    retrieved_messages = []
-    for message in messages:
-        used_chars += len(message)
-        if used_chars > character_budget:
-            # append whatever is left
-            retrieved_messages.append(message[: used_chars - character_budget])
-            break
-        retrieved_messages.append(message)
-    return retrieved_messages
