@@ -1,10 +1,8 @@
 """Class definition for SimpleBot."""
 import contextvars
 
-import panel as pn
 
 # from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
-from loguru import logger
 
 from llamabot.components.messages import (
     AIMessage,
@@ -12,7 +10,6 @@ from llamabot.components.messages import (
     SystemMessage,
     BaseMessage,
 )
-from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
 from llamabot.config import default_language_model
 from litellm import completion
@@ -65,86 +62,82 @@ class SimpleBot:
     def generate_response(self, messages: list[BaseMessage]) -> str:
         """Generate a response from the given messages."""
 
-        messages: list[dict] = [m.model_dump() for m in messages]
-        # response = self.client.chat.completions.create(
-        #     model=self.model_name,
-        #     messages=messages,
-        #     temperature=self.temperature,
-        #     stream=self.streaming,
-        # )
+        messages_dumped: list[dict] = [m.model_dump() for m in messages]
         response = completion(
             model=self.model_name,
-            messages=messages,
+            messages=messages_dumped,
             temperature=self.temperature,
             stream=self.stream,
         )
         if self.stream:
             ai_message = ""
             for chunk in response:
-                if chunk.choices[0].delta.content is not None:
-                    print(chunk.choices[0].delta.content, end="")
-                    ai_message += chunk.choices[0].delta.content
+                delta = chunk.choices[0].delta.content
+                if delta is not None:
+                    print(delta, end="")
+                    ai_message += delta
             return ai_message
 
-        return response.choices[0].text
+        return response.choices[0].message.content
 
-    def panel(
-        self,
-        input_text_label="Input",
-        output_text_label="Output",
-        submit_button_label="Submit",
-        site_name="SimpleBot",
-        title="SimpleBot",
-        show=False,
-    ):
-        """Create a Panel app that wraps a LlamaBot.
+    # Commented out until later.
+    # def panel(
+    #     self,
+    #     input_text_label="Input",
+    #     output_text_label="Output",
+    #     submit_button_label="Submit",
+    #     site_name="SimpleBot",
+    #     title="SimpleBot",
+    #     show=False,
+    # ):
+    #     """Create a Panel app that wraps a LlamaBot.
 
-        :param input_text_label: The label for the input text.
-        :param output_text_label: The label for the output text.
-        :param submit_button_label: The label for the submit button.
-        :param site_name: The name of the site.
-        :param title: The title of the site.
-        :param show: Whether to show the app.
-            If False, we return the Panel app directly.
-            If True, we call `.show()` on the app.
-        :return: The Panel app, either showed or directly.
-        """
-        input_text = pn.widgets.TextAreaInput(
-            name=input_text_label, value="", height=200, width=500
-        )
-        output_text = pn.pane.Markdown("")
-        submit = pn.widgets.Button(name=submit_button_label, button_type="success")
+    #     :param input_text_label: The label for the input text.
+    #     :param output_text_label: The label for the output text.
+    #     :param submit_button_label: The label for the submit button.
+    #     :param site_name: The name of the site.
+    #     :param title: The title of the site.
+    #     :param show: Whether to show the app.
+    #         If False, we return the Panel app directly.
+    #         If True, we call `.show()` on the app.
+    #     :return: The Panel app, either showed or directly.
+    #     """
+    #     input_text = pn.widgets.TextAreaInput(
+    #         name=input_text_label, value="", height=200, width=500
+    #     )
+    #     output_text = pn.pane.Markdown("")
+    #     submit = pn.widgets.Button(name=submit_button_label, button_type="success")
 
-        def b(event):
-            """Button click handler.
+    #     def b(event):
+    #         """Button click handler.
 
-            :param event: The button click event.
-            """
-            logger.info(input_text.value)
-            output_text.object = ""
-            markdown_handler = PanelMarkdownCallbackHandler(output_text)
-            self.model.callback_manager.set_handler(markdown_handler)
-            response = self(input_text.value)
-            logger.info(response)
+    #         :param event: The button click event.
+    #         """
+    #         logger.info(input_text.value)
+    #         output_text.object = ""
+    #         markdown_handler = PanelMarkdownCallbackHandler(output_text)
+    #         self.model.callback_manager.set_handler(markdown_handler)
+    #         response = self(input_text.value)
+    #         logger.info(response)
 
-        submit.on_click(b)
+    #     submit.on_click(b)
 
-        app = pn.template.FastListTemplate(
-            site=site_name,
-            title=title,
-            main=[
-                pn.Column(
-                    *[
-                        input_text,
-                        submit,
-                        pn.pane.Markdown(output_text_label),
-                        output_text,
-                    ]
-                )
-            ],
-            main_max_width="768px",
-        )
-        app = pn.panel(app)
-        if show:
-            return app.show()
-        return app
+    #     app = pn.template.FastListTemplate(
+    #         site=site_name,
+    #         title=title,
+    #         main=[
+    #             pn.Column(
+    #                 *[
+    #                     input_text,
+    #                     submit,
+    #                     pn.pane.Markdown(output_text_label),
+    #                     output_text,
+    #                 ]
+    #             )
+    #         ],
+    #         main_max_width="768px",
+    #     )
+    #     app = pn.panel(app)
+    #     if show:
+    #         return app.show()
+    #     return app
