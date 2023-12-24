@@ -1,6 +1,5 @@
 """Class definition for QueryBot."""
 import contextvars
-import os
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -19,21 +18,6 @@ from llamabot.bot.model_tokens import model_context_window_sizes, DEFAULT_TOKEN_
 
 
 load_dotenv()
-
-DEFAULT_SIMILARITY_TOP_KS = {
-    "gpt-3.5-turbo": 2,
-    "gpt-3.5-turbo-0301": 2,
-    "gpt-3.5-turbo-0613": 2,
-    "gpt-3.5-turbo-16k": 5,
-    "gpt-3.5-turbo-16k-0613": 5,
-    "gpt-4": 3,
-    "gpt-4-0314": 3,
-    "gpt-4-0613": 3,
-    "gpt-4-32k": 10,
-}
-
-
-SIMILARITY_TOP_K = DEFAULT_SIMILARITY_TOP_KS.get(os.getenv("OPENAI_DEFAULT_MODEL"), 3)
 
 
 CACHE_DIR = Path.home() / ".llamabot" / "cache"
