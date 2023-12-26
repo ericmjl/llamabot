@@ -1,4 +1,14 @@
-"""Generic document store for LlamaBot."""
+"""Generic document store for LlamaBot.
+
+The interface that we need is implemented here:
+
+- append,
+- extend,
+- retrieve
+
+ChromaDB is a great default choice because of its simplicity and FOSS nature.
+Hence we use it by default.
+"""
 from pathlib import Path
 import chromadb
 from hashlib import sha256
@@ -21,13 +31,14 @@ class DocumentStore:
         self.collection = collection
         self.collection_name = collection_name
 
-    def append(self, document: str):
+    def append(self, document: str, metadata: dict = {}):
         """Append a document to the store.
 
         :param document: The document to append.
         """
         doc_id = sha256(document.encode()).hexdigest()
-        self.collection.add(documents=document, ids=doc_id)
+
+        self.collection.add(documents=document, ids=doc_id, metadatas=metadata)
 
     def extend(self, documents: list[str]):
         """Extend the document store.
