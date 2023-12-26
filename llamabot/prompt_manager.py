@@ -22,7 +22,7 @@ def prompt(func):
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> str:
         """Wrapper function.
 
         :param args: Positional arguments to the function.

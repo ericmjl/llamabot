@@ -1,3 +1,5 @@
+nous-hermes2
+dolphin-phi
 phi
 solar
 dolphin-mixtral
