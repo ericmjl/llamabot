@@ -38,11 +38,13 @@ class SimpleBot:
         temperature=0.0,
         model_name=default_language_model(),
         stream=True,
+        json_mode: bool = False,
     ):
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
         self.model_name = model_name
         self.temperature = temperature
         self.stream = stream
+        self.json_mode = json_mode
 
     def __call__(self, human_message: str) -> AIMessage:
         """Call the SimpleBot.
@@ -63,12 +65,15 @@ class SimpleBot:
         """Generate a response from the given messages."""
 
         messages_dumped: list[dict] = [m.model_dump() for m in messages]
-        response = completion(
+        completion_kwargs = dict(
             model=self.model_name,
             messages=messages_dumped,
             temperature=self.temperature,
             stream=self.stream,
         )
+        if self.json_mode:
+            completion_kwargs["response_format"] = {"type": "json_object"}
+        response = completion(**completion_kwargs)
         if self.stream:
             ai_message = ""
             for chunk in response:
