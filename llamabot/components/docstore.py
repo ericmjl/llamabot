@@ -57,3 +57,10 @@ class DocumentStore:
             query_texts=query, n_results=n_results
         )
         return results["documents"][0]
+
+    def reset(self):
+        """Reset the document store."""
+        self.client.delete_collection(self.collection_name)
+        self.collection = self.client.create_collection(
+            self.collection_name, get_or_create=True
+        )
