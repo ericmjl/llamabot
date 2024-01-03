@@ -4,7 +4,7 @@ from openai import OpenAI
 from IPython.display import display, Image
 import requests
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 from langchain.schema import AIMessage
 
 
@@ -24,11 +24,14 @@ class ImageBot:
         self.quality = quality
         self.n = n
 
-    def __call__(self, prompt: str, save_path: Path = None) -> Union[str, Path]:
+    def __call__(
+        self, prompt: str, save_path: Optional[Path] = None
+    ) -> Union[str, Path]:
         """Generate an image from a prompt.
 
         :param prompt: The prompt to generate an image from.
         :param save_path: The path to save the generated image to.
+            If it is empty, then we will generate a filename from the prompt.
         :return: The URL of the generated image if running in a Jupyter notebook (str),
             otherwise a pathlib.Path object pointing to the generated image.
         """
