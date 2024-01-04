@@ -78,8 +78,9 @@ class ChatBot(SimpleBot, History):
         :return: A string representation of the ChatBot.
         """
         representation = ""
+        prefix = ""
 
-        for message in self.chat_history:
+        for message in self.messages:
             if isinstance(message, SystemMessage):
                 prefix = "[System]\n"
             elif isinstance(message, HumanMessage):
