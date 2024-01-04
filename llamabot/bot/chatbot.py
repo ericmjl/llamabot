@@ -12,12 +12,11 @@ from llamabot.components.messages import (
     SystemMessage,
 )
 from llamabot.components.history import History
-from functools import partial
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
-class ChatBot:
+class ChatBot(SimpleBot, History):
     """ChatBot that is primed with a system prompt, accepts a human message,
     and sends back a single response.
 
@@ -44,39 +43,33 @@ class ChatBot:
         model_name=default_language_model(),
         stream=True,
         response_budget=2_000,
-        chat_history_class: callable = partial(History),
     ):
-        chat_history_class_kwargs = {
-            "session_name": session_name,
-        }
-        self.bot = SimpleBot(
+        SimpleBot.__init__(
+            self,
             system_prompt=system_prompt,
             temperature=temperature,
             model_name=model_name,
             stream=stream,
         )
-        self.model_name = model_name
-        self.chat_history = chat_history_class(**chat_history_class_kwargs)
+        History.__init__(self, session_name=session_name)
         self.response_budget = response_budget
-        self.session_name = session_name
 
-    def __call__(self, human_message: str) -> AIMessage:
+    def __call__(self, message: str) -> AIMessage:
         """Call the ChatBot.
 
         :param human_message: The human message to use.
         :return: The response to the human message, primed by the system prompt.
         """
-        human_message = HumanMessage(content=human_message)
-        history = self.chat_history.retrieve(
+        human_message = HumanMessage(content=message)
+        history = self.retrieve(
             query=human_message, character_budget=self.response_budget
         )
-        messages = [self.bot.system_prompt] + history + [human_message]
-        response_string: str = self.bot.generate_response(messages)
-        autorecord(human_message, response_string)
+        messages = [self.system_prompt] + history + [human_message]
+        response = self.generate_response(messages)
+        autorecord(message, response.content)
 
-        response: AIMessage = AIMessage(content=response_string)
-        self.chat_history.append(human_message)
-        self.chat_history.append(response)
+        self.append(human_message)
+        self.append(response)
         return response
 
     def __repr__(self):
