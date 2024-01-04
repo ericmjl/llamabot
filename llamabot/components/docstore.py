@@ -21,12 +21,12 @@ class DocumentStore:
     def __init__(
         self,
         collection_name: str,
-        db_path: Path = Path.home() / ".llamabot" / "chroma.db",
+        storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
     ):
-        client = chromadb.PersistentClient(path=str(db_path))
+        client = chromadb.PersistentClient(path=str(storage_path))
         collection = client.create_collection(collection_name, get_or_create=True)
 
-        self.db_path = db_path
+        self.storage_path = storage_path
         self.client = client
         self.collection = collection
         self.collection_name = collection_name
