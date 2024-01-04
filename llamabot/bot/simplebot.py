@@ -27,9 +27,9 @@ class SimpleBot:
     :param temperature: The model temperature to use.
         See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
         for more information.
-    :param model_name: The name of the OpenAI model to use.
-    :param streaming: (LangChain config) Whether to stream the output to stdout.
-    :param verbose: (LangChain config) Whether to print debug messages.
+    :param model_name: The name of the model to use.
+    :param stream: Whether to stream the output to stdout.
+    :param json_mode: Whether to print debug messages.
     """
 
     def __init__(
@@ -58,10 +58,10 @@ class SimpleBot:
             HumanMessage(content=human_message),
         ]
         response = self.generate_response(messages)
-        autorecord(human_message, response)
-        return AIMessage(content=response)
+        autorecord(human_message, response.content)
+        return response
 
-    def generate_response(self, messages: list[BaseMessage]) -> str:
+    def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
         """Generate a response from the given messages."""
 
         messages_dumped: list[dict] = [m.model_dump() for m in messages]
@@ -81,9 +81,9 @@ class SimpleBot:
                 if delta is not None:
                     print(delta, end="")
                     ai_message += delta
-            return ai_message
+            return AIMessage(content=ai_message)
 
-        return response.choices[0].message.content
+        return AIMessage(content=response.choices[0].message.content)
 
     # Commented out until later.
     # def panel(
