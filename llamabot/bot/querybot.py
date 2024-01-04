@@ -24,7 +24,7 @@ CACHE_DIR = Path.home() / ".llamabot" / "cache"
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
-class QueryBot:
+class QueryBot(SimpleBot, DocumentStore):
     """QueryBot is a bot that uses simple RAG to answer questions about a document."""
 
     def __init__(
@@ -36,16 +36,16 @@ class QueryBot:
         model_name: str = default_language_model(),
         stream=True,
     ):
-        self.bot = SimpleBot(
+        SimpleBot.__init__(
+            self,
             system_prompt=system_prompt,
             temperature=temperature,
             model_name=model_name,
             stream=stream,
         )
-        self.document_store = DocumentStore(collection_name=collection_name)
+        DocumentStore.__init__(self, collection_name=collection_name)
         self.add(document_paths=document_paths)
         self.response_budget = 2_000
-        self.model_name = model_name
 
     def add(
         self,
@@ -63,7 +63,7 @@ class QueryBot:
                 document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
             )
             splitted_document = [doc.text for doc in splitted_document]
-            self.document_store.extend(splitted_document)
+            self.extend(splitted_document)
 
     def __call__(self, query: str, n_results: int = 20) -> AIMessage:
         """Query documents within QueryBot's document store.
@@ -80,11 +80,11 @@ class QueryBot:
         retrieved = retrieve_messages_up_to_budget(
             messages=[
                 RetrievedMessage(content=chunk)
-                for chunk in self.document_store.retrieve(query, n_results=n_results)
+                for chunk in self.retrieve(query, n_results=n_results)
             ],
             character_budget=context_budget - self.response_budget,
         )
         messages.extend(retrieved)
         messages.append(HumanMessage(content=query))
-        response: str = self.bot.generate_response(messages)
-        return AIMessage(content=response)
+        response: AIMessage = self.generate_response(messages)
+        return response
