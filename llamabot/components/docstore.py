@@ -13,6 +13,7 @@ from pathlib import Path
 import chromadb
 from hashlib import sha256
 from chromadb import QueryResult
+from llamabot.doc_processor import magic_load_doc, split_document
 
 
 class DocumentStore:
@@ -64,3 +65,21 @@ class DocumentStore:
         self.collection = self.client.create_collection(
             self.collection_name, get_or_create=True
         )
+
+    def add_documents(
+        self,
+        document_paths: Path | list[Path],
+        chunk_size: int = 2_000,
+        chunk_overlap: int = 500,
+    ):
+        """Add documents to the QueryBot DocumentStore."""
+        if isinstance(document_paths, Path):
+            document_paths = [document_paths]
+
+        for document_path in document_paths:
+            document = magic_load_doc(document_path)
+            splitted_document = split_document(
+                document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
+            splitted_document = [doc.text for doc in splitted_document]
+            self.extend(splitted_document)

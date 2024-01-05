@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 
 
 from llamabot.config import default_language_model
-from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage, HumanMessage
 from llamabot.components.docstore import DocumentStore
@@ -44,26 +43,8 @@ class QueryBot(SimpleBot, DocumentStore):
             stream=stream,
         )
         DocumentStore.__init__(self, collection_name=collection_name)
-        self.add(document_paths=document_paths)
+        self.add_documents(document_paths=document_paths)
         self.response_budget = 2_000
-
-    def add(
-        self,
-        document_paths: Path | list[Path],
-        chunk_size: int = 2_000,
-        chunk_overlap: int = 500,
-    ):
-        """Add documents to the QueryBot DocumentStore."""
-        if isinstance(document_paths, Path):
-            document_paths = [document_paths]
-
-        for document_path in document_paths:
-            document = magic_load_doc(document_path)
-            splitted_document = split_document(
-                document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-            )
-            splitted_document = [doc.text for doc in splitted_document]
-            self.extend(splitted_document)
 
     def __call__(self, query: str, n_results: int = 20) -> AIMessage:
         """Query documents within QueryBot's document store.
