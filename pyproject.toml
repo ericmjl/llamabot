@@ -87,6 +87,7 @@ dependencies = [
     "pre-commit",
     "beartype==0.15.0",
     "litellm",
+    "chromadb",
 ]
 requires-python = ">3.10"
 description = "A Pythonic interface to LLMs."
