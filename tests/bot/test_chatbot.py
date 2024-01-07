@@ -71,7 +71,7 @@ def test_chatbot_repr(mocker, system_prompt, session_name):
     :param session_name: The session name for the chatbot.
     """
     # Mock the generate_response method
-    mocked_response = "Mocked AI response"
+    mocked_response = AIMessage(content="Mocked AI response")
     mocker.patch(
         "llamabot.bot.chatbot.ChatBot.generate_response", return_value=mocked_response
     )
@@ -84,4 +84,4 @@ def test_chatbot_repr(mocker, system_prompt, session_name):
     representation = str(chatbot)
     assert "[Human]" in representation
     assert "[AI]" in representation
-    assert mocked_response in representation
+    assert mocked_response.content in representation
