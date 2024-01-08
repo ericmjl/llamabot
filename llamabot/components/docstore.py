@@ -39,7 +39,14 @@ class DocumentStore:
         """
         doc_id = sha256(document.encode()).hexdigest()
 
-        self.collection.add(documents=document, ids=doc_id, metadatas=metadata)
+        add_kwargs = dict(
+            documents=document,
+            ids=doc_id,
+        )
+        if metadata:
+            add_kwargs["metadatas"] = metadata
+
+        self.collection.add(**add_kwargs)
 
     def extend(self, documents: list[str]):
         """Extend the document store.
