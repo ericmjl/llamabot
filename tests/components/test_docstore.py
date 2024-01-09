@@ -3,7 +3,6 @@
 
 from pathlib import Path
 from llamabot.components.docstore import DocumentStore
-import pytest
 
 
 def test_document_store():
@@ -11,15 +10,6 @@ def test_document_store():
     docstore = DocumentStore(collection_name="test_collection")
     assert docstore.collection_name == "test_collection"
     docstore.client.delete_collection("test_collection")
-
-
-def make_fake_document(tmp_path):
-    """Make a fake document at a temp path."""
-    with pytest.raises(FileNotFoundError):
-        with pytest.tempdir() as temp_dir:  # type: TempPathFactory
-            temp_file = temp_dir.join("fake_document.txt")
-            temp_file.write("This is a fake document.")
-            return Path(temp_file)
 
 
 def test_add_documents(tmp_path: Path):

@@ -1,3 +1,4 @@
+llama-pro
 tinyllama
 openhermes
 notux
