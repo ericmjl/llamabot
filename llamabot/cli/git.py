@@ -135,7 +135,8 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
 
     bot = SimpleBot(
         "You are an expert software developer "
-        "who knows how to write excellent release notes based on git commit logs."
+        "who knows how to write excellent release notes based on git commit logs.",
+        model_name="mistral/mistral-medium",
     )
     notes = bot(compose_release_notes(log_info))
 
