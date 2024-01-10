@@ -2,104 +2,74 @@
 
 import contextvars
 
-import panel as pn
-import tiktoken
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
-from loguru import logger
 
+from llamabot.bot.simplebot import SimpleBot
 from llamabot.config import default_language_model
-from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.recorder import autorecord
-from llamabot.bot.model_tokens import model_chat_token_budgets, DEFAULT_TOKEN_BUDGET
-from llamabot.bot.model_dispatcher import create_model
+from llamabot.components.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from llamabot.components.history import History
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
-class ChatBot:
-    """Chat Bot that is primed with a system prompt, accepts a human message.
+class ChatBot(SimpleBot, History):
+    """ChatBot that is primed with a system prompt, accepts a human message,
+    and sends back a single response.
 
-    Automatic chat memory management happens.
-
-    h/t Andrew Giessel/GPT4 for the idea.
+    It is essentially SimpleBot composed with History.
 
     :param system_prompt: The system prompt to use.
-    :param temperature: The model temperature to use.
-        See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
-        for more information.
-    :param model_name: The name of the OpenAI model to use.
-    :param logging: Whether to log the chat history.
-    :param streaming: (LangChain config) Whether to stream the output to stdout.
-    :param verbose: (LangChain config) Whether to print debug messages.
-    :param response_budget: (LangChain config) The maximum number of tokens
-        to use for the response.
+    :param session_name: The name of the session to use.
+        This is used in the chat history class.
+    :param temperature: The temperature to use.
+    :param model_name: The model name to use.
+    :param stream: Whether to stream the output to stdout.
+    :param response_budget: The response budget to use, in terms of number of characters.
+    :param chat_history_class: The chat history class to use.
+        Should be a callable that returns an object
+        that follows the History API.
+        Defaults to History from `llamabot.components.history`.
     """
 
     def __init__(
         self,
-        system_prompt,
+        system_prompt: str,
+        session_name: str,
         temperature=0.0,
         model_name=default_language_model(),
-        logging=False,
-        streaming=True,
-        verbose=True,
+        stream=True,
         response_budget=2_000,
     ):
-        self.model = create_model(
-            model_name=model_name,
+        SimpleBot.__init__(
+            self,
+            system_prompt=system_prompt,
             temperature=temperature,
-            streaming=streaming,
-            verbose=verbose,
+            model_name=model_name,
+            stream=stream,
         )
-        self.chat_history = [
-            SystemMessage(content="Always return Markdown-compatible text."),
-            SystemMessage(content=system_prompt),
-        ]
-        self.logging = logging
-        self.model_name = model_name
+        History.__init__(self, session_name=session_name)
         self.response_budget = response_budget
 
-    def __call__(self, human_message) -> AIMessage:
+    def __call__(self, message: str) -> AIMessage:
         """Call the ChatBot.
 
         :param human_message: The human message to use.
         :return: The response to the human message, primed by the system prompt.
         """
-        self.chat_history.append(HumanMessage(content=human_message))
-
-        # Calculate the token budget that will be used for context.
-        faux_chat_history = []
-        enc = tiktoken.encoding_for_model("gpt-4")
-        token_budget = (
-            model_chat_token_budgets.get(self.model_name, DEFAULT_TOKEN_BUDGET)
-            - self.response_budget
+        human_message = HumanMessage(content=message)
+        history = self.retrieve(
+            query=human_message, character_budget=self.response_budget
         )
+        messages = [self.system_prompt] + history + [human_message]
+        response = self.generate_response(messages)
+        autorecord(message, response.content)
 
-        # Put the system message into the faux chat history.
-        system_messages = []
-        for message in self.chat_history:
-            if isinstance(message, SystemMessage):
-                system_messages.append(message)
-                tokens = enc.encode(message.content)
-                token_budget -= len(tokens)
-
-        faux_chat_history = []
-        for message in self.chat_history[::-1]:
-            if token_budget > 0:
-                if self.logging:
-                    logger.info(f"Token budget: {token_budget}")
-                faux_chat_history.append(message)
-                tokens = enc.encode(message.content)
-                token_budget -= len(tokens)
-
-        messages = system_messages + faux_chat_history[::-1]
-        if self.logging:
-            logger.info(messages)
-
-        response = self.model(messages)
-        self.chat_history.append(response)
-        autorecord(human_message, response.content)
-
+        self.append(human_message)
+        self.append(response)
         return response
 
     def __repr__(self):
@@ -108,8 +78,9 @@ class ChatBot:
         :return: A string representation of the ChatBot.
         """
         representation = ""
+        prefix = ""
 
-        for message in self.chat_history:
+        for message in self.messages:
             if isinstance(message, SystemMessage):
                 prefix = "[System]\n"
             elif isinstance(message, HumanMessage):
@@ -119,73 +90,3 @@ class ChatBot:
 
             representation += f"{prefix}{message.content}" + "\n\n"
         return representation
-
-    def panel(
-        self,
-        show: bool = True,
-        site="ChatBot",
-        title="ChatBot",
-        width=768,
-    ):
-        """Create a Panel app that wraps a LlamaBot.
-
-        :param show: Whether to show the app.
-            If False, we return the Panel app directly.
-            If True, we call `.show()` on the app.
-        :param site: The name of the site.
-        :param title: The title of the app.
-        :param width: The width of the app in pixels.
-        :return: The Panel app, either showed or directly.
-        """
-
-        text_input = pn.widgets.TextAreaInput(placeholder="Start chatting...")
-        chat_history = pn.Column(*[])
-        send_button = pn.widgets.Button(name="Send", button_type="primary")
-
-        widget_width = width - 150
-
-        def b(event):
-            """Button click handler.
-
-            :param event: The button click event.
-            """
-            chat_messages = []
-            for message in self.chat_history:
-                if isinstance(message, SystemMessage):
-                    pass
-                elif isinstance(message, HumanMessage):
-                    chat_markdown = pn.pane.Markdown(
-                        f"Human: {message.content}", width=widget_width
-                    )
-                    chat_messages.append(chat_markdown)
-                elif isinstance(message, AIMessage):
-                    chat_markdown = pn.pane.Markdown(
-                        f"Bot: {message.content}", width=widget_width
-                    )
-                    chat_messages.append(chat_markdown)
-
-            chat_messages.append(
-                pn.pane.Markdown(f"Human: {text_input.value}", width=widget_width)
-            )
-            bot_reply = pn.pane.Markdown("Bot: ", width=widget_width)
-            chat_messages.append(bot_reply)
-            chat_history.objects = chat_messages
-            markdown_handler = PanelMarkdownCallbackHandler(bot_reply)
-            self.model.callback_manager.set_handler(markdown_handler)
-            self(text_input.value)
-            text_input.value = ""
-
-        send_button.on_click(b)
-        input_pane = pn.Row(text_input, send_button)
-        output_pane = pn.Column(chat_history, scroll=False, height=500)
-
-        main = pn.Row(input_pane, output_pane)
-        app = pn.template.FastListTemplate(
-            site=site,
-            title=title,
-            main=main,
-            main_max_width=f"{width}px",
-        )
-        if show:
-            return app.show()
-        return app

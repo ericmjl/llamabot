@@ -50,6 +50,7 @@ dependencies:
   - rich
   - pyzotero
   - nltk # transitive dependency by way of llama_index
+  - chromadb
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
@@ -58,3 +59,5 @@ dependencies:
       - mknotebooks
       - case-converter
       - sh
+      - unstructured[all-docs]
+      - litellm
