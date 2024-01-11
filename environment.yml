@@ -60,4 +60,4 @@ dependencies:
       - case-converter
       - sh
       - unstructured[all-docs]
-      - litellm
+      - litellm==1.16.16

@@ -86,7 +86,7 @@ dependencies = [
     "sh",
     "pre-commit",
     "beartype==0.15.0",
-    "litellm",
+    "litellm==1.16.16",
     "chromadb",
 ]
 requires-python = ">3.10"
