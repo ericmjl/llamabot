@@ -24,7 +24,7 @@ LlamaBot will first load the environment variables from the `.env` file located 
 
 The function then displays the list of available models and prompts you to select one. As you type, the function will suggest completions based on the available models. The last model in the list is provided as the default option.
 
-Once you have entered a valid model ID, the function stores it as an environment variable, `OPENAI_DEFAULT_MODEL`.
+Once you have entered a valid model ID, the function stores it as an environment variable, `DEFAULT_LANGUAGE_MODEL`.
 
 ## Conclusion
 
