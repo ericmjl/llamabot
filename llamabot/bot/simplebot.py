@@ -14,6 +14,10 @@ from llamabot.recorder import autorecord
 from llamabot.config import default_language_model
 from litellm import completion
 
+# import litellm
+
+# litellm.drop_params = True
+
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
