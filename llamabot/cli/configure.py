@@ -52,7 +52,7 @@ def default_model(model_name=None):
 
     if model_name in available_models:
         configure_environment_variable(
-            env_var="OPENAI_DEFAULT_MODEL", env_value=model_name
+            env_var="DEFAULT_LANGUAGE_MODEL", env_value=model_name
         )
         return
 
@@ -71,6 +71,6 @@ def default_model(model_name=None):
         )
         if default_model in available_models:
             configure_environment_variable(
-                env_var="OPENAI_DEFAULT_MODEL", env_value=default_model
+                env_var="DEFAULT_LANGUAGE_MODEL", env_value=default_model
             )
             break

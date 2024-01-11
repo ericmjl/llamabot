@@ -15,7 +15,7 @@ def commitbot():
     """
     return SimpleBot(
         "You are an expert user of Git.",
-        model_name=os.getenv("OPENAI_DEFAULT_MODEL", "mistral/mistral-medium"),
+        model_name=os.getenv("DEFAULT_LANGUAGE_MODEL", "mistral/mistral-medium"),
     )
 
 

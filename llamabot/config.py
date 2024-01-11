@@ -17,4 +17,4 @@ def default_language_model():
 
     load_dotenv(llamabotrc_path)
 
-    return os.getenv("OPENAI_DEFAULT_MODEL", "gpt-4-32k")
+    return os.getenv("DEFAULT_LANGUAGE_MODEL", "mistral/mistral-medium")
