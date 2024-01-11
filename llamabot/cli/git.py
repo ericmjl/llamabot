@@ -137,7 +137,7 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
         "You are an expert software developer "
         "who knows how to write excellent release notes based on git commit logs.",
         model_name="mistral/mistral-medium",
-        api_key=os.getenv("MISTRAL_API_KEY"),
+        api_key=os.environ["MISTRAL_API_KEY"],
     )
     notes = bot(compose_release_notes(log_info))
 
