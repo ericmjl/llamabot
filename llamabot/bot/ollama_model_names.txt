@@ -1,3 +1,4 @@
+megadolphin
 llama-pro
 tinyllama
 openhermes
