@@ -1,5 +1,6 @@
 """Class definition for SimpleBot."""
 import contextvars
+from typing import Optional
 
 
 # from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
@@ -13,10 +14,6 @@ from llamabot.components.messages import (
 from llamabot.recorder import autorecord
 from llamabot.config import default_language_model
 from litellm import completion
-
-# import litellm
-
-# litellm.drop_params = True
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -43,12 +40,14 @@ class SimpleBot:
         model_name=default_language_model(),
         stream=True,
         json_mode: bool = False,
+        api_key: Optional[str] = None,
     ):
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
         self.model_name = model_name
         self.temperature = temperature
         self.stream = stream
         self.json_mode = json_mode
+        self.api_key = api_key
 
     def __call__(self, human_message: str) -> AIMessage:
         """Call the SimpleBot.
@@ -77,7 +76,10 @@ class SimpleBot:
         )
         if self.json_mode:
             completion_kwargs["response_format"] = {"type": "json_object"}
+        if self.api_key:
+            completion_kwargs["api_key"] = self.api_key
         response = completion(**completion_kwargs)
+
         if self.stream:
             ai_message = ""
             for chunk in response:

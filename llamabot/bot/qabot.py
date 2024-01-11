@@ -62,6 +62,7 @@ class DocQABot:
         self.response_bot = SimpleBot(
             "Based on Q&A results and relevant documents, please answer the query.",
             model_name="mistral/mistral-medium",
+            api_key=os.getenv("MISTRAL_API_KEY"),
         )
         self.jeopardy_bot = SimpleBot(
             system_prompt=jeopardy_bot_sysprompt(),
@@ -69,6 +70,7 @@ class DocQABot:
             json_mode=True,
             stream=False,
             temperature=0.3,
+            api_key=os.getenv("OPENAI_API_KEY"),
         )
 
     def add_documents(
