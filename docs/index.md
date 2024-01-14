@@ -28,8 +28,10 @@ Then follow the instructions below.
 Obtain an OpenAI API key, then configure LlamaBot to use the API key by running:
 
 ```bash
-llamabot configure
+llamabot configure api-key
 ```
+
+By default, this will store your API key in $HOME/.llamabot/.llamabotrc.
 
 ## How to use
 
@@ -48,7 +50,7 @@ like Richard Feynman would:
 ```python
 from llamabot import SimpleBot
 
-feynman = SimpleBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.")
+feynman = SimpleBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.", model_name="gpt-3.5-turbo")
 ```
 
 Now, `feynman` is callable on any arbitrary chunk of text and will return a rephrasing of that text in Richard Feynman's style (or more accurately, according to the style prescribed by the prompt).
