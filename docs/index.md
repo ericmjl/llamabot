@@ -101,12 +101,13 @@ However, if you'd like to use an Ollama local model instead:
 from llamabot import SimpleBot
 bot = SimpleBot(
     "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.",
-    model_name="llama2:13b"
+    model_name="ollama/llama2:13b"
 )
 ```
 
 Simply specify the `model_name` keyword argument
-and provide a model name from the [Ollama library of models](https://ollama.ai/library).
+and provide a model name from the [Ollama library of models](https://ollama.ai/library)
+prefixed by "ollama/".
 (The same can be done for the `ChatBot` and `QueryBot` classes below!)
 
 ### Chat Bot
