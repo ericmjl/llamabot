@@ -1,6 +1,7 @@
 """Class definition for QueryBot."""
 import contextvars
 from pathlib import Path
+from typing import Optional
 from dotenv import load_dotenv
 
 
@@ -29,8 +30,8 @@ class QueryBot(SimpleBot, DocumentStore):
     def __init__(
         self,
         system_prompt: str,
-        document_paths: Path | list[Path],
         collection_name: str,
+        document_paths: Optional[Path | list[Path]] = None,
         temperature: float = 0.0,
         model_name: str = default_language_model(),
         stream=True,
