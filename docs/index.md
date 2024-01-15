@@ -2,10 +2,8 @@
 
 LLaMaBot implements a Pythonic interface to LLMs,
 making it much easier to experiment with LLMs in a Jupyter notebook
-and build simple utility apps that utilize LLMs.
-The model that we default to using is OpenAI's largest GPT-4 model
-(via an API key);
-local models through Ollama are also supported.
+and build Python apps that utilize LLMs.
+All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are supported by LLaMaBot.
 
 ## Install LLaMaBot
 
@@ -23,12 +21,12 @@ LlamaBot supports using local models through Ollama.
 To do so, head over to the [Ollama website](https://ollama.ai) and install Ollama.
 Then follow the instructions below.
 
-### Option 2: Use the OpenAI API
+### Option 2: Use an API provider
 
 Obtain an OpenAI API key, then configure LlamaBot to use the API key by running:
 
 ```bash
-llamabot configure api-key
+llamabot configure api-key mistral # or openai or any other provider
 ```
 
 By default, this will store your API key in $HOME/.llamabot/.llamabotrc.
@@ -94,8 +92,8 @@ enzymes. This could have big implications for fields like genomics, synthetic bi
 and biocatalysis, which all rely on understanding how enzymes work.
 ```
 
-LlamaBot defaults to using the OpenAI API for convenience.
-However, if you'd like to use an Ollama local model instead:
+If you want to use an Ollama model hosted locally,
+then you would use the following syntax:
 
 ```python
 from llamabot import SimpleBot
@@ -107,7 +105,7 @@ bot = SimpleBot(
 
 Simply specify the `model_name` keyword argument
 and provide a model name from the [Ollama library of models](https://ollama.ai/library)
-prefixed by "ollama/".
+prefixed by `ollama/`.
 (The same can be done for the `ChatBot` and `QueryBot` classes below!)
 
 ### Chat Bot
@@ -123,14 +121,14 @@ For example:
 ```python
 from llamabot import ChatBot
 
-feynman = ChatBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.")
-feynman("Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed. However, most of these tools cannot accurately predict functional annotations, such as enzyme commission (EC) number, for less-studied proteins or those with previously uncharacterized functions or multiple activities. We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation) to assign EC numbers to enzymes with better accuracy, reliability, and sensitivity compared with the state-of-the-art tool BLASTp. The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes, (ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions that we demonstrate by systematic in silico and in vitro experiments. We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes, thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.", session_name="Example Session")
+feynman = ChatBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.", session_name="feynman_chat")
+feynman("Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed. However, most of these tools cannot accurately predict functional annotations, such as enzyme commission (EC) number, for less-studied proteins or those with previously uncharacterized functions or multiple activities. We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation) to assign EC numbers to enzymes with better accuracy, reliability, and sensitivity compared with the state-of-the-art tool BLASTp. The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes, (ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions that we demonstrate by systematic in silico and in vitro experiments. We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes, thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.")
 ```
 
 With the chat history available, you can ask a follow-up question:
 
 ```python
-feynman("Is there a simpler way to rephrase the text?")
+feynman("Is there a simpler way to rephrase the text such that a high schooler would understand it?")
 ```
 
 And your bot will work with the chat history to respond.
@@ -142,7 +140,7 @@ This bot lets you query a collection of documents.
 To use it, you have two options:
 
 1. Pass in a list of paths to text files, or
-2. Pass in a pre-computed `GPTSimpleIndex` from LlamaIndex.
+2. Pass in a session name of a previously instantiated `QueryBot` that model. (This will load the previously-computed text index into memory.)
 
 As an illustrative example:
 
@@ -151,8 +149,10 @@ from llamabot import QueryBot
 from pathlib import Path
 
 blog_index = Path("/path/to/index.json")
-bot = QueryBot(system_message="You are a Q&A bot.", saved_index_path=blog_index)
-result = bot("Do you have any advice for me on career development?", similarity_top_k=5)
+bot = QueryBot(system_message="You are an expert on Eric Ma's blog.", session_name="eric_ma_blog")  # this loads my previously-embedded blog text.
+# alternatively:
+# bot = QueryBot(system_message="You are an expert on Eric Ma's blog.", session_name="eric_ma_blog", document_paths=[Path("/path/to/blog/post1.txt"), Path("/path/to/blog/post2.txt"), ...])
+result = bot("Do you have any advice for me on career development?")
 display(Markdown(result.response))
 ```
 
