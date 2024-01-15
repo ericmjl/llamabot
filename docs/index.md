@@ -28,8 +28,10 @@ Then follow the instructions below.
 Obtain an OpenAI API key, then configure LlamaBot to use the API key by running:
 
 ```bash
-llamabot configure
+llamabot configure api-key
 ```
+
+By default, this will store your API key in $HOME/.llamabot/.llamabotrc.
 
 ## How to use
 
@@ -48,7 +50,7 @@ like Richard Feynman would:
 ```python
 from llamabot import SimpleBot
 
-feynman = SimpleBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.")
+feynman = SimpleBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.", model_name="gpt-3.5-turbo")
 ```
 
 Now, `feynman` is callable on any arbitrary chunk of text and will return a rephrasing of that text in Richard Feynman's style (or more accurately, according to the style prescribed by the prompt).
@@ -99,12 +101,13 @@ However, if you'd like to use an Ollama local model instead:
 from llamabot import SimpleBot
 bot = SimpleBot(
     "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.",
-    model_name="llama2:13b"
+    model_name="ollama/llama2:13b"
 )
 ```
 
 Simply specify the `model_name` keyword argument
-and provide a model name from the [Ollama library of models](https://ollama.ai/library).
+and provide a model name from the [Ollama library of models](https://ollama.ai/library)
+prefixed by "ollama/".
 (The same can be done for the `ChatBot` and `QueryBot` classes below!)
 
 ### Chat Bot
@@ -121,7 +124,7 @@ For example:
 from llamabot import ChatBot
 
 feynman = ChatBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.")
-feynman("Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed. However, most of these tools cannot accurately predict functional annotations, such as enzyme commission (EC) number, for less-studied proteins or those with previously uncharacterized functions or multiple activities. We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation) to assign EC numbers to enzymes with better accuracy, reliability, and sensitivity compared with the state-of-the-art tool BLASTp. The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes, (ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions that we demonstrate by systematic in silico and in vitro experiments. We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes, thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.")
+feynman("Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed. However, most of these tools cannot accurately predict functional annotations, such as enzyme commission (EC) number, for less-studied proteins or those with previously uncharacterized functions or multiple activities. We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation) to assign EC numbers to enzymes with better accuracy, reliability, and sensitivity compared with the state-of-the-art tool BLASTp. The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes, (ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions that we demonstrate by systematic in silico and in vitro experiments. We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes, thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.", session_name="Example Session")
 ```
 
 With the chat history available, you can ask a follow-up question:
