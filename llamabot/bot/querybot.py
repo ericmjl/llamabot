@@ -44,7 +44,8 @@ class QueryBot(SimpleBot, DocumentStore):
             stream=stream,
         )
         DocumentStore.__init__(self, collection_name=collection_name)
-        self.add_documents(document_paths=document_paths)
+        if document_paths:
+            self.add_documents(document_paths=document_paths)
         self.response_budget = 2_000
 
     def __call__(self, query: str, n_results: int = 20) -> AIMessage:
