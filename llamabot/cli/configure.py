@@ -12,20 +12,36 @@ app = typer.Typer()
 
 @app.command()
 def api_key(
+    provider: str = typer.Argument(default="openai", help="The API provider to use."),
     api_key: str = typer.Option(
         ..., prompt=True, hide_input=True, confirmation_prompt=True
     ),
 ) -> None:
     """
-    Configure the API key for llamabot.
+    Configure the API keys that LlamaBot gets to use.
 
     .. code-block:: python
 
         configure(api_key="your_api_key_here")
 
+    .. code-block:: shell
+
+        llamabot configure api-key openai --api-key <your_api_key_here>
+        llamabot configure api-key mistral --api-key <your_api_key_here>
+
+    The `provider` argument will be used to set the environment variable.
+    The environment variable name is the provider name in all caps,
+    followed by `_API_KEY`.
+    For example, if you set the provider to `zotero`,
+    then the environment variable will be `ZOTERO_API_KEY`.
+    Alternatively, if you set the provider to `mistral`,
+    then the environment variable will be `MISTRAL_API_KEY`.
+
     :param api_key: The API key to be used for authentication.
     """
-    configure_environment_variable(env_var="OPENAI_API_KEY", env_value=api_key)
+    configure_environment_variable(
+        env_var=f"{provider.upper()}_API_KEY", env_value=api_key
+    )
 
 
 @app.command()
