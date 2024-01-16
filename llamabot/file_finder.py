@@ -9,8 +9,6 @@ Functions:
     - read_file(path: Path) -> str:
         Read a file.
 """
-import fnmatch
-import os
 import subprocess
 from pathlib import Path
 from typing import List
@@ -22,15 +20,9 @@ def recursive_find(root_dir: Path, file_extension: str) -> List[Path]:
     :param root_dir: Directory in which to search for files.
     :param file_extension: File extension to search for.
         As an example, this should be ".py", not "py".
-    :return: List of Paths to requeested documents.
+    :return: List of Paths to requested documents.
     """
-    python_files = []
-
-    for root, dirnames, filenames in os.walk(root_dir):
-        for filename in fnmatch.filter(filenames, f"*{file_extension}"):
-            python_files.append(Path(root) / filename)
-
-    return python_files
+    return [path for path in root_dir.rglob(f"*{file_extension}") if path.is_file()]
 
 
 def check_in_git_repo(path) -> bool:
