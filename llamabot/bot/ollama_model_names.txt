@@ -1,3 +1,4 @@
+nous-hermes2-mixtral
 megadolphin
 llama-pro
 tinyllama
