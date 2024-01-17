@@ -21,10 +21,11 @@ def chat(
     :param doc_path: Path to the document you wish to chat with.
     """
     bot = QueryBot(
-        system_message=(
+        system_prompt=(
             "You are a bot that can answer questions about a document provided to you."
         ),
-        doc_paths=[doc_path],
+        collection_name=doc_path.stem.lower().replace(" ", "-"),
+        document_paths=[doc_path],
     )
     typer.echo(
         (
