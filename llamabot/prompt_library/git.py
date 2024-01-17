@@ -1,6 +1,5 @@
 """Prompts for writing git stuff."""
 from llamabot import SimpleBot
-import os
 from llamabot.prompt_manager import prompt
 
 
@@ -15,7 +14,7 @@ def commitbot():
     """
     return SimpleBot(
         "You are an expert user of Git.",
-        model_name=os.getenv("DEFAULT_LANGUAGE_MODEL", "gpt-3.5-turbo-1106"),
+        model_name="gpt-4-1106-preview",
     )
 
 
