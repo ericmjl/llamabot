@@ -29,7 +29,8 @@ Obtain an OpenAI API key, then configure LlamaBot to use the API key by running:
 llamabot configure api-key mistral # or openai or any other provider
 ```
 
-By default, this will store your API key in $HOME/.llamabot/.llamabotrc.
+By default, this will store your API key in `$HOME/.llamabot/.llamabotrc`.
+The API key will then be accessible by the environment variable `{PROVIDER_NAME_UPPERCASE}_API_KEY`.
 
 ## How to use
 
@@ -106,6 +107,8 @@ bot = SimpleBot(
 Simply specify the `model_name` keyword argument
 and provide a model name from the [Ollama library of models](https://ollama.ai/library)
 prefixed by `ollama/`.
+All you need to do is make sure Ollama is running locally;
+see the [Ollama documentation](https://ollama.ai/) for more details.
 (The same can be done for the `ChatBot` and `QueryBot` classes below!)
 
 ### Chat Bot
