@@ -12,7 +12,6 @@ from llamabot.components.messages import (
 from llamabot.recorder import autorecord
 from llamabot.config import default_language_model
 from litellm import completion
-from loguru import logger
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -77,7 +76,6 @@ class SimpleBot:
             completion_kwargs["response_format"] = {"type": "json_object"}
         if self.api_key:
             completion_kwargs["api_key"] = self.api_key
-        logger.info(f"Using SimpleBot API key: {self.api_key}...")
         response = completion(**completion_kwargs)
 
         if self.stream:
