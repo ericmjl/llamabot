@@ -71,6 +71,8 @@ def split_document(
     """
     if chunk_overlap < 0:
         raise ValueError("chunk_overlap must be non-negative.")
+    if chunk_size < 0:
+        raise ValueError("chunk_size must be non-negative.")
 
     # Split the document into sub-documents with chunk size of `chunk_size` characters
     # and overlap of `chunk_overlap` characters.

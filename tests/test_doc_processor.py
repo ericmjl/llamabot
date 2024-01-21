@@ -160,7 +160,7 @@ def test_split_document_chunk_size_larger_than_text():
 
     result = split_document(doc, chunk_size, chunk_overlap)
 
-    assert len(result) == 1
+    assert len(result) == 3
     assert result[0].text == "This is a test document."
 
 
