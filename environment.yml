@@ -51,6 +51,7 @@ dependencies:
   - pyzotero
   - nltk # transitive dependency by way of llama_index
   - chromadb
+  - python-slugify
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
