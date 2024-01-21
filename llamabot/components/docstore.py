@@ -14,6 +14,7 @@ import chromadb
 from hashlib import sha256
 from chromadb import QueryResult
 from llamabot.doc_processor import magic_load_doc, split_document
+from tqdm.auto import tqdm
 
 
 class DocumentStore:
@@ -31,6 +32,7 @@ class DocumentStore:
         self.client = client
         self.collection = collection
         self.collection_name = collection_name
+        self.existing_records = collection.get()
 
     def append(self, document: str, metadata: dict = {}):
         """Append a document to the store.
@@ -83,10 +85,14 @@ class DocumentStore:
         if isinstance(document_paths, Path):
             document_paths = [document_paths]
 
-        for document_path in document_paths:
+        for document_path in tqdm(document_paths):
             document = magic_load_doc(document_path)
             splitted_document = split_document(
                 document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
             )
-            splitted_document = [doc.text for doc in splitted_document]
-            self.extend(splitted_document)
+            chunks_to_add = [
+                doc.text
+                for doc in splitted_document
+                if doc.text not in self.existing_records["documents"]
+            ]
+            self.extend(chunks_to_add)
