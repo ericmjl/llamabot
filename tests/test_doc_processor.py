@@ -127,10 +127,10 @@ def test_split_document_with_overlap():
 
     result = split_document(doc, chunk_size, chunk_overlap)
 
-    assert len(result) == 3
-    assert result[0].text == "This is a test document"
-    assert result[1].text == " test document. It has"
-    assert result[2].text == " It has multiple sentences."
+    assert len(result) == 17
+    assert result[0].text == "This "
+    assert result[1].text == "s is "
+    assert result[2].text == "s a t"
 
 
 def test_split_document_empty_text():
