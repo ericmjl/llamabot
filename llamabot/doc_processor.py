@@ -1,10 +1,10 @@
 """Code for document preprocessing."""
 
 
+from functools import lru_cache
 from pathlib import Path
 from typing import List
 
-from langchain.text_splitter import TokenTextSplitter
 from llama_index import Document, download_loader
 
 EXTENSION_LOADER_MAPPING = {
@@ -16,6 +16,10 @@ EXTENSION_LOADER_MAPPING = {
     ".ipynb": "IPYNBReader",
     ".html": "UnstructuredReader",
 }
+
+# We lru_cache this in order to make it run faster.
+# Eric Ma profiled this code on 20 Jan 2024; it takes about 0.5 seconds per call.
+download_loader = lru_cache(download_loader)
 
 
 def magic_load_doc(file_path: Path) -> Document:
@@ -67,8 +71,12 @@ def split_document(
     """
     if chunk_overlap < 0:
         raise ValueError("chunk_overlap must be non-negative.")
-    splitter = TokenTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    sub_texts = splitter.split_text(doc.text)
+
+    # Split the document into sub-documents with chunk size of `chunk_size` characters
+    # and overlap of `chunk_overlap` characters.
+    sub_texts = []
+    for i in range(0, len(doc.text), chunk_size - chunk_overlap):
+        sub_texts.append(doc.text[i : i + chunk_size])
 
     sub_docs = [Document(text=t) for t in sub_texts]
     return sub_docs
