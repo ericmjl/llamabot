@@ -15,7 +15,7 @@ from llamabot.components.messages import (
     retrieve_messages_up_to_budget,
 )
 from llamabot.bot.model_tokens import model_context_window_sizes, DEFAULT_TOKEN_BUDGET
-
+from slugify import slugify
 
 load_dotenv()
 
@@ -43,7 +43,7 @@ class QueryBot(SimpleBot, DocumentStore):
             model_name=model_name,
             stream=stream,
         )
-        DocumentStore.__init__(self, collection_name=collection_name)
+        DocumentStore.__init__(self, collection_name=slugify(collection_name))
         if document_paths:
             self.add_documents(document_paths=document_paths)
         self.response_budget = 2_000
