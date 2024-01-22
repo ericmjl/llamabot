@@ -1,3 +1,5 @@
+qwen
+tinydolphin
 stable-code
 nous-hermes2-mixtral
 megadolphin
