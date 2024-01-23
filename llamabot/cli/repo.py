@@ -47,7 +47,7 @@ def chat(
         source_files.extend(files)
 
     bot = QueryBot(
-        system_prompt="You are a knowledgeable code repository author.",
+        system_prompt="You are a knowledgeable git repository author. Your answers come from the repository. If the answer is not in the repository, say 'I don't know'.",
         collection_name=repo_url,
         document_paths=source_files,
         model_name=model_name,
