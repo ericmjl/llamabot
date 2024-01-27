@@ -1,13 +1,13 @@
-# LLaMaBot: A Pythonic bot interface to LLMs
+# LlamaBot: A Pythonic bot interface to LLMs
 
-LLaMaBot implements a Pythonic interface to LLMs,
+LlamaBot implements a Pythonic interface to LLMs,
 making it much easier to experiment with LLMs in a Jupyter notebook
 and build Python apps that utilize LLMs.
-All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are supported by LLaMaBot.
+All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are supported by LlamaBot.
 
-## Install LLaMaBot
+## Install LlamaBot
 
-To install LLaMaBot:
+To install LlamaBot:
 
 ```python
 pip install llamabot
@@ -23,20 +23,32 @@ Then follow the instructions below.
 
 ### Option 2: Use an API provider
 
-Obtain an OpenAI API key, then configure LlamaBot to use the API key by running:
+#### OpenAI
+
+If you have an OpenAI API key, then configure LlamaBot to use the API key by running:
 
 ```bash
-llamabot configure api-key mistral # or openai or any other provider
+export OPENAI_API_KEY="sk-your1api2key3goes4here"
 ```
 
-By default, this will store your API key in `$HOME/.llamabot/.llamabotrc`.
-The API key will then be accessible by the environment variable `{PROVIDER_NAME_UPPERCASE}_API_KEY`.
+#### Mistral
+
+If you have a Mistral API key, then configure LlamaBot to use the API key by running:
+
+```bash
+export MISTRAL_API_KEY="your-api-key-goes-here"
+```
+
+#### Other API providers
+
+Other API providers will usually specify an environment variable to set.
+If you have an API key, then set the environment variable accordingly.
 
 ## How to use
 
 ### SimpleBot
 
-The simplest use case of LLaMaBot
+The simplest use case of LlamaBot
 is to create a `SimpleBot` that keeps no record of chat history.
 This is effectively the same as a _stateless function_
 that you program with natural language instructions rather than code.
