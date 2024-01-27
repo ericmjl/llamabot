@@ -39,6 +39,11 @@ If you have a Mistral API key, then configure LlamaBot to use the API key by run
 export MISTRAL_API_KEY="your-api-key-goes-here"
 ```
 
+#### Other API providers
+
+Other API providers will usually specify an environment variable to set.
+If you have an API key, then set the environment variable accordingly.
+
 ## How to use
 
 ### SimpleBot
