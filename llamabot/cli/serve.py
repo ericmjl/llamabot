@@ -12,14 +12,14 @@ cli = typer.Typer()
 
 @cli.command()
 def querybot(
-    system_prompt: str = typer.Argument(..., help="System prompt."),
-    collection_name: str = typer.Argument(..., help="Name of the collection."),
-    document_paths: List[Path] = typer.Argument(..., help="Paths to the documents."),
-    model_name: str = typer.Argument(
+    system_prompt: str = typer.Option(..., help="System prompt."),
+    collection_name: str = typer.Option(..., help="Name of the collection."),
+    document_paths: List[Path] = typer.Option(..., help="Paths to the documents."),
+    model_name: str = typer.Option(
         "mistral/mistral-medium", help="Name of the model to use."
     ),
-    host: str = typer.Argument("0.0.0.0", help="Host to serve the API on."),
-    port: int = typer.Argument(6363, help="Port to serve the API on."),
+    host: str = typer.Option("0.0.0.0", help="Host to serve the API on."),
+    port: int = typer.Option(6363, help="Port to serve the API on."),
 ):
     """Serve up a LlamaBot as a FastAPI endpoint."""
     bot = QueryBot(

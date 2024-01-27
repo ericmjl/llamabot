@@ -1,3 +1,5 @@
+stablelm2
+duckdb-nsql
 qwen
 tinydolphin
 stable-code
