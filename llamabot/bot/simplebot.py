@@ -65,19 +65,7 @@ class SimpleBot:
     def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
         """Generate a response from the given messages."""
 
-        messages_dumped: list[dict] = [m.model_dump() for m in messages]
-        completion_kwargs = dict(
-            model=self.model_name,
-            messages=messages_dumped,
-            temperature=self.temperature,
-            stream=self.stream,
-        )
-        if self.json_mode:
-            completion_kwargs["response_format"] = {"type": "json_object"}
-        if self.api_key:
-            completion_kwargs["api_key"] = self.api_key
-        response = completion(**completion_kwargs)
-
+        response = _make_response(self, messages)
         if self.stream:
             ai_message = ""
             for chunk in response:
@@ -88,6 +76,27 @@ class SimpleBot:
             return AIMessage(content=ai_message)
 
         return AIMessage(content=response.choices[0].message.content)
+
+
+def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
+    """Make a response from the given messages.
+
+    :param bot: A SimpleBot
+    :param messages: A list of Messages.
+    :return: A response object.
+    """
+    messages_dumped: list[dict] = [m.model_dump() for m in messages]
+    completion_kwargs = dict(
+        model=bot.model_name,
+        messages=messages_dumped,
+        temperature=bot.temperature,
+        stream=bot.stream,
+    )
+    if bot.json_mode:
+        completion_kwargs["response_format"] = {"type": "json_object"}
+    if bot.api_key:
+        completion_kwargs["api_key"] = bot.api_key
+    return completion(**completion_kwargs)
 
     # Commented out until later.
     # def panel(
