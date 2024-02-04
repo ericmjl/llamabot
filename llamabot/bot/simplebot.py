@@ -87,7 +87,9 @@ class SimpleBot:
             delta = chunk.choices[0].delta.content
             if delta is not None:
                 message += delta
+                print(delta, end="")
                 yield message
+        print()
 
 
 def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
