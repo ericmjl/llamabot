@@ -1,6 +1,6 @@
 """Class definition for SimpleBot."""
 import contextvars
-from typing import Optional
+from typing import Optional, Union
 
 
 from llamabot.components.messages import (
@@ -47,17 +47,14 @@ class SimpleBot:
         self.json_mode = json_mode
         self.api_key = api_key
 
-    def __call__(self, human_message: str) -> AIMessage:
+    def __call__(self, human_message: str) -> Union[AIMessage, str]:
         """Call the SimpleBot.
 
         :param human_message: The human message to use.
         :return: The response to the human message, primed by the system prompt.
         """
 
-        messages: list[BaseMessage] = [
-            self.system_prompt,
-            HumanMessage(content=human_message),
-        ]
+        messages = [self.system_prompt, HumanMessage(content=human_message)]
         if self.stream:
             return self.stream_response(messages)
         response = self.generate_response(messages, stream=self.stream)
@@ -74,14 +71,6 @@ class SimpleBot:
         """
 
         response = _make_response(self, messages)
-        # if stream:
-        #     ai_message = ""
-        #     for chunk in response:
-        #         delta = chunk.choices[0].delta.content
-        #         if delta is not None:
-        #             print(delta, end="")
-        #             ai_message += delta
-        #     return AIMessage(content=ai_message)
         return AIMessage(content=response.choices[0].message.content)
 
     def stream_response(self, messages: list[BaseMessage]) -> str:
@@ -98,7 +87,7 @@ class SimpleBot:
             delta = chunk.choices[0].delta.content
             if delta is not None:
                 message += delta
-                yield AIMessage(content=message)
+                yield message
 
 
 def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
