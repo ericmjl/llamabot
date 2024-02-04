@@ -65,6 +65,8 @@ class ChatBot(SimpleBot, History):
             query=human_message, character_budget=self.response_budget
         )
         messages = [self.system_prompt] + history + [human_message]
+        if self.stream:
+            return self.stream_response(messages)
         response = self.generate_response(messages)
         autorecord(message, response.content)
 
