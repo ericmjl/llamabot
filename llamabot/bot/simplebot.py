@@ -77,6 +77,16 @@ class SimpleBot:
 
         return AIMessage(content=response.choices[0].message.content)
 
+    async def stream_response(self, messages: list[BaseMessage]):
+        """Stream the response from the given messages."""
+        response = _make_response(self, messages)
+        message = ""
+        for chunk in response:
+            delta = chunk.choices[0].delta.content
+            if delta is not None:
+                message += delta
+                yield message
+
 
 def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
     """Make a response from the given messages.
