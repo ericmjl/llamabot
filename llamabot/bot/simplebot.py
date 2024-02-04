@@ -58,6 +58,8 @@ class SimpleBot:
             self.system_prompt,
             HumanMessage(content=human_message),
         ]
+        if self.stream:
+            return self.stream_response(messages)
         response = self.generate_response(messages, stream=self.stream)
         autorecord(human_message, response.content)
         return response
@@ -72,18 +74,17 @@ class SimpleBot:
         """
 
         response = _make_response(self, messages)
-        if stream:
-            ai_message = ""
-            for chunk in response:
-                delta = chunk.choices[0].delta.content
-                if delta is not None:
-                    print(delta, end="")
-                    ai_message += delta
-            return AIMessage(content=ai_message)
-
+        # if stream:
+        #     ai_message = ""
+        #     for chunk in response:
+        #         delta = chunk.choices[0].delta.content
+        #         if delta is not None:
+        #             print(delta, end="")
+        #             ai_message += delta
+        #     return AIMessage(content=ai_message)
         return AIMessage(content=response.choices[0].message.content)
 
-    async def stream_response(self, messages: list[BaseMessage]):
+    def stream_response(self, messages: list[BaseMessage]) -> str:
         """Stream the response from the given messages.
 
         This is intended to be used with Panel's ChatInterface as part of the callback.
@@ -97,7 +98,7 @@ class SimpleBot:
             delta = chunk.choices[0].delta.content
             if delta is not None:
                 message += delta
-                yield message
+                yield AIMessage(content=message)
 
 
 def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
