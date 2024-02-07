@@ -51,7 +51,7 @@ def test_chatbot_call(mocker, system_prompt, session_name):
     )
 
     # Initialize the ChatBot and send a message
-    chatbot = ChatBot(system_prompt, session_name)
+    chatbot = ChatBot(system_prompt, session_name, stream=False)
     human_message = "Hello, ChatBot!"
     response = chatbot(human_message)
 
