@@ -77,7 +77,9 @@ def test_chatbot_repr(mocker, system_prompt, session_name):
     )
 
     # Initialize ChatBot and simulate a human message
-    chatbot = ChatBot(system_prompt=system_prompt, session_name=session_name)
+    chatbot = ChatBot(
+        system_prompt=system_prompt, session_name=session_name, stream=False
+    )
     chatbot("Hello, ChatBot!")  # Send a message to create some chat history.
 
     # Verify the string representation

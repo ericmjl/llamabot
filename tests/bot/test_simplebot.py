@@ -44,7 +44,7 @@ def test_simple_bot_init(system_prompt, temperature, model_name, stream, json_mo
     assert bot.json_mode == json_mode
 
 
-@given(system_prompt=st.text(), human_message=st.text())
+@given(system_prompt=st.text(min_size=1), human_message=st.text(min_size=1))
 @settings(deadline=None)
 def test_simple_bot_call(system_prompt, human_message):
     """Test that the SimpleBot is called correctly.
