@@ -11,10 +11,8 @@ Functions:
     - tests(code, source_file)
     - create_panel_app()
 """
-import panel as pn
 
 from llamabot.bot.simplebot import SimpleBot
-from llamabot.panel_utils import PanelMarkdownCallbackHandler
 from llamabot.prompt_manager import prompt
 
 
@@ -144,90 +142,3 @@ def tests(code, source_file_txt: str, dependent_source_files: str):
 
     # noqa: DAR101
     """
-
-
-def create_panel_app() -> pn.Column:
-    """Create a panel app for codebot.
-
-    :return: The panel app.
-    """
-    programming_languages = [
-        "Python",
-        "Java",
-        "JavaScript",
-        "C",
-        "C++",
-        "C#",
-        "Ruby",
-        "Go",
-        "Rust",
-        "Swift",
-        "Kotlin",
-        "TypeScript",
-        "PHP",
-        "Perl",
-        "Objective-C",
-        "Shell",
-        "SQL",
-        "HTML",
-        "CSS",
-        "R",
-        "MATLAB",
-        "Scala",
-        "Groovy",
-        "Lua",
-        "Haskell",
-        "Elixir",
-        "Julia",
-        "Dart",
-        "VB.NET",
-        "Assembly",
-        "F#",
-    ]
-    language = pn.widgets.Select(name="Select Language", options=programming_languages)
-
-    user_specification = pn.widgets.TextAreaInput(
-        name="User Specification",
-        placeholder="Please write me a function that generates Fibonacci numbers.",
-    )
-    code_output = pn.pane.Markdown()
-    code_output.object = "_Generated code will show up here._"
-    test_output = pn.pane.Markdown()
-    test_output.object = "_Generated unit tests will show up here._"
-
-    def generate_code(event):
-        """Callback for the code generator button.
-
-        :param event: The button click event.
-        """
-        code_output.object = f"```{language.value}\n"
-        markdown_handler = PanelMarkdownCallbackHandler(code_output)
-        codebot.model.callbacks.set_handler(markdown_handler)
-        code_text = codebot(ghostwriter(user_specification.value, language.value))
-        code_output.object = f"```{language.value}\n{code_text.content}\n```"
-
-    def generate_tests(event):
-        """Callback for the test generator button.
-
-        :param event: The button click event.
-        """
-        test_output.object = f"```{language.value}\n"
-        markdown_handler = PanelMarkdownCallbackHandler(test_output)
-        codebot.model.callbacks.set_handler(markdown_handler)
-        test_text = codebot(tests(code_output.object, language.value))
-        test_output.object = f"```{language.value}\n{test_text.content}\n```"
-
-    generate_button = pn.widgets.Button(name="Generate Code")
-    generate_button.on_click(generate_code)
-
-    test_button = pn.widgets.Button(name="Generate Unit Tests")
-    test_button.on_click(generate_tests)
-
-    return pn.Column(
-        language,
-        user_specification,
-        generate_button,
-        code_output,
-        test_button,
-        test_output,
-    )
