@@ -29,6 +29,8 @@ class SimpleBot:
     :param model_name: The name of the model to use.
     :param stream: Whether to stream the output to stdout.
     :param json_mode: Whether to print debug messages.
+    :param api_key: The OpenAI API key to use.
+    :param mock_response: A mock response to use, for testing purposes only.
     """
 
     def __init__(
@@ -39,6 +41,7 @@ class SimpleBot:
         stream=True,
         json_mode: bool = False,
         api_key: Optional[str] = None,
+        mock_response: Optional[str] = None,
     ):
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
         self.model_name = model_name
@@ -46,6 +49,7 @@ class SimpleBot:
         self.stream = stream
         self.json_mode = json_mode
         self.api_key = api_key
+        self.mock_response = mock_response
 
     def __call__(self, human_message: str) -> Union[AIMessage, str]:
         """Call the SimpleBot.
@@ -104,6 +108,8 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
         temperature=bot.temperature,
         stream=bot.stream,
     )
+    if bot.mock_response:
+        completion_kwargs["mock_response"] = bot.mock_response
     if bot.json_mode:
         completion_kwargs["response_format"] = {"type": "json_object"}
     if bot.api_key:
