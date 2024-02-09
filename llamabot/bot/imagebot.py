@@ -5,7 +5,7 @@ from IPython.display import display, Image
 import requests
 from pathlib import Path
 from typing import Optional, Union
-from langchain.schema import AIMessage
+from llamabot.components.messages import AIMessage
 
 
 class ImageBot:
@@ -34,6 +34,7 @@ class ImageBot:
             If it is empty, then we will generate a filename from the prompt.
         :return: The URL of the generated image if running in a Jupyter notebook (str),
             otherwise a pathlib.Path object pointing to the generated image.
+        :raises Exception: If no image URL is found in the response.
         """
         response = self.client.images.generate(
             model=self.model,
@@ -43,6 +44,8 @@ class ImageBot:
             n=self.n,
         )
         image_url = response.data[0].url
+        if not image_url:
+            raise Exception("No image URL found in response! Please try again.")
 
         # Check if running in a Jupyter notebook
         if is_running_in_jupyter():
