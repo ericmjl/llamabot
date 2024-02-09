@@ -9,7 +9,7 @@ from llamabot.config import default_language_model
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage, HumanMessage
 from llamabot.components.docstore import DocumentStore
-
+from llamabot.components.api import APIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
     retrieve_messages_up_to_budget,
@@ -24,7 +24,7 @@ CACHE_DIR = Path.home() / ".llamabot" / "cache"
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
-class QueryBot(SimpleBot, DocumentStore):
+class QueryBot(SimpleBot, DocumentStore, APIMixin):
     """QueryBot is a bot that uses simple RAG to answer questions about a document."""
 
     def __init__(

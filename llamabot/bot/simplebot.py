@@ -1,6 +1,6 @@
 """Class definition for SimpleBot."""
 import contextvars
-from typing import Optional
+from typing import Optional, Union
 
 
 from llamabot.components.messages import (
@@ -29,6 +29,8 @@ class SimpleBot:
     :param model_name: The name of the model to use.
     :param stream: Whether to stream the output to stdout.
     :param json_mode: Whether to print debug messages.
+    :param api_key: The OpenAI API key to use.
+    :param mock_response: A mock response to use, for testing purposes only.
     """
 
     def __init__(
@@ -39,6 +41,7 @@ class SimpleBot:
         stream=True,
         json_mode: bool = False,
         api_key: Optional[str] = None,
+        mock_response: Optional[str] = None,
     ):
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
         self.model_name = model_name
@@ -46,48 +49,72 @@ class SimpleBot:
         self.stream = stream
         self.json_mode = json_mode
         self.api_key = api_key
+        self.mock_response = mock_response
 
-    def __call__(self, human_message: str) -> AIMessage:
+    def __call__(self, human_message: str) -> Union[AIMessage, str]:
         """Call the SimpleBot.
 
         :param human_message: The human message to use.
         :return: The response to the human message, primed by the system prompt.
         """
 
-        messages: list[BaseMessage] = [
-            self.system_prompt,
-            HumanMessage(content=human_message),
-        ]
+        messages = [self.system_prompt, HumanMessage(content=human_message)]
+        if self.stream:
+            return self.stream_response(messages)
         response = self.generate_response(messages)
         autorecord(human_message, response.content)
         return response
 
     def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
-        """Generate a response from the given messages."""
+        """Generate a response from the given messages.
 
-        messages_dumped: list[dict] = [m.model_dump() for m in messages]
-        completion_kwargs = dict(
-            model=self.model_name,
-            messages=messages_dumped,
-            temperature=self.temperature,
-            stream=self.stream,
-        )
-        if self.json_mode:
-            completion_kwargs["response_format"] = {"type": "json_object"}
-        if self.api_key:
-            completion_kwargs["api_key"] = self.api_key
-        response = completion(**completion_kwargs)
+        :param messages: A list of messages.
+        :return: The response to the messages.
+        """
 
-        if self.stream:
-            ai_message = ""
-            for chunk in response:
-                delta = chunk.choices[0].delta.content
-                if delta is not None:
-                    print(delta, end="")
-                    ai_message += delta
-            return AIMessage(content=ai_message)
-
+        response = _make_response(self, messages)
         return AIMessage(content=response.choices[0].message.content)
+
+    def stream_response(self, messages: list[BaseMessage]) -> str:
+        """Stream the response from the given messages.
+
+        This is intended to be used with Panel's ChatInterface as part of the callback.
+
+        :param messages: A list of messages.
+        :return: A generator that yields the response.
+        """
+        response = _make_response(self, messages)
+        message = ""
+        for chunk in response:
+            delta = chunk.choices[0].delta.content
+            if delta is not None:
+                message += delta
+                print(delta, end="")
+                yield message
+        print()
+
+
+def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
+    """Make a response from the given messages.
+
+    :param bot: A SimpleBot
+    :param messages: A list of Messages.
+    :return: A response object.
+    """
+    messages_dumped: list[dict] = [m.model_dump() for m in messages]
+    completion_kwargs = dict(
+        model=bot.model_name,
+        messages=messages_dumped,
+        temperature=bot.temperature,
+        stream=bot.stream,
+    )
+    if bot.mock_response:
+        completion_kwargs["mock_response"] = bot.mock_response
+    if bot.json_mode:
+        completion_kwargs["response_format"] = {"type": "json_object"}
+    if bot.api_key:
+        completion_kwargs["api_key"] = bot.api_key
+    return completion(**completion_kwargs)
 
     # Commented out until later.
     # def panel(

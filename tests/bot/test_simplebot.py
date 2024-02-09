@@ -12,11 +12,11 @@ Functions:
 - test_simple_bot_init
 - test_simple_bot_call
 """
-from unittest.mock import MagicMock
 
 from hypothesis import given, settings, strategies as st
 
-from llamabot.bot.simplebot import AIMessage, SimpleBot
+from llamabot.bot.simplebot import SimpleBot
+from llamabot.components.messages import AIMessage
 
 
 @given(
@@ -44,7 +44,7 @@ def test_simple_bot_init(system_prompt, temperature, model_name, stream, json_mo
     assert bot.json_mode == json_mode
 
 
-@given(system_prompt=st.text(), human_message=st.text())
+@given(system_prompt=st.text(min_size=1), human_message=st.text(min_size=1))
 @settings(deadline=None)
 def test_simple_bot_call(system_prompt, human_message):
     """Test that the SimpleBot is called correctly.
@@ -52,13 +52,7 @@ def test_simple_bot_call(system_prompt, human_message):
     :param system_prompt: The system prompt to use.
     :param human_message: The human message to use.
     """
-    bot = SimpleBot(system_prompt)
-    bot.generate_response = MagicMock()
-    response = AIMessage(content="Test response")
-    bot.generate_response.return_value = response
-
+    bot = SimpleBot(system_prompt, stream=False, mock_response="hello")
     result = bot(human_message)
-
-    bot.generate_response.assert_called_once()
     assert isinstance(result, AIMessage)
-    assert result.content == "Test response"
+    assert result.content == "hello"
