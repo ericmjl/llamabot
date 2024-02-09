@@ -16,7 +16,9 @@ from unittest.mock import MagicMock
 
 from hypothesis import given, settings, strategies as st
 
-from llamabot.bot.simplebot import AIMessage, SimpleBot
+from llamabot.bot.simplebot import SimpleBot
+import pytest
+from llamabot.components.messages import BaseMessage, AIMessage
 
 
 @given(
@@ -62,3 +64,28 @@ def test_simple_bot_call(system_prompt, human_message):
     bot.generate_response.assert_called_once()
     assert isinstance(result, AIMessage)
     assert result.content == "Test response"
+
+
+def test_simple_bot_stream_response():
+    """Test that the SimpleBot streams responses correctly."""
+    bot = SimpleBot(
+        system_prompt="", temperature=0.5, model_name="", stream=True, json_mode=False
+    )
+    messages = [
+        BaseMessage(content="Hello"),
+        BaseMessage(content="How are you?"),
+        BaseMessage(content="Goodbye"),
+    ]
+    response_generator = bot.stream_response(messages)
+
+    response = next(response_generator)
+    assert response == "Hello"
+
+    response = next(response_generator)
+    assert response == "How are you?"
+
+    response = next(response_generator)
+    assert response == "Goodbye"
+
+    with pytest.raises(StopIteration):
+        next(response_generator)
