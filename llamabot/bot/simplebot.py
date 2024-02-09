@@ -57,13 +57,11 @@ class SimpleBot:
         messages = [self.system_prompt, HumanMessage(content=human_message)]
         if self.stream:
             return self.stream_response(messages)
-        response = self.generate_response(messages, stream=self.stream)
+        response = self.generate_response(messages)
         autorecord(human_message, response.content)
         return response
 
-    def generate_response(
-        self, messages: list[BaseMessage], stream: bool = True
-    ) -> AIMessage:
+    def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
         """Generate a response from the given messages.
 
         :param messages: A list of messages.
