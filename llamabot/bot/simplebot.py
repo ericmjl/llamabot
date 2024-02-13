@@ -111,7 +111,6 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
         stream=bot.stream,
     )
     completion_kwargs.update(bot.completion_kwargs)
-    print("completion_kwargs", completion_kwargs)
 
     if bot.mock_response:
         completion_kwargs["mock_response"] = bot.mock_response
