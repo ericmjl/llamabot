@@ -35,6 +35,7 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
         temperature: float = 0.0,
         model_name: str = default_language_model(),
         stream=True,
+        **kwargs
     ):
         SimpleBot.__init__(
             self,
@@ -42,6 +43,7 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
             temperature=temperature,
             model_name=model_name,
             stream=stream,
+            **kwargs
         )
         DocumentStore.__init__(self, collection_name=slugify(collection_name))
         if document_paths:

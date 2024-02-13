@@ -42,6 +42,7 @@ class SimpleBot:
         json_mode: bool = False,
         api_key: Optional[str] = None,
         mock_response: Optional[str] = None,
+        **completion_kwargs
     ):
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
         self.model_name = model_name
@@ -50,6 +51,7 @@ class SimpleBot:
         self.json_mode = json_mode
         self.api_key = api_key
         self.mock_response = mock_response
+        self.completion_kwargs = completion_kwargs
 
     def __call__(self, human_message: str) -> Union[AIMessage, str]:
         """Call the SimpleBot.
@@ -108,6 +110,9 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
         temperature=bot.temperature,
         stream=bot.stream,
     )
+    completion_kwargs.update(bot.completion_kwargs)
+    print("completion_kwargs", completion_kwargs)
+
     if bot.mock_response:
         completion_kwargs["mock_response"] = bot.mock_response
     if bot.json_mode:
