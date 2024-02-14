@@ -2,7 +2,7 @@
 from pathlib import Path
 
 import pytest
-from llama_index import Document
+from llama_index.core.schema import Document
 from pytest_mock import mocker  # noqa: F401
 
 from llamabot.doc_processor import (
