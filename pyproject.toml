@@ -66,7 +66,7 @@ version = "0.2.1"
 dependencies = [
     "openai",
     "langchain>=0.0.334",
-    "llama_index>=0.8.67",
+    "llama_index>=0.10.3",
     "panel>=1.1.0",
     "jupyter_bokeh",
     "bokeh>=3.1.0",
