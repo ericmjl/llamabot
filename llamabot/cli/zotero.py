@@ -97,7 +97,12 @@ def chat(
 
     with progress:
         task = progress.add_task("Embedding paper and initializing bot...")
-        docbot = QueryBot(docbot_sysprompt(), doc_paths=[fpath], model_name=model_name)
+        docbot = QueryBot(
+            docbot_sysprompt(),
+            collection_name=str(user_choice),
+            document_paths=[fpath],
+            model_name=model_name,
+        )
         progress.remove_task(task)
 
     # From this point onwards, we need to record the chat.
