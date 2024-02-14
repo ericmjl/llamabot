@@ -52,7 +52,7 @@ def test_simple_bot_call(system_prompt, human_message):
     :param system_prompt: The system prompt to use.
     :param human_message: The human message to use.
     """
-    bot = SimpleBot(system_prompt, stream=False, mock_response="hello")
+    bot = SimpleBot(system_prompt, stream=False, mock_response=" hello")
     result = bot(human_message)
     assert isinstance(result, AIMessage)
     assert result.content == "hello"
