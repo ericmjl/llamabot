@@ -42,7 +42,7 @@ class SimpleBot:
         json_mode: bool = False,
         api_key: Optional[str] = None,
         mock_response: Optional[str] = None,
-        **completion_kwargs
+        **completion_kwargs,
     ):
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
         self.model_name = model_name
