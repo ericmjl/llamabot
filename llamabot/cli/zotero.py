@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from prompt_toolkit import prompt
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from slugify import slugify
 
 from llamabot import QueryBot
 from llamabot.recorder import PromptRecorder
@@ -99,7 +100,7 @@ def chat(
         task = progress.add_task("Embedding paper and initializing bot...")
         docbot = QueryBot(
             docbot_sysprompt(),
-            collection_name=str(user_choice),
+            collection_name=slugify(user_choice),
             document_paths=[fpath],
             model_name=model_name,
         )
