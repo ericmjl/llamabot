@@ -5,7 +5,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List
 
-from llama_index.core import Document, download_loader
+from llama_index.core.schema import Document
+from llama_index.core.readers import download_loader
 
 EXTENSION_LOADER_MAPPING = {
     ".pdf": "PDFReader",
