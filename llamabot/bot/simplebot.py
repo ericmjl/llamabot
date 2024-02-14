@@ -75,7 +75,7 @@ class SimpleBot:
         """
 
         response = _make_response(self, messages)
-        return AIMessage(content=response.choices[0].message.content)
+        return AIMessage(content=response.choices[0].message.content.strip())
 
     def stream_response(self, messages: list[BaseMessage]) -> str:
         """Stream the response from the given messages.
