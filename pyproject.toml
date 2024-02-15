@@ -62,7 +62,7 @@ namespaces = false
 
 [project]
 name = "llamabot"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
     "openai",
     "langchain>=0.0.334",
