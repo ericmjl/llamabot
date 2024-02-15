@@ -90,9 +90,9 @@ class DocQABot:
                 document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
             )
             for chunk in tqdm(chunks, desc="Chunk Q&A"):
-                doc_id = sha256(chunk.text.encode()).hexdigest()
-                self.document_store.append(chunk.text, metadata=dict(doc_id=doc_id))
-                q_and_a = json.loads(self.jeopardy_bot(chunk.text).content)
+                doc_id = sha256(chunk.encode()).hexdigest()
+                self.document_store.append(chunk, metadata=dict(doc_id=doc_id))
+                q_and_a = json.loads(self.jeopardy_bot(chunk).content)
                 for q_and_a in tqdm(
                     q_and_a["questions_and_answers"], desc="Storing Q&A"
                 ):
