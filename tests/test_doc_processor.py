@@ -46,7 +46,7 @@ def test_magic_load_doc_txt(txt_file: Path):
     result = magic_load_doc(txt_file)
     # assert len(result) == 1
     assert isinstance(result, Document)
-    assert result.text == "This is a test text file."
+    assert result == "This is a test text file."
 
 
 def test_magic_load_doc_unknown(unknown_file: Path):
@@ -59,7 +59,7 @@ def test_magic_load_doc_unknown(unknown_file: Path):
     """
     result = magic_load_doc(unknown_file)
     assert isinstance(result, Document)
-    assert result.text == "This is a test file with an unknown extension."
+    assert result == "This is a test file with an unknown extension."
 
 
 @pytest.mark.xfail(
@@ -94,7 +94,7 @@ def test_magic_load_doc_unknown(unknown_file: Path):
 #     mock_download_loader.assert_called_once_with(loader)
 #     mock_loader_instance.load_data.assert_called_once_with(file_path)
 #     assert isinstance(result, Document)
-#     assert result.text == "Test document"
+#     assert result == "Test document"
 
 
 def test_split_document_no_overlap():
@@ -110,9 +110,9 @@ def test_split_document_no_overlap():
     result = split_document(doc, chunk_size, chunk_overlap)
 
     assert len(result) == 3
-    assert result[0].text == "This is a test document"
-    assert result[1].text == ". It has multiple sentences"
-    assert result[2].text == "."
+    assert result[0] == "This is a test document"
+    assert result[1] == ". It has multiple sentences"
+    assert result[2] == "."
 
 
 def test_split_document_with_overlap():
@@ -128,9 +128,9 @@ def test_split_document_with_overlap():
     result = split_document(doc, chunk_size, chunk_overlap)
 
     assert len(result) == 17
-    assert result[0].text == "This "
-    assert result[1].text == "s is "
-    assert result[2].text == "s a t"
+    assert result[0] == "This "
+    assert result[1] == "s is "
+    assert result[2] == "s a t"
 
 
 def test_split_document_empty_text():
@@ -161,7 +161,7 @@ def test_split_document_chunk_size_larger_than_text():
     result = split_document(doc, chunk_size, chunk_overlap)
 
     assert len(result) == 3
-    assert result[0].text == "This is a "
+    assert result[0] == "This is a "
 
 
 def test_split_document_invalid_chunk_size():
