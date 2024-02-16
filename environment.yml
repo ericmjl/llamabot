@@ -54,8 +54,6 @@ dependencies:
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
-      - llama_index>=0.8.67
-      - langchain>=0.0.334
       - mknotebooks
       - case-converter
       - sh
