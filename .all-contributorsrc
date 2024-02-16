@@ -47,6 +47,15 @@
         "design",
         "code"
       ]
+    },
+    {
+      "login": "marhar",
+      "name": "Mark Harrison",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7154?v=4",
+      "profile": "http://stackoverflow.com/users/116/mark-harrison",
+      "contributions": [
+        "ideas"
+      ]
     }
   ]
 }
