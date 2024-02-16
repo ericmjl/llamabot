@@ -1,23 +1,4 @@
 {
     "projectName": "llamabot",
-    "projectOwner": "ericmjl",
-    "repoType": "github",
-    "repoHost": "https://github.com",
-    "files": [
-        "docs/index.md"
-    ],
-    "imageSize": 100,
-    "commit": false,
-    "contributorsPerLine": 7,
-    "contributorsSortAlphabetically": false,
-    "types": {
-        "custom": {
-            "symbol": "🔭",
-            "description": "A custom contribution type.",
-            "link": "[<%= symbol %>](<%= url %> \"<%= description %>\"),"
-        }
-    },
-    "linkToUsage": true,
-    "skipCi": true,
-    "contributors": ["ericmjl"]
+    "projectOwner": "ericmjl"
 }
