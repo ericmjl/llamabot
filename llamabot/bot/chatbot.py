@@ -30,10 +30,7 @@ class ChatBot(SimpleBot, History):
     :param stream_target: The stream target to use.
         Should be one of ("stdout", "panel", "api").
     :param response_budget: The response budget to use, in terms of number of characters.
-    :param chat_history_class: The chat history class to use.
-        Should be a callable that returns an object
-        that follows the History API.
-        Defaults to History from `llamabot.components.history`.
+    :param completion_kwargs: Additional keyword arguments to pass to the completion function.
     """
 
     def __init__(
@@ -44,6 +41,7 @@ class ChatBot(SimpleBot, History):
         temperature=0.0,
         model_name=default_language_model(),
         response_budget=2_000,
+        **completion_kwargs,
     ):
         if stream_target == "api":
             raise ValueError("ChatBot does not support API streaming.")
@@ -53,6 +51,7 @@ class ChatBot(SimpleBot, History):
             temperature=temperature,
             model_name=model_name,
             stream_target=stream_target,
+            **completion_kwargs,
         )
         History.__init__(self, session_name=session_name)
         self.response_budget = response_budget
