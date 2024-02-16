@@ -90,6 +90,7 @@ dependencies = [
     "chromadb",
     "python-slugify",
     "pydantic>=2.0",
+    "pdfreader"
 ]
 requires-python = ">3.10"
 description = "A Pythonic interface to LLMs."
