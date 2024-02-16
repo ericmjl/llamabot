@@ -27,7 +27,8 @@ class ChatBot(SimpleBot, History):
         This is used in the chat history class.
     :param temperature: The temperature to use.
     :param model_name: The model name to use.
-    :param stream: Whether to stream the output to stdout.
+    :param stream_target: The stream target to use.
+        Should be one of ("stdout", "panel", "api").
     :param response_budget: The response budget to use, in terms of number of characters.
     :param chat_history_class: The chat history class to use.
         Should be a callable that returns an object
@@ -39,9 +40,9 @@ class ChatBot(SimpleBot, History):
         self,
         system_prompt: str,
         session_name: str,
+        stream_target: str = "stdout",
         temperature=0.0,
         model_name=default_language_model(),
-        stream=True,
         response_budget=2_000,
     ):
         SimpleBot.__init__(
@@ -49,7 +50,7 @@ class ChatBot(SimpleBot, History):
             system_prompt=system_prompt,
             temperature=temperature,
             model_name=model_name,
-            stream=stream,
+            stream_target=stream_target,
         )
         History.__init__(self, session_name=session_name)
         self.response_budget = response_budget
