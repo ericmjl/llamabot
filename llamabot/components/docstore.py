@@ -91,8 +91,8 @@ class DocumentStore:
                 document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
             )
             chunks_to_add = [
-                doc.text
+                doc
                 for doc in splitted_document
-                if doc.text not in self.existing_records["documents"]
+                if doc not in self.existing_records["documents"]
             ]
             self.extend(chunks_to_add)

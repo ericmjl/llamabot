@@ -54,11 +54,10 @@ dependencies:
   # pip dependencies
   - pip:
       # Place packages that cannot be installed by conda in this section.
-      - llama_index>=0.8.67
-      - langchain>=0.0.334
       - mknotebooks
       - case-converter
       - sh
       - unstructured[all-docs]
       - litellm==1.16.16
       - pydantic>=2.0
+      - pdfminer.six
