@@ -62,4 +62,4 @@ dependencies:
       - unstructured[all-docs]
       - litellm==1.16.16
       - pydantic>=2.0
-      - pdfminer
+      - pdfminer.six

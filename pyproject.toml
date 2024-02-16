@@ -90,7 +90,7 @@ dependencies = [
     "chromadb",
     "python-slugify",
     "pydantic>=2.0",
-    "pdfminer"
+    "pdfminer.six"
 ]
 requires-python = ">3.10"
 description = "A Pythonic interface to LLMs."
