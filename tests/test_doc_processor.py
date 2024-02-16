@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import pytest
-from llama_index.core.schema import Document
 from pytest_mock import mocker  # noqa: F401
 
 from llamabot.doc_processor import (
@@ -45,7 +44,7 @@ def test_magic_load_doc_txt(txt_file: Path):
     """
     result = magic_load_doc(txt_file)
     # assert len(result) == 1
-    assert isinstance(result, Document)
+    assert isinstance(result, str)
     assert result == "This is a test text file."
 
 
@@ -58,43 +57,8 @@ def test_magic_load_doc_unknown(unknown_file: Path):
     :param unknown_file: Pytest fixture, the Path to the test unknown file.
     """
     result = magic_load_doc(unknown_file)
-    assert isinstance(result, Document)
+    assert isinstance(result, str)
     assert result == "This is a test file with an unknown extension."
-
-
-@pytest.mark.xfail(
-    reason=(
-        "18 June 2023 - The test text file provided in the test below "
-        "needs to be changed to create special files of each type."
-    )
-)
-# @pytest.mark.parametrize("ext,loader", EXTENSION_LOADER_MAPPING.items())
-# def test_magic_load_doc_extensions(
-#     mocker, tmp_path: Path, ext: str, loader: str  # noqa: F811
-# ):
-#     """Test magic_load_doc for different file extensions.
-
-#     This test tests that magic_load_doc returns a list of one Document object,
-#     and the text of the Document object is the content of the test file.
-#     It also tests that magic_load_doc calls the correct loader.
-
-#     :param mocker: Pytest mocker fixture.
-#     :param tmp_path: Pytest tmp_path fixture.
-#     :param ext: File extension.
-#     :param loader: Loader name.
-#     """
-#     file_path = tmp_path / f"test{ext}"
-#     file_path.write_text("This is a test file.")
-
-#     mock_download_loader = mocker.patch("llama_index.download_loader")
-#     mock_loader_instance = mock_download_loader.return_value.return_value
-#     mock_loader_instance.load_data.return_value = [Document(text="Test document")]
-
-#     result = magic_load_doc(file_path)
-#     mock_download_loader.assert_called_once_with(loader)
-#     mock_loader_instance.load_data.assert_called_once_with(file_path)
-#     assert isinstance(result, Document)
-#     assert result == "Test document"
 
 
 def test_split_document_no_overlap():
@@ -103,7 +67,7 @@ def test_split_document_no_overlap():
     This test tests that split_document returns a list of three Document objects,
     and the text of the Document objects are the correct chunks of the test document.
     """
-    doc = Document(text="This is a test document. It has multiple sentences.")
+    doc = "This is a test document. It has multiple sentences."
     chunk_size = 5
     chunk_overlap = 0
 
@@ -121,7 +85,7 @@ def test_split_document_with_overlap():
     This test tests that split_document returns a list of four Document objects,
     and the text of the Document objects are the correct chunks of the test document.
     """
-    doc = Document(text="This is a test document. It has multiple sentences.")
+    doc = "This is a test document. It has multiple sentences."
     chunk_size = 5
     chunk_overlap = 2
 
@@ -139,7 +103,7 @@ def test_split_document_empty_text():
     This test tests that split_document returns an empty list
     when the text of the Document object is empty.
     """
-    doc = Document(text="")
+    doc = ""
     chunk_size = 5
     chunk_overlap = 0
 
@@ -154,7 +118,7 @@ def test_split_document_chunk_size_larger_than_text():
     This test tests that split_document returns a list of one Document object,
     and the text of the Document object is the text of the Document object.
     """
-    doc = Document(text="This is a test document.")
+    doc = "This is a test document."
     chunk_size = 10
     chunk_overlap = 0
 
@@ -170,7 +134,7 @@ def test_split_document_invalid_chunk_size():
     This test tests that split_document raises a ValueError
     when the chunk_size is negative.
     """
-    doc = Document(text="This is a test document.")
+    doc = "This is a test document."
     chunk_size = -1
     chunk_overlap = 0
 
@@ -184,7 +148,7 @@ def test_split_document_invalid_chunk_overlap():
     This test tests that split_document raises a ValueError
     when the chunk_overlap is negative.
     """
-    doc = Document(text="This is a test document.")
+    doc = "This is a test document."
     chunk_size = 5
     chunk_overlap = -1
 
