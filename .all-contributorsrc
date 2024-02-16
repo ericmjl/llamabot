@@ -36,6 +36,17 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ericmjl",
+      "name": "Eric Ma",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2631566?v=4",
+      "profile": "https://ericmjl.github.io/",
+      "contributions": [
+        "ideas",
+        "design",
+        "code"
+      ]
     }
   ]
 }
