@@ -1,11 +1,11 @@
 """Class definition for ChatBot."""
 
 import contextvars
+from typing import Generator, Union
 
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.config import default_language_model
-from llamabot.recorder import autorecord
 from llamabot.components.messages import (
     AIMessage,
     HumanMessage,
@@ -45,6 +45,8 @@ class ChatBot(SimpleBot, History):
         model_name=default_language_model(),
         response_budget=2_000,
     ):
+        if stream_target == "api":
+            raise ValueError("ChatBot does not support API streaming.")
         SimpleBot.__init__(
             self,
             system_prompt=system_prompt,
@@ -55,7 +57,7 @@ class ChatBot(SimpleBot, History):
         History.__init__(self, session_name=session_name)
         self.response_budget = response_budget
 
-    def __call__(self, message: str) -> AIMessage:
+    def __call__(self, message: str) -> Union[AIMessage, Generator]:
         """Call the ChatBot.
 
         :param human_message: The human message to use.
@@ -66,14 +68,16 @@ class ChatBot(SimpleBot, History):
             query=human_message, character_budget=self.response_budget
         )
         messages = [self.system_prompt] + history + [human_message]
-        if self.stream:
-            return self.stream_response(messages)
-        response = self.generate_response(messages)
-        autorecord(message, response.content)
+        match self.stream_target:
+            case "stdout":
+                response = self.stream_stdout(messages)
+                self.append(human_message)
+                self.append(response)
+                return response
+            case "panel":
+                return self.stream_panel(messages)
 
-        self.append(human_message)
-        self.append(response)
-        return response
+        return AIMessage(content="")
 
     def __repr__(self):
         """Return a string representation of the ChatBot.
