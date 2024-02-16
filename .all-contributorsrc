@@ -1,25 +1,61 @@
 {
-    "projectName": "llamabot",
-    "projectOwner": "ericmjl",
-    "repoType": "github",
-    "repoHost": "https://github.com",
-    "files": [
-        "docs/index.md"
-    ],
-    "imageSize": 100,
-    "commit": false,
-    "contributorsPerLine": 7,
-    "contributorsSortAlphabetically": false,
-    "badgeTemplate": "[![All Contributors](https://img.shields.io/github/all-contributors/<%= projectOwner %>/<%= projectName %>?color=ee8449&style=flat-square)](#contributors)",
-    "contributorTemplate": "<a href=\"<%= contributor.profile %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"<%= options.imageSize %>px;\" alt=\"\"/><br /><sub><b><%= contributor.name %></b></sub></a>",
-    "types": {
-        "custom": {
-            "symbol": "🔭",
-            "description": "A custom contribution type.",
-            "link": "[<%= symbol %>](<%= url %> \"<%= description %>\"),"
-        }
+  "projectName": "llamabot",
+  "projectOwner": "ericmjl",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "RenaLu",
+      "name": "Rena Lu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12033704?v=4",
+      "profile": "https://github.com/RenaLu",
+      "contributions": [
+        "code"
+      ]
     },
-    "linkToUsage": true,
-    "skipCi": true,
-    "contributors": ["ericmjl"]
+    {
+      "login": "andrewgiessel",
+      "name": "andrew giessel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1160997?v=4",
+      "profile": "http://giessel.com",
+      "contributions": [
+        "ideas",
+        "design",
+        "code"
+      ]
+    },
+    {
+      "login": "aidanbrewis",
+      "name": "Aidan Brewis",
+      "avatar_url": "https://avatars.githubusercontent.com/u/83365064?v=4",
+      "profile": "https://github.com/aidanbrewis",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "ericmjl",
+      "name": "Eric Ma",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2631566?v=4",
+      "profile": "https://ericmjl.github.io/",
+      "contributions": [
+        "ideas",
+        "design",
+        "code"
+      ]
+    },
+    {
+      "login": "marhar",
+      "name": "Mark Harrison",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7154?v=4",
+      "profile": "http://stackoverflow.com/users/116/mark-harrison",
+      "contributions": [
+        "ideas"
+      ]
+    }
+  ]
 }
