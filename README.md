@@ -235,6 +235,14 @@ Please use the issue tracker on GitHub.
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/RenaLu"><img src="https://avatars.githubusercontent.com/u/12033704?v=4?s=100" width="100px;" alt="Rena Lu"/><br /><sub><b>Rena Lu</b></sub></a><br /><a href="#code-RenaLu" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://giessel.com"><img src="https://avatars.githubusercontent.com/u/1160997?v=4?s=100" width="100px;" alt="andrew giessel"/><br /><sub><b>andrew giessel</b></sub></a><br /><a href="#ideas-andrewgiessel" title="Ideas, Planning, & Feedback">🤔</a> <a href="#design-andrewgiessel" title="Design">🎨</a> <a href="#code-andrewgiessel" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
