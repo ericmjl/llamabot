@@ -2,7 +2,6 @@
 import pytest
 
 from llamabot.bot.chatbot import ChatBot
-from llamabot.components.messages import AIMessage
 
 
 @pytest.fixture
@@ -34,39 +33,13 @@ def test_chatbot_initialization(system_prompt, session_name):
     assert isinstance(chatbot.messages, list)
 
 
-def test_chatbot_call(mocker, system_prompt, session_name):
-    """Test the call method of the ChatBot.
-    This test verifies that the ChatBot correctly processes a human message using pytest-mock.
-    :param mocker: The pytest-mock mocker fixture.
-    :param system_prompt: The system prompt to use for the chatbot.
-    :param session_name: The session name for the chatbot.
-    """
-    # Set up the mocks
-    mock_retrieve = mocker.patch(
-        "llamabot.bot.chatbot.ChatBot.retrieve", return_value=[]
-    )
-    mock_generate_response = mocker.patch(
-        "llamabot.bot.chatbot.ChatBot.generate_response",
-        return_value=AIMessage(content="Mocked AI response"),
-    )
-
-    # Initialize the ChatBot and send a message
-    chatbot = ChatBot(system_prompt, session_name, mock_response="hello!")
-    human_message = "Hello, ChatBot!"
-    response = chatbot(human_message)
-
-    # Assertions
-    mock_retrieve.assert_called_once()
-    mock_generate_response.assert_called_once()
-    assert isinstance(response, AIMessage)
-    assert response.content == "hello!"
-    assert len(chatbot.messages) > 0  # Chat history should have entries now.
-
-
 def test_chatbot_repr(system_prompt, session_name):
     """Test that the repr of the chatbot is correct.
-    This test ensures that the string representation of ChatBot includes both human and AI messages.
-    :param mocker: The pytest-mock mocker fixture.
+
+    This test ensures that the string representation of ChatBot
+    includes both human and AI messages.
+    It also serves as an execution test for `__call__`.
+
     :param system_prompt: The system prompt to use for the chatbot.
     :param session_name: The session name for the chatbot.
     """
