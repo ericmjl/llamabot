@@ -63,29 +63,24 @@ def test_chatbot_call(mocker, system_prompt, session_name):
     assert len(chatbot.messages) > 0  # Chat history should have entries now.
 
 
-def test_chatbot_repr(mocker, system_prompt, session_name):
+def test_chatbot_repr(system_prompt, session_name):
     """Test that the repr of the chatbot is correct.
     This test ensures that the string representation of ChatBot includes both human and AI messages.
     :param mocker: The pytest-mock mocker fixture.
     :param system_prompt: The system prompt to use for the chatbot.
     :param session_name: The session name for the chatbot.
     """
-    # Mock the generate_response method
-    mocked_response = AIMessage(content="Mocked AI response")
-    mocker.patch(
-        "llamabot.bot.chatbot.ChatBot.generate_response", return_value=mocked_response
-    )
-
     # Initialize ChatBot and simulate a human message
     chatbot = ChatBot(
         system_prompt=system_prompt,
         session_name=session_name,
         stream_target="stdout",
+        mock_response="Mocked AI response",
     )
-    chatbot("Hello, ChatBot!")  # Send a message to create some chat history.
+    response = chatbot("Hello, ChatBot!")  # Send a message to create some chat history.
 
     # Verify the string representation
     representation = str(chatbot)
     assert "[Human]" in representation
     assert "[AI]" in representation
-    assert mocked_response.content in representation
+    assert response.content in representation
