@@ -87,7 +87,6 @@ class SimpleBot:
         response = _make_response(self, messages)
         message = ""
         for chunk in response:
-            print(chunk)
             delta = chunk.choices[0].delta["content"]
             if delta is not None:
                 print(delta, end="")

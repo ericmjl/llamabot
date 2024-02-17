@@ -106,8 +106,7 @@ def compose_commit():
     try:
         diff = get_git_diff()
         bot = commitbot()
-        msg = bot(write_commit_message(diff))
-        echo(msg.content)
+        bot(write_commit_message(diff))
     except Exception as e:
         echo(f"Error encountered: {e}", err=True)
         echo("Please write your own commit message.", err=True)
