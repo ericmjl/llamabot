@@ -57,4 +57,4 @@ def test_simple_bot_call(system_prompt, human_message):
     bot = SimpleBot(system_prompt, mock_response=" hello")
     result = bot(human_message)
     assert isinstance(result, AIMessage)
-    assert result.content == "hello"
+    assert result.content == " hello"

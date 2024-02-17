@@ -58,6 +58,6 @@ dependencies:
       - case-converter
       - sh
       - unstructured[all-docs]
-      - litellm==1.16.16
+      - litellm
       - pydantic>=2.0
       - pdfminer.six

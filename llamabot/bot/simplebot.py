@@ -87,9 +87,11 @@ class SimpleBot:
         response = _make_response(self, messages)
         message = ""
         for chunk in response:
-            delta = chunk.choices[0].delta.content
+            print(chunk)
+            delta = chunk.choices[0].delta["content"]
             if delta is not None:
                 print(delta, end="")
+                message += delta
         autorecord("\n".join(m.content for m in messages), message)
         return AIMessage(content=message)
 
@@ -101,7 +103,7 @@ class SimpleBot:
         response = _make_response(self, messages)
         message = ""
         for chunk in response:
-            delta = chunk.choices[0].delta.content
+            delta = chunk.choices[0].delta["content"]
             if delta is not None:
                 message += delta
                 yield message
@@ -113,7 +115,7 @@ class SimpleBot:
         """
         response = _make_response(self, messages)
         for chunk in response:
-            delta = chunk.choices[0].delta.content
+            delta = chunk.choices[0].delta["content"]
             if delta is not None:
                 yield delta
 
