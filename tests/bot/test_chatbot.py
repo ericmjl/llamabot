@@ -51,7 +51,7 @@ def test_chatbot_call(mocker, system_prompt, session_name):
     )
 
     # Initialize the ChatBot and send a message
-    chatbot = ChatBot(system_prompt, session_name)
+    chatbot = ChatBot(system_prompt, session_name, mock_response="hello!")
     human_message = "Hello, ChatBot!"
     response = chatbot(human_message)
 
@@ -59,7 +59,7 @@ def test_chatbot_call(mocker, system_prompt, session_name):
     mock_retrieve.assert_called_once()
     mock_generate_response.assert_called_once()
     assert isinstance(response, AIMessage)
-    assert response.content == "Mocked AI response"
+    assert response.content == "hello!"
     assert len(chatbot.messages) > 0  # Chat history should have entries now.
 
 
