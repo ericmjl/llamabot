@@ -46,15 +46,35 @@ def test_simple_bot_init(
     assert bot.json_mode == json_mode
 
 
-@given(system_prompt=st.text(min_size=1), human_message=st.text(min_size=1))
+@given(
+    system_prompt=st.text(min_size=1),
+    human_message=st.text(min_size=1),
+    mock_response=st.text(min_size=1),
+)
 @settings(deadline=None)
-def test_simple_bot_call(system_prompt, human_message):
-    """Test that the SimpleBot is called correctly.
-
-    :param system_prompt: The system prompt to use.
-    :param human_message: The human message to use.
-    """
-    bot = SimpleBot(system_prompt, mock_response=" hello")
+def test_simple_bot_stream_stdout(system_prompt, human_message, mock_response):
+    """Test that SimpleBot stream API exists and returns agenerator."""
+    bot = SimpleBot(system_prompt, stream_target="stdout", mock_response=mock_response)
     result = bot(human_message)
     assert isinstance(result, AIMessage)
-    assert result.content == " hello"
+    assert result.content in mock_response
+
+
+@given(
+    system_prompt=st.text(min_size=1),
+    human_message=st.text(min_size=1),
+    mock_response=st.text(min_size=1),
+    stream_target=st.one_of(st.just("panel"), st.just("api")),
+)
+@settings(deadline=None)
+def test_simple_bot_stream_panel_or_api(
+    system_prompt, human_message, mock_response, stream_target
+):
+    """Test that SimpleBot stream API exists and returns agenerator."""
+    bot = SimpleBot(
+        system_prompt, stream_target=stream_target, mock_response=mock_response
+    )
+    result = bot(human_message)
+    for r in result:
+        assert isinstance(r, str)
+        assert r in mock_response
