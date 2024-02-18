@@ -106,8 +106,7 @@ def compose_commit():
     try:
         diff = get_git_diff()
         bot = commitbot()
-        msg = bot(write_commit_message(diff))
-        echo(msg.content)
+        bot(write_commit_message(diff))
     except Exception as e:
         echo(f"Error encountered: {e}", err=True)
         echo("Please write your own commit message.", err=True)
@@ -139,7 +138,7 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
         "who knows how to write excellent release notes based on git commit logs.",
         model_name="mistral/mistral-medium",
         api_key=os.environ["MISTRAL_API_KEY"],
-        stream=False,
+        stream_target="stdout",
     )
     notes = bot(compose_release_notes(log_info))
 

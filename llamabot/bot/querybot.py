@@ -34,7 +34,6 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
         document_paths: Optional[Path | list[Path]] = None,
         temperature: float = 0.0,
         model_name: str = default_language_model(),
-        stream=True,
         **kwargs,
     ):
         SimpleBot.__init__(
@@ -42,7 +41,7 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
             system_prompt=system_prompt,
             temperature=temperature,
             model_name=model_name,
-            stream=stream,
+            stream_target="stdout",
             **kwargs,
         )
         DocumentStore.__init__(self, collection_name=slugify(collection_name))
@@ -71,5 +70,5 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
         )
         messages.extend(retrieved)
         messages.append(HumanMessage(content=query))
-        response: AIMessage = self.generate_response(messages)
+        response: AIMessage = self.stream_stdout(messages)
         return response

@@ -68,7 +68,7 @@ class DocQABot:
             system_prompt=jeopardy_bot_sysprompt(),
             model_name="gpt-3.5-turbo-1106",
             json_mode=True,
-            stream=False,
+            stream_target="stdout",
             temperature=0.3,
             api_key=os.getenv("OPENAI_API_KEY"),
         )
