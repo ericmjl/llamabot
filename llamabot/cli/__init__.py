@@ -64,7 +64,8 @@ def chat(save: bool = typer.Option(True, help="Whether to save the chat to a fil
 
     bot = ChatBot(
         "You are a chatbot. Respond to the user. "
-        "Ensure your responses are Markdown compatible."
+        "Ensure your responses are Markdown compatible.",
+        session_name=f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat",
     )
 
     # Save chat to file

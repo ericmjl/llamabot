@@ -91,7 +91,7 @@ class SimpleBot:
             if delta is not None:
                 print(delta, end="")
                 message += delta
-        autorecord("\n".join(m.content for m in messages), message)
+        autorecord(messages[-1].content, message)
         return AIMessage(content=message)
 
     def stream_panel(self, messages: list[BaseMessage]) -> Generator:
