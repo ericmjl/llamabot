@@ -25,7 +25,7 @@ def plaintext_loader(path: Path) -> str:
     :param path: Path to the plain text file to be loaded.
     :return: Text from the plain text file.
     """
-    with open(path, "r") as f:
+    with open(path, "r+") as f:
         return f.read()
 
 
