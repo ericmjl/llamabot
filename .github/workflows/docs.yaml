@@ -35,6 +35,7 @@ jobs:
           conda activate llamabot
           python -m ipykernel install --user --name llamabot
           pip install -e .
+          cp README.md docs/index.md
           mkdocs build --site-dir /tmp/docs
 
       - name: Deploy website

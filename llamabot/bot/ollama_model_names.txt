@@ -1,3 +1,4 @@
+dolphincoder
 starcoder2
 all-minilm
 nomic-embed-text
