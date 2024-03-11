@@ -79,7 +79,7 @@ def chat(save: bool = typer.Option(True, help="Whether to save the chat to a fil
             typer.echo("\n\n")
 
             if save:
-                pr.save(save_filename)
+                pr.save(Path(save_filename))
 
 
 @app.command()
