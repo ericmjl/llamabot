@@ -6,9 +6,9 @@ from llamabot.prompt_manager import prompt
 def commitbot():
     """Return a commitbot instance.
 
-    It is hard-coded to use gpt-3.5-turbo-1106 as its model.
+    It is hard-coded to use mistral/mistral-medium as its model.
     This model is sufficient for the quality of commit messages,
-    matching gpt-4-32k but being 1/10 the cost.
+    matching gpt-4-32k but being a fraction of the cost.
 
     :return: A commitbot instance.
     """
