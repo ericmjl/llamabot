@@ -1,3 +1,8 @@
+dolphincoder
+starcoder2
+all-minilm
+nomic-embed-text
+gemma
 stablelm2
 duckdb-nsql
 qwen
