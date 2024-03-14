@@ -100,7 +100,7 @@ def chat(
         task = progress.add_task("Embedding paper and initializing bot...")
         docbot = QueryBot(
             docbot_sysprompt(),
-            collection_name=slugify(user_choice),
+            collection_name=slugify(user_choice)[:63],
             document_paths=[fpath],
             model_name=model_name,
         )

@@ -1,7 +1,7 @@
 """Test the ImageBot class."""
 from llamabot import ImageBot, SimpleBot
 import requests
-from langchain.schema import AIMessage
+from llamabot.components.messages import AIMessage
 from pathlib import Path
 
 

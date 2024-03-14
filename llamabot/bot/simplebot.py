@@ -1,6 +1,6 @@
 """Class definition for SimpleBot."""
 import contextvars
-from typing import Optional, Union
+from typing import Generator, Optional, Union
 
 
 from llamabot.components.messages import (
@@ -27,10 +27,12 @@ class SimpleBot:
         See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
         for more information.
     :param model_name: The name of the model to use.
-    :param stream: Whether to stream the output to stdout.
+    :param stream_target: The target to stream the response to.
+        Should be one of ("stdout", "panel", "api").
     :param json_mode: Whether to print debug messages.
     :param api_key: The OpenAI API key to use.
     :param mock_response: A mock response to use, for testing purposes only.
+    :param completion_kwargs: Additional keyword arguments to pass to the completion function.
     """
 
     def __init__(
@@ -38,22 +40,28 @@ class SimpleBot:
         system_prompt: str,
         temperature=0.0,
         model_name=default_language_model(),
-        stream=True,
+        stream_target: str = "stdout",
         json_mode: bool = False,
         api_key: Optional[str] = None,
         mock_response: Optional[str] = None,
         **completion_kwargs,
     ):
+        # Validate `stream_target.
+        if stream_target not in ("stdout", "panel", "api"):
+            raise ValueError(
+                f"stream_target must be one of ('stdout', 'panel', 'api'), got {stream_target}."
+            )
+
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
         self.model_name = model_name
+        self.stream_target = stream_target
         self.temperature = temperature
-        self.stream = stream
         self.json_mode = json_mode
         self.api_key = api_key
         self.mock_response = mock_response
         self.completion_kwargs = completion_kwargs
 
-    def __call__(self, human_message: str) -> Union[AIMessage, str]:
+    def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
         """Call the SimpleBot.
 
         :param human_message: The human message to use.
@@ -61,11 +69,54 @@ class SimpleBot:
         """
 
         messages = [self.system_prompt, HumanMessage(content=human_message)]
-        if self.stream:
-            return self.stream_response(messages)
-        response = self.generate_response(messages)
-        autorecord(human_message, response.content)
-        return response
+        # response = self.generate_response(messages)
+        match self.stream_target:
+            case "stdout":
+                return self.stream_stdout(messages)
+            case "panel":
+                return self.stream_panel(messages)
+            case "api":
+                return self.stream_api(messages)
+        return AIMessage(content="")
+
+    def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
+        """Stream the response to stdout.
+
+        :param messages: A list of messages.
+        """
+        response = _make_response(self, messages)
+        message = ""
+        for chunk in response:
+            delta = chunk.choices[0].delta["content"]
+            if delta is not None:
+                print(delta, end="")
+                message += delta
+        autorecord(messages[-1].content, message)
+        return AIMessage(content=message)
+
+    def stream_panel(self, messages: list[BaseMessage]) -> Generator:
+        """Stream the response to a Panel app.
+
+        :param messages: A list of messages.
+        """
+        response = _make_response(self, messages)
+        message = ""
+        for chunk in response:
+            delta = chunk.choices[0].delta["content"]
+            if delta is not None:
+                message += delta
+                yield message
+
+    def stream_api(self, messages: list[BaseMessage]) -> Generator:
+        """Stream the response to an API.
+
+        :param messages: A list of messages.
+        """
+        response = _make_response(self, messages)
+        for chunk in response:
+            delta = chunk.choices[0].delta["content"]
+            if delta is not None:
+                yield delta
 
     def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
         """Generate a response from the given messages.
@@ -73,11 +124,10 @@ class SimpleBot:
         :param messages: A list of messages.
         :return: The response to the messages.
         """
-
         response = _make_response(self, messages)
         return AIMessage(content=response.choices[0].message.content.strip())
 
-    def stream_response(self, messages: list[BaseMessage]) -> str:
+    def stream_response(self, messages: list[BaseMessage]):
         """Stream the response from the given messages.
 
         This is intended to be used with Panel's ChatInterface as part of the callback.
@@ -108,7 +158,7 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
         model=bot.model_name,
         messages=messages_dumped,
         temperature=bot.temperature,
-        stream=bot.stream,
+        stream=True,
     )
     completion_kwargs.update(bot.completion_kwargs)
 
