@@ -9,7 +9,7 @@ from llamabot.config import default_language_model
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage, HumanMessage
 from llamabot.components.docstore import DocumentStore
-from llamabot.components.api import APIMixin
+from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
     retrieve_messages_up_to_budget,
@@ -24,16 +24,18 @@ CACHE_DIR = Path.home() / ".llamabot" / "cache"
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
-class QueryBot(SimpleBot, DocumentStore, APIMixin):
-    """QueryBot is a bot that uses simple RAG to answer questions about a document."""
+class QueryBot(SimpleBot, DocumentStore, ChatUIMixin):
+    """QueryBot is a bot that uses the DocumentStore to answer questions about a document."""
 
     def __init__(
         self,
         system_prompt: str,
         collection_name: str,
+        initial_message: Optional[str] = None,
         document_paths: Optional[Path | list[Path]] = None,
         temperature: float = 0.0,
         model_name: str = default_language_model(),
+        stream_target: str = "stdout",
         **kwargs,
     ):
         SimpleBot.__init__(
@@ -41,7 +43,7 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
             system_prompt=system_prompt,
             temperature=temperature,
             model_name=model_name,
-            stream_target="stdout",
+            stream_target=stream_target,
             **kwargs,
         )
         DocumentStore.__init__(self, collection_name=slugify(collection_name))
@@ -49,7 +51,9 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
             self.add_documents(document_paths=document_paths)
         self.response_budget = 2_000
 
-    def __call__(self, query: str, n_results: int = 20) -> AIMessage:
+        ChatUIMixin.__init__(self, initial_message)
+
+    def __call__(self, query: str, n_results: int = 10) -> AIMessage:
         """Query documents within QueryBot's document store.
 
         We use RAG to query out documents.
@@ -70,5 +74,8 @@ class QueryBot(SimpleBot, DocumentStore, APIMixin):
         )
         messages.extend(retrieved)
         messages.append(HumanMessage(content=query))
-        response: AIMessage = self.stream_stdout(messages)
-        return response
+        if self.stream_target == "stdout":
+            response: AIMessage = self.stream_stdout(messages)
+            return response
+        elif self.stream_target == "panel":
+            return self.stream_panel(messages)
