@@ -29,3 +29,4 @@ def test_querybot(
     )
 
     bot("How are you doing?")
+    bot.reset()
