@@ -14,7 +14,7 @@ def commitbot():
     """
     return SimpleBot(
         "You are an expert user of Git.",
-        model_name="mistral/mistral-medium",
+        model_name="gpt-4-0125-preview",
         stream_target="stdout",
     )
 

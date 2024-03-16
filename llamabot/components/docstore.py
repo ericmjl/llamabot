@@ -9,12 +9,14 @@ The interface that we need is implemented here:
 ChromaDB is a great default choice because of its simplicity and FOSS nature.
 Hence we use it by default.
 """
+
 from pathlib import Path
 import chromadb
 from hashlib import sha256
 from chromadb import QueryResult
 from llamabot.doc_processor import magic_load_doc, split_document
 from tqdm.auto import tqdm
+from rank_bm25 import BM25Okapi
 
 
 class DocumentStore:
@@ -63,10 +65,24 @@ class DocumentStore:
 
         :param query: The query to use to retrieve documents.
         """
+        # Use BM25 to get documents.
+        self.existing_records = self.collection.get()
+        tokenized_documents = [
+            doc.split() for doc in self.existing_records["documents"]
+        ]
+        search_engine = BM25Okapi(tokenized_documents)
+        bm25_documents: list[str] = search_engine.get_top_n(
+            query.split(), self.existing_records["documents"], n=n_results
+        )
+        # Use Vectordb to get documents.
         results: QueryResult = self.collection.query(
             query_texts=query, n_results=n_results
         )
-        return results["documents"][0]
+        vectordb_documents: list[str] = results["documents"][0]
+
+        # Return the union of the retrieved documents
+        union = set(vectordb_documents).union(bm25_documents)
+        return list(union)
 
     def reset(self):
         """Reset the document store."""
