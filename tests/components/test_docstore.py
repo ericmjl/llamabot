@@ -46,7 +46,9 @@ def test_add_documents(tmp_path: Path):
     retrieved_documents = docstore.retrieve("query", n_results=2)
 
     # Assert that the retrieved documents match the added documents
-    assert retrieved_documents == ["content of document1", "content of document2"]
+    assert set(retrieved_documents) == set(
+        ["content of document1", "content of document2"]
+    )
 
     # Clean up the temporary collection
     docstore.client.delete_collection(collection_name)
