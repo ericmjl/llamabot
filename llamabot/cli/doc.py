@@ -12,20 +12,35 @@ app = typer.Typer()
 
 @app.command()
 def chat(
+    model_name: str = typer.Option(
+        "mistral/mistral-medium", help="Name of the LLM to use."
+    ),
+    initial_message: str = typer.Option(..., help="Initial message for the bot."),
+    panel: bool = typer.Option(True, help="Whether to use Panel or not."),
     doc_path: Path = typer.Argument(
         "", help="Path to the document you wish to chat with."
-    )
+    ),
 ):
     """Chat with your document.
 
+    :param model_name: Name of the LLM to use.
+    :param panel: Whether to use Panel or not. If not, we default to using CLI chat.
+    :param initial_message: The initial message to send to the user.
     :param doc_path: Path to the document you wish to chat with.
     """
+    stream_target = "stdout"
+    if panel:
+        stream_target = "panel"
+
     bot = QueryBot(
         system_prompt=(
             "You are a bot that can answer questions about a document provided to you."
         ),
         collection_name=doc_path.stem.lower().replace(" ", "-"),
         document_paths=[doc_path],
+        model_name=model_name,
+        initial_message=initial_message,
+        stream_target=stream_target,
     )
     typer.echo(
         (
@@ -34,6 +49,10 @@ def chat(
             "Otherwise, type 'exit' or 'quit' at anytime to exit."
         )
     )
+
+    if panel:
+        print("Serving your document in a panel...")
+        bot.serve()
 
     while True:
         query = uniform_prompt()
