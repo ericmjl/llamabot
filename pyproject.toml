@@ -85,11 +85,11 @@ dependencies = [
     "pre-commit",
     "beartype==0.15.0",
     "litellm>=1.16.16",
-    "chromadb",
     "python-slugify",
     "pydantic>=2.0",
     "pdfminer.six",
     "rank-bm25",
+    "sentence-transformers",
 ]
 requires-python = ">3.10"
 description = "A Pythonic interface to LLMs."
