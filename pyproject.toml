@@ -89,6 +89,7 @@ dependencies = [
     "pydantic>=2.0",
     "pdfminer.six",
     "rank-bm25",
+    "lancedb",
     "sentence-transformers",
 ]
 requires-python = ">3.10"
