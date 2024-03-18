@@ -10,16 +10,83 @@ ChromaDB is a great default choice because of its simplicity and FOSS nature.
 Hence we use it by default.
 """
 
-from pathlib import Path
-import chromadb
 from hashlib import sha256
+from pathlib import Path
+from typing import Optional
+
+import chromadb
+import lancedb
 from chromadb import QueryResult
-from llamabot.doc_processor import magic_load_doc, split_document
-from tqdm.auto import tqdm
+from lancedb.embeddings import get_registry
+from lancedb.pydantic import LanceModel, Vector
 from rank_bm25 import BM25Okapi
+from tqdm.auto import tqdm
+
+from llamabot.doc_processor import magic_load_doc, split_document
 
 
-class DocumentStore:
+class AbstractDocumentStore:
+    """Abstract document store for LlamaBot."""
+
+    def __init__(self):
+        raise NotImplementedError()
+
+    def append(self, document: str):
+        """Append a document to the store.
+
+        :param document: The document to append.
+        :raises NotImplementedError: If the document store is not implemented.
+        """
+        raise NotImplementedError()
+
+    def extend(self, documents: list[str]):
+        """Extend a list of documents to the store.
+
+        :param documents: The documents to append.
+        :raises NotImplementedError: If the document store is not implemented.
+        """
+        raise NotImplementedError()
+
+    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+        """Retrieve a list of documents from the store.
+
+        :param query: The query to make of the documents.
+        :param n_results: The number of results to retrieve.
+        :raises NotImplementedError: If the document store is not implemented.
+        """
+        raise NotImplementedError()
+
+    def reset(self):
+        """Reset the document store.
+
+        :raises NotImplementedError: If the document store is not implemented.
+        """
+        raise NotImplementedError()
+
+    def add_documents(
+        self,
+        document_paths: Path | list[Path],
+        chunk_size: int = 2_000,
+        chunk_overlap: int = 500,
+    ):
+        """Add documents to the QueryBot DocumentStore.
+
+        :param document_paths: The document paths to add to the store.
+        :param chunk_size: The size of each chunk.
+        :param chunk_overlap: The amount of overlap between chunks.
+        """
+        if isinstance(document_paths, Path):
+            document_paths = [document_paths]
+
+        for document_path in tqdm(document_paths):
+            document = magic_load_doc(document_path)
+            splitted_document = split_document(
+                document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
+            self.extend(splitted_document)
+
+
+class ChromaDBDocStore(AbstractDocumentStore):
     """A document store for LlamaBot that wraps around ChromaDB."""
 
     def __init__(
@@ -65,24 +132,16 @@ class DocumentStore:
 
         :param query: The query to use to retrieve documents.
         """
-        # Use BM25 to get documents.
-        self.existing_records = self.collection.get()
-        tokenized_documents = [
-            doc.split() for doc in self.existing_records["documents"]
-        ]
-        search_engine = BM25Okapi(tokenized_documents)
-        bm25_documents: list[str] = search_engine.get_top_n(
-            query.split(), self.existing_records["documents"], n=n_results
-        )
         # Use Vectordb to get documents.
         results: QueryResult = self.collection.query(
             query_texts=query, n_results=n_results
         )
         vectordb_documents: list[str] = results["documents"][0]
+        return vectordb_documents
 
         # Return the union of the retrieved documents
-        union = set(vectordb_documents).union(bm25_documents)
-        return list(union)
+        # union = set(vectordb_documents).union(bm25_documents)
+        # return list(union)
 
     def reset(self):
         """Reset the document store."""
@@ -91,24 +150,117 @@ class DocumentStore:
             self.collection_name, get_or_create=True
         )
 
-    def add_documents(
-        self,
-        document_paths: Path | list[Path],
-        chunk_size: int = 2_000,
-        chunk_overlap: int = 500,
-    ):
-        """Add documents to the QueryBot DocumentStore."""
-        if isinstance(document_paths, Path):
-            document_paths = [document_paths]
 
-        for document_path in tqdm(document_paths):
-            document = magic_load_doc(document_path)
-            splitted_document = split_document(
-                document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-            )
-            chunks_to_add = [
-                doc
-                for doc in splitted_document
-                if doc not in self.existing_records["documents"]
-            ]
-            self.extend(chunks_to_add)
+# Define DocumentStore as an alias for ChromaDBDocStore for backwards compatibility.
+DocumentStore = ChromaDBDocStore
+
+registry = get_registry()
+func = registry.get(name="sentence-transformers").create()
+
+
+class DocstoreEntry(LanceModel):
+    """LanceDB DocumentStore Entry."""
+
+    document: str = func.SourceField()
+    vector: Vector(func.ndims()) = func.VectorField()
+
+
+class LanceDBDocStore(AbstractDocumentStore):
+    """A document store for LlamaBot that wraps around LanceDB."""
+
+    def __init__(
+        self,
+        table_name: str,
+        storage_path: Path = Path.home() / ".llamabot" / "lancedb",
+        schema: Optional[LanceModel] = DocstoreEntry,
+    ):
+        self.table_name = table_name
+        self.db = lancedb.connect(storage_path)
+
+        try:
+            self.table = self.db.open_table(table_name)
+        except FileNotFoundError:
+            self.table = self.db.create_table(table_name, schema=schema)
+
+    def __contains__(self, other: str) -> bool:
+        """Returns boolean whether the 'other' document is in the store.
+
+        :param other: The document to search for.
+        :return: True if the document is in the store, False otherwise.
+        """
+        all_items = self.table.search().limit(None).to_pydantic(DocstoreEntry)
+        texts = set([item.document for item in all_items])
+        return other in texts
+
+    def append(self, document: str):
+        """Append a document to the store.
+
+        :param document: The document to append.
+        """
+        self.table.add([{"document": document}])
+
+    def extend(self, documents: list[str]):
+        """Extend a list of documents to the store.
+
+        :param documents: The documents to append.
+        """
+        # self.table.add(documents)
+        for doc in documents:
+            self.append(doc)
+
+    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+        """Retrieve a list of documents from the store.
+
+        :param query: The query to use to retrieve documents.
+        :param n_results: The number of results to retrieve.
+        :return: A list of documents.
+        """
+        results: list[DocstoreEntry] = (
+            self.table.search(query).limit(n_results).to_pydantic(DocstoreEntry)
+        )
+        return [r.document for r in results]
+
+    def reset(self):
+        """Reset the document store."""
+        self.db.drop_table(self.table_name)
+        self.table = self.db.create_table(self.table_name, schema=DocstoreEntry)
+
+
+class BM25DocStore(AbstractDocumentStore):
+    """In-memory BM25-based retrieval document store."""
+
+    def __init__(self):
+        self.documents: list = []
+
+    def append(self, document: str):
+        """Append a document to the store.
+
+        :param document: The document to append.
+        """
+        self.documents.append(document)
+
+    def extend(self, documents: list[str]):
+        """Extend a list of documents to the store.
+
+        :param documents: The documents to append.
+        """
+        self.documents.extend(documents)
+
+    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+        """Retrieve documents from the store.
+
+        :param query: The query to use to retrieve documents.
+        :param n_results: The number of results to retrieve.
+        :return: A list of documents.
+        """
+        # Use BM25 to get documents.
+        tokenized_docs = [doc.split() for doc in self.documents]
+        search_engine = BM25Okapi(tokenized_docs)
+        docs: list[str] = search_engine.get_top_n(
+            query.split(), self.documents, n=n_results
+        )
+        return docs
+
+    def reset(self):
+        """Reset the document store."""
+        self.documents = []
