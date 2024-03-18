@@ -3,7 +3,7 @@ import contextvars
 from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
-
+from loguru import logger
 
 from llamabot.config import default_language_model
 from llamabot.bot.simplebot import SimpleBot
@@ -12,9 +12,7 @@ from llamabot.components.docstore import BM25DocStore, LanceDBDocStore
 from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
-    retrieve_messages_up_to_budget,
 )
-from llamabot.bot.model_tokens import model_context_window_sizes, DEFAULT_TOKEN_BUDGET
 from slugify import slugify
 
 load_dotenv()
@@ -46,10 +44,15 @@ class QueryBot(SimpleBot, ChatUIMixin):
             stream_target=stream_target,
             **kwargs,
         )
+        logger.debug("Initializing LanceDB DocStore...")
         self.lancedb_store = LanceDBDocStore(table_name=slugify(collection_name))
+        self.lancedb_store.reset()
+        logger.debug("Initializing BM25 DocStore...")
         self.bm25_store = BM25DocStore()
         if document_paths:
+            logger.debug("Adding documents to LanceDB DocStore...")
             self.lancedb_store.add_documents(document_paths=document_paths)
+            logger.debug("Adding documents to BM25 DocStore...")
             self.bm25_store.add_documents(document_paths=document_paths)
 
         self.response_budget = 2_000
@@ -65,22 +68,20 @@ class QueryBot(SimpleBot, ChatUIMixin):
         """
         messages = []
 
-        context_budget = model_context_window_sizes.get(
-            self.model_name, DEFAULT_TOKEN_BUDGET
-        )
+        # context_budget = model_context_window_sizes.get(
+        #     self.model_name, DEFAULT_TOKEN_BUDGET
+        # )
 
         retreived_messages = set()
+        logger.debug(f"Retrieving {n_results} documents from LanceDB DocStore...")
         retrieved_messages = retreived_messages.union(
             self.lancedb_store.retrieve(query, n_results)
         )
+        logger.debug("Retrieving documents from BM25 DocStore...")
         retrieved_messages = retreived_messages.union(
             self.bm25_store.retrieve(query, n_results)
         )
-
-        retrieved = retrieve_messages_up_to_budget(
-            messages=[RetrievedMessage(content=chunk) for chunk in retrieved_messages],
-            character_budget=context_budget - self.response_budget,
-        )
+        retrieved = [RetrievedMessage(content=chunk) for chunk in retrieved_messages]
         messages.extend(retrieved)
         messages.append(HumanMessage(content=query))
         if self.stream_target == "stdout":
