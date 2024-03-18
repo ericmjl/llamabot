@@ -151,9 +151,6 @@ class ChromaDBDocStore(AbstractDocumentStore):
         )
 
 
-# Define DocumentStore as an alias for ChromaDBDocStore for backwards compatibility.
-DocumentStore = ChromaDBDocStore
-
 registry = get_registry()
 func = registry.get(name="sentence-transformers").create()
 
