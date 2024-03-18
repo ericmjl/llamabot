@@ -12,7 +12,7 @@ def test_document_store():
     docstore.client.delete_collection("test_collection")
 
 
-def test_add_documents(tmp_path: Path):
+def test_add_documents(tmp_path: Path, docstore_class):
     """Test the add_documents method of DocumentStore."""
     # Create a temporary collection for testing
     collection_name = "test_collection"
@@ -51,4 +51,4 @@ def test_add_documents(tmp_path: Path):
     )
 
     # Clean up the temporary collection
-    docstore.client.delete_collection(collection_name)
+    docstore.reset()
