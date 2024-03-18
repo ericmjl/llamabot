@@ -54,8 +54,9 @@ def chat(
         print("Serving your document in a panel...")
         bot.serve()
 
-    while True:
-        query = uniform_prompt()
-        exit_if_asked(query)
-        bot(query)
-        typer.echo("\n\n")
+    else:
+        while True:
+            query = uniform_prompt()
+            exit_if_asked(query)
+            bot(query)
+            typer.echo("\n\n")
