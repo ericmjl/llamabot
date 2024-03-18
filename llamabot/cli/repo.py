@@ -1,5 +1,5 @@
 """CLI for chatting with a code repository."""
-from typing import List
+from typing import List, Optional
 import typer
 import git
 import tempfile
@@ -28,6 +28,7 @@ def chat(
         "rst",
     ],
     model_name: str = "gpt-4-0125-preview",
+    initial_message: Optional[str] = None,
     panel: bool = True,
 ):
     """Chat with a code repository."""
@@ -61,7 +62,7 @@ def chat(
         collection_name=slugify(repo_url + ":" + checkout),
         document_paths=source_files,
         model_name=model_name,
-        initial_message=f"Hello! I am here to help you answer questions about your repo, {repo_url}:{checkout}.",
+        initial_message=initial_message,
         stream_target=stream_target,
     )
     if panel:
