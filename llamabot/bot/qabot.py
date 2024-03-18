@@ -2,7 +2,7 @@
 from hashlib import sha256
 from pathlib import Path
 from llamabot.bot.simplebot import SimpleBot
-from llamabot.components.docstore import DocumentStore
+from llamabot.components.docstore import LanceDBDocStore
 from llamabot.components.messages import AIMessage
 from llamabot.doc_processor import magic_load_doc, split_document
 from llamabot.prompt_manager import prompt
@@ -54,10 +54,10 @@ class DocQABot:
     """A bot designed to use pre-computed questions and answers to generate a response."""
 
     def __init__(self, collection_name: str):
-        self.question_store = DocumentStore(
+        self.question_store = LanceDBDocStore(
             collection_name=f"{collection_name}_questions"
         )
-        self.document_store = DocumentStore(collection_name=f"{collection_name}")
+        self.document_store = LanceDBDocStore(collection_name=f"{collection_name}")
 
         self.response_bot = SimpleBot(
             "Based on Q&A results and relevant documents, please answer the query.",
