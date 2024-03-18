@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from llamabot.config import default_language_model
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage, HumanMessage
-from llamabot.components.docstore import DocumentStore
+from llamabot.components.docstore import BM25DocStore, LanceDBDocStore
 from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
@@ -24,7 +24,7 @@ CACHE_DIR = Path.home() / ".llamabot" / "cache"
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
-class QueryBot(SimpleBot, DocumentStore, ChatUIMixin):
+class QueryBot(SimpleBot, ChatUIMixin):
     """QueryBot is a bot that uses the DocumentStore to answer questions about a document."""
 
     def __init__(
@@ -46,9 +46,12 @@ class QueryBot(SimpleBot, DocumentStore, ChatUIMixin):
             stream_target=stream_target,
             **kwargs,
         )
-        DocumentStore.__init__(self, collection_name=slugify(collection_name))
+        self.lancedb_store = LanceDBDocStore(table_name=slugify(collection_name))
+        self.bm25_store = BM25DocStore()
         if document_paths:
-            self.add_documents(document_paths=document_paths)
+            self.lancedb_store.add_documents(document_paths=document_paths)
+            self.bm25_store.add_documents(document_paths=document_paths)
+
         self.response_budget = 2_000
 
         ChatUIMixin.__init__(self, initial_message)
@@ -65,11 +68,17 @@ class QueryBot(SimpleBot, DocumentStore, ChatUIMixin):
         context_budget = model_context_window_sizes.get(
             self.model_name, DEFAULT_TOKEN_BUDGET
         )
+
+        retreived_messages = set()
+        retrieved_messages = retreived_messages.union(
+            self.lancedb_store.retrieve(query, n_results)
+        )
+        retrieved_messages = retreived_messages.union(
+            self.bm25_store.retrieve(query, n_results)
+        )
+
         retrieved = retrieve_messages_up_to_budget(
-            messages=[
-                RetrievedMessage(content=chunk)
-                for chunk in self.retrieve(query, n_results=n_results)
-            ],
+            messages=[RetrievedMessage(content=chunk) for chunk in retrieved_messages],
             character_budget=context_budget - self.response_budget,
         )
         messages.extend(retrieved)
