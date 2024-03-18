@@ -91,6 +91,7 @@ dependencies = [
     "rank-bm25",
     "lancedb",
     "sentence-transformers",
+    "chromadb",
 ]
 requires-python = ">3.10"
 description = "A Pythonic interface to LLMs."
