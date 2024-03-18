@@ -21,6 +21,7 @@ from lancedb.embeddings import get_registry
 from lancedb.pydantic import LanceModel, Vector
 from rank_bm25 import BM25Okapi
 from tqdm.auto import tqdm
+from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
 
@@ -179,6 +180,12 @@ class LanceDBDocStore(AbstractDocumentStore):
         except FileNotFoundError:
             self.table = self.db.create_table(table_name, schema=schema)
 
+        logger.debug("Getting existing documents from LanceDB DocStore...")
+        self.existing_records = [
+            item.document
+            for item in self.table.search().limit(None).to_pydantic(DocstoreEntry)
+        ]
+
     def __contains__(self, other: str) -> bool:
         """Returns boolean whether the 'other' document is in the store.
 
@@ -194,7 +201,10 @@ class LanceDBDocStore(AbstractDocumentStore):
 
         :param document: The document to append.
         """
-        self.table.add([{"document": document}])
+        # Avoid duplication of documents in LanceDB.
+        if document not in self.existing_records:
+            self.table.add([{"document": document}])
+            self.existing_records.append(document)
 
     def extend(self, documents: list[str]):
         """Extend a list of documents to the store.
@@ -202,7 +212,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param documents: The documents to append.
         """
         # self.table.add(documents)
-        for doc in documents:
+        for doc in tqdm(documents):
             self.append(doc)
 
     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
