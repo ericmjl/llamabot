@@ -34,7 +34,9 @@ def chat(
 
     bot = QueryBot(
         system_prompt=(
-            "You are a bot that can answer questions about a document provided to you."
+            "You are a bot that can answer questions about a document provided to you. "
+            "Based on the document, respond to the query that is given to you. "
+            "As much as possible, quote from the context that is provided to you."
         ),
         collection_name=doc_path.stem.lower().replace(" ", "-"),
         document_paths=[doc_path],
