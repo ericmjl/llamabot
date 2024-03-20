@@ -85,6 +85,11 @@ class AbstractDocumentStore:
                 document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
             )
             self.extend(splitted_document)
+        self.__post_add_documents__()
+
+    def __post_add_documents__(self):
+        """Execute code after adding documents to the store."""
+        raise NotImplementedError()
 
 
 class ChromaDBDocStore(AbstractDocumentStore):
@@ -223,7 +228,9 @@ class LanceDBDocStore(AbstractDocumentStore):
         :return: A list of documents.
         """
         results: list[DocstoreEntry] = (
-            self.table.search(query).limit(n_results).to_pydantic(DocstoreEntry)
+            self.table.search(query, query_type="hybrid")
+            .limit(n_results)
+            .to_pydantic(DocstoreEntry)
         )
         return [r.document for r in results]
 
@@ -231,6 +238,10 @@ class LanceDBDocStore(AbstractDocumentStore):
         """Reset the document store."""
         self.db.drop_table(self.table_name)
         self.table = self.db.create_table(self.table_name, schema=DocstoreEntry)
+
+    def __post_add_documents__(self):
+        """Execute code after adding documents to the store."""
+        self.table.create_fts_index("document")
 
 
 class BM25DocStore(AbstractDocumentStore):
