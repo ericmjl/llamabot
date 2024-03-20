@@ -8,7 +8,7 @@ from loguru import logger
 from llamabot.config import default_language_model
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage, HumanMessage
-from llamabot.components.docstore import BM25DocStore, LanceDBDocStore
+from llamabot.components.docstore import LanceDBDocStore
 from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
@@ -47,13 +47,9 @@ class QueryBot(SimpleBot, ChatUIMixin):
         logger.debug("Initializing LanceDB DocStore...")
         self.lancedb_store = LanceDBDocStore(table_name=slugify(collection_name))
         self.lancedb_store.reset()
-        logger.debug("Initializing BM25 DocStore...")
-        self.bm25_store = BM25DocStore()
         if document_paths:
             logger.debug("Adding documents to LanceDB DocStore...")
             self.lancedb_store.add_documents(document_paths=document_paths)
-            logger.debug("Adding documents to BM25 DocStore...")
-            self.bm25_store.add_documents(document_paths=document_paths)
 
         self.response_budget = 2_000
 
@@ -76,10 +72,6 @@ class QueryBot(SimpleBot, ChatUIMixin):
         logger.debug(f"Retrieving {n_results} documents from LanceDB DocStore...")
         retrieved_messages = retreived_messages.union(
             self.lancedb_store.retrieve(query, n_results)
-        )
-        logger.debug("Retrieving documents from BM25 DocStore...")
-        retrieved_messages = retreived_messages.union(
-            self.bm25_store.retrieve(query, n_results)
         )
         retrieved = [RetrievedMessage(content=chunk) for chunk in retrieved_messages]
         messages.extend(retrieved)
