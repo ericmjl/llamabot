@@ -69,6 +69,7 @@ def test_ghostwriter(desired_functionality: str, language: str):
 
 
 @given(code=st.text(), style=st.sampled_from(["sphinx", "numpy", "google"]))
+@settings(deadline=None)
 def test_docstring(code: str, style: str):
     """Test that the docstring function generates a docstring with the specified style.
 

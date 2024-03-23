@@ -29,4 +29,4 @@ def test_querybot(
     )
 
     bot("How are you doing?")
-    bot.reset()
+    bot.lancedb_store.reset()

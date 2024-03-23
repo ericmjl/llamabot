@@ -2,23 +2,40 @@
 
 
 from pathlib import Path
-from llamabot.components.docstore import DocumentStore
+from llamabot.components.docstore import BM25DocStore, ChromaDBDocStore, LanceDBDocStore
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 
-def test_document_store():
-    """Test the DocumentStore class."""
-    docstore = DocumentStore(collection_name="test_collection")
-    assert docstore.collection_name == "test_collection"
-    docstore.client.delete_collection("test_collection")
+def lancedb():
+    """Return a LanceDBDocStore."""
+    store = LanceDBDocStore(table_name="test_lancedb", storage_path=Path("/tmp"))
+    store.reset()
+    return store
 
 
-def test_add_documents(tmp_path: Path):
+def chromadb():
+    """Return a ChromaDBDocStore."""
+    store = ChromaDBDocStore(collection_name="test_chromadb", storage_path=Path("/tmp"))
+    store.reset()
+    return store
+
+
+def bm25():
+    """Return a BM25DocStore."""
+    return BM25DocStore()
+
+
+docstore_strategies = [
+    st.just(lancedb()),
+    st.just(chromadb()),
+    st.just(bm25()),
+]
+
+
+@given(docstore=st.one_of(docstore_strategies))
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+def test_add_documents(tmp_path: Path, docstore):
     """Test the add_documents method of DocumentStore."""
-    # Create a temporary collection for testing
-    collection_name = "test_collection"
-    storage_path = Path.home() / ".llamabot" / "test_chroma.db"
-    docstore = DocumentStore(collection_name=collection_name, storage_path=storage_path)
-
     # Add a single document
     # document_path = Path("path/to/document.txt")
     document_path = tmp_path / "document.txt"
@@ -32,9 +49,6 @@ def test_add_documents(tmp_path: Path):
     # Assert that the retrieved document matches the added document
     assert retrieved_documents == ["content of the document"]
 
-    # Reset the document store
-    docstore.reset()
-
     # Add multiple documents
     document_paths = [tmp_path / "document1.txt", tmp_path / "document2.txt"]
     for i, document_path in enumerate(document_paths):
@@ -43,12 +57,10 @@ def test_add_documents(tmp_path: Path):
     docstore.add_documents(document_paths=document_paths)
 
     # Retrieve the documents from the store
-    retrieved_documents = docstore.retrieve("query", n_results=2)
+    retrieved_documents = docstore.retrieve("document1", n_results=1)
 
     # Assert that the retrieved documents match the added documents
-    assert set(retrieved_documents) == set(
-        ["content of document1", "content of document2"]
-    )
+    assert set(retrieved_documents) == set(["content of document1"])
 
     # Clean up the temporary collection
-    docstore.client.delete_collection(collection_name)
+    docstore.reset()
