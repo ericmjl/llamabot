@@ -186,10 +186,13 @@ class LanceDBDocStore(AbstractDocumentStore):
             self.table = self.db.create_table(table_name, schema=schema)
 
         logger.debug("Getting existing documents from LanceDB DocStore...")
-        self.existing_records = [
-            item.document
-            for item in self.table.search().limit(None).to_pydantic(DocstoreEntry)
-        ]
+        try:
+            self.existing_records = [
+                item.document
+                for item in self.table.search().limit(None).to_pydantic(DocstoreEntry)
+            ]
+        except ValueError:
+            self.existing_records = []
 
     def __contains__(self, other: str) -> bool:
         """Returns boolean whether the 'other' document is in the store.

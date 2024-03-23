@@ -3,7 +3,7 @@
 
 from pathlib import Path
 from llamabot.components.docstore import BM25DocStore, ChromaDBDocStore, LanceDBDocStore
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st, reproduce_failure
 
 
 def lancedb():
@@ -32,6 +32,7 @@ docstore_strategies = [
 ]
 
 
+@reproduce_failure("6.99.6", b"AAA=")
 @given(docstore=st.one_of(docstore_strategies))
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 def test_add_documents(tmp_path: Path, docstore):

@@ -20,7 +20,7 @@ dependencies:
   # CLI development
   - typer>=0.4.0
   # Software testing
-  - hypothesis
+  - hypothesis>=6.99.6
   - pytest
   - pytest-cov
   - coverage
