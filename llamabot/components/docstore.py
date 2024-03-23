@@ -109,6 +109,10 @@ class ChromaDBDocStore(AbstractDocumentStore):
         self.collection_name = collection_name
         self.existing_records = collection.get()
 
+    def __post_add_documents__(self):
+        """Execute code after adding documents to the store."""
+        pass
+
     def append(self, document: str, metadata: dict = {}):
         """Append a document to the store.
 
@@ -244,7 +248,7 @@ class LanceDBDocStore(AbstractDocumentStore):
 
     def __post_add_documents__(self):
         """Execute code after adding documents to the store."""
-        self.table.create_fts_index("document")
+        self.table.create_fts_index("document", replace=True)
 
 
 class BM25DocStore(AbstractDocumentStore):
@@ -252,6 +256,10 @@ class BM25DocStore(AbstractDocumentStore):
 
     def __init__(self):
         self.documents: list = []
+
+    def __post_add_documents__(self):
+        """Execute code after adding documents to the store."""
+        pass
 
     def append(self, document: str):
         """Append a document to the store.
