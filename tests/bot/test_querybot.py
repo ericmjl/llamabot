@@ -30,4 +30,3 @@ def test_querybot(
 
     bot("How are you doing?")
     bot.lancedb_store.reset()
-    bot.bm25_store.reset()
