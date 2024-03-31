@@ -62,7 +62,7 @@ namespaces = false
 
 [project]
 name = "llamabot"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
     "openai",
     "panel>=1.1.0",
@@ -72,7 +72,7 @@ dependencies = [
     "pyperclip",
     "astor>=0.8.1",
     "python-dotenv",
-    "typer>=0.4.0",
+    "typer>=0.4.1",
     "gitpython",
     "pyprojroot",
     "frozenlist",
