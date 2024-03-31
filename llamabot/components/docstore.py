@@ -14,9 +14,6 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Optional
 
-import chromadb
-import lancedb
-from chromadb import QueryResult
 from lancedb.embeddings import get_registry
 from lancedb.pydantic import LanceModel, Vector
 from rank_bm25 import BM25Okapi
@@ -100,6 +97,8 @@ class ChromaDBDocStore(AbstractDocumentStore):
         collection_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
     ):
+        import chromadb
+
         client = chromadb.PersistentClient(path=str(storage_path))
         collection = client.create_collection(collection_name, get_or_create=True)
 
@@ -142,8 +141,10 @@ class ChromaDBDocStore(AbstractDocumentStore):
 
         :param query: The query to use to retrieve documents.
         """
+        import chromadb
+
         # Use Vectordb to get documents.
-        results: QueryResult = self.collection.query(
+        results: chromadb.QueryResult = self.collection.query(
             query_texts=query, n_results=n_results
         )
         vectordb_documents: list[str] = results["documents"][0]
@@ -161,15 +162,14 @@ class ChromaDBDocStore(AbstractDocumentStore):
         )
 
 
-registry = get_registry()
-func = registry.get(name="sentence-transformers").create()
-
-
 class DocstoreEntry(LanceModel):
     """LanceDB DocumentStore Entry."""
 
-    document: str = func.SourceField()
-    vector: Vector(func.ndims()) = func.VectorField()
+    def __init__(self):
+        registry = get_registry()
+        func = registry.get(name="sentence-transformers").create()
+        self.document: str = func.SourceField()
+        self.vector: Vector(func.ndims()) = func.VectorField()
 
 
 class LanceDBDocStore(AbstractDocumentStore):
@@ -181,6 +181,8 @@ class LanceDBDocStore(AbstractDocumentStore):
         storage_path: Path = Path.home() / ".llamabot" / "lancedb",
         schema: Optional[LanceModel] = DocstoreEntry,
     ):
+        import lancedb
+
         self.table_name = table_name
         self.db = lancedb.connect(storage_path)
 

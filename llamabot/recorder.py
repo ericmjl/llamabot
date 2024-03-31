@@ -3,8 +3,6 @@ import contextvars
 from pathlib import Path
 from typing import Optional
 
-import pandas as pd
-import panel as pn
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -45,6 +43,8 @@ class PromptRecorder:
 
         :return: A string form of the prompts and responses as a dataframe.
         """
+        import pandas as pd
+
         return pd.DataFrame(self.prompts_and_responses).__str__()
 
     def _repr_html_(self):
@@ -59,6 +59,8 @@ class PromptRecorder:
 
         :return: A pandas DataFrame representation of the prompt recorder.
         """
+        import pandas as pd
+
         return pd.DataFrame(self.prompts_and_responses)
 
     def save(self, path: Path):
@@ -78,14 +80,14 @@ class PromptRecorder:
 
         :return: A panel representation of the prompt recorder.
         """
+        import panel as pn
+
         global index
         index = 0
         pn.extension()
 
         next_button = pn.widgets.Button(name=">")
-        next_button
         prev_button = pn.widgets.Button(name="<")
-        prev_button
 
         buttons = pn.Row(prev_button, next_button)
 

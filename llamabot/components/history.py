@@ -5,7 +5,6 @@ We can retrieve the last N messages from the database
 or use vector similarity search to identify similar messages to retrieve (RAGHistory).
 """
 from pathlib import Path
-import chromadb
 from hashlib import sha256
 from llamabot.components.messages import (
     BaseMessage,
@@ -48,6 +47,8 @@ class RAGHistory:
         session_name: str,
         db_path: Path = Path.home() / ".llamabot" / "chroma.db",
     ):
+        import chromadb
+
         client = chromadb.PersistentClient(path=str(db_path))
         collection = client.create_collection(session_name, get_or_create=True)
 
