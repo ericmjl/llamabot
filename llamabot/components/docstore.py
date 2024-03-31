@@ -13,12 +13,9 @@ Hence we use it by default.
 from hashlib import sha256
 from pathlib import Path
 from typing import Optional
-
-from lancedb.embeddings import get_registry
 from lancedb.pydantic import LanceModel, Vector
 from rank_bm25 import BM25Okapi
 from tqdm.auto import tqdm
-from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
 
@@ -166,6 +163,8 @@ class DocstoreEntry(LanceModel):
     """LanceDB DocumentStore Entry."""
 
     def __init__(self):
+        from lancedb.embeddings import get_registry
+
         registry = get_registry()
         func = registry.get(name="sentence-transformers").create()
         self.document: str = func.SourceField()
@@ -191,7 +190,6 @@ class LanceDBDocStore(AbstractDocumentStore):
         except FileNotFoundError:
             self.table = self.db.create_table(table_name, schema=schema)
 
-        logger.debug("Getting existing documents from LanceDB DocStore...")
         try:
             self.existing_records = [
                 item.document
@@ -236,7 +234,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
-        results: list[DocstoreEntry] = (
+        results: list["DocstoreEntry"] = (
             self.table.search(query, query_type="hybrid")
             .limit(n_results)
             .to_pydantic(DocstoreEntry)
