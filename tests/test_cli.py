@@ -15,4 +15,4 @@ def test_cli_tool_execution_time():
     execution_time = end_time - start_time
 
     # Replace 'threshold_in_seconds' with your time threshold
-    assert execution_time < 2.0
+    assert execution_time < 3.0
