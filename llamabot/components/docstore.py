@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Callable
 
 
-from rank_bm25 import BM25Okapi
 from tqdm.auto import tqdm
 
 from llamabot.doc_processor import magic_load_doc, split_document
@@ -282,6 +281,8 @@ class BM25DocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
+        from rank_bm25 import BM25Okapi
+
         # Use BM25 to get documents.
         tokenized_docs = [doc.split() for doc in self.documents]
         search_engine = BM25Okapi(tokenized_docs)

@@ -1,6 +1,5 @@
 """ImageBot module for generating images."""
 
-from IPython.display import display, Image
 import requests
 from pathlib import Path
 from typing import Optional, Union
@@ -37,6 +36,8 @@ class ImageBot:
             otherwise a pathlib.Path object pointing to the generated image.
         :raises Exception: If no image URL is found in the response.
         """
+        from IPython.display import display, Image
+
         response = self.client.images.generate(
             model=self.model,
             prompt=prompt,
