@@ -3,6 +3,7 @@ from llamabot import ImageBot, SimpleBot
 import requests
 from llamabot.components.messages import AIMessage
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 
 def test_initialization_defaults():
@@ -23,28 +24,26 @@ def test_initialization_custom():
     assert bot.n == 2
 
 
-def test_call_in_jupyter(mocker):
-    """Test the call method when running in a Jupyter notebook.
+def test_call_in_jupyter():
+    """Test the call method when running in a Jupyter notebook."""
+    with patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=True):
+        with patch("IPython.display.Image") as mock_image:
+            with patch("IPython.display.display") as mock_display:
+                # Setup
+                bot = ImageBot()
+                mock_response = MagicMock()
+                test_url = "http://image.url"
+                mock_response.data = [MagicMock(url=test_url)]
+                bot.client = MagicMock()
+                bot.client.images.generate.return_value = mock_response
 
-    This test tests that the call method returns the URL of the generated image
-    when running in a Jupyter notebook and displays the image.
+                # Action
+                result = bot("test prompt")
 
-    :param mocker: The pytest-mock fixture.
-    """
-    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=True)
-    mock_display = mocker.patch("llamabot.bot.imagebot.display")
-
-    bot = ImageBot()
-
-    # Mock the client's generate method on the instance to return the desired URL
-    mock_response = mocker.MagicMock()
-    mock_response.data = [mocker.MagicMock(url="http://image.url")]
-    bot.client = mocker.MagicMock()
-    bot.client.images.generate.return_value = mock_response
-
-    result = bot("test prompt")
-    assert result == "http://image.url"
-    mock_display.assert_called_once()
+                # Assert
+                assert result == test_url
+                mock_image.assert_called_once_with(url=test_url)
+                mock_display.assert_called_once_with(mock_image.return_value)
 
 
 def test_call_outside_jupyter(mocker, tmp_path):
