@@ -3,7 +3,6 @@ import contextvars
 from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
-from loguru import logger
 
 from llamabot.config import default_language_model
 from llamabot.bot.simplebot import SimpleBot
@@ -44,11 +43,9 @@ class QueryBot(SimpleBot, ChatUIMixin):
             stream_target=stream_target,
             **kwargs,
         )
-        logger.debug("Initializing LanceDB DocStore...")
         self.lancedb_store = LanceDBDocStore(table_name=slugify(collection_name))
         self.lancedb_store.reset()
         if document_paths:
-            logger.debug("Adding documents to LanceDB DocStore...")
             self.lancedb_store.add_documents(document_paths=document_paths)
 
         self.response_budget = 2_000
@@ -69,7 +66,6 @@ class QueryBot(SimpleBot, ChatUIMixin):
         # )
 
         retreived_messages = set()
-        logger.debug(f"Retrieving {n_results} documents from LanceDB DocStore...")
         retrieved_messages = retreived_messages.union(
             self.lancedb_store.retrieve(query, n_results)
         )

@@ -1,7 +1,6 @@
 """LlamaBot ChatUI that composes with Bots."""
 
 from typing import Callable, Optional
-import panel as pn
 
 
 class ChatUIMixin:
@@ -12,6 +11,8 @@ class ChatUIMixin:
         initial_message: Optional[str] = None,
         callback_function: Optional[Callable] = None,
     ):
+        import panel as pn
+
         self.callback_function = callback_function
         if callback_function is None:
             self.callback_function = lambda ai_message, user, instance: self(ai_message)

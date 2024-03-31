@@ -11,7 +11,6 @@ from llamabot.components.messages import (
 )
 from llamabot.recorder import autorecord
 from llamabot.config import default_language_model
-from litellm import completion
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -153,6 +152,8 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
     :param messages: A list of Messages.
     :return: A response object.
     """
+    from litellm import completion
+
     messages_dumped: list[dict] = [m.model_dump() for m in messages]
     completion_kwargs = dict(
         model=bot.model_name,

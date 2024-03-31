@@ -12,16 +12,10 @@ Hence we use it by default.
 
 from hashlib import sha256
 from pathlib import Path
-from typing import Optional
+from typing import Callable
 
-import chromadb
-import lancedb
-from chromadb import QueryResult
-from lancedb.embeddings import get_registry
-from lancedb.pydantic import LanceModel, Vector
-from rank_bm25 import BM25Okapi
+
 from tqdm.auto import tqdm
-from loguru import logger
 
 from llamabot.doc_processor import magic_load_doc, split_document
 
@@ -100,6 +94,8 @@ class ChromaDBDocStore(AbstractDocumentStore):
         collection_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
     ):
+        import chromadb
+
         client = chromadb.PersistentClient(path=str(storage_path))
         collection = client.create_collection(collection_name, get_or_create=True)
 
@@ -142,8 +138,10 @@ class ChromaDBDocStore(AbstractDocumentStore):
 
         :param query: The query to use to retrieve documents.
         """
+        import chromadb
+
         # Use Vectordb to get documents.
-        results: QueryResult = self.collection.query(
+        results: chromadb.QueryResult = self.collection.query(
             query_texts=query, n_results=n_results
         )
         vectordb_documents: list[str] = results["documents"][0]
@@ -161,17 +159,6 @@ class ChromaDBDocStore(AbstractDocumentStore):
         )
 
 
-registry = get_registry()
-func = registry.get(name="sentence-transformers").create()
-
-
-class DocstoreEntry(LanceModel):
-    """LanceDB DocumentStore Entry."""
-
-    document: str = func.SourceField()
-    vector: Vector(func.ndims()) = func.VectorField()
-
-
 class LanceDBDocStore(AbstractDocumentStore):
     """A document store for LlamaBot that wraps around LanceDB."""
 
@@ -179,21 +166,33 @@ class LanceDBDocStore(AbstractDocumentStore):
         self,
         table_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "lancedb",
-        schema: Optional[LanceModel] = DocstoreEntry,
     ):
+        import lancedb
+        from lancedb.embeddings import EmbeddingFunctionRegistry, get_registry
+        from lancedb.pydantic import LanceModel, Vector
+
+        registry: EmbeddingFunctionRegistry = get_registry()
+        func: Callable = registry.get(name="sentence-transformers").create()
+
+        class DocstoreEntry(LanceModel):
+            """LanceDB DocumentStore Entry."""
+
+            document: str = func.SourceField()
+            vector: Vector(func.ndims()) = func.VectorField()
+
+        self.schema = DocstoreEntry
         self.table_name = table_name
         self.db = lancedb.connect(storage_path)
 
         try:
             self.table = self.db.open_table(table_name)
         except FileNotFoundError:
-            self.table = self.db.create_table(table_name, schema=schema)
+            self.table = self.db.create_table(table_name, schema=self.schema)
 
-        logger.debug("Getting existing documents from LanceDB DocStore...")
         try:
             self.existing_records = [
                 item.document
-                for item in self.table.search().limit(None).to_pydantic(DocstoreEntry)
+                for item in self.table.search().limit(None).to_pydantic(self.schema)
             ]
         except ValueError:
             self.existing_records = []
@@ -204,7 +203,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param other: The document to search for.
         :return: True if the document is in the store, False otherwise.
         """
-        all_items = self.table.search().limit(None).to_pydantic(DocstoreEntry)
+        all_items = self.table.search().limit(None).to_pydantic(self.schema)
         texts = set([item.document for item in all_items])
         return other in texts
 
@@ -234,17 +233,17 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
-        results: list[DocstoreEntry] = (
+        results: list = (
             self.table.search(query, query_type="hybrid")
             .limit(n_results)
-            .to_pydantic(DocstoreEntry)
+            .to_pydantic(self.schema)
         )
         return [r.document for r in results]
 
     def reset(self):
         """Reset the document store."""
         self.db.drop_table(self.table_name)
-        self.table = self.db.create_table(self.table_name, schema=DocstoreEntry)
+        self.table = self.db.create_table(self.table_name, schema=self.schema)
 
     def __post_add_documents__(self):
         """Execute code after adding documents to the store."""
@@ -282,6 +281,8 @@ class BM25DocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
+        from rank_bm25 import BM25Okapi
+
         # Use BM25 to get documents.
         tokenized_docs = [doc.split() for doc in self.documents]
         search_engine = BM25Okapi(tokenized_docs)

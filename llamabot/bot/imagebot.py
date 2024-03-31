@@ -1,7 +1,5 @@
 """ImageBot module for generating images."""
 
-from openai import OpenAI
-from IPython.display import display, Image
 import requests
 from pathlib import Path
 from typing import Optional, Union
@@ -18,6 +16,8 @@ class ImageBot:
     """
 
     def __init__(self, model="dall-e-3", size="1024x1024", quality="hd", n=1):
+        from openai import OpenAI
+
         self.client = OpenAI()
         self.model = model
         self.size = size
@@ -36,6 +36,8 @@ class ImageBot:
             otherwise a pathlib.Path object pointing to the generated image.
         :raises Exception: If no image URL is found in the response.
         """
+        from IPython.display import display, Image
+
         response = self.client.images.generate(
             model=self.model,
             prompt=prompt,
