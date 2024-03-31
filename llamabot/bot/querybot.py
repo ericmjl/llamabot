@@ -55,7 +55,7 @@ class QueryBot(SimpleBot, ChatUIMixin):
 
         ChatUIMixin.__init__(self, initial_message)
 
-    def __call__(self, query: str, n_results: int = 10) -> AIMessage:
+    def __call__(self, query: str, n_results: int = 20) -> AIMessage:
         """Query documents within QueryBot's document store.
 
         We use RAG to query out documents.

@@ -1,3 +1,5 @@
+command-r
+mxbai-embed-large
 dolphincoder
 starcoder2
 all-minilm
