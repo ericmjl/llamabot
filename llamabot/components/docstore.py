@@ -12,8 +12,9 @@ Hence we use it by default.
 
 from hashlib import sha256
 from pathlib import Path
-from typing import Optional
-from lancedb.pydantic import LanceModel, Vector
+from typing import Callable
+
+
 from rank_bm25 import BM25Okapi
 from tqdm.auto import tqdm
 
@@ -159,18 +160,6 @@ class ChromaDBDocStore(AbstractDocumentStore):
         )
 
 
-class DocstoreEntry(LanceModel):
-    """LanceDB DocumentStore Entry."""
-
-    def __init__(self):
-        from lancedb.embeddings import get_registry
-
-        registry = get_registry()
-        func = registry.get(name="sentence-transformers").create()
-        self.document: str = func.SourceField()
-        self.vector: Vector(func.ndims()) = func.VectorField()
-
-
 class LanceDBDocStore(AbstractDocumentStore):
     """A document store for LlamaBot that wraps around LanceDB."""
 
@@ -178,22 +167,33 @@ class LanceDBDocStore(AbstractDocumentStore):
         self,
         table_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "lancedb",
-        schema: Optional[LanceModel] = DocstoreEntry,
     ):
         import lancedb
+        from lancedb.embeddings import EmbeddingFunctionRegistry, get_registry
+        from lancedb.pydantic import LanceModel, Vector
 
+        registry: EmbeddingFunctionRegistry = get_registry()
+        func: Callable = registry.get(name="sentence-transformers").create()
+
+        class DocstoreEntry(LanceModel):
+            """LanceDB DocumentStore Entry."""
+
+            document: str = func.SourceField()
+            vector: Vector(func.ndims()) = func.VectorField()
+
+        self.schema = DocstoreEntry
         self.table_name = table_name
         self.db = lancedb.connect(storage_path)
 
         try:
             self.table = self.db.open_table(table_name)
         except FileNotFoundError:
-            self.table = self.db.create_table(table_name, schema=schema)
+            self.table = self.db.create_table(table_name, schema=self.schema)
 
         try:
             self.existing_records = [
                 item.document
-                for item in self.table.search().limit(None).to_pydantic(DocstoreEntry)
+                for item in self.table.search().limit(None).to_pydantic(self.schema)
             ]
         except ValueError:
             self.existing_records = []
@@ -204,7 +204,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param other: The document to search for.
         :return: True if the document is in the store, False otherwise.
         """
-        all_items = self.table.search().limit(None).to_pydantic(DocstoreEntry)
+        all_items = self.table.search().limit(None).to_pydantic(self.schema)
         texts = set([item.document for item in all_items])
         return other in texts
 
@@ -234,17 +234,17 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
-        results: list["DocstoreEntry"] = (
+        results: list = (
             self.table.search(query, query_type="hybrid")
             .limit(n_results)
-            .to_pydantic(DocstoreEntry)
+            .to_pydantic(self.schema)
         )
         return [r.document for r in results]
 
     def reset(self):
         """Reset the document store."""
         self.db.drop_table(self.table_name)
-        self.table = self.db.create_table(self.table_name, schema=DocstoreEntry)
+        self.table = self.db.create_table(self.table_name, schema=self.schema)
 
     def __post_add_documents__(self):
         """Execute code after adding documents to the store."""
