@@ -80,7 +80,7 @@ jobs:
       - name: Commit release notes
         run: |
           python -m pip install pre-commit
-          pre-commit run --all-files || true
+          pre-commit run --all-files || pre-commit run --all-files
           git add .
           git commit -m "Add release notes for ${{ env.version_number }}"
 
