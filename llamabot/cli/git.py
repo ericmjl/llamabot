@@ -144,7 +144,9 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
 
     # Create release_notes_dir if it doesn't exist:
     release_notes_dir.mkdir(parents=True, exist_ok=True)
+    # Ensure only one newline at the end of the file
+    trimmed_notes = notes.content.rstrip() + "\n"
 
-    # Write release notes to the file:
+    # Write release notes to the file
     with open(release_notes_dir / f"{tag2.name}.md", "w+") as f:
-        f.write(notes.content)
+        f.write(trimmed_notes)
