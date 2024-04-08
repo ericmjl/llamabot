@@ -1,39 +1,43 @@
 # Chatting with a Code Repository: Llamabot CLI Guide
 
-Welcome to the guide on using the Llamabot CLI for interacting with code repositories. This tool facilitates engaging conversations with your codebase, leveraging the power of AI to understand and read documentation within a repo. Let’s get started on how to utilize this tool.
+Welcome to the guide on using the Llamabot CLI for interacting with code repositories. This innovative tool leverages AI to facilitate engaging and insightful conversations with your codebase. Discover how to effectively use this tool to read and understand documentation within a repository.
 
-## Getting Started
+## Getting started
 
-Before diving into the commands, ensure you have Llamabot CLI installed. Install it via pip:
+Before you can start chatting with your code repository, ensure that Llamabot CLI is installed on your system. You can install it via pip with the following command:
 
 ```bash
 pip install -U llamabot
 ```
 
-After installation, access the CLI with the `llamabot repo` command.
+Once installed, you can access the CLI using the `llamabot repo chat` command.
 
-## Key Commands
+## Key commands
 
-Llamabot CLI offers several commands:
+Llamabot CLI introduces the `chat` command, allowing for dynamic interactions with your code repository.
 
-1. `chat`: Engage in a conversation with your code repository.
-
-### Chat with Your Repository
+### Chat with your repository
 
 The `chat` command allows you to interact with your code repository in a conversational manner.
 
 #### Usage
 
+Run the command below to start a conversation with your repository:
+
 ```bash
-llamabot python chat --repo-url https://github.com/ericmjl/llamabot --checkout="main" --source-file-extensions md --source-file-extensions py --model-name="mistral/mistral-medium"
+llamabot repo chat --repo-url https://github.com/yourusername/yourrepo --checkout="branch_or_tag" --source-file-extensions py --source-file-extensions md --model-name="gpt-4-0125-preview"
 ```
 
-- `--repo-url`: URL of the git repository.
-- `--checkout`: Branch or tag to use (default: "main").
-- `--source-file-extensions`: File types to include in the conversation.
-- `--model-name`: AI model to use for generating responses.
+Here are the key parameters to understand:
 
-Once you have executed this command, LlamaBot will automatically clone the repository to a temporary directory, embed the files as specified by the source-file extensions, and fire up LlamaBot's usual command line-based chat interface.
+- `--repo-url`: URL of the git repository you want to interact with.
+- `--checkout`: Specify the branch or tag you wish to use. The default is "main".
+- `--source-file-extensions`: Define the types of source files to include in the conversation. Supports a variety of file extensions.
+- `--model-name`: AI model to be used for generating responses.
+- `--initial-message` (optional): Initial message to start the conversation.
+- `--panel` (optional): Set to `true` to launch a Panel web app to chat.
+
+After executing the command, Llamabot clones the repository into a temporary directory, processes the files as specified, and starts the chat interface. If `--panel` is true, the chat interface will be served in a browser.
 
 ## Conclusion
 
