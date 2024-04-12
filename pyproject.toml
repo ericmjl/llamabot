@@ -65,7 +65,7 @@ name = "llamabot"
 version = "0.4.1"
 dependencies = [
     "openai",
-    "panel>=1.1.0",
+    "panel>=1.3.0",
     "jupyter_bokeh",
     "bokeh>=3.1.0",
     "loguru",
