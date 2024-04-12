@@ -1,3 +1,4 @@
+codegemma
 command-r
 mxbai-embed-large
 dolphincoder
