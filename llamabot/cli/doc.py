@@ -29,6 +29,8 @@ def chat(
     :param panel: Whether to use Panel or not. If not, we default to using CLI chat.
     :param initial_message: The initial message to send to the user.
     :param doc_path: Path to the document you wish to chat with.
+    :param address: Host to serve the API on.
+    :param port: Port to serve the API on.
     """
     stream_target = "stdout"
     if panel:
