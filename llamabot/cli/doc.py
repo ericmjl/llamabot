@@ -20,6 +20,8 @@ def chat(
     doc_path: Path = typer.Argument(
         "", help="Path to the document you wish to chat with."
     ),
+    address: str = typer.Option("0.0.0.0", help="Host to serve the API on."),
+    port: int = typer.Option(6363, help="Port to serve the API on."),
 ):
     """Chat with your document.
 
@@ -27,6 +29,8 @@ def chat(
     :param panel: Whether to use Panel or not. If not, we default to using CLI chat.
     :param initial_message: The initial message to send to the user.
     :param doc_path: Path to the document you wish to chat with.
+    :param address: Host to serve the API on.
+    :param port: Port to serve the API on.
     """
     stream_target = "stdout"
     if panel:
@@ -54,7 +58,7 @@ def chat(
 
     if panel:
         print("Serving your document in a panel...")
-        bot.serve()
+        bot.serve(address=address, port=port, websocket_origin=["*"])
 
     else:
         while True:
