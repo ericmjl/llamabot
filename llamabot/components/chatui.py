@@ -30,9 +30,9 @@ class ChatUIMixin:
         """
         return self.chat_interface.servable()
 
-    def serve(self):
+    def serve(self, **kwargs):
         """Serve the chat interface.
 
         :returns: None
         """
-        self.chat_interface.show()
+        self.chat_interface.show(**kwargs)
