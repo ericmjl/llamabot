@@ -21,6 +21,7 @@ cli = typer.Typer()
 # -------------------------------------------------------------------------------
 # /api/generate
 
+
 class ApiGenerateRequest(pydantic.BaseModel):
     model: str
     prompt: Optional[str] = None
@@ -150,13 +151,13 @@ def querybot(
     #   File "/Users/mark/h/llamabot/llamabot/cli/serve.py", line 107, in stream_api_generate
     #        for part in iter:
     #        TypeError: 'NoneType' object is not iterable
-    #_the_bot = QueryBot(
+    # _the_bot = QueryBot(
     #    system_prompt=system_prompt,
     #    collection_name=collection_name,
     #    stream_target="api",
     #    document_paths=document_paths,
     #    model_name=model_name,
-    #)
+    # )
     _the_bot = llamabot.SimpleBot(
         system_prompt=system_prompt,
         stream_target="api",
