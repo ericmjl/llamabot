@@ -200,20 +200,11 @@ def querybot(
     """Serve up a LlamaBot as a FastAPI endpoint."""
     global _the_bot
 
-    # SimpleBot works, QueryBot doesn't seem to return an iterator:
-    #   File "/Users/mark/h/llamabot/llamabot/cli/serve.py", line 107, in stream_api_generate
-    #        for part in iter:
-    #        TypeError: 'NoneType' object is not iterable
-    # _the_bot = QueryBot(
-    #    system_prompt=system_prompt,
-    #    collection_name=collection_name,
-    #    stream_target="api",
-    #    document_paths=document_paths,
-    #    model_name=model_name,
-    # )
-    _the_bot = llamabot.SimpleBot(
+    _the_bot = QueryBot(
         system_prompt=system_prompt,
+        collection_name=collection_name,
         stream_target="api",
+        document_paths=document_paths,
         model_name=model_name,
     )
     uvicorn.run(app, host=host, port=port)
