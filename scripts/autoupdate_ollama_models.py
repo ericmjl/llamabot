@@ -12,7 +12,7 @@ if response.status_code == 200:
 
     # Find all h2 tags that contain the model names
     model_names = [
-        h2.text.strip("\n").strip(" ").strip("\n") for h2 in soup.find_all("h2")
+        h2.span.text.strip("\n").strip(" ").strip("\n") for h2 in soup.find_all("h2")
     ]
 
 # Write model names to llamabot/bot/ollama_model_names.txt
