@@ -93,6 +93,7 @@ dependencies = [
     "sentence-transformers",
     "chromadb",
     "tantivy",
+    "numpy<2", # https://github.com/ericmjl/llamabot/issues/56
 ]
 requires-python = ">=3.11"
 description = "A Pythonic interface to LLMs."
