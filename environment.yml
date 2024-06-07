@@ -14,6 +14,7 @@ dependencies:
   - pip
   - twine
   - loguru
+  - numpy<2 # Added temporarily on 29 May 2024; see https://github.com/ericmjl/llamabot/issues/56
   # Utilities
   - pyprojroot
   - python-dotenv
