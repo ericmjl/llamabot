@@ -8,6 +8,7 @@ import asyncio
 import datetime
 import devtools
 import fastapi
+import glob
 import json
 import llamabot
 import pydantic
@@ -177,10 +178,16 @@ data = {
 }
 
 
+@app.get("/api/tags")
 @app.post("/api/tags")
 async def get_tags():
     return TagsRootModel(**data)
 
+
+@app.get("/")
+@app.head("/")
+async def get_root():
+    return ""
 
 # -------------------------------------------------------------------------------
 # cli interface
@@ -200,11 +207,19 @@ def querybot(
     """Serve up a LlamaBot as a FastAPI endpoint."""
     global _the_bot
 
+    all_paths = []
+    for path in document_paths:
+        all_paths.extend(glob.glob(str(path)))
+    all_paths = sorted(all_paths)
+
+    for p in all_paths:
+        print(f"Loading {p}")
+
     _the_bot = QueryBot(
         system_prompt=system_prompt,
         collection_name=collection_name,
         stream_target="api",
-        document_paths=document_paths,
+        document_paths=all_paths,
         model_name=model_name,
     )
     uvicorn.run(app, host=host, port=port)
