@@ -78,7 +78,7 @@ def test_call_outside_jupyter(mocker, tmp_path):
     )
 
     # Call the method and perform the assertion
-    result = bot("test prompt", tmp_path / "test_prompt.jpg")
+    result = bot("test prompt", save_path=tmp_path / "test_prompt.jpg")
     assert result == tmp_path / "test_prompt.jpg"
     requests.get.assert_called_with("http://image.url")
 
