@@ -25,11 +25,13 @@ class ImageBot:
         self.n = n
 
     def __call__(
-        self, prompt: str, save_path: Optional[Path] = None
+        self, prompt: str, return_url: bool = False, save_path: Optional[Path] = None
     ) -> Union[str, Path]:
         """Generate an image from a prompt.
 
         :param prompt: The prompt to generate an image from.
+        :param return_url: Whether to return the URL of the generated image.
+            Overrides the save_path parameter. Defaults to False.
         :param save_path: The path to save the generated image to.
             If it is empty, then we will generate a filename from the prompt.
         :return: The URL of the generated image if running in a Jupyter notebook (str),
@@ -52,6 +54,9 @@ class ImageBot:
         # Check if running in a Jupyter notebook
         if is_running_in_jupyter():
             display(Image(url=image_url))
+            return image_url
+
+        if return_url:
             return image_url
 
         image_data = requests.get(image_url).content
