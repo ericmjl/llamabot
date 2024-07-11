@@ -1,0 +1,262 @@
+---
+author: Eric J. Ma
+institute: Moderna
+title: "🌟 LlamaBot: A Pythonic Interface to LLMs"
+format:
+  revealjs:
+    slide-number: c/t
+  # html:
+  #   toc: true
+jupyter: llamabot
+execute:
+  echo: true
+  eval: false
+  cache: true
+footer: Made with ❤️ by Eric J. Ma using Quarto
+---
+
+## 💁🏻‍♂️ About me
+
+-   Website: https://ericmjl.github.io/
+-   LlamaBot: https://ericmjl.github.io/llamabot
+
+------------------------------------------------------------------------
+
+## 💁🏻‍♂️ About me
+
+> "Sr. Principal Data Scientist, DSAI (Research) \@ Moderna"
+
+-   **Sr. Principal Data Scientist:** Data science team lead
+-   **DSAI:** Computer nerd
+-   **Research:** Science nerd
+
+## Why LlamaBot exists
+
+LlamaBot has dual purposes:
+
+-   Pedagogical: learn about LLMs by building tooling around LLMs
+-   Pythonic: make LLMs Pythonic around a "bot"-based paradigm.
+
+## Bot?
+
+A bot is a front-end to an LLM, such that the LLM responds to what you input.
+
+------------------------------------------------------------------------
+
+### SimpleBot
+
+:::::: {.panel-tabset .incremental}
+## OpenAI
+
+```{python}
+#| label: "import-and-response"
+#| eval: false
+#| cache: true
+
+from llamabot import SimpleBot
+
+bot = SimpleBot(
+  "You are Richard Feynman"
+)
+response = bot(
+  "Tell me about the evidence for black holes in under 100 words."
+)
+```
+
+::: callout-note
+OpenAI API key required!
+:::
+
+## Ollama
+
+```{python}
+#| eval: false
+#| label: run-with-ollama
+#| code-line-numbers: "3,"
+
+bot = SimpleBot(
+    "You are Richard Feynman",
+    model_name="ollama/mistral",
+)
+response = bot(
+    "Tell me about the evidence for black holes in under 100 words."
+)
+```
+
+::: callout-note
+Needs [Ollama](https://ollama.com/) running locally!
+:::
+
+## Anthropic
+
+```{python}
+#| eval: false
+#| label: run-with-anthropic
+#| code-line-numbers: "3,"
+
+bot = SimpleBot(
+    "You are Richard Feynman",
+    model_name="anthropic/claude-3-5-sonnet-20240620",
+)
+response = bot(
+    "Tell me about the evidence for black holes in under 100 words."
+)
+```
+
+::: callout-note
+OpenAI API key required!
+:::
+::::::
+
+
+## ChatBot
+
+Comes with memory of previous messages sent and received.
+
+```{python}
+#| echo: true
+#| eval: false
+from llamabot import ChatBot
+
+bot = ChatBot("You are Richard Feynman.")
+response1 = bot(
+    "Tell me about the evidence for black holes in under 100 words."
+)
+response2 = bot(
+    "What about cells as the unit of life?"
+)
+```
+
+
+## QueryBot (for RAG)
+
+Enables us to quickly set up retrieval-augmented generation on documents.
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-line-numbers: "4,7-8,10"
+from llamabot import QueryBot
+from pyprojroot import here
+
+bot = QueryBot(
+    """You are Richard Feynman who answers questions
+    based on provided documents.""",
+    collection_name="llamabot-readme",
+    document_paths=(here() / "docs").rglob("*.md")
+)
+bot("How do I use SimpleBot with Ollama?")
+```
+
+Highly inspired by [EmbedChain](https://github.com/embedchain/embedchain),
+without the LangChain dependency.
+
+## Prompt Functions
+
+Original idea came from Outlines. Check them out!
+
+```{python}
+from llamabot.prompt_manager import prompt
+
+
+@prompt
+def structured_sysprompt(json: str):
+    """You are a bot that returns structured JSON."""
+
+
+@prompt
+def structured_chatprompt(query: str, json_schema: str):
+    """Given the following query:
+
+    {{ query }}
+
+    Respond with JSON based on the following schema:
+
+    {{ json_schema }}
+    """
+```
+
+## JSON Mode (for structured output)
+
+```{python}
+#| echo: true
+#| eval: false
+
+from pydantic import BaseModel
+import json5 as json
+
+class Character(BaseModel):
+    name: str
+    age: int
+
+
+schema = json.dumps(Character.model_json_schema())
+
+bot = QueryBot(
+    structured_sysprompt(my_json),
+    collection_name="llamabot-readme",
+    document_paths=(here() / "docs").rglob("*.md"),
+    json_mode=True
+)
+bot(structured_chatprompt(query="I need new characters for my game", json_schema=json_schema))
+```
+
+Also see Outlines for even more reliable structured text generation!
+
+## ImageBot
+
+Only works with DALL-E for now, but lets us generate images:
+
+```{python}
+from llamabot import ImageBot
+
+bannerbot = ImageBot(size="1792x1024")
+response = bannerbot(bannerbot_sysprompt() + "blog_contents_go_here")
+```
+
+::: callout-note
+OpenAI API key required!
+:::
+
+## Let's build some tools!
+
+We can use LlamaBot to build a suite of LLM-powered applications.
+Examples that I have worked on:
+
+::: panel-tabset
+## Git
+
+We can now automatically compose:
+
+-   Commit messages
+-   Release notes
+
+## DocChat
+
+Similar to embedchain, I can chat with:
+
+-   Zotero library
+-   Repository source files
+
+...at the terminal
+
+## Blogging
+
+I can use LLMs to quickly bootstrap mentally tedious tasks when blogging:
+
+-   Post tags
+-   Summaries
+-   Banner images
+
+## Social Media
+
+I can use LLMs to help me to write things I'm bad at writing
+
+-   Twitter posts
+-   LinkedIn posts
+-   Substack summaries
+:::
+
+
+
+## ⭐️ Thank You
