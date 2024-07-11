@@ -1,7 +1,6 @@
 ---
-author: Eric J. Ma
-institute: Moderna
-title: "🌟 LlamaBot: A Pythonic Interface to LLMs"
+author: ericmjl.github.io/llamabot
+title: "🦙 LlamaBot: A Pythonic Interface to LLMs"
 format:
   revealjs:
     slide-number: c/t
@@ -17,20 +16,10 @@ footer: Made with ❤️ by Eric J. Ma using Quarto
 
 ## 💁🏻‍♂️ About me
 
--   Website: https://ericmjl.github.io/
--   LlamaBot: https://ericmjl.github.io/llamabot
+-   Website: [https://ericmjl.github.io/](https://ericmjl.github.io/)
+-   LlamaBot: [https://ericmjl.github.io/llamabot](https://ericmjl.github.io/llamabot)
 
-------------------------------------------------------------------------
-
-## 💁🏻‍♂️ About me
-
-> "Sr. Principal Data Scientist, DSAI (Research) \@ Moderna"
-
--   **Sr. Principal Data Scientist:** Data science team lead
--   **DSAI:** Computer nerd
--   **Research:** Science nerd
-
-## Why LlamaBot exists
+## 🦙 Why LlamaBot exists
 
 LlamaBot has dual purposes:
 
@@ -41,9 +30,9 @@ LlamaBot has dual purposes:
 
 A bot is a front-end to an LLM, such that the LLM responds to what you input.
 
-------------------------------------------------------------------------
+## SimpleBot
 
-### SimpleBot
+The original paradigm.
 
 :::::: {.panel-tabset .incremental}
 ## OpenAI
@@ -52,6 +41,7 @@ A bot is a front-end to an LLM, such that the LLM responds to what you input.
 #| label: "import-and-response"
 #| eval: false
 #| cache: true
+#| code-line-numbers: "1|3-5|6-8"
 
 from llamabot import SimpleBot
 
@@ -64,7 +54,7 @@ response = bot(
 ```
 
 ::: callout-note
-OpenAI API key required!
+OpenAI API key required by default!
 :::
 
 ## Ollama
@@ -96,7 +86,7 @@ Needs [Ollama](https://ollama.com/) running locally!
 
 bot = SimpleBot(
     "You are Richard Feynman",
-    model_name="anthropic/claude-3-5-sonnet-20240620",
+    model_name="anthropic/claude-3.5",
 )
 response = bot(
     "Tell me about the evidence for black holes in under 100 words."
@@ -104,10 +94,15 @@ response = bot(
 ```
 
 ::: callout-note
-OpenAI API key required!
+Needs Anthropic API key!
 :::
-::::::
 
+## Others
+
+[LiteLLM](https://github.com/BerriAI/litellm) is our model switchboard underneath the hood.
+
+Any model supported by LiteLLM is supported by LlamaBot.
+:::
 
 ## ChatBot
 
@@ -126,7 +121,6 @@ response2 = bot(
     "What about cells as the unit of life?"
 )
 ```
-
 
 ## QueryBot (for RAG)
 
@@ -149,59 +143,35 @@ bot("How do I use SimpleBot with Ollama?")
 ```
 
 Highly inspired by [EmbedChain](https://github.com/embedchain/embedchain),
-without the LangChain dependency.
+but without the LangChain dependency.
 
-## Prompt Functions
+## Prompt Decorator
 
-Original idea came from Outlines. Check them out!
+Original idea came from [Outlines](https://github.com/outlines-dev/outlines). Check them out!
 
 ```{python}
+#| eval: false
+#| code-line-numbers: "1|3-5|8-17"
 from llamabot.prompt_manager import prompt
 
-
 @prompt
-def structured_sysprompt(json: str):
+def structured_sysprompt() -> str:
     """You are a bot that returns structured JSON."""
 
 
 @prompt
-def structured_chatprompt(query: str, json_schema: str):
+def structured_chatprompt(query: str, json_schema: str) -> str:
     """Given the following query:
 
     {{ query }}
 
-    Respond with JSON based on the following schema:
+    Return JSON that follows the following JSON schema:
 
     {{ json_schema }}
     """
 ```
 
-## JSON Mode (for structured output)
-
-```{python}
-#| echo: true
-#| eval: false
-
-from pydantic import BaseModel
-import json5 as json
-
-class Character(BaseModel):
-    name: str
-    age: int
-
-
-schema = json.dumps(Character.model_json_schema())
-
-bot = QueryBot(
-    structured_sysprompt(my_json),
-    collection_name="llamabot-readme",
-    document_paths=(here() / "docs").rglob("*.md"),
-    json_mode=True
-)
-bot(structured_chatprompt(query="I need new characters for my game", json_schema=json_schema))
-```
-
-Also see Outlines for even more reliable structured text generation!
+`jinja2` templating enables safe interpolation into strings.
 
 ## ImageBot
 
@@ -218,18 +188,30 @@ response = bannerbot(bannerbot_sysprompt() + "blog_contents_go_here")
 OpenAI API key required!
 :::
 
-## Let's build some tools!
+## Example Images
 
-We can use LlamaBot to build a suite of LLM-powered applications.
-Examples that I have worked on:
+::: {.panel-tabset}
+## Example 1
 
-::: panel-tabset
+![](https://ericmjl.github.io/blog/2024/7/2/use-native-formats-when-storing-data/logo.webp)
+
+## Example 2
+
+![](https://ericmjl.github.io/blog/2024/6/30/two-years-of-docathons-insights-and-lessons-learned/logo.webp)
+
+## Example 3
+
+![](https://ericmjl.github.io/blog/2024/6/26/hire-for-communication-skills-not-conversational-skills/logo.webp)
+:::
+
+---
+
+[Let's build some tools!]{style="font-size:160px"}
+
+---
+
 ## Git
 
-We can now automatically compose:
-
--   Commit messages
--   Release notes
 
 ## DocChat
 
@@ -255,7 +237,6 @@ I can use LLMs to help me to write things I'm bad at writing
 -   Twitter posts
 -   LinkedIn posts
 -   Substack summaries
-:::
 
 
 
