@@ -32,8 +32,6 @@ A bot is a front-end to an LLM, such that the LLM responds to what you input.
 
 ## 🤖 SimpleBot
 
-The original paradigm.
-
 :::::: {.panel-tabset .incremental}
 ## OpenAI
 
@@ -106,7 +104,7 @@ Any model supported by LiteLLM is supported by LlamaBot.
 LiteLLM will be automatically installed as a dependency.
 :::
 
-:::
+::::::
 
 ## 💬 ChatBot
 
@@ -143,11 +141,12 @@ bot("How do I use SimpleBot with Ollama?")
 ```
 
 Highly inspired by [EmbedChain](https://github.com/embedchain/embedchain),
-but without the LangChain dependency.
+but without the heavyweight dependency chain🥁.
 
 ## 🎙️ Prompt Decorator
 
-Original idea came from [Outlines](https://github.com/outlines-dev/outlines). Check them out!
+
+Turns empty Python functions' docstrings into a parametrizable LLM prompt.
 
 ```{python}
 #| code-line-numbers: "1|3-5|8-17"
@@ -170,7 +169,8 @@ def structured_chatprompt(query: str, json_schema: str) -> str:
     """
 ```
 
-`jinja2` templating enables safe interpolation into strings.
+Original idea came from [Outlines](https://github.com/outlines-dev/outlines). Check them out!
+
 
 ## 🎆 ImageBot
 
@@ -194,32 +194,32 @@ OpenAI API key required!
 
 ![](https://ericmjl.github.io/blog/2024/7/2/use-native-formats-when-storing-data/logo.webp)
 
-## Example 2
+## 🌠 Example 2
 
 ![](https://ericmjl.github.io/blog/2024/6/30/two-years-of-docathons-insights-and-lessons-learned/logo.webp)
 
-## Example 3
+## 🌄 Example 3
 
 ![](https://ericmjl.github.io/blog/2024/6/26/hire-for-communication-skills-not-conversational-skills/logo.webp)
 :::
 
 ---
 
-[Let's build some tools!]{style="font-size:160px"}
+[🧰 Let's build some tools!]{style="font-size:160px"}
 
 ---
 
-## 🖥️ Git commit message writer
-
-<script src="https://asciinema.org/a/8hvzuCGlukGqrRLbTn09p6BkE.js" id="asciicast-8hvzuCGlukGqrRLbTn09p6BkE" async="true"></script>
+## 🖥️ Live Demo: commit messages
 
 ## 🎯 Automatic Release Notes
 
 ![GitHub Actions using the `llamabot git write-release-notes` command](./images/gh-actions-release-notes.webp)
 
+## 🛠️ Demo: Poor Man's Paul Ivanov
+
 ---
 
-[LlamaBot has a composable design]{style="font-size:120px"}
+[🧩 LlamaBot has a **composable design**]{style="font-size:120px"}
 
 ---
 
@@ -230,18 +230,18 @@ OpenAI API key required!
 ## Class Interface
 
 ```{python}
-#| code-line-numbers: "1|4-11"
+#| code-line-numbers: "1,4|5-11"
 class SimpleBot:
     def __init__(
         self,
-        system_prompt: str,
+        system_prompt: str, # Only one required argument.
         temperature=0.0,
         model_name=default_language_model(),
         stream_target: str = "stdout",
         json_mode: bool = False,
         api_key: Optional[str] = None,
         mock_response: Optional[str] = None,
-        **completion_kwargs,
+        **completion_kwargs, # passed onto LiteLLM
     ):
         ...
 ```
@@ -249,9 +249,9 @@ class SimpleBot:
 ## API
 
 ```{python}
-#| code-line-numbers: "1-2|4-5|7-8|10-11|13-14"
+#| code-line-numbers: "1-2|4-14"
     def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
-        # Calls to underlying LiteLLM API.
+        # Returns one or more of stream_* below.
 
     def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
         # Use this when streaming target is stdout
@@ -264,7 +264,15 @@ class SimpleBot:
 ```
 :::
 
-## 📄 Text Storage and Retrieval
+
+## 🧣 Retrieval-Augmented Generation
+
+[*Your embedding model can be different from your text generation model*
+](https://ericmjl.github.io/blog/2024/1/15/your-embedding-model-can-be-different-from-your-text-generation-model/)
+
+<iframe src="https://link.excalidraw.com/readonly/Hd9NUurFW5YdM0zYxUwZ" width="100%" height="100%" style="border: none;"></iframe>
+
+## 📄 Text Storage and Retrieval for RAG
 
 ::: {.panel-tabset}
 
@@ -318,27 +326,11 @@ class LanceDBDocStore(AbstractDocumentStore):
 ```
 :::
 
-## 💬 Chat UI
-
-```{python}
-class ChatUIMixin:
-    """A mixin for a chat user interface."""
-
-    def __init__(
-        self,
-        initial_message: Optional[str] = None,
-        callback_function: Optional[Callable] = None,
-    ):
-        ...
-
-    def servable(self):
-        ...
-
-    def serve(self, **kwargs):
-        ...
-```
+Chat history and Doc storage implement a shared interface.
 
 ## ChatBot = 🤖 + 🕰️
+
+ChatBot's retrieval of history is a form of RAG.
 
 ```{python}
 #| code-line-numbers: "1|8-10|11,13"
@@ -356,41 +348,66 @@ class ChatBot(SimpleBot, History):
         ...
         response: AIMessage = self.stream_stdout(messages) # SimpleBot class method
         ...
-
 ```
 
 ## QueryBot = 🤖 + 🗄️
 
 ```{python}
-#| code-line-numbers: "1|4|9-10"
+#| code-line-numbers: "1|4|9-12|14"
 class QueryBot(SimpleBot, LanceDBDocStore):
     def __init__(self, document_paths,...):
         ...
         self.add_documents(document_paths=document_paths) # LanceDBDocStore method
         ...
 
-    def __call__(self,...):
+    def __call__(self, query: str):
         ...
-        messages = self.retrieve(...) # LanceDBDocStore method
+        messages = [self.system_prompt]
+        retreived_messages = ... # LanceDBDocStore method
+        messages.extend(retrieved)
+        messages.append(HumanMessage(content=query))
+        ...
         return self.stream_stdout(messages) # SimpleBot method
 ```
 
 ---
 
-{{< video https://f005.backblazeb2.com/file/ericmjl-public-share/scipy2024-talk-llamabot-screenshot-demos/blogbot-demo.mp4 >}}
+[🤖 Final Demo: Blogging Bot Panel App]{style="font-size:120px"}
 
 ---
 
-## 🏃🏻 Sprints
+## 💡 Lessons baked into design
 
-Goals:
+::: incremental
+1. Text generation is separate from retrieval. Separate these concerns.
+2. Flat is better than nested.
+3. Composable tools >> wrapped behemoths.
+4. Surgically integrate LLMs into workflows.
+:::
 
-1. (Beginner) Onboarding documentation improvements.
-2. (Beginner) Useful examples within a single notebook setting.
-3. (Intermediate) New types of bots?
-4. (Intermediate) Standardization of interface.
-5. (Advanced) Testing without using an API key or local LLMs.
+## 🏃🏻 Sprint Goals
 
-**I will help you get set up with Ollama.**
+::: {.panel-tabset}
+
+## 1️⃣ Beginner
+
+- Onboarding documentation improvements.
+- Useful examples within a single notebook setting.
+
+## 2️⃣ Intermediate
+
+- Examples with dashboarding frameworks.
+- New types of bots?
+
+## 3️⃣ Advanced
+
+- Standardization of interface.
+- Testing without using an API key or local LLMs.
+- Review code.
+:::
+
+::: callout-tip
+**Come sprint, and I will help you get set up with Ollama.** (No API keys to give out, unfortunately, unless an org would like to sponsor!)
+:::
 
 ## ⭐️ Thank You
