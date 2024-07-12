@@ -26,11 +26,11 @@ LlamaBot has dual purposes:
 -   Pedagogical: learn about LLMs by building tooling around LLMs
 -   Pythonic: make LLMs Pythonic around a "bot"-based paradigm.
 
-## Bot?
+## Bot❓
 
 A bot is a front-end to an LLM, such that the LLM responds to what you input.
 
-## SimpleBot
+## 🤖 SimpleBot
 
 The original paradigm.
 
@@ -39,16 +39,15 @@ The original paradigm.
 
 ```{python}
 #| label: "import-and-response"
-#| eval: false
 #| cache: true
 #| code-line-numbers: "1|3-5|6-8"
 
 from llamabot import SimpleBot
 
-bot = SimpleBot(
+bot = SimpleBot( # Set the Bot's persona
   "You are Richard Feynman"
 )
-response = bot(
+response = bot( # Interact with the bot
   "Tell me about the evidence for black holes in under 100 words."
 )
 ```
@@ -60,9 +59,9 @@ OpenAI API key required by default!
 ## Ollama
 
 ```{python}
-#| eval: false
 #| label: run-with-ollama
-#| code-line-numbers: "3,"
+#| code-line-numbers: "5,"
+from llamabot import SimpleBot
 
 bot = SimpleBot(
     "You are Richard Feynman",
@@ -80,9 +79,9 @@ Needs [Ollama](https://ollama.com/) running locally!
 ## Anthropic
 
 ```{python}
-#| eval: false
 #| label: run-with-anthropic
-#| code-line-numbers: "3,"
+#| code-line-numbers: "5,"
+from llamabot import SimpleBot
 
 bot = SimpleBot(
     "You are Richard Feynman",
@@ -102,15 +101,18 @@ Needs Anthropic API key!
 [LiteLLM](https://github.com/BerriAI/litellm) is our model switchboard underneath the hood.
 
 Any model supported by LiteLLM is supported by LlamaBot.
+
+::: callout-note
+LiteLLM will be automatically installed as a dependency.
 :::
 
-## ChatBot
+:::
+
+## 💬 ChatBot
 
 Comes with memory of previous messages sent and received.
 
 ```{python}
-#| echo: true
-#| eval: false
 from llamabot import ChatBot
 
 bot = ChatBot("You are Richard Feynman.")
@@ -122,13 +124,11 @@ response2 = bot(
 )
 ```
 
-## QueryBot (for RAG)
+## ❓ QueryBot (for RAG)
 
 Enables us to quickly set up retrieval-augmented generation on documents.
 
 ```{python}
-#| echo: true
-#| eval: false
 #| code-line-numbers: "4,7-8,10"
 from llamabot import QueryBot
 from pyprojroot import here
@@ -145,12 +145,11 @@ bot("How do I use SimpleBot with Ollama?")
 Highly inspired by [EmbedChain](https://github.com/embedchain/embedchain),
 but without the LangChain dependency.
 
-## Prompt Decorator
+## 🎙️ Prompt Decorator
 
 Original idea came from [Outlines](https://github.com/outlines-dev/outlines). Check them out!
 
 ```{python}
-#| eval: false
 #| code-line-numbers: "1|3-5|8-17"
 from llamabot.prompt_manager import prompt
 
@@ -173,7 +172,7 @@ def structured_chatprompt(query: str, json_schema: str) -> str:
 
 `jinja2` templating enables safe interpolation into strings.
 
-## ImageBot
+## 🎆 ImageBot
 
 Only works with DALL-E for now, but lets us generate images:
 
@@ -188,10 +187,10 @@ response = bannerbot(bannerbot_sysprompt() + "blog_contents_go_here")
 OpenAI API key required!
 :::
 
-## Example Images
+---
 
 ::: {.panel-tabset}
-## Example 1
+## 🌃 Example 1
 
 ![](https://ericmjl.github.io/blog/2024/7/2/use-native-formats-when-storing-data/logo.webp)
 
@@ -210,34 +209,188 @@ OpenAI API key required!
 
 ---
 
-## Git
+## 🖥️ Git commit message writer
 
+<script src="https://asciinema.org/a/8hvzuCGlukGqrRLbTn09p6BkE.js" id="asciicast-8hvzuCGlukGqrRLbTn09p6BkE" async="true"></script>
 
-## DocChat
+## 🎯 Automatic Release Notes
 
-Similar to embedchain, I can chat with:
+![GitHub Actions using the `llamabot git write-release-notes` command](./images/gh-actions-release-notes.webp)
 
--   Zotero library
--   Repository source files
+---
 
-...at the terminal
+[LlamaBot has a composable design]{style="font-size:120px"}
 
-## Blogging
+---
 
-I can use LLMs to quickly bootstrap mentally tedious tasks when blogging:
+## 🤖 Bot Engine
 
--   Post tags
--   Summaries
--   Banner images
+::: {.panel-tabset}
 
-## Social Media
+## Class Interface
 
-I can use LLMs to help me to write things I'm bad at writing
+```{python}
+#| code-line-numbers: "1|4-11"
+class SimpleBot:
+    def __init__(
+        self,
+        system_prompt: str,
+        temperature=0.0,
+        model_name=default_language_model(),
+        stream_target: str = "stdout",
+        json_mode: bool = False,
+        api_key: Optional[str] = None,
+        mock_response: Optional[str] = None,
+        **completion_kwargs,
+    ):
+        ...
+```
 
--   Twitter posts
--   LinkedIn posts
--   Substack summaries
+## API
 
+```{python}
+#| code-line-numbers: "1-2|4-5|7-8|10-11|13-14"
+    def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
+        # Calls to underlying LiteLLM API.
 
+    def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
+        # Use this when streaming target is stdout
+
+    def stream_panel(self, messages: list[BaseMessage]) -> Generator:
+        # Use this when streaming target is a Panel chatbot
+
+    def stream_api(self, messages: list[BaseMessage]) -> Generator:
+        # Use this when streaming target is a web API.
+```
+:::
+
+## 📄 Text Storage and Retrieval
+
+::: {.panel-tabset}
+
+## 📖 History
+
+```{python}
+#| code-line-numbers: 1,7-11
+class History:
+    """History of messages."""
+
+    def __init__(self, session_name: str):
+      ...
+
+    def append(self, message: BaseMessage):
+      ...
+
+    def retrieve(self, query: BaseMessage, character_budget: int) -> list[BaseMessage]:
+      ...
+
+    def __getitem__(self, index):
+      ...
+```
+
+## 📖 Document Store Interface
+
+```{python}
+#| code-line-numbers: 1,7-11
+class LanceDBDocStore(AbstractDocumentStore):
+    """A document store for LlamaBot that wraps around LanceDB."""
+
+    def __init__(self, table_name: str, storage_path: Path = Path.home() / ".llamabot" / "lancedb",):
+        ...
+
+    def append(self, document: str):
+        ...
+
+    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+        ...
+
+    def extend(self, documents: list[str]):
+        ...
+
+    def reset(self):
+        ...
+
+    def __post_add_documents__(self):
+        ...
+
+    def __contains__(self, other: str) -> bool:
+        ...
+```
+:::
+
+## 💬 Chat UI
+
+```{python}
+class ChatUIMixin:
+    """A mixin for a chat user interface."""
+
+    def __init__(
+        self,
+        initial_message: Optional[str] = None,
+        callback_function: Optional[Callable] = None,
+    ):
+        ...
+
+    def servable(self):
+        ...
+
+    def serve(self, **kwargs):
+        ...
+```
+
+## ChatBot = 🤖 + 🕰️
+
+```{python}
+#| code-line-numbers: "1|8-10|11,13"
+class ChatBot(SimpleBot, History):
+
+    def __init__(self, ...):
+        ...
+
+    def __call__(self, message: str) -> Union[AIMessage, Generator]:
+        ...
+        history = self.retrieve(
+            query=human_message, character_budget=self.response_budget
+        ) # History class method
+        messages = [self.system_prompt] + history + [human_message]
+        ...
+        response: AIMessage = self.stream_stdout(messages) # SimpleBot class method
+        ...
+
+```
+
+## QueryBot = 🤖 + 🗄️
+
+```{python}
+#| code-line-numbers: "1|4|9-10"
+class QueryBot(SimpleBot, LanceDBDocStore):
+    def __init__(self, document_paths,...):
+        ...
+        self.add_documents(document_paths=document_paths) # LanceDBDocStore method
+        ...
+
+    def __call__(self,...):
+        ...
+        messages = self.retrieve(...) # LanceDBDocStore method
+        return self.stream_stdout(messages) # SimpleBot method
+```
+
+---
+
+{{< video https://f005.backblazeb2.com/file/ericmjl-public-share/scipy2024-talk-llamabot-screenshot-demos/blogbot-demo.mp4 >}}
+
+---
+
+## 🏃🏻 Sprints
+
+Goals:
+
+1. (Beginner) Onboarding documentation improvements.
+2. (Beginner) Useful examples within a single notebook setting.
+3. (Intermediate) New types of bots?
+4. (Intermediate) Standardization of interface.
+5. (Advanced) Testing without using an API key or local LLMs.
+
+**I will help you get set up with Ollama.**
 
 ## ⭐️ Thank You
