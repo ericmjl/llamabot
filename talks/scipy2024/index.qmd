@@ -16,6 +16,7 @@ footer: Made with ❤️ by Eric J. Ma using Quarto
 
 ## 💁🏻‍♂️ About me
 
+-   Sr. Principal Data Scientist, Moderna
 -   Website: [https://ericmjl.github.io/](https://ericmjl.github.io/)
 -   LlamaBot: [https://ericmjl.github.io/llamabot](https://ericmjl.github.io/llamabot)
 
@@ -23,8 +24,8 @@ footer: Made with ❤️ by Eric J. Ma using Quarto
 
 LlamaBot has dual purposes:
 
--   Pedagogical: learn about LLMs by building tooling around LLMs
--   Pythonic: make LLMs Pythonic around a "bot"-based paradigm.
+-   **Pedagogical**: learn about LLMs by building tooling around LLMs
+-   **Pythonic**: make LLMs Pythonic around a "bot"-based paradigm.
 
 ## Bot❓
 
