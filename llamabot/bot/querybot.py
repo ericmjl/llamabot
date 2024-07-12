@@ -59,7 +59,7 @@ class QueryBot(SimpleBot, ChatUIMixin):
 
         :param query: The query to make of the documents.
         """
-        messages = []
+        messages = [self.system_prompt]
 
         # context_budget = model_context_window_sizes.get(
         #     self.model_name, DEFAULT_TOKEN_BUDGET
