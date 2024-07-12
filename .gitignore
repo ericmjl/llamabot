@@ -149,3 +149,7 @@ oryx-build-commands.txt
 .DS_Store
 *.md.tmp
 data/*
+.jupyter_cache
+talks/scipy2024/images/blogbot-demo.mp4
+scratch_notebooks/*_files
+scratch_notebooks/*.html

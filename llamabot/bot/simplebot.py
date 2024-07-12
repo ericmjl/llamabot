@@ -68,7 +68,6 @@ class SimpleBot:
         """
 
         messages = [self.system_prompt, HumanMessage(content=human_message)]
-        # response = self.generate_response(messages)
         match self.stream_target:
             case "stdout":
                 return self.stream_stdout(messages)

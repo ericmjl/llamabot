@@ -1,3 +1,8 @@
+codegeex4
+glm4
+internlm2
+gemma2
+deepseek-coder-v2
 qwen2
 deepseek-v2
 codestral

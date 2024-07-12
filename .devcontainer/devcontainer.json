@@ -4,14 +4,25 @@
         "dockerfile": "Dockerfile",
         "context": ".."
     },
-    "extensions": [
-        "ms-azuretools.vscode-docker",
-        "ms-toolsai.jupyter",
-        "arcticicestudio.nord-visual-studio-code",
-        "ms-python.vscode-pylance",
-        "ms-python.python",
-        "redhat.vscode-yaml",
-    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "arcticicestudio.nord-visual-studio-code",
+                "charliermarsh.ruff",
+                "ms-azuretools.vscode-docker",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-toolsai.jupyter",
+                "quarto.quarto",
+                "redhat.vscode-yaml",
+                "github.vscode-github-actions",
+                "GitHub.codespaces",
+                "GitHub.vscode-pull-request-github",
+                "DavidAnson.vscode-markdownlint",
+            ],
+
+        }
+    },
     "forwardPorts": [
         8888
     ],

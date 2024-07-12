@@ -39,3 +39,7 @@ repos:
         language: python
         additional_dependencies: ["beautifulsoup4", "lxml", "requests"]
         pass_filenames: false
+  - repo: https://github.com/ericmjl/webp-pre-commit
+    rev: v0.0.8
+    hooks:
+      - id: convert-to-webp

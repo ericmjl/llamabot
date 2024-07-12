@@ -1,0 +1,414 @@
+---
+author: ericmjl.github.io/llamabot
+title: "🦙 LlamaBot: A Pythonic Interface to LLMs"
+format:
+  revealjs:
+    slide-number: c/t
+  # html:
+  #   toc: true
+jupyter: llamabot
+execute:
+  echo: true
+  eval: false
+  cache: true
+footer: Made with ❤️ by Eric J. Ma using Quarto
+---
+
+## 💁🏻‍♂️ About me
+
+-   Sr. Principal Data Scientist, Moderna
+-   Website: [https://ericmjl.github.io/](https://ericmjl.github.io/)
+-   LlamaBot: [https://ericmjl.github.io/llamabot](https://ericmjl.github.io/llamabot)
+
+## 🦙 Why LlamaBot exists
+
+LlamaBot has dual purposes:
+
+-   **Pedagogical**: learn about LLMs by building tooling around LLMs
+-   **Pythonic**: make LLMs Pythonic around a "bot"-based paradigm.
+
+## Bot❓
+
+A bot is a front-end to an LLM, such that the LLM responds to what you input.
+
+## 🤖 SimpleBot
+
+:::::: {.panel-tabset .incremental}
+## OpenAI
+
+```{python}
+#| label: "import-and-response"
+#| cache: true
+#| code-line-numbers: "1|3-5|6-8"
+
+from llamabot import SimpleBot
+
+bot = SimpleBot( # Set the Bot's persona
+  "You are Richard Feynman"
+)
+response = bot( # Interact with the bot
+  "Tell me about the evidence for black holes in under 100 words."
+)
+```
+
+::: callout-note
+OpenAI API key required by default!
+:::
+
+## Ollama
+
+```{python}
+#| label: run-with-ollama
+#| code-line-numbers: "5,"
+from llamabot import SimpleBot
+
+bot = SimpleBot(
+    "You are Richard Feynman",
+    model_name="ollama/mistral",
+)
+response = bot(
+    "Tell me about the evidence for black holes in under 100 words."
+)
+```
+
+::: callout-note
+Needs [Ollama](https://ollama.com/) running locally!
+:::
+
+## Anthropic
+
+```{python}
+#| label: run-with-anthropic
+#| code-line-numbers: "5,"
+from llamabot import SimpleBot
+
+bot = SimpleBot(
+    "You are Richard Feynman",
+    model_name="anthropic/claude-3.5",
+)
+response = bot(
+    "Tell me about the evidence for black holes in under 100 words."
+)
+```
+
+::: callout-note
+Needs Anthropic API key!
+:::
+
+## Others
+
+[LiteLLM](https://github.com/BerriAI/litellm) is our model switchboard underneath the hood.
+
+Any model supported by LiteLLM is supported by LlamaBot.
+
+::: callout-note
+LiteLLM will be automatically installed as a dependency.
+:::
+
+::::::
+
+## 💬 ChatBot
+
+Comes with memory of previous messages sent and received.
+
+```{python}
+from llamabot import ChatBot
+
+bot = ChatBot("You are Richard Feynman.")
+response1 = bot(
+    "Tell me about the evidence for black holes in under 100 words."
+)
+response2 = bot(
+    "What about cells as the unit of life?"
+)
+```
+
+## ❓ QueryBot (for RAG)
+
+Enables us to quickly set up retrieval-augmented generation on documents.
+
+```{python}
+#| code-line-numbers: "4,7-8,10"
+from llamabot import QueryBot
+from pyprojroot import here
+
+bot = QueryBot(
+    """You are Richard Feynman who answers questions
+    based on provided documents.""",
+    collection_name="llamabot-readme",
+    document_paths=(here() / "docs").rglob("*.md")
+)
+bot("How do I use SimpleBot with Ollama?")
+```
+
+Highly inspired by [EmbedChain](https://github.com/embedchain/embedchain),
+but without the heavyweight dependency chain🥁.
+
+## 🎙️ Prompt Decorator
+
+
+Turns empty Python functions' docstrings into a parametrizable LLM prompt.
+
+```{python}
+#| code-line-numbers: "1|3-5|8-17"
+from llamabot.prompt_manager import prompt
+
+@prompt
+def structured_sysprompt() -> str:
+    """You are a bot that returns structured JSON."""
+
+
+@prompt
+def structured_chatprompt(query: str, json_schema: str) -> str:
+    """Given the following query:
+
+    {{ query }}
+
+    Return JSON that follows the following JSON schema:
+
+    {{ json_schema }}
+    """
+```
+
+Original idea came from [Outlines](https://github.com/outlines-dev/outlines). Check them out!
+
+
+## 🎆 ImageBot
+
+Only works with DALL-E for now, but lets us generate images:
+
+```{python}
+from llamabot import ImageBot
+
+bannerbot = ImageBot(size="1792x1024")
+response = bannerbot(bannerbot_sysprompt() + "blog_contents_go_here")
+```
+
+::: callout-note
+OpenAI API key required!
+:::
+
+---
+
+::: {.panel-tabset}
+## 🌃 Example 1
+
+![](https://ericmjl.github.io/blog/2024/7/2/use-native-formats-when-storing-data/logo.webp)
+
+## 🌠 Example 2
+
+![](https://ericmjl.github.io/blog/2024/6/30/two-years-of-docathons-insights-and-lessons-learned/logo.webp)
+
+## 🌄 Example 3
+
+![](https://ericmjl.github.io/blog/2024/6/26/hire-for-communication-skills-not-conversational-skills/logo.webp)
+:::
+
+---
+
+[🧰 Let's build some tools!]{style="font-size:160px"}
+
+---
+
+## 🖥️ Live Demo: commit messages
+
+## 🎯 Automatic Release Notes
+
+![GitHub Actions using the `llamabot git write-release-notes` command](./images/gh-actions-release-notes.webp)
+
+## 🛠️ Demo: Poor Man's Paul Ivanov
+
+---
+
+[🧩 LlamaBot has a **composable design**]{style="font-size:120px"}
+
+---
+
+## 🤖 Bot Engine
+
+::: {.panel-tabset}
+
+## Class Interface
+
+```{python}
+#| code-line-numbers: "1,4|5-11"
+class SimpleBot:
+    def __init__(
+        self,
+        system_prompt: str, # Only one required argument.
+        temperature=0.0,
+        model_name=default_language_model(),
+        stream_target: str = "stdout",
+        json_mode: bool = False,
+        api_key: Optional[str] = None,
+        mock_response: Optional[str] = None,
+        **completion_kwargs, # passed onto LiteLLM
+    ):
+        ...
+```
+
+## API
+
+```{python}
+#| code-line-numbers: "1-2|4-14"
+    def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
+        # Returns one or more of stream_* below.
+
+    def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
+        # Use this when streaming target is stdout
+
+    def stream_panel(self, messages: list[BaseMessage]) -> Generator:
+        # Use this when streaming target is a Panel chatbot
+
+    def stream_api(self, messages: list[BaseMessage]) -> Generator:
+        # Use this when streaming target is a web API.
+```
+:::
+
+
+## 🧣 Retrieval-Augmented Generation
+
+[*Your embedding model can be different from your text generation model*
+](https://ericmjl.github.io/blog/2024/1/15/your-embedding-model-can-be-different-from-your-text-generation-model/)
+
+<iframe src="https://link.excalidraw.com/readonly/Hd9NUurFW5YdM0zYxUwZ" width="100%" height="100%" style="border: none;"></iframe>
+
+## 📄 Text Storage and Retrieval for RAG
+
+::: {.panel-tabset}
+
+## 📖 History
+
+```{python}
+#| code-line-numbers: 1,7-11
+class History:
+    """History of messages."""
+
+    def __init__(self, session_name: str):
+      ...
+
+    def append(self, message: BaseMessage):
+      ...
+
+    def retrieve(self, query: BaseMessage, character_budget: int) -> list[BaseMessage]:
+      ...
+
+    def __getitem__(self, index):
+      ...
+```
+
+## 📖 Document Store Interface
+
+```{python}
+#| code-line-numbers: 1,7-11
+class LanceDBDocStore(AbstractDocumentStore):
+    """A document store for LlamaBot that wraps around LanceDB."""
+
+    def __init__(self, table_name: str, storage_path: Path = Path.home() / ".llamabot" / "lancedb",):
+        ...
+
+    def append(self, document: str):
+        ...
+
+    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+        ...
+
+    def extend(self, documents: list[str]):
+        ...
+
+    def reset(self):
+        ...
+
+    def __post_add_documents__(self):
+        ...
+
+    def __contains__(self, other: str) -> bool:
+        ...
+```
+:::
+
+Chat history and Doc storage implement a shared interface.
+
+## ChatBot = 🤖 + 🕰️
+
+ChatBot's retrieval of history is a form of RAG.
+
+```{python}
+#| code-line-numbers: "1|8-10|11,13"
+class ChatBot(SimpleBot, History):
+
+    def __init__(self, ...):
+        ...
+
+    def __call__(self, message: str) -> Union[AIMessage, Generator]:
+        ...
+        history = self.retrieve(
+            query=human_message, character_budget=self.response_budget
+        ) # History class method
+        messages = [self.system_prompt] + history + [human_message]
+        ...
+        response: AIMessage = self.stream_stdout(messages) # SimpleBot class method
+        ...
+```
+
+## QueryBot = 🤖 + 🗄️
+
+```{python}
+#| code-line-numbers: "1|4|9-12|14"
+class QueryBot(SimpleBot, LanceDBDocStore):
+    def __init__(self, document_paths,...):
+        ...
+        self.add_documents(document_paths=document_paths) # LanceDBDocStore method
+        ...
+
+    def __call__(self, query: str):
+        ...
+        messages = [self.system_prompt]
+        retreived_messages = ... # LanceDBDocStore method
+        messages.extend(retrieved)
+        messages.append(HumanMessage(content=query))
+        ...
+        return self.stream_stdout(messages) # SimpleBot method
+```
+
+---
+
+[🤖 Final Demo: Blogging Bot Panel App]{style="font-size:120px"}
+
+---
+
+## 💡 Lessons baked into design
+
+::: incremental
+1. Text generation is separate from retrieval. Separate these concerns.
+2. Flat is better than nested.
+3. Composable tools >> wrapped behemoths.
+4. Surgically integrate LLMs into workflows.
+:::
+
+## 🏃🏻 Sprint Goals
+
+::: {.panel-tabset}
+
+## 1️⃣ Beginner
+
+- Onboarding documentation improvements.
+- Useful examples within a single notebook setting.
+
+## 2️⃣ Intermediate
+
+- Examples with dashboarding frameworks.
+- New types of bots?
+
+## 3️⃣ Advanced
+
+- Standardization of interface.
+- Testing without using an API key or local LLMs.
+- Review code.
+:::
+
+::: callout-tip
+**Come sprint, and I will help you get set up with Ollama.** (No API keys to give out, unfortunately, unless an org would like to sponsor!)
+:::
+
+## ⭐️ Thank You
