@@ -55,20 +55,43 @@ that you program with natural language instructions rather than code.
 This is useful for prompt experimentation,
 or for creating simple bots that are preconditioned on an instruction to handle texts
 and are then called upon repeatedly with different texts.
+
+#### Using `SimpleBot` with an API provider
+
 For example, to create a Bot that explains a given chunk of text
 like Richard Feynman would:
 
 ```python
 from llamabot import SimpleBot
 
-feynman = SimpleBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.", model_name="gpt-3.5-turbo")
+system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
+feynman = SimpleBot(
+  system_prompt,
+  model_name="gpt-3.5-turbo"
+)
 ```
 
-Now, `feynman` is callable on any arbitrary chunk of text and will return a rephrasing of that text in Richard Feynman's style (or more accurately, according to the style prescribed by the prompt).
+For using GPT, you need to have the `OPENAI_API_KEY` environment variable configured. If you want to use `SimpleBot` with a local Ollama model, [check out this example](#using-simplebot-with-a-local-ollama-model)
+
+Now, `feynman` is callable on any arbitrary chunk of text and will return a rephrasing of that text in Richard Feynman's style (or more accurately, according to the style prescribed by the `system_prompt`).
 For example:
 
 ```python
-feynman("Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed. However, most of these tools cannot accurately predict functional annotations, such as enzyme commission (EC) number, for less-studied proteins or those with previously uncharacterized functions or multiple activities. We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation) to assign EC numbers to enzymes with better accuracy, reliability, and sensitivity compared with the state-of-the-art tool BLASTp. The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes, (ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions that we demonstrate by systematic in silico and in vitro experiments. We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes, thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.")
+prompt = """
+Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed.
+However, most of these tools cannot accurately predict functional annotations,
+such as enzyme commission (EC) number,
+for less-studied proteins or those with previously uncharacterized functions or multiple activities.
+We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation)
+to assign EC numbers to enzymes with better accuracy, reliability,
+and sensitivity compared with the state-of-the-art tool BLASTp.
+The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes,
+(ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions
+that we demonstrate by systematic in silico and in vitro experiments.
+We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes,
+thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.
+"""
+feynman(prompt)
 ```
 
 This will return something that looks like:
@@ -105,23 +128,31 @@ enzymes. This could have big implications for fields like genomics, synthetic bi
 and biocatalysis, which all rely on understanding how enzymes work.
 ```
 
+#### Using `SimpleBot` with a Local Ollama Model
+
 If you want to use an Ollama model hosted locally,
 then you would use the following syntax:
 
 ```python
 from llamabot import SimpleBot
+
+system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
 bot = SimpleBot(
-    "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.",
+    system_prompt,
     model_name="ollama/llama2:13b"
 )
 ```
 
-Simply specify the `model_name` keyword argument
-and provide a model name from the [Ollama library of models](https://ollama.ai/library)
-prefixed by `ollama/`.
+Simply specify the `model_name` keyword argument following the `<provider>/<model name>` format. For example:
+
+* `ollama/` as the prefix, and
+* a model name from the [Ollama library of models](https://ollama.ai/library)
+
 All you need to do is make sure Ollama is running locally;
 see the [Ollama documentation](https://ollama.ai/) for more details.
 (The same can be done for the `ChatBot` and `QueryBot` classes below!)
+
+The `model_name` argument is optional. If you don't provide it, Llamabot will try to use the default model. You can configure that in the `DEFAULT_LANGUAGE_MODEL` environment variable.
 
 ### Chat Bot
 
@@ -136,8 +167,37 @@ For example:
 ```python
 from llamabot import ChatBot
 
-feynman = ChatBot("You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.", session_name="feynman_chat")
-feynman("Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed. However, most of these tools cannot accurately predict functional annotations, such as enzyme commission (EC) number, for less-studied proteins or those with previously uncharacterized functions or multiple activities. We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation) to assign EC numbers to enzymes with better accuracy, reliability, and sensitivity compared with the state-of-the-art tool BLASTp. The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes, (ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions that we demonstrate by systematic in silico and in vitro experiments. We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes, thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.")
+system_prompt="You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
+feynman = ChatBot(
+  system_prompt,
+  session_name="feynman_chat",
+  # Optional:
+  # model_name="gpt-3.5-turbo"
+  # or
+  # model_name="ollama/mistral"
+)
+```
+
+For more explanation about the `model_name`, see [the examples with `SimpleBot`](#using-simplebot-with-a-local-ollama-model).
+
+Now, that you have a `ChatBot` instance, you can start a conversation with it.
+
+```python
+prompt = """
+Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed.
+However, most of these tools cannot accurately predict functional annotations,
+such as enzyme commission (EC) number,
+for less-studied proteins or those with previously uncharacterized functions or multiple activities.
+We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation)
+to assign EC numbers to enzymes with better accuracy, reliability,
+and sensitivity compared with the state-of-the-art tool BLASTp.
+The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes,
+(ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions
+that we demonstrate by systematic in silico and in vitro experiments.
+We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes,
+thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.
+"""
+feynman(prompt)
 ```
 
 With the chat history available, you can ask a follow-up question:
@@ -154,22 +214,50 @@ The final bot provided is a QueryBot.
 This bot lets you query a collection of documents.
 To use it, you have two options:
 
-1. Pass in a list of paths to text files, or
-2. Pass in a session name of a previously instantiated `QueryBot` that model. (This will load the previously-computed text index into memory.)
+1. Pass in a list of paths to text files and make Llamabot create a new collection for them, or
+2. Pass in the `collection_name` of a previously instantiated `QueryBot` model. (This will load the previously-computed text index into memory.)
 
-As an illustrative example:
+An illustrative example creating a new collection:
 
 ```python
 from llamabot import QueryBot
 from pathlib import Path
 
-blog_index = Path("/path/to/index.json")
-bot = QueryBot(system_message="You are an expert on Eric Ma's blog.", session_name="eric_ma_blog")  # this loads my previously-embedded blog text.
-# alternatively:
-# bot = QueryBot(system_message="You are an expert on Eric Ma's blog.", session_name="eric_ma_blog", document_paths=[Path("/path/to/blog/post1.txt"), Path("/path/to/blog/post2.txt"), ...])
+bot = QueryBot(
+  system_prompt="You are an expert on Eric Ma's blog.",
+  collection_name="eric_ma_blog",
+  document_paths=[
+    Path("/path/to/blog/post1.txt"),
+    Path("/path/to/blog/post2.txt"),
+    ...,
+  ],
+  # Optional:
+  # model_name="gpt-3.5-turbo"
+  # or
+  # model_name="ollama/mistral"
+) # This creates a new embedding for my blog text.
 result = bot("Do you have any advice for me on career development?")
 display(Markdown(result.response))
 ```
+
+An illustrative example using an already existing collection:
+
+```python
+from llamabot import QueryBot
+
+bot = QueryBot(
+  system_prompt="You are an expert on Eric Ma's blog",
+  collection_name="eric_ma_blog",
+  # Optional:
+  # model_name="gpt-3.5-turbo"
+  # or
+  # model_name="ollama/mistral"
+)  # This loads my previously-embedded blog text.
+result = bot("Do you have any advice for me on career development?")
+display(Markdown(result.response))
+```
+
+For more explanation about the `model_name`, see [the examples with `SimpleBot`](#using-simplebot-with-a-local-ollama-model).
 
 ### ImageBot
 
