@@ -237,7 +237,6 @@ bot = QueryBot(
   # model_name="ollama/mistral"
 ) # This creates a new embedding for my blog text.
 result = bot("Do you have any advice for me on career development?")
-display(Markdown(result.response))
 ```
 
 An illustrative example using an already existing collection:
@@ -254,7 +253,6 @@ bot = QueryBot(
   # model_name="ollama/mistral"
 )  # This loads my previously-embedded blog text.
 result = bot("Do you have any advice for me on career development?")
-display(Markdown(result.response))
 ```
 
 For more explanation about the `model_name`, see [the examples with `SimpleBot`](#using-simplebot-with-a-local-ollama-model).
