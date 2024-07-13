@@ -1,4 +1,12 @@
 {
+    "peacock.color": "#1857a4",
+    "notebook.formatOnSave.enabled": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "none",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
     "workbench.colorCustomizations": {
         "activityBar.activeBackground": "#1f6fd0",
         "activityBar.background": "#1f6fd0",
@@ -17,13 +25,5 @@
         "titleBar.activeForeground": "#e7e7e7",
         "titleBar.inactiveBackground": "#1857a499",
         "titleBar.inactiveForeground": "#e7e7e799"
-    },
-    "peacock.color": "#1857a4",
-    "notebook.formatOnSave.enabled": true,
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
-    },
-    "python.formatting.provider": "none",
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "basic"
+    }
 }
