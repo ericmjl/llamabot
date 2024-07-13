@@ -6,6 +6,11 @@
     },
     "customizations": {
         "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/conda/envs/llamabot",
+                "python.terminal.activateEnvironment": true,
+                "python.terminal.activateEnvInCurrentTerminal": true
+            },
             "extensions": [
                 "arcticicestudio.nord-visual-studio-code",
                 "charliermarsh.ruff",
@@ -19,14 +24,12 @@
                 "GitHub.codespaces",
                 "GitHub.vscode-pull-request-github",
                 "DavidAnson.vscode-markdownlint",
-            ],
-
+                "johnpapa.vscode-peacock"
+            ]
         }
     },
     "forwardPorts": [
         8888
     ],
-    "postCreateCommand": "pre-commit install && python -m ipykernel install --user --name llamabot",
-    // Use 'postStartCommand' to run commands after the container is _started_.
-    "postStartCommand": "jupyter lab --allow-root"
+    "postCreateCommand": "/opt/conda/envs/llamabot/bin/pre-commit install && /opt/conda/envs/llamabot/bin/python -m ipykernel install --user --name llamabot",
 }
