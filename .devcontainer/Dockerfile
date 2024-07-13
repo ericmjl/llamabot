@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-FROM continuumio/miniconda3
+FROM mambaorg/micromamba
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
@@ -21,20 +21,7 @@ ARG USER_GID=$USER_UID
 COPY environment.yml*  /tmp/conda-tmp/
 
 # Configure apt and install packages
-RUN apt-get update \
-    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
-    #
-    # Verify git, process tools, lsb-release (common in install instructions for CLIs) installed
-    && apt-get -y install git openssh-client less iproute2 procps iproute2 lsb-release \
-    #
-    # Install TexLive and related utilities
-    && apt-get -y install texlive texlive-publishers texlive-science latexmk cm-super texlive-xetex \
-    #
-    # Install mamba to replace conda
-    && /opt/conda/bin/conda install -c conda-forge -y mamba \
-    #
-    # Update Python environment based on environment.yml (if present)
-    && if [ -f "/tmp/conda-tmp/environment.yml" ]; then /opt/conda/bin/mamba env update -n base -f /tmp/conda-tmp/environment.yml; fi \
+RUN if [ -f "/tmp/conda-tmp/environment.yml" ]; then /opt/conda/bin/mamba env update -n base -f /tmp/conda-tmp/environment.yml; fi \
     && rm -rf /tmp/conda-tmp \
     #
     # Create a non-root user to use if preferred - see https://aka.ms/vscode-remote/containers/non-root-user.
