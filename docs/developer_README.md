@@ -12,7 +12,7 @@ All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are suppor
 
 Make sure that you have followed the [README.md](../README.md) before jumping on the next steps.
 
-## Create a Conda virtual environment
+## Creating a Conda virtual environment
 
 It is recommended to have [Conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) available on your system.
 
@@ -31,18 +31,25 @@ The following command will install all your pip dependencies
 pip install -e .
 ```
 
-## Install LlamaBot
+## Configuring your downloaded model
 
-To install LlamaBot:
-
-```bash
-pip install llamabot
-```
-
-Please note: if you are using a local model, you may need to update the `DEFAULT_LANGUAGE_MODEL` to your local model path
+If you are using a local model, you may need to update the `DEFAULT_LANGUAGE_MODEL` to your local model path
 at [config.py](../llamabot/config.py).
 
 this could be something similar to "ollama/<your_model>" 
 
 For Llama3: (ex. "ollama/llama3")  
 For Mistral: (ex. "ollama/mistral")
+
+OR
+
+You could also pass the language model as an argument when extending/creating your own model from the
+[SimpleBot](../llamabot/bot/simplebot.py) api.
+
+Example: 
+```python
+feynman = SimpleBot(
+    "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back.",
+    model_name="ollama/llama3"
+)
+```
