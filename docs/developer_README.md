@@ -43,7 +43,7 @@ pre-commit install
 ```
 
 Now before you commit your changes, running the pre-commit command below will automatically run code checks for you.
-If there are any issues that pre-commit finds, such as missing line breaks, indentations or others,
+If there are any issues that pre-commit finds, such as missing line breaks, lint errors or others,
 then please make the appropriate changes, rerun pre-commit to ensure that the checks pass and then commit the files.
 
 ```bash
