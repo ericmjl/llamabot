@@ -79,9 +79,14 @@ jobs:
         if: matrix.environment-type == 'pixi'
         run: |
           pixi run test
+
+      - name: Test CLI
+        if: matrix.environment-type == 'pixi'
+        run: |
           pixi run llamabot
 
       - name: Test CLI
+        if: matrix.environment-type == 'bare' || matrix.environment-type == 'miniconda'
         run: |
           pip install -e ".[all]"
           llamabot --help
