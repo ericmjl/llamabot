@@ -1,0 +1,5 @@
+# GitHub syntax highlighting
+pixi.lock linguist-language=YAML linguist-generated=true
+
+# Disable nbstripout for anything in the docs directory
+docs/** filter= diff=
