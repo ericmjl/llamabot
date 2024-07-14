@@ -56,6 +56,16 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "reka",
+      "name": "reka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/382113?v=4",
+      "profile": "https://github.com/reka",
+      "contributions": [
+        "doc",
+        "code"
+      ]
     }
   ]
 }
