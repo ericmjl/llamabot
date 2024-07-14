@@ -42,7 +42,9 @@ The following command will install pre-commit in your virtual environment.
 pre-commit install
 ```
 
-Now before you commit your changes, you may run the following command and resolve any issues that come up.
+Now before you commit your changes, running the pre-commit command below will automatically run code checks for you.
+If there are any issues that pre-commit finds, such as missing line breaks or others,
+then please make the appropriate changes, rerun pre-commit to ensure that the checks pass and then commit the files.
 
 ```bash
 pre-commit run
