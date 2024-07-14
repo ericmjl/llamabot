@@ -28,5 +28,5 @@ jobs:
             uses: docker/build-push-action@v6
             with:
                 push: true
-                tags: ericmjl/llamabot-devcontainer:latest
+                tags: ericmjl/llamabot-devcontainer:latest,ericmjl/llamabot-devcontainer:${{ github.sha }}
                 file: .devcontainer/Dockerfile
