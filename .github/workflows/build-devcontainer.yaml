@@ -1,4 +1,4 @@
-name: Code style checks
+name: Build development container
 
 on: [push]
 
