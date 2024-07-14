@@ -77,3 +77,7 @@ class QueryBot(SimpleBot, ChatUIMixin):
             return response
         elif self.stream_target == "panel":
             return self.stream_panel(messages)
+        elif self.stream_target == "api":
+            return self.stream_api(messages)
+        else:
+            raise ValueError(f"Invalid stream target: {self.stream_target}")
