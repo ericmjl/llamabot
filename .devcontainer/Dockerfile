@@ -25,6 +25,11 @@ COPY pyproject.toml pyproject.toml
 RUN /opt/conda/envs/llamabot/bin/pip install -e .
 RUN /opt/conda/envs/llamabot/bin/mamba install -y pre-commit jupyter
 
+# Install Ollama within Docker container
+RUN apt-get update && apt-get install -y curl
+RUN curl -fsSL https://ollama.com/install.sh | sh
+# RUN ollama pull phi3
+
 # Always the final command
 COPY . .
 
