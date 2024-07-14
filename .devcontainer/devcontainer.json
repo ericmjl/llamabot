@@ -32,4 +32,5 @@
         8888
     ],
     "postCreateCommand": "/opt/conda/envs/llamabot/bin/pre-commit install && /opt/conda/envs/llamabot/bin/python -m ipykernel install --user --name llamabot",
+    "postStartCommand": "ollama serve"
 }
