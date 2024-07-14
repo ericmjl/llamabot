@@ -179,5 +179,3 @@ tests = { features = ["tests"], solve-group = "default" }
 [tool.pixi.tasks]
 test = "pytest"
 docs = "mkdocs serve"
-install-e = "pip install -e ."
-install-pdfminer = "pip uninstall pdfminer.six && pip install pdfminer.six"
