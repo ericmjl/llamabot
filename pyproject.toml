@@ -124,47 +124,60 @@ llamabot = "llamabot.cli:app"
 channels = ["conda-forge"]
 platforms = ["osx-arm64"]
 
-[tool.pixi.dependencies]
+[tool.pixi.feature.core.dependencies]
+python = ">=3.10"
+pip = "*"
 openai = "*"
 panel = ">=1.3.0"
-jupyter_bokeh = "*"
-bokeh = ">=3.1.0"
-loguru = "*"
 pyperclip = "*"
 astor = ">=0.8.1"
 python-dotenv = "*"
 typer = ">=0.4.7"
-gitpython = "*"
 pyprojroot = "*"
-frozenlist = "*"
-beautifulsoup4 = "*"
 rich = "*"
-pyzotero = "*"
 prompt-toolkit = "*"
 sh = "*"
-pre-commit = "*"
-beartype = "==0.15.0"
 litellm = "<=1.35.38" # temporary to enable continued usage of JSON mode, reported issue to BerriAI
 python-slugify = "*"
 pydantic = ">=2.0"
-pdfminer.six = "*"
 lancedb = "*"
 sentence-transformers = "*"
 chromadb = "*"
 numpy = "<2" # https://github.com/ericmjl/llamabot/issues/56
 
-[tool.pixi.pypi-dependencies]
+[tool.pixi.feature.repo.dependencies]
+loguru = "*"
+gitpython = "*"
+
+[tool.pixi.feature.zotero.dependencies]
+pyzotero = "*"
+
+[tool.pixi.feature.docs.dependencies]
+pre-commit = "*"
+mkdocs = "*"
+mkdocs-material = "*"
+mknotebooks = "*"
+
+[tool.pixi.feature.tests.dependencies]
+pytest = "*"
+hypothesis = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+
+[tool.pixi.feature.core.pypi-dependencies]
 llamabot = { path = ".", editable = true }
 case-converter = "*"
 rank-bm25 = "*"
 tantivy = "*"
+"pdfminer.six" = "*"
 
 [tool.pixi.environments]
-default = { solve-group = "default" }
-all = { features = ["all", "tests", "docs"], solve-group = "default" }
+default = { features = ["core", "repo", "zotero", "tests", "docs"], solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
 tests = { features = ["tests"], solve-group = "default" }
 
 [tool.pixi.tasks]
 test = "pytest"
 docs = "mkdocs serve"
+install-e = "pip install -e ."
+install-pdfminer = "pip uninstall pdfminer.six && pip install pdfminer.six"
