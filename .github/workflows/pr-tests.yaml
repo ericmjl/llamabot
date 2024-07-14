@@ -79,6 +79,7 @@ jobs:
         if: matrix.environment-type == 'pixi'
         run: |
           pixi run test
+          pixi run llamabot
 
       - name: Test CLI
         run: |

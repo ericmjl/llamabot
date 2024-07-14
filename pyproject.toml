@@ -179,3 +179,4 @@ tests = { features = ["tests"], solve-group = "default" }
 [tool.pixi.tasks]
 test = "pytest"
 docs = "mkdocs serve"
+llamabot = "llamabot --help"
