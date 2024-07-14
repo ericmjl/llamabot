@@ -60,7 +60,8 @@ dependencies:
       - case-converter
       - sh
       - unstructured[all-docs]
-      - litellm
+      - litellm<=1.35.38
       - pydantic>=2.0
       - pdfminer.six
       - rank-bm25
+      - lancedb
