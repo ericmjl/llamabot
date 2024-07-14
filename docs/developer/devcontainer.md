@@ -12,6 +12,10 @@ This is particularly useful for individuals running Windows machines.
 
 Your system should have `git` and Docker both installed on it.
 
+Additionally, we recommend that you configure Docker
+to be able to use at least 12-14GB of RAM
+to ensure that local LLMs have enough RAM to run.
+
 ## Brief Instructions
 
 1. Fork LlamaBot to your own GitHub account.
