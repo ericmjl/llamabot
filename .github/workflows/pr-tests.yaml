@@ -55,7 +55,9 @@ jobs:
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           auth-host: prefix.dev
           auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
-
+          environments: >-
+            default
+            tests
 
       - name: Install dependencies
         if: matrix.environment-type == 'bare'
@@ -70,6 +72,11 @@ jobs:
           fi
           pip install -e ".[all]"
           pytest
+
+      - name: Run tests
+        if: matrix.environment-type == 'pixi'
+        run: |
+          pixi run test
 
       - name: Test CLI
         run: |
