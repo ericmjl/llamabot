@@ -1,0 +1,13 @@
+name: Code style checks
+
+on: [push]
+
+jobs:
+    build-container:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v2
+
+        - name: Build and push Docker image
+          run: |
+            docker build -f .devcontainer/Dockerfile .
