@@ -110,6 +110,7 @@ tests = [
 docs = [
     "mkdocs-material",
     "mkdocs",
+    "mknotebooks",
 ]
 
 all = [
@@ -123,8 +124,40 @@ llamabot = "llamabot.cli:app"
 channels = ["conda-forge"]
 platforms = ["osx-arm64"]
 
+[tool.pixi.dependencies]
+openai = "*"
+panel = ">=1.3.0"
+jupyter_bokeh = "*"
+bokeh = ">=3.1.0"
+loguru = "*"
+pyperclip = "*"
+astor = ">=0.8.1"
+python-dotenv = "*"
+typer = ">=0.4.7"
+gitpython = "*"
+pyprojroot = "*"
+frozenlist = "*"
+beautifulsoup4 = "*"
+rich = "*"
+pyzotero = "*"
+prompt-toolkit = "*"
+sh = "*"
+pre-commit = "*"
+beartype = "==0.15.0"
+litellm = "<=1.35.38" # temporary to enable continued usage of JSON mode, reported issue to BerriAI
+python-slugify = "*"
+pydantic = ">=2.0"
+pdfminer.six = "*"
+lancedb = "*"
+sentence-transformers = "*"
+chromadb = "*"
+numpy = "<2" # https://github.com/ericmjl/llamabot/issues/56
+
 [tool.pixi.pypi-dependencies]
 llamabot = { path = ".", editable = true }
+case-converter = "*"
+rank-bm25 = "*"
+tantivy = "*"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
@@ -134,3 +167,4 @@ tests = { features = ["tests"], solve-group = "default" }
 
 [tool.pixi.tasks]
 test = "pytest"
+docs = "mkdocs serve"
