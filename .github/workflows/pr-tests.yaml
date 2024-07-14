@@ -66,8 +66,8 @@ jobs:
         run: |
           python -m pip install -e ".[all]"
 
-      - name: Run tests
-        if: matrix.environment-type == 'miniconda'
+      - name: Run tests (miniconda/bare)
+        if: matrix.environment-type == 'miniconda' || matrix.environment-type == 'bare'
         run: |
           if [ "${{ matrix.environment-type }}" == "miniconda" ]; then
             conda activate llamabot
@@ -75,21 +75,21 @@ jobs:
           pip install -e ".[all]"
           pytest
 
-      - name: Run tests
+      - name: Run tests (pixi)
         if: matrix.environment-type == 'pixi'
         run: |
           pixi run test
 
-      - name: Test CLI
-        if: matrix.environment-type == 'pixi'
-        run: |
-          pixi run llamabot
-
-      - name: Test CLI
+      - name: Test CLI (miniconda/bare)
         if: matrix.environment-type == 'bare' || matrix.environment-type == 'miniconda'
         run: |
           pip install -e ".[all]"
           llamabot --help
+
+      - name: Test CLI (pixi)
+        if: matrix.environment-type == 'pixi'
+        run: |
+          pixi run llamabot
 
       # https://github.com/codecov/codecov-action
       - name: Upload code coverage
