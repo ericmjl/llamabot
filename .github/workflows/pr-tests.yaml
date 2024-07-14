@@ -67,6 +67,7 @@ jobs:
           python -m pip install -e ".[all]"
 
       - name: Run tests
+        if: matrix.environment-type == 'miniconda'
         run: |
           if [ "${{ matrix.environment-type }}" == "miniconda" ]; then
             conda activate llamabot
