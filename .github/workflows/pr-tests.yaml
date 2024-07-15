@@ -31,9 +31,6 @@ jobs:
       - name: Download Ollama
         run: curl -fsSL https://ollama.com/install.sh | sh
 
-      - name: Start Ollama in background
-        run: ollama serve &
-
       - name: Pull Microsoft's Phi3 model
         run: ollama pull phi3
 
