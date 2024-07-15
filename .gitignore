@@ -153,3 +153,6 @@ data/*
 talks/scipy2024/images/blogbot-demo.mp4
 scratch_notebooks/*_files
 scratch_notebooks/*.html
+# pixi environments
+.pixi
+*.egg-info

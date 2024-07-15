@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.11]
-        environment-type: ['miniconda', 'bare']
+        environment-type: ['miniconda', 'bare', 'pixi']
 
     # https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
     defaults:
@@ -34,20 +34,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # # See: https://github.com/marketplace/actions/setup-miniconda
-      # - name: Setup miniconda
-      #   if: matrix.environment-type == 'miniconda'
-      #   uses: conda-incubator/setup-miniconda@v2
-      #   with:
-      #     auto-update-conda: true
-      #     miniforge-variant: Mambaforge
-      #     channels: conda-forge
-      #     activate-environment: llamabot
-      #     environment-file: environment.yml
-      #     use-mamba: true
-      #     python-version: ${{ matrix.python-version }}
-
-      - uses: mamba-org/setup-micromamba@v1
+      - name: Setup Micromamba Environment
+        uses: mamba-org/setup-micromamba@v1
         if: matrix.environment-type == 'miniconda'
         with:
           micromamba-version: '1.5.1-2'
@@ -59,6 +47,15 @@ jobs:
           cache-downloads-key: downloads-${{ steps.date.outputs.date }}-${{ hashFiles('environment.yml') }}
           post-cleanup: 'all'
 
+      - name: Setup Pixi Environment
+        if: matrix.environment-type == 'pixi'
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: v0.25.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          auth-host: prefix.dev
+          auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
 
       - name: Install dependencies
         if: matrix.environment-type == 'bare'
@@ -66,7 +63,8 @@ jobs:
         run: |
           python -m pip install -e ".[all]"
 
-      - name: Run tests
+      - name: Run tests (miniconda/bare)
+        if: matrix.environment-type == 'miniconda' || matrix.environment-type == 'bare'
         run: |
           if [ "${{ matrix.environment-type }}" == "miniconda" ]; then
             conda activate llamabot
@@ -74,10 +72,21 @@ jobs:
           pip install -e ".[all]"
           pytest
 
-      - name: Test CLI
+      - name: Run tests (pixi)
+        if: matrix.environment-type == 'pixi'
+        run: |
+          pixi run test
+
+      - name: Test CLI (miniconda/bare)
+        if: matrix.environment-type == 'bare' || matrix.environment-type == 'miniconda'
         run: |
           pip install -e ".[all]"
           llamabot --help
+
+      - name: Test CLI (pixi)
+        if: matrix.environment-type == 'pixi'
+        run: |
+          pixi run llamabot
 
       # https://github.com/codecov/codecov-action
       - name: Upload code coverage

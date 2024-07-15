@@ -110,6 +110,7 @@ tests = [
 docs = [
     "mkdocs-material",
     "mkdocs",
+    "mknotebooks",
 ]
 
 all = [

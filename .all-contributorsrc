@@ -56,6 +56,44 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "reka",
+      "name": "reka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/382113?v=4",
+      "profile": "https://github.com/reka",
+      "contributions": [
+        "doc",
+        "code"
+      ]
+    },
+    {
+      "login": "anujsinha3",
+      "name": "anujsinha3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/21972901?v=4",
+      "profile": "https://github.com/anujsinha3",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "ElliotSalisbury",
+      "name": "Elliot Salisbury",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2605537?v=4",
+      "profile": "https://github.com/ElliotSalisbury",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "eefricker",
+      "name": "Ethan Fricker, PhD",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65178728?v=4",
+      "profile": "http://eefricker.github.io",
+      "contributions": [
+        "doc"
+      ]
     }
   ]
 }
