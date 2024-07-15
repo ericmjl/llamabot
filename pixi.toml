@@ -1,0 +1,57 @@
+[project]
+name = "llamabot"
+description = "A Pythonic interface to LLMs"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+
+[dependencies]
+python = ">=3.10"
+pip = "*"
+openai = "*"
+panel = ">=1.3.0"
+pyperclip = "*"
+astor = ">=0.8.1"
+python-dotenv = "*"
+typer = ">=0.4.7"
+pyprojroot = "*"
+rich = "*"
+prompt-toolkit = "*"
+sh = "*"
+litellm = "<=1.35.38" # temporary to enable continued usage of JSON mode, reported issue to BerriAI
+python-slugify = "*"
+pydantic = ">=2.0"
+lancedb = "*"
+sentence-transformers = "*"
+chromadb = "*"
+numpy = "<2" # https://github.com/ericmjl/llamabot/issues/56
+loguru = "*"
+gitpython = "*"
+pyzotero = "*"
+pre-commit = "*"
+mkdocs = "*"
+mkdocs-material = "*"
+mknotebooks = "*"
+pytest = "*"
+hypothesis = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+jupyter = ">=1.0.0,<1.1"
+ipykernel = "*"
+jupyterlab = ">=4.2.3,<4.3"
+pixi-kernel = ">=0.3.0,<0.4"
+stack_data = ">=0.6.2,<0.7"
+
+[pypi-dependencies]
+llamabot = { path = ".", editable = true }
+case-converter = "*"
+rank-bm25 = "*"
+tantivy = "*"
+"pdfminer.six" = "*"
+
+[tasks]
+test = "pytest"
+docs = "mkdocs serve"
+llamabot = "llamabot --help"
+jlab = "jupyter lab"
+kernel = "python -m ipykernel install --user --name llamabot --display-name llamabot"
+dummy = "which python"
