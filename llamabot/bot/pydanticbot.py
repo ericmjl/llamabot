@@ -20,7 +20,7 @@ class PydanticBot(ChatBot):
         num_attempts: int = 3,
         **kwargs,
     ):
-        super().__init__(system_prompt, session_name, **kwargs)
+        super().__init__(system_prompt, session_name, json_mode=True, **kwargs)
         self.pydantic_model = pydantic_model
         self.num_attempts = num_attempts
 
@@ -44,7 +44,7 @@ class PydanticBot(ChatBot):
                 obj = self.pydantic_model.model_validate_json(codeblock)
                 return obj
             except ValidationError as e:
-                if attempt == self.num_attempts - 1:
+                if attempt >= self.num_attempts - 1:
                     raise e
 
                 prompt = self.get_validation_error_prompt(e)
