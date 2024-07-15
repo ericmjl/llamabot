@@ -1,4 +1,5 @@
 """A component that provides tools to the chatbot."""
+
 import inspect
 from openai.types.chat import ChatCompletionMessageToolCall
 import typing

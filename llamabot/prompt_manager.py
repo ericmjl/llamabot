@@ -7,7 +7,6 @@ and return the Jinja2 templated docstrings as strings when called.
 Inspired from the Outlines library.
 """
 
-
 from functools import wraps
 import jinja2
 from jinja2 import meta

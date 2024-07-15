@@ -1,4 +1,5 @@
 """Serve up LlamaBots as a FastAPI endpoint."""
+
 from pathlib import Path
 import typer
 from typing import List

@@ -1,4 +1,5 @@
 """Paths to configuration files and directories."""
+
 import os
 from pathlib import Path
 

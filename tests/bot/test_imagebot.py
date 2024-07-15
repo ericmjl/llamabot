@@ -1,4 +1,5 @@
 """Test the ImageBot class."""
+
 from llamabot import ImageBot, SimpleBot
 import requests
 from llamabot.components.messages import AIMessage

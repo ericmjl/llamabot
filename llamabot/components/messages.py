@@ -1,4 +1,5 @@
 """Definitions for the different types of messages that can be sent."""
+
 from pydantic import BaseModel
 
 
