@@ -28,6 +28,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Download Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama in background
+        run: ollama serve &
+
+      - name: Pull Microsoft's Phi3 model
+        run: ollama pull phi3
+
       - name: Setup Python environment
         if: matrix.environment-type == 'bare'
         uses: actions/setup-python@v2
