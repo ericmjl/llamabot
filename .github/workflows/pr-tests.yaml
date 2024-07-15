@@ -56,9 +56,6 @@ jobs:
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           auth-host: prefix.dev
           auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
-          environments: >-
-            default
-            tests
 
       - name: Install dependencies
         if: matrix.environment-type == 'bare'
