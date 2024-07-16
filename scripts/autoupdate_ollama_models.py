@@ -1,4 +1,5 @@
 """Automatically update the list of Ollama models in llamabot/bot/ollama_model_names.txt"""
+
 from bs4 import BeautifulSoup
 import requests
 

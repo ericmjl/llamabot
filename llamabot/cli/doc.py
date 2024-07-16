@@ -1,4 +1,5 @@
 """Document chat bots."""
+
 from pathlib import Path
 
 import typer

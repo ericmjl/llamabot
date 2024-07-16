@@ -1,4 +1,5 @@
 """Dummy class for experimentation purposes."""
+
 from dataclasses import dataclass
 
 

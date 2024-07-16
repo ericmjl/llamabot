@@ -9,6 +9,7 @@ Functions:
     - read_file(path: Path) -> str:
         Read a file.
 """
+
 import subprocess
 from pathlib import Path
 from typing import List

@@ -1,6 +1,5 @@
 """Tests for the Python prompt library."""
 
-
 from hypothesis import given, settings
 from hypothesis import strategies as st
 

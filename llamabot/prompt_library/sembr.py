@@ -1,4 +1,5 @@
 """Bots and prompts for semantic line breaks."""
+
 from llamabot import SimpleBot
 from llamabot.prompt_manager import prompt
 

@@ -4,6 +4,7 @@ Message history is always stored in a chroma database.
 We can retrieve the last N messages from the database
 or use vector similarity search to identify similar messages to retrieve (RAGHistory).
 """
+
 from pathlib import Path
 from hashlib import sha256
 from llamabot.components.messages import (

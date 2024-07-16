@@ -1,4 +1,5 @@
 """Completer class for paper titles."""
+
 from prompt_toolkit.completion import Completer, Completion
 
 

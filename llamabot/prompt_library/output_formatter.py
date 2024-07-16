@@ -1,4 +1,5 @@
 """Prompts and bots for validating outputs."""
+
 import json
 
 from llamabot import SimpleBot

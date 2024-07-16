@@ -1,4 +1,5 @@
 """CLI for chatting with a code repository."""
+
 from typing import List, Optional
 import typer
 import git
