@@ -2,6 +2,7 @@
 This module provides a set of tests for the PromptRecorder
 and autorecord functions in the llamabot.recorder module.
 """
+
 import pandas as pd
 
 from llamabot.recorder import PromptRecorder, autorecord

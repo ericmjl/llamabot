@@ -1,4 +1,5 @@
 """This is an example that doesn't work. I need to fix this."""
+
 from fastapi import FastAPI
 from llamabot import SimpleBot
 from starlette.concurrency import run_in_threadpool

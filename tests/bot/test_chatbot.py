@@ -1,4 +1,5 @@
 """Tests for the ChatBot class."""
+
 import pytest
 
 from llamabot.bot.chatbot import ChatBot

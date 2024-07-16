@@ -1,4 +1,5 @@
 """Llamabot Zotero CLI."""
+
 from datetime import date
 from pathlib import Path
 

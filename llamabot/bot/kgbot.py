@@ -1,4 +1,5 @@
 """Knowledge Graph bot."""
+
 import json
 from llamabot.components.messages import HumanMessage
 from llamabot.config import default_language_model

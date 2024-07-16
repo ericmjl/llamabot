@@ -1,4 +1,5 @@
 """Zotero prompt library."""
+
 from llamabot.prompt_manager import prompt
 
 

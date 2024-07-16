@@ -1,4 +1,5 @@
 """Prompt recorder class definition."""
+
 import contextvars
 from pathlib import Path
 from typing import Optional

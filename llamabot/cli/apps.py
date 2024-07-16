@@ -1,4 +1,5 @@
 """Run llamabot codebot panel apps."""
+
 import os
 
 import typer

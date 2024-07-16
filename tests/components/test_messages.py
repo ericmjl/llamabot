@@ -1,4 +1,5 @@
 """Tests for the message classes."""
+
 from llamabot.components.messages import (
     SystemMessage,
     HumanMessage,

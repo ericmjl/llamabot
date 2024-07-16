@@ -1,4 +1,5 @@
 """Zotero utilities."""
+
 import os
 
 from pyzotero import zotero

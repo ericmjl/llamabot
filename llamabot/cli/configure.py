@@ -1,4 +1,5 @@
 """LlamaBot configuration."""
+
 from openai import OpenAI
 
 import typer

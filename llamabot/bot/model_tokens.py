@@ -1,4 +1,5 @@
 """Constants for model tokens and token budgets."""
+
 DEFAULT_TOKEN_BUDGET = 4_096
 
 # Reference: https://platform.openai.com/docs/models

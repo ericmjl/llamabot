@@ -1,6 +1,5 @@
 """Code for document preprocessing."""
 
-
 from pathlib import Path
 from typing import List
 from pdfminer.high_level import (
