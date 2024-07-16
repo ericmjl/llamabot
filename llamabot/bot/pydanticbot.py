@@ -8,8 +8,15 @@ from pydantic import BaseModel, ValidationError
 
 
 class PydanticBot(SimpleBot):
-    """Pydantic Bot is given a Pydantic Model and expects the LLM to return a JSON structure that conforms to the model schema
-    It will validate the model, repeating the prompt if it does not validate, and then returns an instance of that model.
+    """ Pydantic Bot is given a Pydantic Model and expects the LLM to return a JSON structure that conforms to the model schema.
+        It will validate the returned json against the pydantic model, prompting the LLM to fix any of the validation errors if it does not validate, and then explicitly return an instance of that model.
+
+        This is distinct from SimpleBot's JSON-mode behaviour in the following ways:
+
+        1. JSON mode ensures a valid JSON is returned, but it does not guarantee it's in the schema you requested.
+        2. We can customize the validation rules to our needs. For example: checking for hallucinations.
+        3. Explicitly controllable number of retries.
+        4. Directly returning an instance of the Pydantic model rather than just a plain JSON string.
     """
 
     def __init__(
