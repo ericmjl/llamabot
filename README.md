@@ -335,6 +335,7 @@ Please use the issue tracker on GitHub.
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ElliotSalisbury"><img src="https://avatars.githubusercontent.com/u/2605537?v=4?s=100" width="100px;" alt="Elliot Salisbury"/><br /><sub><b>Elliot Salisbury</b></sub></a><br /><a href="#doc-ElliotSalisbury" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://eefricker.github.io"><img src="https://avatars.githubusercontent.com/u/65178728?v=4?s=100" width="100px;" alt="Ethan Fricker, PhD"/><br /><sub><b>Ethan Fricker, PhD</b></sub></a><br /><a href="#doc-eefricker" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://speakerdeck.com/eltociear"><img src="https://avatars.githubusercontent.com/u/22633385?v=4?s=100" width="100px;" alt="Ikko Eltociear Ashimine"/><br /><sub><b>Ikko Eltociear Ashimine</b></sub></a><br /><a href="#doc-eltociear" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
