@@ -1,4 +1,5 @@
 """Tests for the prompt decorator."""
+
 import pytest
 from llamabot.prompt_manager import prompt
 

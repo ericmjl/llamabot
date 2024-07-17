@@ -2,6 +2,7 @@
 This module contains tests for the get_valid_input function
 from the llamabot.utils module.
 """
+
 from unittest.mock import patch
 
 from llamabot.cli.utils import get_valid_input

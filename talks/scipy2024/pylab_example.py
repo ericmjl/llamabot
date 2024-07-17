@@ -1,4 +1,5 @@
 """git commit diff example."""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

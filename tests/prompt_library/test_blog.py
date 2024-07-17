@@ -1,4 +1,5 @@
 """Tests for blogging prompts"""
+
 from llamabot.prompt_library.blog import (
     compose_linkedin_post,
     compose_patreon_post,

@@ -1,4 +1,5 @@
 """Class definition for SimpleBot."""
+
 import contextvars
 from typing import Generator, Optional, Union
 
