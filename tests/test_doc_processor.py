@@ -1,4 +1,5 @@
 """Tests for doc_processor.py."""
+
 from pathlib import Path
 
 import pytest

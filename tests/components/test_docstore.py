@@ -1,6 +1,5 @@
 """Tests for the document store."""
 
-
 from pathlib import Path
 from llamabot.components.docstore import BM25DocStore, ChromaDBDocStore, LanceDBDocStore
 from hypothesis import HealthCheck, given, settings, strategies as st

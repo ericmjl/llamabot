@@ -1,4 +1,5 @@
 """A bot designed to use questions and answers to generate a response."""
+
 from hashlib import sha256
 from pathlib import Path
 from llamabot.bot.simplebot import SimpleBot

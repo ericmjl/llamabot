@@ -1,4 +1,5 @@
 """Tutorial bots."""
+
 from pathlib import Path
 
 from typer import Typer

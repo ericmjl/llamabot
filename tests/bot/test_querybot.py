@@ -1,4 +1,5 @@
 """Tests for QueryBot."""
+
 from llamabot.bot.querybot import QueryBot
 from hypothesis import HealthCheck, strategies as st, given, settings
 

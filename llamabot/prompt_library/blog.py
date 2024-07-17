@@ -1,4 +1,5 @@
 """Blogging prompts."""
+
 from pydantic import BaseModel
 
 from llamabot import SimpleBot

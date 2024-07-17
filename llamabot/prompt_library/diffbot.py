@@ -1,4 +1,5 @@
 """PR Diff Bot and Prompts."""
+
 from urllib.parse import urlparse
 
 import requests

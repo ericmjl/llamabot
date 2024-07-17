@@ -1,6 +1,5 @@
 """Bot abstractions that let me quickly build new GPT-based applications."""
 
-
 from dotenv import load_dotenv
 
 from llamabot.config import llamabotrc_path

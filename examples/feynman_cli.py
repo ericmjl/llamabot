@@ -1,4 +1,5 @@
 """Example Feynman bot at the CLI."""
+
 import typer
 
 from llamabot import SimpleBot

@@ -2,6 +2,7 @@
 This module contains tests for the get_function_source function
 in the llamabot.code_manipulation module.
 """
+
 import pytest
 
 from llamabot.code_manipulation import get_function_source
