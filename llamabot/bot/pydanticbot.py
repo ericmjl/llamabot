@@ -37,12 +37,16 @@ class PydanticBot(SimpleBot):
         self.pydantic_model = pydantic_model
         self.num_attempts = num_attempts
 
+    def get_model_schema(self):
+        return self.pydantic_model.schema_json()
+
     def get_system_message(self) -> SystemMessage:
-        schema = self.pydantic_model.schema_json()
-        return SystemMessage(content=self.system_prompt.content + f"\n\nYour task is to return the data in a json object that matches the following json_schema:\n```{ schema }```\nOnly return an INSTANCE of the schema, do not return the schema itself.")
+        schema = self.get_model_schema()
+        return SystemMessage(content=self.system_prompt.content + f"\n\nYour task is to return the data in a json object that matches the following json_schema:\n```{ schema }```")
 
     def get_validation_error_message(self, exception) -> HumanMessage:
-        return HumanMessage(content=f"There was a validation error: {exception.json()} try again.")
+        exception_msg = exception.json()
+        return HumanMessage(content=f"There was a validation error: {exception_msg}")
 
     def _extract_json_from_response(self, response:AIMessage):
         content = response.content
