@@ -21,7 +21,7 @@ export ANTHROPIC_API_KEY="YOUR KEY"
 
 Save this file to the same directory as this notebook
 
-We now load the .env file and store the API key as an enviroment variable
+We now load the .env file and store the API key as an environment variable
 
 
 ```python

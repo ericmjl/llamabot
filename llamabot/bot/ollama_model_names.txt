@@ -1,3 +1,4 @@
+mathstral
 codegeex4
 glm4
 internlm2
