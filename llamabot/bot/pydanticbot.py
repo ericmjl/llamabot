@@ -93,7 +93,11 @@ class PydanticBot(SimpleBot):
 
         :param message: The text on which to parse to generate the structured response.
         """
-        messages = [self.system_prompt, self.task_message(), HumanMessage(content=message)]
+        messages = [
+            self.system_prompt,
+            self.task_message(),
+            HumanMessage(content=message),
+        ]
 
         # we'll attempt to get the response from the model and validate it
         for attempt in range(num_attempts):
