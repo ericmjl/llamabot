@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.11]
-        environment-type: ['miniconda', 'bare', 'pixi']
+        environment-type: ['miniconda', 'bare']
 
     # https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
     defaults:
@@ -78,10 +78,10 @@ jobs:
           pip install -e ".[all]"
           pytest
 
-      - name: Run tests (pixi)
-        if: matrix.environment-type == 'pixi'
-        run: |
-          pixi run test
+      # - name: Run tests (pixi)
+      #   if: matrix.environment-type == 'pixi'
+      #   run: |
+      #     pixi run test
 
       - name: Test CLI (miniconda/bare)
         if: matrix.environment-type == 'bare' || matrix.environment-type == 'miniconda'
@@ -89,10 +89,10 @@ jobs:
           pip install -e ".[all]"
           llamabot --help
 
-      - name: Test CLI (pixi)
-        if: matrix.environment-type == 'pixi'
-        run: |
-          pixi run llamabot
+      # - name: Test CLI (pixi)
+      #   if: matrix.environment-type == 'pixi'
+      #   run: |
+      #     pixi run llamabot
 
       # https://github.com/codecov/codecov-action
       - name: Upload code coverage
