@@ -4,7 +4,7 @@ from pathlib import Path
 import typer
 from typing import List
 from fastapi import FastAPI
-from llamabot.bot import QueryBot
+from llamabot import QueryBot
 import uvicorn
 
 api = FastAPI()
