@@ -28,14 +28,14 @@ def bot_task(schema) -> str:
     """
 
 
-class PydanticBot(SimpleBot):
-    """Pydantic Bot is given a Pydantic Model and expects the LLM to return
+class StructuredBot(SimpleBot):
+    """StructuredBot is given a Pydantic Model and expects the LLM to return
     a JSON structure that conforms to the model schema.
     It will validate the returned json against the pydantic model,
     prompting the LLM to fix any of the validation errors if it does not validate,
     and then explicitly return an instance of that model.
 
-    PydanticBot streams only to stdout; other modes of streaming are not supported.
+    StructuredBot streams only to stdout; other modes of streaming are not supported.
 
     This is distinct from SimpleBot's JSON-mode behaviour in the following ways:
 
@@ -57,7 +57,7 @@ class PydanticBot(SimpleBot):
 
         self.pydantic_model = pydantic_model
 
-    def get_model_schema(self) -> str:
+    def get_model_schema(self) -> dict:
         """Gets the JSON schema we want the LLM to return"""
         return self.pydantic_model.model_json_schema()
 
