@@ -1,3 +1,5 @@
+firefunction-v2
+llama3-groq-tool-use
 mathstral
 codegeex4
 glm4

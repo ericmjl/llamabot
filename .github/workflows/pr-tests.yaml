@@ -60,8 +60,8 @@ jobs:
           pixi-version: v0.25.0
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          auth-host: prefix.dev
-          auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
+          # auth-host: prefix.dev
+          # auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
 
       - name: Install dependencies
         if: matrix.environment-type == 'bare'
