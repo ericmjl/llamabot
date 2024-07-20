@@ -14,6 +14,7 @@ from llamabot.components.messages import (
     SystemMessage,
 )
 from pydantic import BaseModel, ValidationError
+from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
 
 
@@ -49,10 +50,15 @@ class StructuredBot(SimpleBot):
         self,
         system_prompt: str,
         pydantic_model: BaseModel,
+        model_name: str = default_language_model(),
         **completion_kwargs,
     ):
         super().__init__(
-            system_prompt, stream_target="stdout", json_mode=True, **completion_kwargs
+            system_prompt,
+            stream_target="stdout",
+            json_mode=True,
+            model_name=model_name,
+            **completion_kwargs,
         )
 
         self.pydantic_model = pydantic_model
