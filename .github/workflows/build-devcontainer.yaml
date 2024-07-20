@@ -4,6 +4,9 @@ on:
     schedule:
         # Cron schedule every morning at 3.14 am
         - cron: '14 3 * * *'
+    push:
+        branches:
+            - main
 
 jobs:
     build-container:
