@@ -6,7 +6,10 @@ on:
         - cron: '14 3 * * *'
 
 jobs:
+    if: github.owner == "ericmjl"
     build-container:
+
+
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v2
@@ -29,3 +32,5 @@ jobs:
                 push: true
                 tags: ericmjl/llamabot-devcontainer:latest,ericmjl/llamabot-devcontainer:${{ github.sha }}
                 file: .devcontainer/Dockerfile
+                cache-from: type=gha
+                cache-to: type=gha,mode=max
