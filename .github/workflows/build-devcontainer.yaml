@@ -10,7 +10,7 @@ on:
 
 jobs:
     build-container:
-        if: github.owner == "ericmjl"
+        if: github.owner == 'ericmjl'
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v2
