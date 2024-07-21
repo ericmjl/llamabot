@@ -63,13 +63,9 @@ class StructuredBot(SimpleBot):
 
         self.pydantic_model = pydantic_model
 
-    def get_model_schema(self) -> dict:
-        """Gets the JSON schema we want the LLM to return"""
-        return self.pydantic_model.model_json_schema()
-
     def task_message(self) -> SystemMessage:
         """Compose instructions for what the bot is supposed to do."""
-        schema = self.get_model_schema()
+        schema = self.pydantic_model.model_json_schema()
         return SystemMessage(content=bot_task(schema))
 
     def get_validation_error_message(self, exception: ValidationError) -> HumanMessage:
