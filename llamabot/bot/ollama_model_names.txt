@@ -1,3 +1,7 @@
+mistral-large
+llama3.1
+nuextract
+mistral-nemo
 firefunction-v2
 llama3-groq-tool-use
 mathstral

@@ -51,11 +51,12 @@ class StructuredBot(SimpleBot):
         system_prompt: str,
         pydantic_model: BaseModel,
         model_name: str = default_language_model(),
+        stream_target: str = "stdout",
         **completion_kwargs,
     ):
         super().__init__(
             system_prompt,
-            stream_target="stdout",
+            stream_target=stream_target,
             json_mode=True,
             model_name=model_name,
             **completion_kwargs,
@@ -63,13 +64,9 @@ class StructuredBot(SimpleBot):
 
         self.pydantic_model = pydantic_model
 
-    def get_model_schema(self) -> dict:
-        """Gets the JSON schema we want the LLM to return"""
-        return self.pydantic_model.model_json_schema()
-
     def task_message(self) -> SystemMessage:
         """Compose instructions for what the bot is supposed to do."""
-        schema = self.get_model_schema()
+        schema = self.pydantic_model.model_json_schema()
         return SystemMessage(content=bot_task(schema))
 
     def get_validation_error_message(self, exception: ValidationError) -> HumanMessage:
@@ -108,7 +105,11 @@ class StructuredBot(SimpleBot):
         # we'll attempt to get the response from the model and validate it
         for attempt in range(num_attempts):
             try:
-                response = self.stream_stdout(messages)
+                match self.stream_target:
+                    case "stdout":
+                        response = self.stream_stdout(messages)
+                    case "none":
+                        response = self.stream_none(messages)
 
                 # parse the response, and validate it against the pydantic model
                 codeblock = self._extract_json_from_response(response)

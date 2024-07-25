@@ -6408,9 +6408,9 @@ packages:
   timestamp: 1714805877754
 - kind: pypi
   name: llamabot
-  version: 0.4.7
+  version: 0.5.0
   path: .
-  sha256: 4c60d36810fbf9a04e0a0583d2e25785fc8ac1061e74c12c4eb013dc93a2d4e1
+  sha256: aa974900ed9b22b9e4e49a32ec109b85e4feb3eebf34239f0331700f305cbb44
   requires_dist:
   - openai
   - panel>=1.3.0
@@ -6420,7 +6420,7 @@ packages:
   - pyperclip
   - astor>=0.8.1
   - python-dotenv
-  - typer>=0.4.7
+  - typer>=0.5.0
   - gitpython
   - pyprojroot
   - frozenlist
