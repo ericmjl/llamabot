@@ -51,11 +51,12 @@ class StructuredBot(SimpleBot):
         system_prompt: str,
         pydantic_model: BaseModel,
         model_name: str = default_language_model(),
+        stream_target: str = "stdout",
         **completion_kwargs,
     ):
         super().__init__(
             system_prompt,
-            stream_target="stdout",
+            stream_target=stream_target,
             json_mode=True,
             model_name=model_name,
             **completion_kwargs,
@@ -104,7 +105,11 @@ class StructuredBot(SimpleBot):
         # we'll attempt to get the response from the model and validate it
         for attempt in range(num_attempts):
             try:
-                response = self.stream_stdout(messages)
+                match self.stream_target:
+                    case "stdout":
+                        response = self.stream_stdout(messages)
+                    case "none":
+                        response = self.stream_none(messages)
 
                 # parse the response, and validate it against the pydantic model
                 codeblock = self._extract_json_from_response(response)

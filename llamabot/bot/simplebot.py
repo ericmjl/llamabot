@@ -47,9 +47,9 @@ class SimpleBot:
         **completion_kwargs,
     ):
         # Validate `stream_target.
-        if stream_target not in ("stdout", "panel", "api"):
+        if stream_target not in ("stdout", "panel", "api", "none"):
             raise ValueError(
-                f"stream_target must be one of ('stdout', 'panel', 'api'), got {stream_target}."
+                f"stream_target must be one of ('stdout', 'panel', 'api', 'none'), got {stream_target}."
             )
 
         self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
@@ -76,6 +76,8 @@ class SimpleBot:
                 return self.stream_panel(messages)
             case "api":
                 return self.stream_api(messages)
+            case "none":
+                return self.stream_none(messages)
         return AIMessage(content="")
 
     def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
@@ -105,6 +107,14 @@ class SimpleBot:
             if delta is not None:
                 message += delta
                 yield message
+
+    def stream_none(self, messages: list[BaseMessage]) -> AIMessage:
+        """Stream the response to None.
+
+        :param messages: A list of messages.
+        """
+        response = _make_response(self, messages, stream=False)
+        return AIMessage(content=response.choices[0].message.content.strip())
 
     def stream_api(self, messages: list[BaseMessage]) -> Generator:
         """Stream the response to an API.
@@ -145,7 +155,7 @@ class SimpleBot:
         print()
 
 
-def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
+def _make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = True):
     """Make a response from the given messages.
 
     :param bot: A SimpleBot
@@ -159,7 +169,7 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage]):
         model=bot.model_name,
         messages=messages_dumped,
         temperature=bot.temperature,
-        stream=True,
+        stream=stream,
     )
     completion_kwargs.update(bot.completion_kwargs)
 
