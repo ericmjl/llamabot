@@ -92,7 +92,7 @@ jobs:
       - name: Test CLI (pixi)
         if: matrix.environment-type == 'pixi' && github.repository_owner == 'ericmjl'
         run: |
-          pixi run llamabot
+          pixi run llamabot-cli
 
       # https://github.com/codecov/codecov-action
       - name: Upload code coverage
