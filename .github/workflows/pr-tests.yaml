@@ -62,7 +62,7 @@ jobs:
       - name: Test CLI (bare)
         if: matrix.environment-type == 'bare' && github.repository_owner == 'ericmjl'
         run: |
-          pip install -e
+          pip install .
           llamabot --help
 
       - name: Test CLI (pixi)
