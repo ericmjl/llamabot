@@ -17,9 +17,8 @@ jobs:
     strategy:
       matrix:
         python-version: [3.11]
-        environment-type: ['miniconda', 'bare', 'pixi']
+        environment-type: ['bare', 'pixi']
 
-    # https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
     defaults:
       run:
         shell: bash -l {0}
@@ -40,19 +39,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Setup Micromamba Environment
-        uses: mamba-org/setup-micromamba@v1
-        if: matrix.environment-type == 'miniconda'
-        with:
-          micromamba-version: '1.5.1-2'
-          environment-file: environment.yml
-          init-shell: >-
-            bash
-          cache-environment: true
-          cache-environment-key: environment-${{ steps.date.outputs.date }}-${{ hashFiles('environment.yml') }}
-          cache-downloads-key: downloads-${{ steps.date.outputs.date }}-${{ hashFiles('environment.yml') }}
-          post-cleanup: 'all'
-
       - name: Setup Pixi Environment
         if: matrix.environment-type == 'pixi' && github.repository_owner == 'ericmjl'
         uses: prefix-dev/setup-pixi@v0.8.1
@@ -69,12 +55,9 @@ jobs:
         run: |
           python -m pip install -e ".[all]"
 
-      - name: Run tests (miniconda/bare)
-        if: matrix.environment-type == 'miniconda' || matrix.environment-type == 'bare'
+      - name: Run tests (bare)
+        if: matrix.environment-type == 'bare'
         run: |
-          if [ "${{ matrix.environment-type }}" == "miniconda" ]; then
-            conda activate llamabot
-          fi
           pip install -e ".[all]"
           pytest
 
@@ -83,8 +66,8 @@ jobs:
         run: |
             pixi run test
 
-      - name: Test CLI (miniconda/bare)
-        if: matrix.environment-type == 'bare' || matrix.environment-type == 'miniconda'
+      - name: Test CLI (bare)
+        if: matrix.environment-type == 'bare'
         run: |
           pip install -e ".[all]"
           llamabot --help
