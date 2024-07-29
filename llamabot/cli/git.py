@@ -129,7 +129,7 @@ def _fmt(cm):
     """  # noqa: E501
 
 
-def commitbot(model_name: str = "groq/llama-3.1-70b-versatile") -> StructuredBot:
+def commitbot(model_name: str = "gpt-4-turbo") -> StructuredBot:
     """Return a structured bot for writing commit messages."""
 
     @prompt
