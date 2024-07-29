@@ -2,83 +2,156 @@
 
 from pathlib import Path
 import os
-from tempfile import NamedTemporaryFile
 
 import git
 from pyprojroot import here
-from sh import pre_commit
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from typer import Typer, echo
 
-from llamabot import SimpleBot
-from llamabot.cli.utils import get_valid_input
+from llamabot import SimpleBot, prompt
+from llamabot.bot.structuredbot import StructuredBot
 from llamabot.code_manipulation import get_git_diff
 from llamabot.prompt_library.git import (
-    commitbot,
-    write_commit_message,
     compose_release_notes,
 )
+from pydantic import BaseModel, Field, model_validator
+from enum import Enum
 
 gitapp = Typer()
 
 
-@gitapp.command()
-def commit(autocommit: bool = True):
-    """Commit staged changes.
+class CommitType(str, Enum):
+    """Type of commit."""
 
-    :param autocommit: Whether to automatically commit the changes.
-    """
-    # Run pre-commit hooks first so that we don't waste tokens if hooks fail.
-    repo = git.Repo(search_parent_directories=True)
-    bot = commitbot()
-    progress = Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        transient=True,
+    fix = "fix"
+    feat = "feat"
+    build = "build"
+    chore = "chore"
+    ci = "ci"
+    docs = "docs"
+    style = "style"
+    refactor = "refactor"
+    perf = "perf"
+    test = "test"
+    other = "other"
+
+
+class DescriptionEntry(BaseModel):
+    """Description entry."""
+
+    txt: str = Field(
+        ...,
+        description="A single bullet point describing one major change in the commit.",
     )
 
-    while True:
-        diff = get_git_diff()
-        if not diff:
-            print(
-                "I don't see any staged changes to commit! "
-                "Please stage some files before running me again."
+    @model_validator(mode="after")
+    def validate_description(self):
+        """Validate description length."""
+        if len(self.txt) > 79:
+            raise ValueError(
+                "Description should be less than or equal to 79 characters."
             )
-            return
-        pre_commit("run")
+        return self
 
-        message = bot(write_commit_message(diff))
-        print("\n\n")
-        user_response = get_valid_input(
-            "Do you accept this commit message?", ("y", "n", "m")
-        )
-        if user_response == "y":
-            break
-        elif user_response == "m":
-            # Provide option to edit the commit message
-            with NamedTemporaryFile(mode="w+", delete=False) as temp_file:
-                temp_file.write(message.content)
-                temp_file.flush()
-                editor = os.getenv(
-                    "EDITOR", "nano"
-                )  # Use the system's default text editor
-                os.system(f"{editor} {temp_file.name}")
-                temp_file.seek(0)
-                edited_message = temp_file.read().strip()
-                message.content = edited_message
-                break
 
-    if autocommit:
-        with progress:
-            progress.add_task("Committing changes", total=None)
-            repo.index.commit(message.content)
-            progress.add_task("Pushing changes", total=None)
-            origin = repo.remote(name="origin")
-            origin.push()
+class CommitMessage(BaseModel):
+    """Commit message."""
+
+    commit_type: CommitType = Field(
+        ...,
+        description=(
+            "Type of change. Should usually be fix or feat. "
+            "But others, based on the Angular convention, are allowed, "
+            "such as build, chore, ci, docs, style, refactor, perf, test, and others."
+        ),
+    )
+    scope: str = Field(
+        ...,
+        description=(
+            "Scope of change. If commits are only in a single file, "
+            "then scope should be the filename. "
+            "If commits involve multiple files, "
+            "then the scope should be one word "
+            "that accurately describes the scope of changes."
+        ),
+    )
+    description: str = Field(
+        ...,
+        description="A one line description of the changes, in <79 characters.",
+    )
+
+    body: list[DescriptionEntry] = Field(
+        ...,
+        description=(
+            "A list of description entries. "
+            "Each description entry should have a single bullet point "
+            "describing one change in the commit. "
+            "At most 6 entries. "
+            "Be very detailed."
+        ),
+    )
+
+    breaking_change: bool = Field(
+        ..., description="Whether or not there is a breaking change in the commit. "
+    )
+
+    footer: str = Field("", description="An optional footer.")
+
+    @model_validator(mode="after")
+    def validate_scope(self):
+        """Validate the scope length."""
+        if len(self.scope) > 0 and len(self.scope.split()) > 1:
+            raise ValueError("Scope should be one word.")
+        return self
+
+    @model_validator(mode="after")
+    def validate_body(self):
+        """Validate the body length."""
+        if len(self.body) > 6:
+            raise ValueError("Description entries should be no more than 6.")
+        return self
+
+    def format(self) -> str:
+        """Format the commit message according to the provided model.
+
+        :return: Formatted commit message as a string.
+        """
+        return _fmt(self)
+
+
+@prompt
+def _fmt(cm):
+    """{{ cm.commit_type.value }}({{ cm.scope }}){%if cm.breaking_change %}!{% else %}{% endif %}: {{ cm.description }}
+
+    {% for bullet in cm.body %}- {{ bullet.txt }}
+    {% endfor %}
+
+    {% if cm.footer %}{{ cm.footer }}{% endif %}
+    """  # noqa: E501
+
+
+def commitbot(model_name: str = "gpt-4-turbo") -> StructuredBot:
+    """Return a structured bot for writing commit messages."""
+
+    @prompt
+    def commitbot_sysprompt() -> str:
+        """You are an expert software developer
+        who writes excellent and accurate commit messages.
+        You are going to be given a diff as input,
+        and you will generate a structured JSON output
+        based on the pydantic model provided.
+        """
+
+    bot = StructuredBot(
+        system_prompt=commitbot_sysprompt(),
+        pydantic_model=CommitMessage,
+        model_name=model_name,
+        stream_target="none",
+    )
+    return bot
 
 
 @gitapp.command()
-def install_commit_message_hook():
+def hooks(model_name: str = "groq/llama-3.1-70b-versatile"):
     """Install a commit message hook that runs the commit message through the bot.
 
     :raises RuntimeError: If the current directory is not a git repository root.
@@ -93,8 +166,8 @@ def install_commit_message_hook():
         )
 
     with open(".git/hooks/prepare-commit-msg", "w+") as f:
-        contents = """#!/bin/sh
-llamabot git compose-commit > .git/COMMIT_EDITMSG
+        contents = f"""#!/bin/sh
+llamabot git compose --model-name {model_name} > .git/COMMIT_EDITMSG
 """
         f.write(contents)
     os.chmod(".git/hooks/prepare-commit-msg", 0o755)
@@ -102,12 +175,13 @@ llamabot git compose-commit > .git/COMMIT_EDITMSG
 
 
 @gitapp.command()
-def compose_commit():
+def compose(model_name: str = "groq/llama-3.1-70b-versatile"):
     """Autowrite commit message based on the diff."""
     try:
         diff = get_git_diff()
-        bot = commitbot()
-        bot(write_commit_message(diff))
+        bot = commitbot(model_name)
+        response = bot(diff)
+        print(response.format())
     except Exception as e:
         echo(f"Error encountered: {e}", err=True)
         echo("Please write your own commit message.", err=True)
