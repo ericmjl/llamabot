@@ -20,5 +20,5 @@ class PhiBotOutput(BaseModel):
 def test_structuredbot():
     """Test that StructuredBot returns a pydantic model."""
     bot = StructuredBot(phibot_sysprompt(), PhiBotOutput, model_name="ollama/phi3")
-    response = bot("I need a number and a text.")
+    response = bot("I need a number and a text.", num_attempts=10)
     assert isinstance(response, BaseModel)
