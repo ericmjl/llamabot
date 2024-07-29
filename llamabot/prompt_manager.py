@@ -11,6 +11,7 @@ from functools import wraps
 import jinja2
 from jinja2 import meta
 import inspect
+from textwrap import dedent
 
 
 def prompt(func):
@@ -53,6 +54,18 @@ def prompt(func):
 
         # interpolate docstring with args and kwargs
         template = jinja2.Template(docstring)
-        return template.render(**kwargs)
+        string = template.render(**kwargs)
+
+        # dedent the string
+        # Split the string into lines
+        lines = string.split("\n")
+
+        # Dedent each line
+        dedented_lines = [dedent(line) for line in lines]
+
+        # Join the lines back into a single string
+        dedented_string = "\n".join(dedented_lines).strip()
+
+        return dedented_string
 
     return wrapper
