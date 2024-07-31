@@ -171,6 +171,7 @@ test = "pytest"
 
 [tool.pixi.feature.docs.tasks]
 docs = "mkdocs serve"
+build-docs = "mkdocs build"
 
 [tool.pixi.environments]
 default = ["core", "tests", "devtools", "docs", "notebooks"]
