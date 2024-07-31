@@ -27,12 +27,7 @@ jobs:
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
       - name: Build docs
-        run: |
-          conda activate llamabot
-          python -m ipykernel install --user --name llamabot
-          pip install -e .
-          cp README.md docs/index.md
-          mkdocs build --site-dir /tmp/docs
+        run: pixi run build-docs
 
       - name: Deploy website
         uses: peaceiris/actions-gh-pages@v3
@@ -41,7 +36,7 @@ jobs:
 
           personal_token: ${{ secrets.GHPAGES_DEPLOY_KEY }}
 
-          publish_dir: /tmp/docs
+          publish_dir: ./site
           publish_branch: gh-pages
           allow_empty_commit: false
           keep_files: false
