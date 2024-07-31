@@ -167,7 +167,15 @@ def hooks(model_name: str = "groq/llama-3.1-70b-versatile"):
 
     with open(".git/hooks/prepare-commit-msg", "w+") as f:
         contents = f"""#!/bin/sh
-llamabot git compose --model-name {model_name} > .git/COMMIT_EDITMSG
+
+# Check if the commit message argument is provided
+if echo "$@" | grep -q -e '-m\s\+"[^"]\+"'; then
+    # Commit message provided, skip llamabot git compose
+    echo "Commit message provided, skipping llamabot git compose."
+else
+    # No commit message, run llamabot git compose
+    llamabot git compose --model-name {model_name} > .git/COMMIT_EDITMSG
+fi
 """
         f.write(contents)
     os.chmod(".git/hooks/prepare-commit-msg", 0o755)
