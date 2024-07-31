@@ -9,7 +9,7 @@ in particular, the ability to automatically generate commit messages.
 
 The `llamabot` prepare message hook requires that you have `llamabot >=0.0.77`.
 You will also need an OpenAI API key
-(until we have enabled and tested locally-hosted language models).
+(unless you have Ollama for local LLMs or other API provider that LiteLLM supports).
 Be sure to setup and configure LlamaBot
 by executing the following two configuration commands
 and following the instructions there.
@@ -32,18 +32,22 @@ has anecdotally worked well.
 
 ## Install the Commit Message Hook
 
-Once you have configured `llamabot`, the next thing you need to do is install the `prepare-msg-hook` within your `git` repository.
-This is a `git` hook that allows you to run commands after the `pre-commit` hooks are run
+Once you have configured `llamabot`,
+the next thing you need to do is
+install the `prepare-msg-hook` within your `git` repository.
+This is a `git` hook that allows you to run commands
+after the `pre-commit` hooks are run
 but before your editor of the commit message is opened.
 To install the hook, simply run:
 
 ```bash
-llamabot git install-commit-message-hook
+llamabot git hooks
 ```
 
 This command will check if the current directory is a Git repository root.
 If it is not, it raises a `RuntimeError`.
-If it is, it writes a script to the `prepare-commit-msg` file in the `.git/hooks` directory
+If it is, it writes a script to the `prepare-commit-msg` file
+in the `.git/hooks` directory
 and changes the file's permissions to make it executable.
 
 ## Auto-Compose a Commit Message
@@ -63,6 +67,7 @@ Rather, it is called behind-the-scenes within the `prepare-msg-hook`.
 
 ## Conclusion
 
-The `llamabot git` CLI provides a set of tools to automate and enhance your Git workflow.
+The `llamabot git` CLI provides a set of tools
+to automate and enhance your Git workflow.
 It provides an automatic commit message writer based on your repo's `git diff`.
 By using `llamabot git`, you can streamline your Git workflow and focus on writing code.
