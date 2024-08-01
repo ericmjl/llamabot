@@ -1,4 +1,4 @@
-FROM condaforge/mambaforge
+FROM ghcr.io/prefix-dev/pixi:latest
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
@@ -13,17 +13,14 @@ ARG USER_GID=$USER_UID
 
 # Copy environment.yml (if found) to a temp locaition so we update the environment. Also
 # copy "noop.txt" so the COPY instruction does not fail if no environment.yml exists.
-COPY environment.yml .
-
-# Configure apt and install packages
-RUN mamba env create -f environment.yml -y
-
+COPY pixi.lock .
+COPY pyproject.toml .
 COPY docs docs
 COPY llamabot llamabot
 COPY tests tests
-COPY pyproject.toml pyproject.toml
-RUN /opt/conda/envs/llamabot/bin/pip install -e .
-RUN /opt/conda/envs/llamabot/bin/mamba install -y pre-commit jupyter
+
+# Configure apt and install packages
+RUN /usr/local/bin/pixi install --manifest-path pyproject.toml
 
 # Install Ollama within Docker container
 RUN apt-get update && apt-get install -y curl
