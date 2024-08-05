@@ -76,7 +76,7 @@ class CommitMessage(BaseModel):
     )
     description: str = Field(
         ...,
-        description="A one line description of the changes, in <79 characters.",
+        description="A one line description of the changes, in <160 characters.",
     )
 
     body: list[DescriptionEntry] = Field(
@@ -85,7 +85,7 @@ class CommitMessage(BaseModel):
             "A list of description entries. "
             "Each description entry should have a single bullet point "
             "describing one change in the commit. "
-            "At most 6 entries. "
+            "At most 10 entries. "
             "Be very detailed."
         ),
     )
@@ -106,8 +106,8 @@ class CommitMessage(BaseModel):
     @model_validator(mode="after")
     def validate_body(self):
         """Validate the body length."""
-        if len(self.body) > 6:
-            raise ValueError("Description entries should be no more than 6.")
+        if len(self.body) > 10:
+            raise ValueError("Description entries should be no more than 10.")
         return self
 
     def format(self) -> str:
@@ -119,7 +119,7 @@ class CommitMessage(BaseModel):
 
 
 @prompt
-def _fmt(cm):
+def _fmt(cm) -> str:
     """{{ cm.commit_type.value }}({{ cm.scope }}){%if cm.breaking_change %}!{% else %}{% endif %}: {{ cm.description }}
 
     {% for bullet in cm.body %}- {{ bullet.txt }}
