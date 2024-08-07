@@ -1,3 +1,6 @@
+bge-large
+paraphrase-multilingual
+bge-m3
 mistral-large
 llama3.1
 nuextract
