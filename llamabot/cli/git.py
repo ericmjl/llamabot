@@ -48,7 +48,7 @@ class DescriptionEntry(BaseModel):
         """Validate description length."""
         if len(self.txt) > 79:
             raise ValueError(
-                "Description should be less than or equal to 79 characters."
+                "Description should be less than or equal to 160 characters."
             )
         return self
 
@@ -67,16 +67,13 @@ class CommitMessage(BaseModel):
     scope: str = Field(
         ...,
         description=(
-            "Scope of change. If commits are only in a single file, "
-            "then scope should be the filename. "
-            "If commits involve multiple files, "
-            "then the scope should be one word "
-            "that accurately describes the scope of changes."
+            "Scope of change. "
+            "Should be at most two words that accurately describes the scope of changes."
         ),
     )
     description: str = Field(
         ...,
-        description="A one line description of the changes, in <160 characters.",
+        description="A one line description of the changes, in 79 characters.",
     )
 
     body: list[DescriptionEntry] = Field(
@@ -95,19 +92,20 @@ class CommitMessage(BaseModel):
     )
 
     footer: str = Field("", description="An optional footer.")
+    emoji: str = Field("", description="An emoji that represents the commit content.")
 
     @model_validator(mode="after")
     def validate_scope(self):
         """Validate the scope length."""
-        if len(self.scope) > 0 and len(self.scope.split()) > 1:
-            raise ValueError("Scope should be one word.")
+        if len(self.scope) > 0 and len(self.scope.split()) > 2:
+            raise ValueError("Scope should be at most two words.")
         return self
 
     @model_validator(mode="after")
     def validate_body(self):
         """Validate the body length."""
         if len(self.body) > 10:
-            raise ValueError("Description entries should be no more than 10.")
+            raise ValueError("Description entries should be no more than 10 in length.")
         return self
 
     def format(self) -> str:
@@ -120,7 +118,7 @@ class CommitMessage(BaseModel):
 
 @prompt
 def _fmt(cm) -> str:
-    """{{ cm.commit_type.value }}({{ cm.scope }}){%if cm.breaking_change %}!{% else %}{% endif %}: {{ cm.description }}
+    """{{ cm.commit_type.value }}({{ cm.scope }}){{ cm.emoji }}{%if cm.breaking_change %}!{% else %}{% endif %}: {{ cm.description }}
 
     {% for bullet in cm.body %}- {{ bullet.txt }}
     {% endfor %}
@@ -151,7 +149,7 @@ def commitbot(model_name: str = "gpt-4-turbo") -> StructuredBot:
 
 
 @gitapp.command()
-def hooks(model_name: str = "groq/llama-3.1-70b-versatile"):
+def hooks(model_name: str = "gpt-4-turbo"):
     """Install a commit message hook that runs the commit message through the bot.
 
     :raises RuntimeError: If the current directory is not a git repository root.
