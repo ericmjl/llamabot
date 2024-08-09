@@ -66,10 +66,7 @@ class CommitMessage(BaseModel):
     )
     scope: str = Field(
         ...,
-        description=(
-            "Scope of change. "
-            "Should be at most two words that accurately describes the scope of changes."
-        ),
+        description=("Scope of change."),
     )
     description: str = Field(
         ...,
@@ -93,13 +90,6 @@ class CommitMessage(BaseModel):
 
     footer: str = Field("", description="An optional footer.")
     emoji: str = Field("", description="An emoji that represents the commit content.")
-
-    @model_validator(mode="after")
-    def validate_scope(self):
-        """Validate the scope length."""
-        if len(self.scope) > 0 and len(self.scope.split()) > 2:
-            raise ValueError("Scope should be at most two words.")
-        return self
 
     @model_validator(mode="after")
     def validate_body(self):
