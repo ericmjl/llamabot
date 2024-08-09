@@ -66,21 +66,57 @@ class CommitMessage(BaseModel):
     )
     scope: str = Field(
         ...,
-        description=("Scope of change."),
+        description=(
+            "Scope of change. "
+            "The scope in a conventional commit message represents "
+            "a contextual identifier for the changes made in that particular commit. "
+            "It provides a way to categorize and organize commits, "
+            "making it easier to track and manage changes in a project. "
+            "It can be thought of as a descriptor for the "
+            "location, component, or module "
+            "that is being modified or affected by the commit. "
+            "For example, if a developer is working on a web application "
+            "with multiple components such as the login system, "
+            "user profile, and settings page, they can use scopes like "
+            "login, profile or settings to indicate "
+            "which part of the application the commit is related to. "
+            "This helps other team members and future contributors understand "
+            "the purpose of the commit "
+            "without having to inspect the actual changes right away."
+        ),
     )
     description: str = Field(
         ...,
-        description="A one line description of the changes, in 79 characters.",
+        description=(
+            "The description provides a concise summary of what the commit accomplishes, "
+            "making it easier for team members and contributors to understand "
+            "the purpose of the commit at a glance. "
+            "It should be written in the present tense and be clear and informative. "
+            "It should convey what the code changes do, "
+            "rather than how they were implemented. "
+            "It is not necessary to provide every detail in the description; "
+            "instead, focus on the high-level overview of the modifications."
+        ),
     )
 
     body: list[DescriptionEntry] = Field(
         ...,
         description=(
-            "A list of description entries. "
-            "Each description entry should have a single bullet point "
-            "describing one change in the commit. "
-            "At most 10 entries. "
-            "Be very detailed."
+            "Unlike the description, "
+            "which provides a concise summary of the changes made in the commit, "
+            "the body allows for a more detailed explanation of the commit. "
+            "The body section is used to provide additional context, reasoning, "
+            "or implementation details that might be helpful "
+            "for other developers, reviewers, or future contributors "
+            "to understand the commit thoroughly. "
+            "It is particularly useful "
+            "when the changes introduced in the commit are complex "
+            "or when there are specific design decisions that need to be explained. "
+            "It is worth mentioning that having a body section is optional, "
+            "and not every commit requires it. "
+            "Simple and straightforward changes "
+            "might not need a detailed explanation beyond the description."
+            "If provided, this should be bullet points."
         ),
     )
 
