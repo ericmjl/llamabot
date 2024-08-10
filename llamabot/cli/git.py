@@ -208,7 +208,7 @@ if $commit_message_provided; then
     echo "Commit message provided, skipping llamabot git compose."
 else
     echo "No commit message found, running llamabot git compose."
-    llamabot git compose --model-name {model_name} > .git/COMMIT_EDITMSG
+    llamabot git compose --model-name {model_name}
 fi
 """
         f.write(contents)
@@ -224,6 +224,8 @@ def compose(model_name: str = "groq/llama-3.1-70b-versatile"):
         bot = commitbot(model_name)
         response = bot(diff)
         print(response.format())
+        with open(".git/COMMIT_EDITMSG", "w") as f:
+            f.write(response.format())
     except Exception as e:
         echo(f"Error encountered: {e}", err=True)
         echo("Please write your own commit message.", err=True)

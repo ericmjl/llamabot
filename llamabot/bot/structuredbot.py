@@ -90,7 +90,7 @@ class StructuredBot(SimpleBot):
         return content[first_paren : last_paren + 1]
 
     def __call__(
-        self, message: str, num_attempts: int = 3, verbose: bool = False
+        self, message: str, num_attempts: int = 10, verbose: bool = False
     ) -> BaseModel | None:
         """Process the input message and return an instance of the Pydantic model.
 
