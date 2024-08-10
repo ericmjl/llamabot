@@ -125,7 +125,7 @@ class CommitMessage(BaseModel):
     )
 
     footer: str = Field("", description="An optional footer.")
-    emoji: str = Field("", description="An emoji that represents the commit content.")
+    emoji: str = Field(..., description="An emoji that represents the commit content.")
 
     @model_validator(mode="after")
     def validate_body(self):
