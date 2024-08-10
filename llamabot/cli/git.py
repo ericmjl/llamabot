@@ -222,7 +222,7 @@ def compose(model_name: str = "groq/llama-3.1-70b-versatile"):
     try:
         diff = get_git_diff()
         bot = commitbot(model_name)
-        response = bot(diff)
+        response = bot(diff, verbose=True)
         print(response.format())
         with open(".git/COMMIT_EDITMSG", "w") as f:
             f.write(response.format())
