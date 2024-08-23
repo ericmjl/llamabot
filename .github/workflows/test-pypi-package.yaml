@@ -31,6 +31,7 @@ jobs:
         # 17 June 2023: Figure out a way to move testing deps to the `pip install -e .` step below.
         run: |
           uv venv llamabot-env --python ${{ matrix.python-version }}
+          source llamabot-env/bin/activate
           uv pip install llamabot[all]
 
       - name: Test CLI
