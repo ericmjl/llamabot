@@ -70,11 +70,13 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup uv
+        # Install latest uv version using the installer
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
         if: ${{ matrix.environment-type == 'bare' }}
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Test CLI (pixi)
         if: matrix.environment-type == 'pixi' && github.repository_owner == 'ericmjl'
@@ -84,5 +86,5 @@ jobs:
       - name: Test CLI (bare)
         if: matrix.environment-type == 'bare' && github.repository_owner == 'ericmjl'
         run: |
-          pip install .
+          uv pip install .
           llamabot --help
