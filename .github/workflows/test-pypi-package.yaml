@@ -36,4 +36,5 @@ jobs:
 
       - name: Test CLI
         run: |
+          source llamabot-env/bin/activate
           llamabot --help
