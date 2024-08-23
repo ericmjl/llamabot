@@ -1,3 +1,5 @@
+phi3.5
+smollm
 bge-large
 paraphrase-multilingual
 bge-m3

@@ -96,7 +96,7 @@ dependencies = [
     "numpy<2", # https://github.com/ericmjl/llamabot/issues/56
     "sentence-transformers",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 description = "A Pythonic interface to LLMs."
 readme = "README.md"
 
