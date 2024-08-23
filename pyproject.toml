@@ -44,7 +44,7 @@ whitelist-regex = []
 color = true
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report term-missing"
+addopts = "-v --cov --cov-report term-missing -n auto"
 testpaths = [
     "tests",
 ]
@@ -143,6 +143,7 @@ pytest = "*"
 hypothesis = "*"
 pytest-cov = "*"
 pytest-mock = "*"
+pytest-xdist = "*"
 
 [tool.pixi.feature.devtools.dependencies]
 pre-commit = "*"
