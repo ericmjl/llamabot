@@ -75,7 +75,7 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Set up Python
-        run: uv venv llamabot --python ${{ matrix.python-version }}
+        run: uv venv llamabot-env --python ${{ matrix.python-version }}
         if: ${{ matrix.environment-type == 'bare' }}
 
       - name: Test CLI (pixi)
@@ -86,6 +86,6 @@ jobs:
       - name: Test CLI (bare)
         if: matrix.environment-type == 'bare' && github.repository_owner == 'ericmjl'
         run: |
-          source llamabot/bin/activate
+          source llamabot-env/bin/activate
           uv pip install .
           llamabot --help
