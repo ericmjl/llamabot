@@ -86,5 +86,5 @@ jobs:
       - name: Test CLI (bare)
         if: matrix.environment-type == 'bare' && github.repository_owner == 'ericmjl'
         run: |
-          uv pip install .
+          uv pip install . --system
           llamabot --help
