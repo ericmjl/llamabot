@@ -5,10 +5,20 @@ on: [pull_request]
 
 jobs:
   linting:
+    env:
+      # Configure a constant location for the uv cache
+      UV_CACHE_DIR: /tmp/.uv-cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.11
+      - uses: actions/checkout@v4
+      # - uses: actions/setup-python@v2
+      #   with:
+      #     python-version: 3.11
+      - name: Setup uv
+        # Install latest uv version using the installer
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Set up Python
+        run: uv python install
+
       - uses: pre-commit/action@v2.0.0
