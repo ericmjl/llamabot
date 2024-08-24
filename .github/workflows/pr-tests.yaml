@@ -29,8 +29,8 @@ jobs:
       - name: Download Ollama
         run: curl -fsSL https://ollama.com/install.sh | sh
 
-      - name: Pull Microsoft's Phi3 model
-        run: ollama pull phi3
+      - name: Pull Google's Gemma2 2B model
+        run: ollama pull gemma2:2b
 
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.8.1
