@@ -23,7 +23,7 @@ COPY tests tests
 RUN /usr/local/bin/pixi install --manifest-path pyproject.toml
 
 # Install Ollama within Docker container
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y curl build-essential
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Always the final command
