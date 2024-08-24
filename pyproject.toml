@@ -150,3 +150,6 @@ build-docs = "mkdocs build"
 default = ["tests", "devtools", "docs", "notebooks"]
 docs = ["docs"]
 notebooks = ["notebooks"] # for those who just want to run notebooks
+
+[tool.pixi.dependencies]
+chromadb = ">=0.5.5,<0.6"
