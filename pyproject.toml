@@ -153,3 +153,4 @@ notebooks = ["notebooks"] # for those who just want to run notebooks
 
 [tool.pixi.dependencies]
 chromadb = ">=0.5.5,<0.6"
+sentence-transformers = ">=3.0.1,<4"
