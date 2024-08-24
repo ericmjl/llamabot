@@ -94,7 +94,6 @@ dependencies = [
     "chromadb",
     "tantivy",
     "numpy<2", # https://github.com/ericmjl/llamabot/issues/56
-    "sentence-transformers",
 ]
 requires-python = ">=3.10"
 description = "A Pythonic interface to LLMs."
@@ -109,34 +108,8 @@ description = "A Pythonic interface to LLMs"
 channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64", "osx-64"]
 
-[tool.pixi.feature.core.dependencies]
-openai = "*"
-panel = ">=1.3.0"
-pyperclip = "*"
-astor = ">=0.8.1"
-python-dotenv = "*"
-typer = ">=0.4.7"
-pyprojroot = "*"
-rich = "*"
-prompt-toolkit = "*"
-sh = "*"
-litellm = "<=1.35.38" # temporary to enable continued usage of JSON mode, reported issue to BerriAI
-python-slugify = "*"
-pydantic = ">=2.0"
-lancedb = "*"
-sentence-transformers = "*"
-chromadb = "*"
-numpy = "<2" # https://github.com/ericmjl/llamabot/issues/56
-loguru = "*"
-gitpython = "*"
-pyzotero = "*"
-
-[tool.pixi.feature.core.pypi-dependencies]
+[tool.pixi.pypi-dependencies]
 llamabot = { path = ".", editable = true }
-case-converter = "*"
-rank-bm25 = "*"
-tantivy = "*"
-"pdfminer.six" = "*"
 
 [tool.pixi.feature.tests.dependencies]
 pytest = "*"
@@ -160,7 +133,7 @@ jupyterlab = ">=4.2.3,<4.3"
 pixi-kernel = "*"
 
 # TASKS BELOW!
-[tool.pixi.feature.core.tasks]
+[tool.pixi.tasks]
 llamabot-cli = "llamabot --help"
 
 [tool.pixi.feature.notebooks.tasks]
@@ -174,6 +147,6 @@ docs = "mkdocs serve"
 build-docs = "mkdocs build"
 
 [tool.pixi.environments]
-default = ["core", "tests", "devtools", "docs", "notebooks"]
+default = ["tests", "devtools", "docs", "notebooks"]
 docs = ["docs"]
-notebooks = ["core", "notebooks"] # for those who just want to run notebooks
+notebooks = ["notebooks"] # for those who just want to run notebooks
