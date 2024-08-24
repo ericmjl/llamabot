@@ -19,11 +19,14 @@ COPY docs docs
 COPY llamabot llamabot
 COPY tests tests
 
+# Install curl to get ollama
+# Install build-essential for C++ (needed for ChromaDB)
+RUN apt-get update && apt-get install -y curl build-essential
+
 # Configure apt and install packages
 RUN /usr/local/bin/pixi install --manifest-path pyproject.toml
 
 # Install Ollama within Docker container
-RUN apt-get update && apt-get install -y curl build-essential
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Always the final command
