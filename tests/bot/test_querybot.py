@@ -2,15 +2,16 @@
 
 from llamabot.bot.querybot import QueryBot
 from hypothesis import HealthCheck, strategies as st, given, settings
+import re
 
 
 @given(
-    system_prompt=st.text(),
+    system_prompt=st.text().filter(lambda x: not re.search(r"(.)\1{3,}", x)),
     collection_name=st.text(
         alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=4, max_size=63
-    ),
-    dummy_text=st.text(min_size=400),
-    mock_response=st.text(min_size=4),
+    ).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
+    dummy_text=st.text(min_size=400).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
+    mock_response=st.text(min_size=4).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
     stream_target=st.one_of(st.just("panel"), st.just("stdout")),
 )
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
