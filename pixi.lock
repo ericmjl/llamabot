@@ -11115,7 +11115,7 @@ packages:
   name: llamabot
   version: 0.5.5
   path: .
-  sha256: bbea2f6de2c6403781057b9b2e217e739cca356b8d5a1179eca8b62a8b2ea376
+  sha256: f8b663aab5591b054989eaca64a6e5ebe415f36cfc6c40f087608c39bf08e476
   requires_dist:
   - openai
   - panel>=1.3.0
