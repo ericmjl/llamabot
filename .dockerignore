@@ -1,0 +1,5 @@
+.pixi
+.hypothesis
+.pytest_cache
+.coverage
+.env
