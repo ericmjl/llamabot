@@ -11,10 +11,10 @@ ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# Copy environment.yml (if found) to a temp locaition so we update the environment. Also
-# copy "noop.txt" so the COPY instruction does not fail if no environment.yml exists.
+# Copy lockfile and config file for pixi to install env
 COPY pixi.lock .
 COPY pyproject.toml .
+# Copy docs source, llamabot source, and software tests to get started with development
 COPY docs docs
 COPY llamabot llamabot
 COPY tests tests
@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y curl build-essential
 # Configure apt and install packages
 RUN /usr/local/bin/pixi install --manifest-path pyproject.toml
 
-# Install Ollama within Docker container
+# Install Ollama within Docker container to run large language models locally
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Always the final command
