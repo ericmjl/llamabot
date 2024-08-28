@@ -1,3 +1,4 @@
+hermes3
 phi3.5
 smollm
 bge-large
