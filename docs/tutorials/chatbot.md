@@ -1,80 +1,55 @@
-# ChatBot Tutorial
+---
+intents:
+- How do we use the llamabot ChatBot class in a Jupyter notebook?
+- How to serve up a Panel app based on that ChatBot class.
+- Specific details on how the ChatBot retrieval works when composing an API call,
+  such as which messages are retrieved from history.
+linked_files:
+- llamabot/bot/chatbot.py
+- llamabot/__init__.py
+---
 
-!!! note
-    This tutorial was written by GPT4 and edited by a human.
+# Using the llamabot ChatBot Class in a Jupyter Notebook
 
-In this tutorial, we will learn how to use the `ChatBot` class to create a simple chatbot that can interact with users. The chatbot is built using the OpenAI GPT-4 model and can be used in a Panel app.
+To use the `ChatBot` class from llamabot in a Jupyter notebook, you can follow these steps:
 
-## Getting Started
-
-First, let's import the `ChatBot` class:
+1. Import the `ChatBot` class from the `llamabot.bot.chatbot` module:
 
 ```python
-from llamabot import ChatBot
+from llamabot.bot.chatbot import ChatBot
 ```
 
-Now, let's create a new instance of the `ChatBot` class. We need to provide a system prompt, which will be used to prime the chatbot. Optionally, we can also set the temperature and model name:
+2. Create an instance of the `ChatBot` class by providing the required parameters such as the system prompt, session name, and any additional configuration options:
 
 ```python
-system_prompt = "Hello, I am a chatbot. How can I help you today?"
-chatbot = ChatBot(system_prompt, temperature=0.0, model_name="gpt-4")
+system_prompt = "Your system prompt here"
+session_name = "Your session name here"
+chatbot = ChatBot(system_prompt, session_name)
 ```
 
-## Interacting with the ChatBot
-
-To interact with the chatbot, we can simply call the chatbot instance with a human message:
+3. Interact with the `ChatBot` instance by calling it with a human message:
 
 ```python
-human_message = "What is the capital of France?"
+human_message = "Hello, how are you?"
 response = chatbot(human_message)
-print(response.content)
+print(response)
 ```
 
-The chatbot will return an `AIMessage` object containing the response to the human message, primed by the system prompt.
+# Serving a Panel App Based on the ChatBot Class
 
-## Chat History
-
-The chatbot automatically manages the chat history. To view the chat history, we can use the `__repr__` method:
+To serve a Panel app based on the `ChatBot` class, you can use the `stream_panel` method of the `ChatBot` class. Here's an example of how to do this:
 
 ```python
-print(chatbot)
+panel_app = chatbot.stream_panel(messages)
+panel_app.servable()
 ```
 
-This will return a string representation of the chat history, with each message prefixed by its type (System, Human, or AI).
+# ChatBot Retrieval and API Composition
 
-## Creating a Panel App
+When composing an API call using the `ChatBot` class, the retrieval of messages from history is handled internally. The `retrieve` method of the `ChatBot` class is used to retrieve messages from the chat history based on the provided human message and response budget. The retrieved messages include the system prompt, historical messages, and the human message itself.
 
-The `ChatBot` class also provides a `panel` method to create a Panel app that wraps the chatbot. This allows users to interact with the chatbot through a web interface.
+For example, when making an API call to the `ChatBot` instance, the retrieval process ensures that the historical context is considered when generating the response.
 
-To create a Panel app, simply call the `panel` method on the chatbot instance:
+This covers the specific details on how the `ChatBot` retrieval works when composing an API call.
 
-```python
-app = chatbot.panel(show=False)
-```
-
-By default, the app will be shown in a new browser window. If you want to return the app directly, set the `show` parameter to `False`.
-
-You can customize the appearance of the app by providing additional parameters, such as `site`, `title`, and `width`:
-
-```python
-app = chatbot.panel(show=False, site="My ChatBot", title="My ChatBot", width=768)
-```
-
-To run the app, you can either call the `show` method on the app or use the Panel `serve` function:
-
-```python
-app.show()
-```
-
-or
-
-```python
-import panel as pn
-pn.serve(app)
-```
-
-Now you have a fully functional chatbot that can interact with users through a web interface!
-
-## Conclusion
-
-In this tutorial, we learned how to use the `ChatBot` class to create a simple chatbot that can interact with users. We also learned how to create a Panel app to provide a web interface for the chatbot. With this knowledge, you can now create your own chatbots and customize them to suit your needs. Happy chatting!
+Please let me know if you need further details or examples.
