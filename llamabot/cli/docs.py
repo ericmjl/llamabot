@@ -3,11 +3,12 @@
 from typer import Typer
 from pathlib import Path
 import frontmatter
-from pydantic import BaseModel, Field
-from llamabot import prompt, StructuredBot, SimpleBot
+from pydantic import BaseModel, Field, model_validator
+from llamabot import prompt, StructuredBot
 from pyprojroot import here
 
 from pydantic import ConfigDict
+
 
 app = Typer()
 
@@ -47,6 +48,21 @@ class MarkdownSourceFile(BaseModel):
             f.write(frontmatter.dumps(self.post))
 
 
+class DocumentationContent(BaseModel):
+    """Content related to documentation."""
+
+    content: str = Field(..., description="The documentation content.")
+
+    @model_validator(mode="after")
+    def check_content(self):
+        """Validate the content field."""
+        if self.content.startswith("```") or self.content.endswith("```"):
+            raise ValueError(
+                "Documentation content should not start or end with triple backticks."
+            )
+        return self
+
+
 class DocumentationOutOfDate(BaseModel):
     """Status indicating whether a documentation is out of date."""
 
@@ -56,7 +72,7 @@ class DocumentationOutOfDate(BaseModel):
 
 
 @prompt
-def ood_checker_sysprompt():
+def ood_checker_sysprompt() -> str:
     """You are an expert in documentation management.
     You will be provided information about a written documentation file,
     what the documentation is intended to convey,
@@ -67,7 +83,9 @@ def ood_checker_sysprompt():
 
 @prompt
 def documentation_information(source_file: MarkdownSourceFile) -> str:
-    """## Referenced source files
+    """Here, I will provide you with contextual information to do your work.
+
+    ## Referenced source files
 
     These are the source files to reference:
 
@@ -96,22 +114,28 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
     Here is the intent about the documentation:
 
     {% for intent in source_file.post.get("intents", []) %}- {{ intent }}{% endfor %}
+    -----
     """
 
 
 @prompt
 def docwriter_sysprompt():
-    """You are an expert in documentation writing.
+    """
+    [[ Persona ]]
+    You are an expert in documentation writing.
 
+    [[ Context ]]
     You will be provided a documentation source,
     a list of what the documentation is intended to cover,
     and a list of linked source files.
 
+    [[ Instructions ]]
     Based on the intended messages information that the documentation is supposed to cover
     and the content of linked source files,
     please edit or create the documentation,
     ensuring that the documentation matches the intents
     and has the correct content from the linked source files.
+    Return only the Markdown content of the documentation without the surrounding fence.
     """
 
 
@@ -119,23 +143,39 @@ def docwriter_sysprompt():
 def write(file_path: Path, force: bool = False):
     """Write the documentation based on the given source file.
 
+    The Markdown file should have frontmatter that looks like this:
+
+    ```markdown
+    ---
+    intents:
+    - Point 1 that the documentation should cover.
+    - Point 2 that the documentation should cover.
+    - ...
+    linked_files:
+    - path/to/relevant_file1.py
+    - path/to/relevant_file2.toml
+    - ...
+    ---
+    ```
+
     :param file_path: Path to the Markdown source file.
     :param force: Force writing the documentation even if it is not out of date.
     """
     src_file = MarkdownSourceFile(file_path)
 
-    if not src_file.post.content:  # i.e. the documentation is empty
-        docwriter = SimpleBot(system_prompt=docwriter_sysprompt())
-        response = docwriter(documentation_information(src_file))
-        src_file.post.content = response.content
+    docwriter = StructuredBot(
+        system_prompt=docwriter_sysprompt(),
+        pydantic_model=DocumentationContent,
+        model_name="gpt-4o",
+    )
+    ood_checker = StructuredBot(
+        system_prompt=ood_checker_sysprompt(), pydantic_model=DocumentationOutOfDate
+    )
+    result: DocumentationOutOfDate = ood_checker(documentation_information(src_file))
 
-    else:
-        ood_checker = StructuredBot(
-            system_prompt=ood_checker_sysprompt(), pydantic_model=DocumentationOutOfDate
+    if not src_file.post.content or result.is_out_of_date or force:
+        response: DocumentationContent = docwriter(
+            documentation_information(src_file) + "\nNow please write the docs."
         )
-        result = ood_checker(documentation_information(src_file))
-        if result.is_out_of_date or force:
-            docwriter = SimpleBot(system_prompt=docwriter_sysprompt())
-            response = docwriter(documentation_information(src_file))
-            src_file.post.content = response.content
+        src_file.post.content = response.content
     src_file.save()
