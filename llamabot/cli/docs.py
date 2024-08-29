@@ -5,7 +5,6 @@ from pathlib import Path
 import frontmatter
 from pydantic import BaseModel, Field
 from llamabot import prompt, StructuredBot, SimpleBot
-import yaml
 from pyprojroot import here
 
 from pydantic import ConfigDict
@@ -42,6 +41,11 @@ class MarkdownSourceFile(BaseModel):
                 f"{i+1}: {line}" for i, line in enumerate(f.readlines())
             )
 
+    def save(self):
+        """Save the Markdown source file with the updated content."""
+        with open(self.file_path, "w") as f:
+            f.write(frontmatter.dumps(self.post))
+
 
 class DocumentationOutOfDate(BaseModel):
     """Status indicating whether a documentation is out of date."""
@@ -62,16 +66,8 @@ def ood_checker_sysprompt():
 
 
 @prompt
-def documentation_information(
-    source_file: MarkdownSourceFile, line_numbers: bool = False, issues: dict = {}
-) -> str:
-    """## Intents about the documentation
-
-    Here is the intent about the documentation:
-
-    {% for intent in source_file.post.get("intents", []) %}- {{ intent }}{% endfor %}
-
-    ## Referenced source files
+def documentation_information(source_file: MarkdownSourceFile) -> str:
+    """## Referenced source files
 
     These are the source files to reference:
 
@@ -83,30 +79,23 @@ def documentation_information(
     -----
     {% endfor %}
 
-    ## Issues
-    {% if issues %}
-    Here are additional issues found with the docs:
-
-    {{ issues | safe  }}
-    {% else %}
-    <No issues provided, but there may still be issues.>
-    {% endif %}
-
     ## Documentation source file
 
-    Finally, here is the documentation source file, {{ source_file.file_path }}:
+    Here is the documentation source file, {{ source_file.file_path }}:
 
     -----
     {% if source_file.post.content %}
-    {% if line_numbers %}
-    {{ source_file.raw_content | safe  }}
-    {% else %}
     {{ source_file.post.content | safe }}
-    {% endif %}
     {% else %}
     <The documentation is empty.>
     {% endif %}
     -----
+
+    ## Intents about the documentation
+
+    Here is the intent about the documentation:
+
+    {% for intent in source_file.post.get("intents", []) %}- {{ intent }}{% endfor %}
     """
 
 
@@ -118,36 +107,35 @@ def docwriter_sysprompt():
     a list of what the documentation is intended to cover,
     and a list of linked source files.
 
-    Based on the issues provided,
-    please edit the documentation to fix those issues,
-    integrating the changes seamelessly into the documentation.
-    Return only the content without any other preamble.
+    Based on the intended messages information that the documentation is supposed to cover
+    and the content of linked source files,
+    please edit or create the documentation,
+    ensuring that the documentation matches the intents
+    and has the correct content from the linked source files.
     """
 
 
 @app.command()
-def write(file_path: Path):
+def write(file_path: Path, force: bool = False):
     """Write the documentation based on the given source file.
 
     :param file_path: Path to the Markdown source file.
+    :param force: Force writing the documentation even if it is not out of date.
     """
     src_file = MarkdownSourceFile(file_path)
 
     if not src_file.post.content:  # i.e. the documentation is empty
         docwriter = SimpleBot(system_prompt=docwriter_sysprompt())
         response = docwriter(documentation_information(src_file))
+        src_file.post.content = response.content
 
     else:
         ood_checker = StructuredBot(
             system_prompt=ood_checker_sysprompt(), pydantic_model=DocumentationOutOfDate
         )
         result = ood_checker(documentation_information(src_file))
-        if result.ood:
+        if result.is_out_of_date or force:
             docwriter = SimpleBot(system_prompt=docwriter_sysprompt())
             response = docwriter(documentation_information(src_file))
-    with open(src_file, "w+") as f:
-        f.write("---\n")
-        # Write the intents to docs
-        f.write(yaml.dump(src_file.post.metadata))
-        f.write("---\n")
-        f.write(response.content)
+            src_file.post.content = response.content
+    src_file.save()

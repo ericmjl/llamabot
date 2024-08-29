@@ -8,7 +8,7 @@ import typer
 
 from llamabot import ChatBot, PromptRecorder
 
-from . import blog, configure, doc, git, python, tutorial, zotero, repo, serve
+from . import blog, configure, doc, git, python, tutorial, zotero, repo, serve, docs
 from .utils import exit_if_asked, uniform_prompt
 
 app = typer.Typer()
@@ -41,6 +41,9 @@ app.add_typer(configure.app, name="configure", help="Configure LlamaBot.")
 app.add_typer(repo.app, name="repo", help="Chat with a code repository.")
 app.add_typer(
     serve.cli, name="serve", help="Serve up a LlamaBot as a FastAPI endpoint."
+)
+app.add_typer(
+    docs.app, name="docs", help="Create Markdown documentation from source files."
 )
 
 
