@@ -1,7 +1,15 @@
-# Automatically Record QueryBot Calls with PromptRecorder
+---
+intents:
+- This should be a how-to guide that shows a user how the PromptRecorder in LlamaBot
+  works in tandem with QueryBot, specifically using it as a context manager.
+- Specifically, how one sets it up, views recorded prompts and responses, and how
+  to display them in a Panel app.
+linked_files:
+- llamabot/recorder.py
+- llamabot/bot/querybot.py
+---
 
-!!! note
-    This tutorial was written by GPT4 and edited by a human.
+# Automatically Record QueryBot Calls with PromptRecorder
 
 In this tutorial, we will learn how to use the `PromptRecorder` class to automatically record calls made to the `QueryBot`. The `PromptRecorder` class is designed to record prompts and responses, making it a perfect fit for logging interactions with the `QueryBot`.
 
@@ -23,8 +31,8 @@ pip install pandas panel
 First, we need to import the `PromptRecorder` and `QueryBot` classes from their respective source files. You can do this by adding the following lines at the beginning of your script:
 
 ```python
-from prompt_recorder import PromptRecorder, autorecord
-from query_bot import QueryBot
+from llamabot.recorder import PromptRecorder, autorecord
+from llamabot.bot.querybot import QueryBot
 ```
 
 ## Step 2: Initialize the QueryBot
@@ -36,7 +44,7 @@ system_message = "You are a helpful assistant that can answer questions based on
 model_name = "gpt-4"
 doc_paths = ["document1.txt", "document2.txt"]
 
-query_bot = QueryBot(system_message, model_name=model_name, doc_paths=doc_paths)
+query_bot = QueryBot(system_message, model_name=model_name, document_paths=doc_paths)
 ```
 
 ## Step 3: Use the PromptRecorder context manager
@@ -84,14 +92,14 @@ recorder.panel().show()
 Here's the complete example that demonstrates how to use the `PromptRecorder` to automatically record `QueryBot` calls:
 
 ```python
-from prompt_recorder import PromptRecorder, autorecord
-from query_bot import QueryBot
+from llamabot.recorder import PromptRecorder, autorecord
+from llamabot.bot.querybot import QueryBot
 
 system_message = "You are a helpful assistant that can answer questions based on the provided documents."
 model_name = "gpt-4"
 doc_paths = ["document1.txt", "document2.txt"]
 
-query_bot = QueryBot(system_message, model_name=model_name, doc_paths=doc_paths)
+query_bot = QueryBot(system_message, model_name=model_name, document_paths=doc_paths)
 
 with PromptRecorder() as recorder:
     query = "What is the main idea of document1?"
