@@ -43,3 +43,12 @@ repos:
     rev: v0.0.9
     hooks:
       - id: convert-to-webp
+  - repo: local
+    hooks:
+      - id: pixi-install
+        name: pixi-install
+        entry: pixi install
+        language: system
+        always_run: true
+        require_serial: true
+        pass_filenames: false
