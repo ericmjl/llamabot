@@ -1,7 +1,20 @@
+---
+intents:
+- Diataxis framework-style tutorial on the usage of SimpleBot.
+- Emphasis on the returned data structures from SimpleBot.__call__(), that these are
+  not strings, but AIMessages.
+- Explanation on what an AIMessage is, showing its class structure.
+- Creating a Panel app to talk with SimpleBot.
+linked_files:
+- llamabot/__init__.py
+- llamabot/bot/simplebot.py
+- llamabot/components/messages.py
+---
+
 # SimpleBot Tutorial
 
 !!! note
-    This tutorial was written by GPT4 and edited by a human.
+This tutorial was written by GPT4 and edited by a human.
 
 In this tutorial, we will learn how to use the `SimpleBot` class, a Python implementation of a chatbot that interacts with OpenAI's GPT-4 model. The `SimpleBot` class is designed to be simple and easy to use, allowing you to create a chatbot that can respond to human messages based on a given system prompt.
 
@@ -10,7 +23,7 @@ In this tutorial, we will learn how to use the `SimpleBot` class, a Python imple
 First, let's import the `SimpleBot` class:
 
 ```python
-from llamabot import SimpleBot
+from llamabot.bot.simplebot import SimpleBot
 ```
 
 ### Initializing the SimpleBot
@@ -32,7 +45,21 @@ response = bot(human_message)
 print(response.content)
 ```
 
-### Using the Panel App
+## AIMessage
+
+When interacting with the `SimpleBot`, it's important to note that the response returned is not a simple string, but an `AIMessage` object. This object contains the generated response and additional metadata. The structure of an `AIMessage` is as follows:
+
+```python
+from llamabot.components.messages import AIMessage
+
+# Example AIMessage structure
+{
+"content": "Generated response content",
+"role": "assistant"
+}
+```
+
+## Using the Panel App
 
 `SimpleBot` also comes with a built-in Panel app that provides a graphical user interface for interacting with the chatbot. To create the app, call the `panel()` method on your `SimpleBot` instance:
 
@@ -53,7 +80,7 @@ app.show()
 Here's a complete example of how to create and interact with a `SimpleBot`:
 
 ```python
-from simple_bot import SimpleBot
+from llamabot.bot.simplebot import SimpleBot
 
 # Initialize the SimpleBot
 system_prompt = "You are an AI assistant that helps users with their questions."
@@ -72,3 +99,7 @@ app.show()
 ## Conclusion
 
 In this tutorial, we learned how to use the `SimpleBot` class to create a simple chatbot that interacts with OpenAI's GPT-4 model. We also learned how to create a Panel app for a more user-friendly interface. With this knowledge, you can now create your own chatbots and experiment with different system prompts and settings.
+
+## Additional Information
+
+For more detailed information on the `SimpleBot` class and its methods, please refer to the source code and documentation provided in the `llamabot` package.
