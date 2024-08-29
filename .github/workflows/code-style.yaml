@@ -18,6 +18,13 @@ jobs:
         # Install latest uv version using the installer
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
+      - name: Setup Pixi Environment
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: v0.25.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+
       - name: Set up Python
         run: uv python install
 
