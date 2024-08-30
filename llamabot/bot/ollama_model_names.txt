@@ -1,3 +1,4 @@
+qwen2-math
 hermes3
 phi3.5
 smollm
