@@ -162,6 +162,9 @@ def write(file_path: Path, from_scratch: bool = False):
     """
     src_file = MarkdownSourceFile(file_path)
 
+    if from_scratch:
+        src_file.post.content = ""
+
     docwriter = StructuredBot(
         system_prompt=docwriter_sysprompt(),
         pydantic_model=DocumentationContent,
@@ -171,9 +174,6 @@ def write(file_path: Path, from_scratch: bool = False):
         system_prompt=ood_checker_sysprompt(), pydantic_model=DocumentationOutOfDate
     )
     result: DocumentationOutOfDate = ood_checker(documentation_information(src_file))
-
-    if from_scratch:
-        src_file.post.content = ""
 
     if not src_file.post.content or result.is_out_of_date:
         response: DocumentationContent = docwriter(
