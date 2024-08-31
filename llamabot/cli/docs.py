@@ -90,31 +90,30 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
     These are the source files to reference:
 
     {% for filename, content in source_file.linked_files.items() %}
-    -----
-    [ {{ filename }} ]
+    [[ {{ filename }} BEGINS ]]
 
     {{ content }}
-    -----
+    [[ {{ filename }} ENDS ]]
     {% endfor %}
 
     ## Documentation source file
 
     Here is the documentation in its current state, {{ source_file.file_path }}:
 
-    -----
+    [[ {{ source_file.file_path }} BEGINS ]]
     {% if source_file.post.content %}
     {{ source_file.post.content | safe }}
     {% else %}
     <The documentation is empty.>
     {% endif %}
-    -----
+    [[ {{ source_file.file_path }} ENDS ]]
 
     ## Intents about the documentation
 
     Here is the intent about the documentation:
-
+    [[ INTENTS BEGINS ]]
     {% for intent in source_file.post.get("intents", []) %}- {{ intent }}{% endfor %}
-    -----
+    [[ INTENTS ENDS ]]
     """
 
 

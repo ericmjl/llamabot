@@ -25,13 +25,11 @@ llamabot docs write <path_to_markdown_file>
 
 Replace `<path_to_markdown_file>` with the path to the Markdown file you want to generate or update documentation for.
 
-## Flags
+## `--from-scratch` Flag
 
-### `--from-scratch`
+The `--from-scratch` flag is an optional parameter that you can use with the `llamabot docs write` command. When this flag is set to `True`, the command will start with a blank documentation, ignoring any existing content in the Markdown file. This is useful when you want to completely regenerate the documentation from scratch.
 
-The `--from-scratch` flag allows you to start with a blank documentation file. When this flag is used, the existing content of the Markdown file will be cleared before generating new documentation. This can be useful if you want to completely rewrite the documentation from scratch.
-
-Usage example:
+To use the `--from-scratch` flag, run the following command:
 
 ```sh
 llamabot docs write <path_to_markdown_file> --from-scratch
@@ -39,9 +37,7 @@ llamabot docs write <path_to_markdown_file> --from-scratch
 
 ## Frontmatter Key-Value Pairs
 
-To make the `llamabot docs write` command work effectively, your Markdown source file should include specific frontmatter key-value pairs. These pairs provide the necessary context and instructions for generating the documentation.
-
-Here is an example of the required frontmatter:
+For the `llamabot docs write` command to work correctly, your Markdown source file must contain specific frontmatter key-value pairs. The frontmatter should be written in YAML format and placed at the top of the Markdown file. Here is an example of the required frontmatter:
 
 ```markdown
 ---
@@ -56,40 +52,32 @@ linked_files:
 ---
 ```
 
-### `intents`
+### Intents
 
-The `intents` key is a list of points that the documentation should cover. These points guide the content generation process, ensuring that the generated documentation aligns with your specific needs and goals.
+The `intents` key is a list of points that the documentation should cover. These points guide the LLM in generating the content of the documentation.
 
-### `linked_files`
+### Linked Files
 
-The `linked_files` key is a list of file paths to relevant source files. These files provide additional context and information that can be referenced in the generated documentation. The paths should be relative to the root of your project repository.
+The `linked_files` key is a list of paths to relevant source files that the documentation should reference. These paths must be relative to the root of the repository.
 
 ## Example
 
-Here is an example of how to use the `llamabot docs write` command with a Markdown source file that includes the necessary frontmatter:
+Here is an example of a complete Markdown source file with the required frontmatter and some initial content:
 
-1. Create a Markdown file (e.g., `docs/cli/docs.md`) with the following content:
+```markdown
+---
+intents:
+- Provide an overview of the `llamabot docs write` command.
+- Explain the `--from-scratch` flag.
+- Describe the frontmatter key-value pairs needed to make it work.
+linked_files:
+- llamabot/cli/docs.py
+- pyproject.toml
+---
 
-    ```markdown
-    ---
-    intents:
-    - Provide an overview of the `llamabot docs write` command.
-    - Explain the `--from-scratch` flag.
-    - Describe the required frontmatter key-value pairs.
-    linked_files:
-    - llamabot/cli/docs.py
-    - pyproject.toml
-    ---
+# CLI Documentation for `llamabot docs write`
 
-    <The documentation is empty.>
-    ```
+<The documentation content will be generated here.>
+```
 
-2. Run the `llamabot docs write` command:
-
-    ```sh
-    llamabot docs write docs/cli/docs.md
-    ```
-
-3. The command will generate and update the documentation based on the specified intents and linked files.
-
-By following these steps, you can easily create and maintain comprehensive documentation for your project using the `llamabot docs write` command.
+By following these guidelines, you can effectively use the `llamabot docs write` command to generate and maintain high-quality documentation for your project.
