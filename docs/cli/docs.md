@@ -9,54 +9,37 @@ linked_files:
 - pyproject.toml
 ---
 
-# LlamaBot Documentation
+# CLI Documentation for `llamabot docs write`
 
-## Installation
+## Overview
 
-To install LlamaBot, follow these steps:
-
-1. Ensure you have Python 3.10 or higher installed on your system.
-2. Install LlamaBot using pip:
-
-```bash
-pip install llamabot
-```
-
-3. Verify the installation by running:
-
-```bash
-llamabot --help
-```
+The `llamabot docs write` command is a powerful tool designed to help you create and maintain Markdown documentation for your project. This command leverages the capabilities of LLMs (Large Language Models) to generate and update documentation based on the content and intent specified in your Markdown files.
 
 ## Usage
 
-To use LlamaBot to generate documentation, run the following command in the terminal:
+To use the `llamabot docs write` command, navigate to your terminal and run the following command:
 
-```bash
+```sh
 llamabot docs write <path_to_markdown_file>
 ```
 
-### Options
+Replace `<path_to_markdown_file>` with the path to the Markdown file you want to generate or update documentation for.
 
-- `--force`: Use this flag to force the documentation update even if it is not detected as out of date.
+## Options
 
-## Additional Information
+### `--force`
 
-For more information, refer to the [official documentation](https://llamabotdocs.com).
+The `--force` flag can be used to force the regeneration of the documentation, even if it is not out of date. This is useful if you want to ensure that the documentation is always up-to-date with the latest content and intent.
 
-## Explanation
+```sh
+llamabot docs write <path_to_markdown_file> --force
+```
 
-To make the `llamabot docs write` command work, ensure that your Markdown source files are properly formatted and located in the correct directory. The command will read the source files, check if the documentation is up-to-date, and update it if necessary. If you use the `--force` flag, the documentation will be updated regardless of its current status.
+## Frontmatter Key-Value Pairs
 
-### Requirements for Target Documentation File
+To make the `llamabot docs write` command work effectively, your Markdown files should include specific frontmatter key-value pairs. These pairs provide the necessary context and intent for the documentation generation process.
 
-1. **Proper Formatting**: Ensure your Markdown files are correctly formatted.
-2. **Correct Directory**: Place your Markdown files in the appropriate directory as expected by the `llamabot docs write` command.
-3. **Linked Files**: If your documentation references other files, ensure these are correctly linked and accessible.
-
-### Frontmatter Key-Value Pairs
-
-To use the `llamabot docs write` command effectively, your Markdown files should include the following frontmatter:
+### Example Frontmatter
 
 ```markdown
 ---
@@ -71,4 +54,37 @@ linked_files:
 ---
 ```
 
-By following these guidelines, you can effectively use LlamaBot to manage and update your documentation.
+### Explanation
+
+- **intents**: A list of points that the documentation should cover. These points guide the content generation process to ensure that the documentation is aligned with your goals.
+- **linked_files**: A list of paths to relevant files that should be referenced in the documentation. These files provide additional context and content that can be included in the generated documentation.
+
+## Example
+
+Here is an example of how to use the `llamabot docs write` command:
+
+1. Create a Markdown file with the necessary frontmatter:
+
+```markdown
+---
+intents:
+- Explain how to use the `llamabot docs write` command.
+- Describe the `--force` flag.
+- Provide an example of the frontmatter key-value pairs.
+linked_files:
+- path/to/relevant_file1.py
+- path/to/relevant_file2.toml
+---
+```
+
+2. Run the `llamabot docs write` command:
+
+```sh
+llamabot docs write docs/cli/docs.md
+```
+
+3. The command will generate or update the documentation based on the specified intents and linked files.
+
+## Conclusion
+
+The `llamabot docs write` command is a valuable tool for automating the creation and maintenance of your project's documentation. By specifying the intents and linked files in the frontmatter, you can ensure that your documentation is always accurate and up-to-date.

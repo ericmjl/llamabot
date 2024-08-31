@@ -99,7 +99,7 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
 
     ## Documentation source file
 
-    Here is the documentation source file, {{ source_file.file_path }}:
+    Here is the documentation in its current state, {{ source_file.file_path }}:
 
     -----
     {% if source_file.post.content %}
@@ -130,17 +130,16 @@ def docwriter_sysprompt():
     and a list of linked source files.
 
     [[ Instructions ]]
-    Based on the intended messages information that the documentation is supposed to cover
+    Based on the intended information that the documentation is supposed to cover
     and the content of linked source files,
-    please edit or create the documentation,
+    please edit (or create) the documentation,
     ensuring that the documentation matches the intents
     and has the correct content from the linked source files.
-    Return only the Markdown content of the documentation without the surrounding fence.
     """
 
 
 @app.command()
-def write(file_path: Path, force: bool = False):
+def write(file_path: Path, from_scratch: bool = False):
     """Write the documentation based on the given source file.
 
     The Markdown file should have frontmatter that looks like this:
@@ -159,7 +158,7 @@ def write(file_path: Path, force: bool = False):
     ```
 
     :param file_path: Path to the Markdown source file.
-    :param force: Force writing the documentation even if it is not out of date.
+    :param from_scratch: Whether to start with a blank documentation.
     """
     src_file = MarkdownSourceFile(file_path)
 
@@ -173,7 +172,10 @@ def write(file_path: Path, force: bool = False):
     )
     result: DocumentationOutOfDate = ood_checker(documentation_information(src_file))
 
-    if not src_file.post.content or result.is_out_of_date or force:
+    if from_scratch:
+        src_file.post.content = ""
+
+    if not src_file.post.content or result.is_out_of_date:
         response: DocumentationContent = docwriter(
             documentation_information(src_file) + "\nNow please write the docs."
         )
