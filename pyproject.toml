@@ -44,7 +44,7 @@ whitelist-regex = []
 color = true
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report term-missing"
+addopts = "-v --cov --cov-report term-missing -m 'not llm'"
 testpaths = [
     "tests",
 ]
@@ -107,6 +107,9 @@ readme = "README.md"
 
 [project.scripts]
 llamabot = "llamabot.cli:app"
+
+[project.optional-dependencies]
+notebooks = ["ics>=0.7.2,<0.8", "tzlocal>=5.2,<6"]
 
 [tool.pixi.project]
 name = "llamabot"
