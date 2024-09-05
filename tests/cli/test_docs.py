@@ -10,7 +10,7 @@ from llamabot.cli.docs import (
     MarkdownSourceFile,
     DocsContainFactuallyIncorrectMaterial,
     SourceContainsContentNotCoveredInDocs,
-    DocDoNotCoverIntendedMaterial,
+    DocsDoNotCoverIntendedMaterial,
 )
 from pyprojroot import here
 
@@ -157,7 +157,7 @@ test_cases = (
         "original_docs": original_docs,
         "new_source_code": new_source_code,
         "system_prompt": system_prompt1,
-        "pydantic_model": DocDoNotCoverIntendedMaterial,
+        "pydantic_model": DocsDoNotCoverIntendedMaterial,
         "expected_status": True,
     },
     {
@@ -185,7 +185,7 @@ test_cases = (
         "original_docs": original_docs,
         "new_source_code": original_source_code,
         "system_prompt": system_prompt1,
-        "pydantic_model": DocDoNotCoverIntendedMaterial,
+        "pydantic_model": DocsDoNotCoverIntendedMaterial,
         "expected_status": False,
     },
 )
