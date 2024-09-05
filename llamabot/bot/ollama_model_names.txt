@@ -1,3 +1,4 @@
+yi-coder
 qwen2-math
 hermes3
 phi3.5
