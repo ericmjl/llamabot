@@ -2,6 +2,7 @@
 intents:
 - Provide reader with a guided tutorial that shows how to use the `llamabot docs write`
   command at the terminal to generate documentation.
+- Explain the mechanism by which linked files are referenced.
 - Specifically add in information about the `--from-scratch` flag.
 - Describe the frontmatter key-value pairs needed to make it work.
 linked_files:
@@ -81,3 +82,9 @@ linked_files:
 ```
 
 By following these guidelines, you can effectively use the `llamabot docs write` command to generate and maintain high-quality documentation for your project.
+
+## How Linked Files are Referenced
+
+The `llamabot docs write` command references linked files specified in the `linked_files` key of the frontmatter. These files are read and their content is used to inform the generated documentation. The paths to these files must be relative to the root of the repository. For example, if you have a file `llamabot/cli/docs.py` that you want to reference, you would include it in the `linked_files` list as shown in the example above.
+
+By understanding and utilizing these features, you can ensure that your documentation is comprehensive, up-to-date, and aligned with the source code and project intents.
