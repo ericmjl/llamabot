@@ -63,12 +63,99 @@ class DocumentationContent(BaseModel):
         return self
 
 
-class DocumentationOutOfDate(BaseModel):
-    """Status indicating whether a documentation is out of date."""
+class ModelValidatorWrapper(BaseModel):
+    """Base class for model validators that wrap the model with additional fields."""
 
-    is_out_of_date: bool = Field(
-        ..., description="Whether the documentation is out of date."
+    status: bool = Field(..., description="Status indicator.")
+    reasons: list[str] = Field(
+        default_factory=list, description="Reasons for the status."
     )
+
+    @model_validator(mode="after")
+    def validate_status_and_reasons(self):
+        """Validate the status and reasons fields.
+
+        This function checks if the status and reasons fields are in a valid state.
+        Validity is defined by:
+
+        - status == True and reasons are not empty
+        - status == False and reasons are empty
+        """
+        # The only valid states are status == True and reasons are not empty,
+        # or that status == False and reasons are empty.
+        if self.status and not self.reasons:
+            raise ValueError("If status is True, reasons must be provided.")
+        elif not self.status and self.reasons:
+            raise ValueError("If status is False, reasons be empty.")
+        return self
+
+
+class DocumentationOutOfSyncWithSource(ModelValidatorWrapper):
+    """Status indicating whether the documentation is out of sync with the source code."""
+
+    status: bool = Field(
+        ...,
+        description="Whether the documentation is out of sync with the source code.",
+    )
+    reasons: list[str] = Field(
+        default_factory=list,
+        description="Reasons why the documentation is out of sync with the source code. Be specific.",
+    )
+
+
+class SourceContainsContentNotCoveredInDocs(ModelValidatorWrapper):
+    """Status indicating whether the source contains content not covered in the documentation."""
+
+    status: bool = Field(
+        ...,
+        description="Whether the source contains content not covered in the documentation.",
+    )
+    reasons: list[str] = Field(
+        default_factory=list,
+        description="Reasons why the source contains content not covered in the documentation. Be specific.",
+    )
+
+
+class DocsContainFactuallyIncorrectMaterial(ModelValidatorWrapper):
+    """Status indicating whether docs contain factually incorrect material that contradicts the source code."""
+
+    status: bool = Field(
+        ...,
+        description="Whether the documentation contains factually incorrect material that contradicts the source code.",
+    )
+    reasons: list[str] = Field(
+        default_factory=list,
+        description="The factually incorrect material that contradicts the source code. Specify the contradiction.",
+    )
+
+
+class DocsDoNotCoverIntendedMaterial(ModelValidatorWrapper):
+    """Status indicating whether or not the documentation does not cover the intended material."""
+
+    status: bool = Field(
+        ...,
+        description="Whether the intents of the documentation are not covered by the source. Return False if intents are adequately covered. Return True if some intents are not covered.",
+    )
+    reasons: list[str] = Field(
+        default_factory=list,
+        description="Reasons why the intents of the documentation are not covered by the source. Be specific, citing the intent that isn't covered.",
+    )
+
+
+class DocsOutOfDate(BaseModel):
+    """Content related to documentation out of date."""
+
+    source_not_covered: SourceContainsContentNotCoveredInDocs
+    intents_not_covered: DocsDoNotCoverIntendedMaterial
+    factually_inaccurate: DocsContainFactuallyIncorrectMaterial
+
+    def __bool__(self):
+        """Return True if any of the sub-models are True."""
+        return (
+            bool(self.source_not_covered)
+            or bool(self.intents_not_covered)
+            or bool(self.factually_inaccurate)
+        )
 
 
 @prompt
@@ -91,7 +178,6 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
 
     {% for filename, content in source_file.linked_files.items() %}
     [[ {{ filename }} BEGINS ]]
-
     {{ content }}
     [[ {{ filename }} ENDS ]]
     {% endfor %}
@@ -112,7 +198,8 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
 
     Here is the intent about the documentation:
     [[ INTENTS BEGINS ]]
-    {% for intent in source_file.post.get("intents", []) %}- {{ intent }}{% endfor %}
+    {% for intent in source_file.post.get("intents", []) %}- {{ intent }}
+    {% endfor %}
     [[ INTENTS ENDS ]]
     """
 
@@ -135,6 +222,24 @@ def docwriter_sysprompt():
     ensuring that the documentation matches the intents
     and has the correct content from the linked source files.
     """
+
+
+def ood_checker_bot() -> StructuredBot:
+    """Return a StructuredBot for the out-of-date checker."""
+    return StructuredBot(
+        system_prompt=ood_checker_sysprompt(),
+        pydantic_model=DocsOutOfDate,
+        model_name="gpt-4-turbo",
+    )
+
+
+def docwriter_bot() -> StructuredBot:
+    """Return a StructuredBot for the documentation writer."""
+    return StructuredBot(
+        system_prompt=docwriter_sysprompt(),
+        pydantic_model=DocumentationContent,
+        model_name="gpt-4-turbo",
+    )
 
 
 @app.command()
@@ -164,19 +269,16 @@ def write(file_path: Path, from_scratch: bool = False):
     if from_scratch:
         src_file.post.content = ""
 
-    docwriter = StructuredBot(
-        system_prompt=docwriter_sysprompt(),
-        pydantic_model=DocumentationContent,
-        model_name="gpt-4o",
+    ood_checker = ood_checker_bot()
+    result: DocsOutOfDate = ood_checker(
+        documentation_information(src_file), verbose=True
     )
-    ood_checker = StructuredBot(
-        system_prompt=ood_checker_sysprompt(), pydantic_model=DocumentationOutOfDate
-    )
-    result: DocumentationOutOfDate = ood_checker(documentation_information(src_file))
 
-    if not src_file.post.content or result.is_out_of_date:
+    if not src_file.post.content or result:
+        docwriter = docwriter_bot()
         response: DocumentationContent = docwriter(
-            documentation_information(src_file) + "\nNow please write the docs."
+            documentation_information(src_file) + "\nNow please write the docs.",
+            verbose=True,
         )
         src_file.post.content = response.content
     src_file.save()

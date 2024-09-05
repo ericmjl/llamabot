@@ -11,7 +11,6 @@ from llamabot import SimpleBot
 from llamabot.components.messages import (
     AIMessage,
     HumanMessage,
-    SystemMessage,
 )
 from pydantic import BaseModel, ValidationError
 from llamabot.config import default_language_model
@@ -64,10 +63,10 @@ class StructuredBot(SimpleBot):
 
         self.pydantic_model = pydantic_model
 
-    def task_message(self) -> SystemMessage:
+    def task_message(self) -> HumanMessage:
         """Compose instructions for what the bot is supposed to do."""
         schema = self.pydantic_model.model_json_schema()
-        return SystemMessage(content=bot_task(schema))
+        return HumanMessage(content=bot_task(schema))
 
     def get_validation_error_message(self, exception: ValidationError) -> HumanMessage:
         """Return a validation error message to feed back to the bot.
