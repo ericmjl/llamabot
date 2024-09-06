@@ -3,6 +3,8 @@
 This also serves as an evaluation suite for local LLMs that are tested.
 """
 
+from pathlib import Path
+
 import pytest
 from llamabot import StructuredBot
 from llamabot.cli.docs import (
@@ -85,31 +87,16 @@ print(next_prime_number)  # Output: 13
 By combining these two functions, you can efficiently determine the primality of a number and find the next prime number with minimal computation.
 """
 
-original_source_code = '''
-def is_prime(n):
-    """Check if a number is prime."""
-    if n <= 1:
-        return False
-    if n == 2:
-        return True
-    if n % 2 == 0:
-        return False
-    for i in range(3, int(n**0.5) + 1, 2):
-        if n % i == 0:
-            return False
-    return True
-
-def next_prime(current_number):
-    """Find the next prime number after the current number."""
-    next_number = current_number + 1
-    while not is_prime(next_number):
-        next_number += 1
-    return next_number
-'''
+with open(Path(__file__).parent / "assets" / "next_prime" / "source.py", "r+") as f:
+    original_source_code = f.read()
 
 new_source_code = '''
 def is_prime(n):
-    """Check if a number is prime."""
+    """Check if a number is prime.
+
+    :param n: The number to check.
+    :return: True if the number is prime, False otherwise.
+    """
     if n < 2:  # Changed from n <= 1
         return False
     if n == 2 or n == 3:  # Added an additional base case for 3
@@ -124,7 +111,11 @@ def is_prime(n):
     return True
 
 def next_prime(current_number):
-    """Find the next prime number after the current number."""
+    """Find the next prime number after the current number.
+
+    :param current_number: The current number.
+    :return: The next prime number.
+    """
     next_number = current_number + 1
     while not is_prime(next_number):
         next_number += 1
@@ -199,10 +190,10 @@ test_cases = (
 @pytest.mark.parametrize(
     "model_name",
     [
-        # "ollama_chat/gemma2:2b",  # passes all tests
-        "gpt-4-turbo",  # passes all tests, but costs $$ to run
+        # "ollama_chat/gemma2:2b",  # does not pass all tests.
+        "gpt-4-turbo",  # passes all tests, but costs $$ to run.
         # ollama_chat/phi3", # garbage model, doesn't pass any tests.
-        "gpt-4o-mini",  # passes all tests, but costs $$ to run
+        "gpt-4o-mini",  # passes all tests, but costs $$ to run.
     ],
 )
 def test_out_of_date_when_source_changes(
