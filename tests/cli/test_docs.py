@@ -182,7 +182,7 @@ test_cases = (
 )
 
 
-@pytest.mark.llm_evals
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "original_docs,new_source_code,system_prompt,pydantic_model,expected_status",
     [(tuple(case.values())) for case in test_cases],
