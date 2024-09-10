@@ -97,7 +97,6 @@ class SimpleBot:
         autorecord(messages[-1].content, message)
         return AIMessage(content=message)
 
-    @cache.memoize()
     def stream_panel(self, messages: list[BaseMessage]) -> Generator:
         """Stream the response to a Panel app.
 
@@ -120,7 +119,6 @@ class SimpleBot:
         response = _make_response(self, messages, stream=False)
         return AIMessage(content=response.choices[0].message.content.strip())
 
-    @cache.memoize()
     def stream_api(self, messages: list[BaseMessage]) -> Generator:
         """Stream the response to an API.
 
@@ -132,6 +130,7 @@ class SimpleBot:
             if delta is not None:
                 yield delta
 
+    @cache.memoize()
     def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
         """Generate a response from the given messages.
 
