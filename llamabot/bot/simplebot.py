@@ -12,6 +12,7 @@ from llamabot.components.messages import (
 )
 from llamabot.recorder import autorecord
 from llamabot.config import default_language_model
+from llamabot.cache import cache
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -61,6 +62,7 @@ class SimpleBot:
         self.mock_response = mock_response
         self.completion_kwargs = completion_kwargs
 
+    @cache.memoize()
     def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
         """Call the SimpleBot.
 
