@@ -81,7 +81,7 @@ class SimpleBot:
                 return self.stream_none(messages)
         return AIMessage(content="")
 
-    @cache.memoize()
+    @cache.memoize(ignore={0})
     def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
         """Stream the response to stdout.
 
@@ -110,7 +110,7 @@ class SimpleBot:
                 message += delta
                 yield message
 
-    @cache.memoize()
+    @cache.memoize(ignore={0})
     def stream_none(self, messages: list[BaseMessage]) -> AIMessage:
         """Stream the response to None.
 
@@ -130,7 +130,7 @@ class SimpleBot:
             if delta is not None:
                 yield delta
 
-    @cache.memoize()
+    @cache.memoize(ignore={0})
     def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
         """Generate a response from the given messages.
 
