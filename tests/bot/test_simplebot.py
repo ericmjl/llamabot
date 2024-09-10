@@ -13,6 +13,8 @@ Functions:
 - test_simple_bot_call
 """
 
+import hashlib
+
 from hypothesis import given, settings, strategies as st
 
 from llamabot.bot.simplebot import SimpleBot
@@ -46,13 +48,29 @@ def test_simple_bot_init(
     assert bot.json_mode == json_mode
 
 
+def generate_mock_response(system_prompt, human_message):
+    """Generate a unique mock response based on system_prompt and human_message.
+
+    This function creates a deterministic mock response by hashing the combination
+    of the system prompt and human message.
+
+    :param system_prompt: The system prompt used in the bot.
+    :param human_message: The message input by the human.
+    :return: A unique mock response string.
+    """
+    combined = f"{system_prompt}:{human_message}"
+    hash_object = hashlib.md5(combined.encode())
+    return f"Mock response for {hash_object.hexdigest()}"
+
+
 @given(st.data())
 @settings(deadline=None)
 def test_simple_bot_stream_stdout(data):
     """Test that SimpleBot stream API exists and returns agenerator."""
-    system_prompt, human_message, mock_response = data.draw(
-        st.tuples(st.text(min_size=1), st.text(min_size=1), st.text(min_size=1))
+    system_prompt, human_message = data.draw(
+        st.tuples(st.text(min_size=1), st.text(min_size=1))
     )
+    mock_response = generate_mock_response(system_prompt, human_message)
     bot = SimpleBot(system_prompt, stream_target="stdout", mock_response=mock_response)
     result = bot(human_message)
     assert isinstance(result, AIMessage)
