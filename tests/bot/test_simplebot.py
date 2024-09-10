@@ -46,14 +46,13 @@ def test_simple_bot_init(
     assert bot.json_mode == json_mode
 
 
-@given(
-    system_prompt=st.text(min_size=1),
-    human_message=st.text(min_size=1),
-    mock_response=st.text(min_size=1),
-)
+@given(st.data())
 @settings(deadline=None)
-def test_simple_bot_stream_stdout(system_prompt, human_message, mock_response):
+def test_simple_bot_stream_stdout(data):
     """Test that SimpleBot stream API exists and returns agenerator."""
+    system_prompt, human_message, mock_response = data.draw(
+        st.tuples(st.text(min_size=1), st.text(min_size=1), st.text(min_size=1))
+    )
     bot = SimpleBot(system_prompt, stream_target="stdout", mock_response=mock_response)
     result = bot(human_message)
     assert isinstance(result, AIMessage)
