@@ -1,3 +1,6 @@
+minicpm-v
+deepseek-v2.5
+reflection
 yi-coder
 qwen2-math
 hermes3

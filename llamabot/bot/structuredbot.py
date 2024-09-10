@@ -15,6 +15,7 @@ from llamabot.components.messages import (
 from pydantic import BaseModel, ValidationError
 from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
+from llamabot.cache import cache
 
 
 @prompt
@@ -88,6 +89,7 @@ class StructuredBot(SimpleBot):
         last_paren = content.rfind("}")
         return content[first_paren : last_paren + 1]
 
+    @cache.memoize()
     def __call__(
         self, message: str, num_attempts: int = 10, verbose: bool = False
     ) -> BaseModel | None:

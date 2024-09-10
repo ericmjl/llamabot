@@ -14,6 +14,7 @@ from llamabot.components.messages import (
     RetrievedMessage,
 )
 from slugify import slugify
+from llamabot.cache import cache
 
 load_dotenv()
 
@@ -53,6 +54,7 @@ class QueryBot(SimpleBot, ChatUIMixin):
 
         ChatUIMixin.__init__(self, initial_message)
 
+    @cache.memoize()
     def __call__(self, query: str, n_results: int = 20) -> AIMessage:
         """Query documents within QueryBot's document store.
 
