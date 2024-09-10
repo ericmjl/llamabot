@@ -62,7 +62,6 @@ class SimpleBot:
         self.mock_response = mock_response
         self.completion_kwargs = completion_kwargs
 
-    @cache.memoize()
     def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
         """Call the SimpleBot.
 
@@ -82,6 +81,7 @@ class SimpleBot:
                 return self.stream_none(messages)
         return AIMessage(content="")
 
+    @cache.memoize()
     def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
         """Stream the response to stdout.
 
@@ -97,6 +97,7 @@ class SimpleBot:
         autorecord(messages[-1].content, message)
         return AIMessage(content=message)
 
+    @cache.memoize()
     def stream_panel(self, messages: list[BaseMessage]) -> Generator:
         """Stream the response to a Panel app.
 
@@ -110,6 +111,7 @@ class SimpleBot:
                 message += delta
                 yield message
 
+    @cache.memoize()
     def stream_none(self, messages: list[BaseMessage]) -> AIMessage:
         """Stream the response to None.
 
@@ -118,6 +120,7 @@ class SimpleBot:
         response = _make_response(self, messages, stream=False)
         return AIMessage(content=response.choices[0].message.content.strip())
 
+    @cache.memoize()
     def stream_api(self, messages: list[BaseMessage]) -> Generator:
         """Stream the response to an API.
 
