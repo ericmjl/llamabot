@@ -236,7 +236,7 @@ bot = QueryBot(
   # or
   # model_name="ollama/mistral"
 ) # This creates a new embedding for my blog text.
-result = bot("Do you have any advice for me on career development?")
+result = bot("Do you have any advice for me on career development?")
 ```
 
 An illustrative example using an already existing collection:
@@ -252,7 +252,7 @@ bot = QueryBot(
   # or
   # model_name="ollama/mistral"
 )  # This loads my previously-embedded blog text.
-result = bot("Do you have any advice for me on career development?")
+result = bot("Do you have any advice for me on career development?")
 ```
 
 For more explanation about the `model_name`, see [the examples with `SimpleBot`](#using-simplebot-with-a-local-ollama-model).
@@ -296,6 +296,32 @@ And finally, here is one where I use `llamabot`'s `SimpleBot` to create a bot
 that automatically writes commit messages for me.
 
 <script async id="asciicast-594334" src="https://asciinema.org/a/594334.js"></script>
+
+## Caching
+
+LlamaBot uses a caching mechanism to improve performance and reduce unnecessary API calls. By default, all cache entries expire after 1 day (86400 seconds). This behavior is implemented using the `diskcache` library.
+
+### Cache Configuration
+
+The cache is automatically configured when you use any of the bot classes (`SimpleBot`, `ChatBot`, or `QueryBot`). You don't need to set up the cache manually.
+
+### Cache Location
+
+The default cache directory is located at:
+
+```
+~/.llamabot/cache
+```
+
+### Cache Timeout
+
+The cache timeout can be configured using the `LLAMABOT_CACHE_TIMEOUT` environment variable. By default, the cache timeout is set to 1 day (86400 seconds). To customize the cache timeout, set the `LLAMABOT_CACHE_TIMEOUT` environment variable to the desired value in seconds. For example:
+
+```
+export LLAMABOT_CACHE_TIMEOUT=3600
+```
+
+This will set the cache timeout to 1 hour (3600 seconds).
 
 ## Contributing
 
