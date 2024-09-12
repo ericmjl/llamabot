@@ -8,4 +8,4 @@ from pathlib import Path
 CACHE_DIR = Path.home() / ".llamabot" / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-cache = Cache(CACHE_DIR)
+cache = Cache(CACHE_DIR, timeout=86400)  # 86400 seconds = 1 day
