@@ -1,5 +1,7 @@
 """Git subcommand for LlamaBot CLI."""
 
+import pyperclip
+
 import os
 from datetime import datetime, timedelta
 from enum import Enum
@@ -293,4 +295,7 @@ def report(hours: int = 24, model_name: str = "gpt-4-turbo"):
     console = Console()
     with console.status("[bold green]Generating report...", spinner="dots"):
         report = bot(compose_last_hours_report(log_info, hours))
-    print(report.content)
+
+    # Copy report content to clipboard
+    pyperclip.copy(report.content)
+    echo("Report copied to clipboard. Paste it wherever you need!")
