@@ -1,3 +1,9 @@
+qwen2.5-coder
+solar-pro
+nemotron-mini
+qwen2.5
+bespoke-minicheck
+mistral-small
 reader-lm
 minicpm-v
 deepseek-v2.5
