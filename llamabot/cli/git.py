@@ -1,20 +1,23 @@
 """Git subcommand for LlamaBot CLI."""
 
-from pathlib import Path
 import os
+from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
 
 import git
+from pydantic import BaseModel, Field, model_validator
 from pyprojroot import here
+from rich.console import Console
 from typer import Typer, echo
 
 from llamabot import SimpleBot, prompt
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.code_manipulation import get_git_diff
 from llamabot.prompt_library.git import (
+    compose_last_hours_report,
     compose_release_notes,
 )
-from pydantic import BaseModel, Field, model_validator
-from enum import Enum
 
 gitapp = Typer()
 
@@ -269,3 +272,25 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
     # Write release notes to the file
     with open(release_notes_dir / f"{tag2.name}.md", "w+") as f:
         f.write(trimmed_notes)
+
+
+@gitapp.command()
+def report(hours: int = 24, model_name: str = "gpt-4-turbo"):
+    """Write a report on the work done in the last specified hours based on git commit logs."""
+    repo = git.Repo(here())
+    now = datetime.now()
+    time_ago = now - timedelta(hours=hours)
+    # Format the datetime objects as ISO 8601 strings that Git can understand
+    now_str = now.strftime("%Y-%m-%dT%H:%M:%S")
+    time_ago_str = time_ago.strftime("%Y-%m-%dT%H:%M:%S")
+    log_info = repo.git.log(f"--since={time_ago_str}", f"--until={now_str}")
+    bot = SimpleBot(
+        "You are an expert software developer who writes excellent reports based on git commit logs.",
+        model_name=model_name,
+        stream_target="none",
+    )
+
+    console = Console()
+    with console.status("[bold green]Generating report...", spinner="dots"):
+        report = bot(compose_last_hours_report(log_info, hours))
+    print(report.content)
