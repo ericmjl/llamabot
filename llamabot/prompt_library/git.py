@@ -78,7 +78,7 @@ def write_commit_message(diff: str):
 
 
 @prompt
-def compose_last_hours_report(log_info: str, hours: int) -> str:
+def compose_git_activity_report(log_info: str, hours: int) -> str:
     """Given the following git log information for the last {{ hours }} hours,
     please write a concise report summarizing the work done during this period.
     Highlight key changes, features, or fixes.

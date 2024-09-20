@@ -1,27 +1,27 @@
 """Git subcommand for LlamaBot CLI."""
 
-import pyperclip
-
 import os
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 import git
+import pyperclip
+import typer
 from pydantic import BaseModel, Field, model_validator
 from pyprojroot import here
 from rich.console import Console
-from typer import Typer, echo
 
 from llamabot import SimpleBot, prompt
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.code_manipulation import get_git_diff
 from llamabot.prompt_library.git import (
-    compose_last_hours_report,
+    compose_git_activity_report,
     compose_release_notes,
 )
 
-gitapp = Typer()
+gitapp = typer.Typer()
 
 
 class CommitType(str, Enum):
@@ -218,7 +218,7 @@ fi
 """
         f.write(contents)
     os.chmod(".git/hooks/prepare-commit-msg", 0o755)
-    echo("Commit message hook successfully installed! 🎉")
+    typer.echo("Commit message hook successfully installed! 🎉")
 
 
 @gitapp.command()
@@ -232,8 +232,8 @@ def compose(model_name: str = "groq/llama-3.1-70b-versatile"):
         with open(".git/COMMIT_EDITMSG", "w") as f:
             f.write(response.format())
     except Exception as e:
-        echo(f"Error encountered: {e}", err=True)
-        echo("Please write your own commit message.", err=True)
+        typer.echo(f"Error encountered: {e}", err=True)
+        typer.echo("Please write your own commit message.", err=True)
 
 
 @gitapp.command()
@@ -277,14 +277,44 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
 
 
 @gitapp.command()
-def report(hours: int = 24, model_name: str = "gpt-4-turbo"):
-    """Write a report on the work done in the last specified hours based on git commit logs."""
+def report(
+    hours: Optional[int] = typer.Option(None, help="The number of hours to report on."),
+    start_date: Optional[str] = typer.Option(
+        None, help="The start date to report on. Format: YYYY-MM-DD"
+    ),
+    end_date: Optional[str] = typer.Option(
+        None, help="The end date to report on. Format: YYYY-MM-DD"
+    ),
+    model_name: str = "gpt-4-turbo",
+):
+    """
+    Write a report on the work done based on git commit logs.
+
+    If hours is provided, it reports on the last specified hours.
+    If start_date and end_date are provided, it reports on that date range.
+    If neither is provided, it raises an error.
+
+    :param hours: The number of hours to report on.
+    :param start_date: The start date to report on.
+    :param end_date: The end date to report on.
+    :param model_name: The model name to use.
+        Consult LiteLLM's documentation for options.
+    """
     repo = git.Repo(here())
-    now = datetime.now()
-    time_ago = now - timedelta(hours=hours)
-    # Format the datetime objects as ISO 8601 strings that Git can understand
-    now_str = now.strftime("%Y-%m-%dT%H:%M:%S")
-    time_ago_str = time_ago.strftime("%Y-%m-%dT%H:%M:%S")
+
+    if hours is not None:
+        now = datetime.now()
+        time_ago = now - timedelta(hours=hours)
+        now_str = now.strftime("%Y-%m-%dT%H:%M:%S")
+        time_ago_str = time_ago.strftime("%Y-%m-%dT%H:%M:%S")
+    elif start_date and end_date:
+        time_ago_str = start_date
+        now_str = end_date
+    else:
+        raise ValueError(
+            "Either 'hours' or both 'start_date' and 'end_date' must be provided."
+        )
+
     log_info = repo.git.log(f"--since={time_ago_str}", f"--until={now_str}")
     bot = SimpleBot(
         "You are an expert software developer who writes excellent reports based on git commit logs.",
@@ -294,8 +324,13 @@ def report(hours: int = 24, model_name: str = "gpt-4-turbo"):
 
     console = Console()
     with console.status("[bold green]Generating report...", spinner="dots"):
-        report = bot(compose_last_hours_report(log_info, hours))
+        report = bot(
+            compose_git_activity_report(
+                log_info, str(hours) or f"from {start_date} to {end_date}"
+            )
+        )
 
+    print(report.content)
     # Copy report content to clipboard
     pyperclip.copy(report.content)
-    echo("Report copied to clipboard. Paste it wherever you need!")
+    typer.echo("Report copied to clipboard. Paste it wherever you need!")
