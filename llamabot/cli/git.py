@@ -257,14 +257,16 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
         tag1, tag2 = tags[-2], tags[-1]
         log_info = repo.git.log(f"{tag1.commit.hexsha}..{tag2.commit.hexsha}")
 
+    console = Console()
     bot = SimpleBot(
         "You are an expert software developer "
         "who knows how to write excellent release notes based on git commit logs.",
         model_name="mistral/mistral-medium",
         api_key=os.environ["MISTRAL_API_KEY"],
-        stream_target="stdout",
+        stream_target="none",
     )
-    notes = bot(compose_release_notes(log_info))
+    with console.status("[bold green]Generating release notes...", spinner="dots"):
+        notes = bot(compose_release_notes(log_info))
 
     # Create release_notes_dir if it doesn't exist:
     release_notes_dir.mkdir(parents=True, exist_ok=True)
