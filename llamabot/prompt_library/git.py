@@ -78,7 +78,58 @@ def write_commit_message(diff: str):
 
 
 @prompt
-def compose_release_notes(commit_log):
+def compose_git_activity_report(log_info: str, hours: int) -> str:
+    """Given the following git log information for the last {{ hours }} hours,
+    please write a concise report summarizing the work done during this period.
+    Highlight key changes, features, or fixes.
+    Use markdown formatting.
+
+    [[GIT LOG BEGIN]]
+    {{ log_info }}
+    [[GIT LOG END]]
+
+    Please format your report as follows:
+
+    1. Start with a brief summary of the overall work done in the specified time period.
+    2. Use the following sections, omitting any that are not applicable:
+       - New Features
+       - Bug Fixes
+       - Improvements
+       - Documentation
+       - Other Changes
+    3. Under each section, use bullet points to list the relevant changes.
+    4. For each bullet point, include:
+       - A concise description of the change
+       - The commit hash (first 7 characters)
+       - The author's name (if available)
+    5. If there are many similar changes, group them together and provide a summary.
+    6. Highlight any significant or breaking changes.
+    7. End with a brief conclusion or outlook, if appropriate.
+
+    Example format:
+
+    # Work Summary for the Last {{ hours }} Hours
+
+    ## Overview
+    [Brief summary of overall work]
+
+    ## New Features
+    - Implemented user authentication system (abc1234) (Jane Doe)
+    - Added export functionality for reports (def5678) (John Smith)
+
+    ## Bug Fixes
+    - Fixed crash in data processing module (ghi9101) (Alice Johnson)
+
+    ## Improvements
+    - Optimized database queries for faster performance (jkl1121) (Bob Wilson)
+
+    ## Conclusion
+    [Brief conclusion or future outlook]
+    """
+
+
+@prompt
+def compose_release_notes(commit_log: str) -> str:
     """Here is a commit log:
 
     # noqa: DAR101
