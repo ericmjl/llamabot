@@ -1,73 +1,74 @@
-# LlamaBot Git CLI Tutorial
+---
+intents:
+- Provide a diataxis framework-style tutorial on how to use the LlamaBot Git CLI.
+  Covers comprehensively all commands and possible options.
+- Show how to use each of the commands in the `llamabot git` CLI.
+linked_files:
+- llamabot/cli/git.py
+- llamabot/prompt_library/git.py
+---
 
-In this tutorial, we will explore the Git subcommand for the LlamaBot CLI.
-This command-line interface (CLI) provides a set of tools
-to automate and enhance your Git workflow,
-in particular, the ability to automatically generate commit messages.
+## LlamaBot Git CLI Documentation
 
-## Setup
+Welcome to the LlamaBot Git CLI documentation. This guide provides a comprehensive tutorial on how to use the various commands available in the LlamaBot Git CLI, designed to enhance your Git experience with automated commit messages, release notes, and activity reports.
 
-The `llamabot` prepare message hook requires that you have `llamabot >=0.0.77`.
-You will also need an OpenAI API key
-(unless you have Ollama for local LLMs or other API provider that LiteLLM supports).
-Be sure to setup and configure LlamaBot
-by executing the following two configuration commands
-and following the instructions there.
+### Getting Started
 
-```bash
-llamabot configure api-key
-```
+Before you begin, ensure that you have the LlamaBot CLI installed on your system. You will also need to have Git installed and be within a Git repository to use most of the commands.
 
-and
+### Commands Overview
 
-```bash
-llamabot configure default-model
-```
+The LlamaBot Git CLI includes several commands, each tailored for specific Git-related tasks:
 
-For the default model, we suggest using a GPT-4 variant.
-It is generally of higher quality than GPT-3.5.
-If you are concerned with cost,
-the GPT-3.5-turbo variant with 16K context window
-has anecdotally worked well.
+#### 1. `hooks`
 
-## Install the Commit Message Hook
+**Purpose:** Installs a commit message hook that automatically generates commit messages using a structured bot.
 
-Once you have configured `llamabot`,
-the next thing you need to do is
-install the `prepare-msg-hook` within your `git` repository.
-This is a `git` hook that allows you to run commands
-after the `pre-commit` hooks are run
-but before your editor of the commit message is opened.
-To install the hook, simply run:
+**Usage:**
 
 ```bash
 llamabot git hooks
 ```
 
-This command will check if the current directory is a Git repository root.
-If it is not, it raises a `RuntimeError`.
-If it is, it writes a script to the `prepare-commit-msg` file
-in the `.git/hooks` directory
-and changes the file's permissions to make it executable.
+This command sets up a Git hook in your repository that triggers the LlamaBot to compose commit messages if none are provided during commits.
 
-## Auto-Compose a Commit Message
+#### 2. `compose`
 
-The `llamabot git compose-commit` command autowrites a commit message based on the diff.
-It first gets the diff using the `get_git_diff` function.
-It then generates a commit message using the `commitbot`, which is a LlamaBot SimpleBot.
-If any error occurs during this process,
-it prints the error message and prompts the user to write their own commit message,
-allowing for a graceful fallback to default behaviour.
-This can be useful, for example, if you don't have an internet connection
-and cannot connect to the OpenAI API,
-but still need to commit code.
+**Purpose:** Automatically generates a commit message based on the current Git diff.
 
-This command never needs to be explicitly called.
-Rather, it is called behind-the-scenes within the `prepare-msg-hook`.
+**Usage:**
 
-## Conclusion
+```bash
+llamabot git compose
+```
 
-The `llamabot git` CLI provides a set of tools
-to automate and enhance your Git workflow.
-It provides an automatic commit message writer based on your repo's `git diff`.
-By using `llamabot git`, you can streamline your Git workflow and focus on writing code.
+Use this command to autogenerate a commit message which you can then review and edit as needed. This is particularly useful for ensuring commit messages are consistent and informative.
+
+#### 3. `write_release_notes`
+
+**Purpose:** Generates release notes for the latest tags in your repository.
+
+**Usage:**
+
+```bash
+llamabot git write_release_notes
+```
+
+This command will create a markdown file in the specified directory containing release notes based on the commits between the last two tags.
+
+#### 4. `report`
+
+**Purpose:** Generates a report based on Git commit logs for a specified time frame.
+
+**Usage:**
+
+```bash
+llamabot git report --hours 24
+llamabot git report --start-date 2023-01-01 --end-date 2023-01-02
+```
+
+This command can be used to generate a detailed report of activities, highlighting key changes and features implemented within the specified period.
+
+### Conclusion
+
+The LlamaBot Git CLI is a powerful tool for automating and enhancing your Git workflow. By understanding and utilizing these commands, you can significantly improve the efficiency and consistency of your version control practices.
