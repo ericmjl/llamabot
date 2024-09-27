@@ -51,9 +51,9 @@ class DescriptionEntry(BaseModel):
     @model_validator(mode="after")
     def validate_description(self):
         """Validate description length."""
-        if len(self.txt) > 79:
+        if len(self.txt) > 160:
             raise ValueError(
-                "Description should be less than or equal to 79 characters."
+                "Description should be less than or equal to 160 characters."
             )
         return self
 
