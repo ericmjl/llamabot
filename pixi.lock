@@ -6251,7 +6251,7 @@ packages:
   name: llamabot
   version: 0.7.0
   path: .
-  sha256: a9391f26320d9d898c5d6ac9cc4b0d5e2819c600001b8ad73f6576938afce699
+  sha256: 5dac2d0e0051b85cc039e78b049614926dd83392d8b2456fc7d5061e02685349
   requires_dist:
   - openai
   - panel>=1.3.0
@@ -6285,6 +6285,7 @@ packages:
   - numpy<2
   - python-frontmatter>=1.1.0,<2
   - diskcache>=5.6.3,<6
+  - nbformat
   - ics>=0.7.2,<0.8 ; extra == 'notebooks'
   - tzlocal>=5.2,<6 ; extra == 'notebooks'
   requires_python: '>=3.10'
