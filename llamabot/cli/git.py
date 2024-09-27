@@ -53,7 +53,7 @@ class DescriptionEntry(BaseModel):
         """Validate description length."""
         if len(self.txt) > 79:
             raise ValueError(
-                "Description should be less than or equal to 160 characters."
+                "Description should be less than or equal to 79 characters."
             )
         return self
 
