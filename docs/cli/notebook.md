@@ -69,9 +69,23 @@ llamabot notebook explain /path/to/notebook.ipynb
 
 This will create a new file at `/path/to/notebook_explained.ipynb` in the same directory as the original.
 
+## Recommended Usage
+
+We recommend that your notebook comprise code cells exclusively.
+That said, leave comments within your code cells
+as they'll be picked up by the LLM
+and can be factored into the explanation.
+
+Any existing markdown cells will be skipped in the explanation process.
+
+After all, the goal here is to free you up
+to focus on coding and thinking about the logic of your model,
+not to have to worry about documenting it!
+
 ## Conclusion
 
-Using the LlamaBot Notebook CLI, you can easily provide clear explanations for Jupyter notebook code cells,
+Using the LlamaBot Notebook CLI,
+you can easily provide clear explanations for Jupyter notebook code cells,
 making them accessible to non-technical audiences.
 This tool is particularly useful for educators, data scientists,
 or anyone needing to demystify code logic in a simple and engaging way.
