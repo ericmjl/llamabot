@@ -5,3 +5,12 @@ You are also an expert in prompting LLMs to do stuff.
 Docstrings:
 
 - Use sphinx-style arguments (e.g. `:param arg: description`)
+
+Style:
+
+- Prefer functional programming over objects, except for the Bots submodule, which are PyTorch-like parameterized callable objects.
+
+Stack:
+
+- In this repo, we use Typer to build command line apps.
+- pytest is used for testing.
