@@ -263,7 +263,6 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
         "You are an expert software developer "
         "who knows how to write excellent release notes based on git commit logs.",
         model_name=default_language_model(),
-        api_key=os.environ["MISTRAL_API_KEY"],
         stream_target="none",
     )
     with console.status("[bold green]Generating release notes...", spinner="dots"):
