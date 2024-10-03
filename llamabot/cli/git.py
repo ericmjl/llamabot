@@ -16,6 +16,7 @@ from rich.console import Console
 from llamabot import SimpleBot, prompt
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.code_manipulation import get_git_diff
+from llamabot.config import default_language_model
 from llamabot.prompt_library.git import (
     compose_git_activity_report,
     compose_release_notes,
@@ -158,7 +159,7 @@ def _fmt(cm) -> str:
     """  # noqa: E501
 
 
-def commitbot(model_name: str = "gpt-4-turbo") -> StructuredBot:
+def commitbot(model_name: str = default_language_model()) -> StructuredBot:
     """Return a structured bot for writing commit messages."""
 
     @prompt
@@ -180,7 +181,7 @@ def commitbot(model_name: str = "gpt-4-turbo") -> StructuredBot:
 
 
 @gitapp.command()
-def hooks(model_name: str = "gpt-4-turbo"):
+def hooks(model_name: str = default_language_model()):
     """Install a commit message hook that runs the commit message through the bot.
 
     :raises RuntimeError: If the current directory is not a git repository root.
@@ -222,7 +223,7 @@ fi
 
 
 @gitapp.command()
-def compose(model_name: str = "groq/llama-3.1-70b-versatile"):
+def compose(model_name: str = default_language_model()):
     """Autowrite commit message based on the diff."""
     try:
         diff = get_git_diff()
@@ -261,7 +262,7 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
     bot = SimpleBot(
         "You are an expert software developer "
         "who knows how to write excellent release notes based on git commit logs.",
-        model_name="mistral/mistral-medium",
+        model_name=default_language_model(),
         api_key=os.environ["MISTRAL_API_KEY"],
         stream_target="none",
     )
@@ -287,7 +288,7 @@ def report(
     end_date: Optional[str] = typer.Option(
         None, help="The end date to report on. Format: YYYY-MM-DD"
     ),
-    model_name: str = "gpt-4-turbo",
+    model_name: str = default_language_model(),
 ):
     """
     Write a report on the work done based on git commit logs.
