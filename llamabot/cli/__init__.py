@@ -10,6 +10,7 @@ from llamabot import ChatBot, PromptRecorder
 
 from . import (
     blog,
+    cache,
     configure,
     doc,
     git,
@@ -58,6 +59,7 @@ app.add_typer(
     docs.app, name="docs", help="Create Markdown documentation from source files."
 )
 app.add_typer(notebook.app, name="notebook", help="Explain your notebooks.")
+app.add_typer(cache.app, name="cache", help="Clear the LlamaBot cache.")
 
 
 @app.command()
