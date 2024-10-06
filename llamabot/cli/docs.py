@@ -242,8 +242,29 @@ def docwriter_bot() -> StructuredBot:
     )
 
 
+@prompt
+def refine_bot_sysprompt():
+    """
+    You are an expert in documentation writing.
+    You will be provided a documentation source that has been written
+    using other sources as context.
+    Those other sources are not going to be provided to you,
+    only the documentation source that you are going to refine will be provided.
+    Refine the documentation for clarity and logical flow.
+    """
+
+
+def refine_bot() -> StructuredBot:
+    """Return a StructuredBot for the documentation writer."""
+    return StructuredBot(
+        system_prompt=docwriter_sysprompt(),
+        pydantic_model=DocumentationContent,
+        model_name="o1-preview",
+    )
+
+
 @app.command()
-def write(file_path: Path, from_scratch: bool = False):
+def write(file_path: Path, from_scratch: bool = False, refine: bool = False):
     """Write the documentation based on the given source file.
 
     The Markdown file should have frontmatter that looks like this:
