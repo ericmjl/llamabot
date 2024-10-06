@@ -53,7 +53,7 @@ class SimpleBot:
                 f"stream_target must be one of ('stdout', 'panel', 'api', 'none'), got {stream_target}."
             )
 
-        self.system_prompt: SystemMessage = SystemMessage(content=system_prompt)
+        self.system_prompt = SystemMessage(content=system_prompt)
         self.model_name = model_name
         self.stream_target = stream_target
         self.temperature = temperature
@@ -61,6 +61,12 @@ class SimpleBot:
         self.api_key = api_key
         self.mock_response = mock_response
         self.completion_kwargs = completion_kwargs
+
+        # Set special cases for for o1 models.
+        if model_name in ["o1-preview", "o1-mini"]:
+            self.system_prompt = HumanMessage(content=system_prompt)
+            self.temperature = 1.0
+            self.stream_target = "none"
 
     def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
         """Call the SimpleBot.
