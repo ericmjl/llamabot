@@ -1,11 +1,10 @@
 """LlamaBot Notebook Explainer"""
 
 from pathlib import Path
-from pydantic import model_validator, BaseModel, Field
 from tqdm import tqdm
 import typer
 import nbformat
-from llamabot import StructuredBot
+from llamabot.bot.simplebot import SimpleBot
 from llamabot.prompt_manager import prompt
 
 
@@ -21,51 +20,27 @@ def notebook_bot_sysprompt():
 
 
 explanation_description = """
-The explanation of the code cell. Should be at most one paragraph. Examples of openers include:
-
-- We first start with... (At the beginnig of the notebook!)
-- We're now going to...
-- Now, we will...
-- Having done..., we are now going to...
-- By doing..., we will see that..., so now we will...
-- In the following code cell, we will...
-- To understand..., we will...
-- To see why..., we will...
-- To build on that, we will...
-- Finally, we will... (At the end of the notebook!)"
-"""
+The explanation of the code cell. Should be at most one paragraph."""
 
 
-class NotebookExplanation(BaseModel):
-    """Represents an explanation for a notebook code cell."""
+def explainer_bot(model_name: str = "o1-preview") -> SimpleBot:
+    """Create a bot that explains the code in a notebook.
 
-    explanation: str = Field(..., description=explanation_description)
-
-    @model_validator(mode="after")
-    def ensure_only_one_paragraph(self):
-        """
-        Validates that the explanation is at most one paragraph.
-
-        :raises ValueError: If the explanation contains more than 3 lines.
-        :return: The validated model instance.
-        """
-        if len(self.explanation.split("\n")) > 3:
-            raise ValueError("Explanation should be at most one paragraph.")
-        return self
-
-
-bot = StructuredBot(
-    system_prompt=notebook_bot_sysprompt(),
-    pydantic_model=NotebookExplanation,
-    model_name="gpt-4-turbo",
-)
+    :param model_name: The name of the model to use.
+    :return: A bot that explains the code in a notebook.
+    """
+    bot = SimpleBot(
+        system_prompt=notebook_bot_sysprompt(),
+        model_name=model_name,
+    )
+    return bot
 
 
 app = typer.Typer()
 
 
 @prompt
-def provide_content(cell_source: str, notebook: nbformat.NotebookNode):
+def provide_content(cell_source: str, previous_cells: list, upcoming_cells: list):
     """Here is the code context for you to work with:
 
     -----
@@ -76,22 +51,51 @@ def provide_content(cell_source: str, notebook: nbformat.NotebookNode):
 
     -----
 
-    Here is the rest of the notebook to contextualize the code cell to be explained.
+    Here are the previous cells in the notebook, including generated explanations:
 
-    [[ALL NOTEBOOK CELLS START]]
-    {% for cell in notebook.cells %}
+    [[PREVIOUS CELLS START]]
+    {% for cell in previous_cells %}
     {{ cell.source }}
     {% endfor %}
-    [[ALL NOTEBOOK CELLS END]]
+    [[PREVIOUS CELLS END]]
+
+    -----
+
+    Here are the upcoming cells in the notebook:
+
+    [[UPCOMING CELLS START]]
+    {% for cell in upcoming_cells %}
+    {{ cell.source }}
+    {% endfor %}
+    [[UPCOMING CELLS END]]
 
     -----
 
     Please provide a Markdown explanation as instructed.
+    Take into account the previously generated explanations
+    and upcoming cells when writing your response.
+    Examples of openers include:
+
+    - We first start with... (At the beginning of the notebook!)
+    - We're now going to...
+    - Now, we will...
+    - By doing..., we will see that..., so now we will...
+    - Having done..., we are now going to...
+    - In the following code cell, we will...
+    - To understand..., we will...
+    - To see why..., we will...
+    - To build on that, we will...
+    - Finally, we will... (At the end of the notebook!)"
+
+    Be sure to vary the opening of the explanation
+    to ensure that it doesn't sound repetitive.
     """
 
 
 @app.command()
-def explain(notebook_path: Path, overwrite: bool = False):
+def explain(
+    notebook_path: Path, overwrite: bool = False, model_name: str = "o1-preview"
+):
     """
     Explain the code cells in a Jupyter notebook and create a new notebook with explanations.
 
@@ -109,16 +113,23 @@ def explain(notebook_path: Path, overwrite: bool = False):
     new_notebook.metadata = notebook.metadata.copy()
 
     # Iterate through the cells of the original notebook
-    for cell in tqdm(notebook.cells):
-        # make an explanation of the cell
-        if cell.cell_type == "code":
-            response = bot(provide_content(cell.source, notebook), verbose=True)
-            # Create a new markdown cell with the explanation
-            explanation_cell = nbformat.v4.new_markdown_cell(
-                source=response.explanation
-            )
+    for i, cell in enumerate(tqdm(notebook.cells)):
+        if cell.cell_type == "code" and len(cell.source.strip()) > 0:
+            # Prepare context for the current cell
+            previous_cells = new_notebook.cells
+            upcoming_cells = notebook.cells[i + 1 :]
 
+            # Generate explanation for the current cell
+            bot = explainer_bot(model_name)
+            response = bot(provide_content(cell.source, previous_cells, upcoming_cells))
+
+            # Create a new markdown cell with the explanation
+            explanation_cell = nbformat.v4.new_markdown_cell(source=response.content)
+
+            # Add the explanation cell to the new notebook
             new_notebook.cells.append(explanation_cell)
+
+        # Add the original cell to the new notebook
         new_notebook.cells.append(cell)
 
     if overwrite:
