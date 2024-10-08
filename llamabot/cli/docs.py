@@ -226,21 +226,21 @@ def docwriter_sysprompt():
     """
 
 
-def ood_checker_bot() -> StructuredBot:
+def ood_checker_bot(model_name: str = "gpt-4o") -> StructuredBot:
     """Return a StructuredBot for the out-of-date checker."""
     return StructuredBot(
         system_prompt=ood_checker_sysprompt(),
         pydantic_model=DocsOutOfDate,
-        model_name="gpt-4-turbo",
+        model_name=model_name,
     )
 
 
-def docwriter_bot() -> StructuredBot:
+def docwriter_bot(model_name: str = "gpt-4o") -> StructuredBot:
     """Return a StructuredBot for the documentation writer."""
     return StructuredBot(
         system_prompt=docwriter_sysprompt(),
         pydantic_model=DocumentationContent,
-        model_name="gpt-4-turbo",
+        model_name=model_name,
     )
 
 
@@ -256,11 +256,11 @@ def refine_bot_sysprompt():
     """
 
 
-def refine_bot() -> SimpleBot:
+def refine_bot(model_name: str = "o1-preview") -> SimpleBot:
     """Return a SimpleBot for the documentation writer."""
     return SimpleBot(
         system_prompt=refine_bot_sysprompt(),
-        model_name="o1-preview",
+        model_name=model_name,
     )
 
 
@@ -270,6 +270,9 @@ def write(
     from_scratch: bool = False,
     refine: bool = False,
     verbose: bool = False,
+    ood_checker_model_name: str = "gpt-4o",
+    docwriter_model_name: str = "gpt-4o",
+    refiner_model_name: str = "o1-preview",
 ):
     """Write the documentation based on the given source file.
 
@@ -290,19 +293,24 @@ def write(
 
     :param file_path: Path to the Markdown source file.
     :param from_scratch: Whether to start with a blank documentation.
+    :param refine: Whether to refine the documentation.
+    :param verbose: Whether to print the verbose output.
+    :param ood_checker_model_name: The model name for the out-of-date checker.
+    :param docwriter_model_name: The model name for the docwriter.
+    :param refiner_model_name: The model name for the refiner.
     """
     src_file = MarkdownSourceFile(file_path)
 
     if from_scratch:
         src_file.post.content = ""
 
-    ood_checker = ood_checker_bot()
+    ood_checker = ood_checker_bot(model_name=ood_checker_model_name)
     result: DocsOutOfDate = ood_checker(
         documentation_information(src_file), verbose=verbose
     )
 
     if not src_file.post.content or result:
-        docwriter = docwriter_bot()
+        docwriter = docwriter_bot(model_name=docwriter_model_name)
         response: DocumentationContent = docwriter(
             documentation_information(src_file) + "\nNow please write the docs.",
             verbose=verbose,
@@ -310,7 +318,7 @@ def write(
         src_file.post.content = response.content
 
     if refine:
-        refiner = refine_bot()
+        refiner = refine_bot(model_name=refiner_model_name)
         response: str = refiner(src_file.post.content, verbose=verbose)
         src_file.post.content = response
 
