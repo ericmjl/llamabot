@@ -9,6 +9,8 @@ from pyprojroot import here
 
 from pydantic import ConfigDict
 
+from llamabot.bot.simplebot import SimpleBot
+
 
 app = Typer()
 
@@ -254,17 +256,21 @@ def refine_bot_sysprompt():
     """
 
 
-def refine_bot() -> StructuredBot:
-    """Return a StructuredBot for the documentation writer."""
-    return StructuredBot(
-        system_prompt=docwriter_sysprompt(),
-        pydantic_model=DocumentationContent,
+def refine_bot() -> SimpleBot:
+    """Return a SimpleBot for the documentation writer."""
+    return SimpleBot(
+        system_prompt=refine_bot_sysprompt(),
         model_name="o1-preview",
     )
 
 
 @app.command()
-def write(file_path: Path, from_scratch: bool = False, refine: bool = False):
+def write(
+    file_path: Path,
+    from_scratch: bool = False,
+    refine: bool = False,
+    verbose: bool = False,
+):
     """Write the documentation based on the given source file.
 
     The Markdown file should have frontmatter that looks like this:
@@ -292,14 +298,20 @@ def write(file_path: Path, from_scratch: bool = False, refine: bool = False):
 
     ood_checker = ood_checker_bot()
     result: DocsOutOfDate = ood_checker(
-        documentation_information(src_file), verbose=True
+        documentation_information(src_file), verbose=verbose
     )
 
     if not src_file.post.content or result:
         docwriter = docwriter_bot()
         response: DocumentationContent = docwriter(
             documentation_information(src_file) + "\nNow please write the docs.",
-            verbose=True,
+            verbose=verbose,
         )
         src_file.post.content = response.content
+
+    if refine:
+        refiner = refine_bot()
+        response: str = refiner(src_file.post.content, verbose=verbose)
+        src_file.post.content = response
+
     src_file.save()
