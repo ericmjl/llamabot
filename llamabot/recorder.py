@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from pyprojroot import here
 from sqlalchemy import (
     Column,
     Connection,
@@ -18,10 +19,9 @@ from sqlalchemy import (
     inspect,
     text,
 )
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from pyprojroot import here
-from sqlalchemy.exc import OperationalError
 
 from llamabot.components.messages import BaseMessage
 
