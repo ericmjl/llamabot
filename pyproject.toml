@@ -144,7 +144,7 @@ mknotebooks = "*"
 [tool.pixi.feature.notebooks.dependencies]
 jupyter = ">=1.0.0,<1.1"
 ipykernel = "*"
-jupyterlab = ">=4.2.3,<4.3"
+jupyterlab = "*"
 pixi-kernel = "*"
 
 # TASKS BELOW!
