@@ -17,6 +17,7 @@ from llamabot.recorder import (
     sqlite_log,
 )
 from llamabot.components.messages import BaseMessage
+from unittest.mock import Mock
 
 
 @pytest.fixture
@@ -160,8 +161,11 @@ def test_sqlite_log(engine, monkeypatch, tmp_path):
 
     monkeypatch.setattr("llamabot.recorder.get_object_name", mock_get_object_name)
 
-    # Create a test object and messages
-    test_obj = object()
+    # Create a mock test object with model_name and temperature attributes
+    test_obj = Mock()
+    test_obj.model_name = "test_model"
+    test_obj.temperature = 0.7
+
     test_messages = [
         BaseMessage(role="user", content="Hello"),
         BaseMessage(role="assistant", content="Hi there!"),
@@ -182,6 +186,8 @@ def test_sqlite_log(engine, monkeypatch, tmp_path):
     assert log_entry.object_name == "test_object"
     assert "Hello" in log_entry.message_log
     assert "Hi there!" in log_entry.message_log
+    assert log_entry.model_name == "test_model"
+    assert log_entry.temperature == 0.7
 
     # Close the session and dispose of the engine
     session.close()
