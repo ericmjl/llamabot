@@ -1,3 +1,5 @@
+shieldgemma
+llama-guard3
 llama3.2
 qwen2.5-coder
 solar-pro
