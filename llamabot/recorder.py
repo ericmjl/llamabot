@@ -6,10 +6,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from sqlalchemy import Column, Integer, String, Text, create_engine, inspect, text
+from sqlalchemy import (
+    Column,
+    Connection,
+    Engine,
+    Float,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    inspect,
+    text,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pyprojroot import here
+from sqlalchemy.exc import OperationalError
 
 from llamabot.components.messages import BaseMessage
 
@@ -199,9 +211,11 @@ class MessageLog(Base):
     object_name = Column(String)
     timestamp = Column(String)
     message_log = Column(Text)
+    model_name = Column(String)
+    temperature = Column(Float, nullable=True)
 
 
-def upgrade_database(engine):
+def upgrade_database(engine: Engine):
     """
     Upgrade the database schema.
 
@@ -220,10 +234,13 @@ def upgrade_database(engine):
             ]
             for column in MessageLog.__table__.columns:
                 if column.name not in existing_columns:
-                    add_column(connection, MessageLog.__tablename__, column)
+                    try:
+                        add_column(connection, MessageLog.__tablename__, column)
+                    except OperationalError as e:
+                        print(f"Error adding column {column.name}: {e}")
 
 
-def add_column(connection, table_name, column):
+def add_column(connection: Connection, table_name: str, column: Column):
     """
     Add a new column to an existing table.
 
@@ -231,7 +248,7 @@ def add_column(connection, table_name, column):
     :param table_name: Name of the table to modify
     :param column: Column object to add
     """
-    column_name = column.compile(dialect=connection.dialect)
+    column_name = column.name
     column_type = column.type.compile(connection.dialect)
     connection.execute(
         text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
@@ -276,6 +293,7 @@ def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = 
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
+    upgrade_database(engine)
 
     # Get the object name
     object_name = get_object_name(obj)
@@ -288,7 +306,11 @@ def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = 
 
     # Create a new MessageLog instance
     new_log = MessageLog(
-        object_name=object_name, timestamp=timestamp, message_log=message_log
+        object_name=object_name,
+        timestamp=timestamp,
+        message_log=message_log,
+        model_name=obj.model_name,
+        temperature=obj.temperature if hasattr(obj, "temperature") else None,
     )
 
     # Add the new log to the session and commit
