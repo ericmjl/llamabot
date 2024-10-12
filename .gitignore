@@ -156,3 +156,6 @@ scratch_notebooks/*.html
 # pixi environments
 .pixi
 *.egg-info
+
+# SQLite database
+message_log.db
