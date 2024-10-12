@@ -6,8 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from alembic import op
-from sqlalchemy import Column, Integer, String, Text, create_engine
+from sqlalchemy import Column, Integer, String, Text, create_engine, inspect, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pyprojroot import here
@@ -211,39 +210,32 @@ def upgrade_database(engine):
 
     :param engine: SQLAlchemy engine instance
     """
-    # Create a connection
+    Base.metadata.create_all(engine)
+
     with engine.connect() as connection:
-        # Create a transaction
-        with connection.begin():
-            # Create an Alembic operations context
-            context = op.get_context()
-
-            # Check if the table exists
-            if not context.dialect.has_table(connection, MessageLog.__tablename__):
-                # If not, create the table
-                MessageLog.__table__.create(engine)
-            else:
-                # If it exists, add any missing columns
-                existing_columns = [
-                    c["name"]
-                    for c in context.inspector.get_columns(MessageLog.__tablename__)
-                ]
-                for column in MessageLog.__table__.columns:
-                    if column.name not in existing_columns:
-                        op.add_column(MessageLog.__tablename__, column)
+        inspector = inspect(engine)
+        if inspector.has_table(MessageLog.__tablename__):
+            existing_columns = [
+                c["name"] for c in inspector.get_columns(MessageLog.__tablename__)
+            ]
+            for column in MessageLog.__table__.columns:
+                if column.name not in existing_columns:
+                    add_column(connection, MessageLog.__tablename__, column)
 
 
-def add_column(engine, table_name, column):
+def add_column(connection, table_name, column):
     """
     Add a new column to an existing table.
 
-    :param engine: SQLAlchemy engine instance
+    :param connection: SQLAlchemy connection
     :param table_name: Name of the table to modify
     :param column: Column object to add
     """
-    column_name = column.compile(dialect=engine.dialect)
-    column_type = column.type.compile(engine.dialect)
-    engine.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
+    column_name = column.compile(dialect=connection.dialect)
+    column_type = column.type.compile(connection.dialect)
+    connection.execute(
+        text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
+    )
 
 
 # Example usage:
@@ -251,20 +243,33 @@ def add_column(engine, table_name, column):
 # add_column(engine, PromptResponseLog.__tablename__, Column('new_column_name', String))
 
 
-def sqlite_log(obj: Any, messages: list[BaseMessage]):
+def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = None):
     """Log messages to the sqlite database for further analysis.
 
     :param obj: The object to log the messages for.
     :param messages: The messages to log.
+    :param db_path: The path to the database to use. If not specified, defaults to ~/.llamabot/message_log.db
     """
 
     # Set up the database path
-    try:
-        repo_root = here()
-        db_path = repo_root / "message_log.db"
-    except Exception:
-        # If we're not in a git repo, use the home directory
-        db_path = Path.home() / ".llamabot" / "message_log.db"
+    if db_path is None:
+        try:
+            repo_root = here()
+            db_path = repo_root / "message_log.db"
+
+            # Ensure message_log.db is in .gitignore
+            gitignore_path = repo_root / ".gitignore"
+            if gitignore_path.exists():
+                with open(gitignore_path, "r+") as f:
+                    content = f.read()
+                    if "message_log.db" not in content:
+                        f.write("\n# SQLite database\nmessage_log.db\n")
+            else:
+                with open(gitignore_path, "w") as f:
+                    f.write("# SQLite database\nmessage_log.db\n")
+        except Exception:
+            # If we're not in a git repo, use the home directory
+            db_path = Path.home() / ".llamabot" / "message_log.db"
 
     # Create the engine and session
     engine = create_engine(f"sqlite:///{db_path}")
