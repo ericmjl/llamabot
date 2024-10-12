@@ -66,14 +66,14 @@ version = "0.8.3"
 # Runtime dependencies below
 dependencies = [
     "openai",
-    "panel>=1.3.0",
+    "panel",
     "jupyter_bokeh",
-    "bokeh>=3.1.0",
+    "bokeh",
     "loguru",
     "pyperclip",
-    "astor>=0.8.1",
+    "astor",
     "python-dotenv",
-    "typer>=0.5.0",
+    "typer",
     "gitpython",
     "pyprojroot",
     "frozenlist",
@@ -94,7 +94,7 @@ dependencies = [
     "sentence-transformers",
     "chromadb",
     "tantivy",
-    "numpy<2", # https://github.com/ericmjl/llamabot/issues/56
+    "numpy",
     "python-frontmatter",
     "diskcache",
     "nbformat",
@@ -115,7 +115,7 @@ readme = "README.md"
 llamabot = "llamabot.cli:app"
 
 [project.optional-dependencies]
-notebooks = ["ics>=0.7.2,<0.8", "tzlocal>=5.2,<6"]
+notebooks = ["ics", "tzlocal"]
 
 [tool.pixi.project]
 name = "llamabot"
@@ -142,7 +142,7 @@ mknotebooks = "*"
 
 # Stuff that is referenced _only_ in notebooks go here.
 [tool.pixi.feature.notebooks.dependencies]
-jupyter = ">=1.0.0,<1.1"
+jupyter = "*"
 ipykernel = "*"
 jupyterlab = "*"
 pixi-kernel = "*"

@@ -6319,17 +6319,17 @@ packages:
   name: llamabot
   version: 0.8.3
   path: .
-  sha256: 67a98643b5fd93aeb035a34937d3e55afed6979046fd5e731413e686fb4f93b9
+  sha256: 31698ea3f79fda03e4583793e7be0f709854c111920a75c74e0427f6c155ab3d
   requires_dist:
   - openai
-  - panel>=1.3.0
+  - panel
   - jupyter-bokeh
-  - bokeh>=3.1.0
+  - bokeh
   - loguru
   - pyperclip
-  - astor>=0.8.1
+  - astor
   - python-dotenv
-  - typer>=0.5.0
+  - typer
   - gitpython
   - pyprojroot
   - frozenlist
@@ -6350,7 +6350,7 @@ packages:
   - sentence-transformers
   - chromadb
   - tantivy
-  - numpy<2
+  - numpy
   - python-frontmatter
   - diskcache
   - nbformat
@@ -6358,8 +6358,8 @@ packages:
   - jinja2
   - fastapi
   - uvicorn
-  - ics>=0.7.2,<0.8 ; extra == 'notebooks'
-  - tzlocal>=5.2,<6 ; extra == 'notebooks'
+  - ics ; extra == 'notebooks'
+  - tzlocal ; extra == 'notebooks'
   requires_python: '>=3.10'
   editable: true
 - kind: pypi
