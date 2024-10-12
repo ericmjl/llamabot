@@ -10,7 +10,7 @@ from llamabot.components.messages import (
     SystemMessage,
     BaseMessage,
 )
-from llamabot.recorder import autorecord
+from llamabot.recorder import autorecord, sqlite_log
 from llamabot.config import default_language_model
 from llamabot.cache import cache
 
@@ -100,8 +100,10 @@ class SimpleBot:
             if delta is not None:
                 print(delta, end="")
                 message += delta
-        autorecord(messages[-1].content, message)
-        return AIMessage(content=message)
+        response_message = AIMessage(content=message)
+        autorecord(messages[-1].content, response_message.content)
+        sqlite_log(self, messages + [response_message])
+        return response_message
 
     def stream_panel(self, messages: list[BaseMessage]) -> Generator:
         """Stream the response to a Panel app.
@@ -109,12 +111,14 @@ class SimpleBot:
         :param messages: A list of messages.
         """
         response = _make_response(self, messages)
-        message = ""
+        response_message = ""
         for chunk in response:
             delta = chunk.choices[0].delta["content"]
             if delta is not None:
-                message += delta
-                yield message
+                response_message += delta
+                yield response_message
+        autorecord(messages[-1].content, response_message)
+        sqlite_log(self, messages + [AIMessage(content=response_message)])
 
     @cache.memoize(ignore={0})
     def stream_none(self, messages: list[BaseMessage]) -> AIMessage:
@@ -123,7 +127,12 @@ class SimpleBot:
         :param messages: A list of messages.
         """
         response = _make_response(self, messages, stream=False)
-        return AIMessage(content=response.choices[0].message.content.strip())
+        response_message = AIMessage(
+            content=response.choices[0].message.content.strip()
+        )
+        autorecord(messages[-1].content, response_message.content)
+        sqlite_log(self, messages + [response_message])
+        return response_message
 
     def stream_api(self, messages: list[BaseMessage]) -> Generator:
         """Stream the response to an API.
@@ -131,10 +140,14 @@ class SimpleBot:
         :param messages: A list of messages.
         """
         response = _make_response(self, messages)
+        response_message = ""
         for chunk in response:
             delta = chunk.choices[0].delta["content"]
             if delta is not None:
+                response_message += delta
                 yield delta
+        autorecord(messages[-1].content, response_message)
+        sqlite_log(self, messages + [AIMessage(content=response_message)])
 
     @cache.memoize(ignore={0})
     def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
@@ -144,7 +157,12 @@ class SimpleBot:
         :return: The response to the messages.
         """
         response = _make_response(self, messages)
-        return AIMessage(content=response.choices[0].message.content.strip())
+        response_message = AIMessage(
+            content=response.choices[0].message.content.strip()
+        )
+        autorecord(messages[-1].content, response_message.content)
+        sqlite_log(self, messages + [response_message])
+        return response_message
 
     def stream_response(self, messages: list[BaseMessage]):
         """Stream the response from the given messages.
