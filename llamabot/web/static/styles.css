@@ -1,0 +1,90 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.content {
+    display: flex;
+    gap: 20px;
+}
+
+.log-list {
+    flex: 1;
+    background-color: white;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.log-details {
+    flex: 1;
+    background-color: white;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+.log-detail p {
+    margin: 5px 0;
+}
+
+.message-log {
+    margin-top: 10px;
+}
+
+.message {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.message .role {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.message .content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.message.user {
+    background-color: #e6f3ff;
+}
+
+.message.assistant {
+    background-color: #f0f0f0;
+}

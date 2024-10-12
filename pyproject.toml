@@ -99,6 +99,9 @@ dependencies = [
     "diskcache",
     "nbformat",
     "alembic",
+    "jinja2",
+    "fastapi",
+    "uvicorn",
 ]
 requires-python = ">=3.10"
 description = "A Pythonic interface to LLMs."
