@@ -93,7 +93,7 @@ dependencies = [
     "lancedb",
     "chromadb",
     "tantivy",
-    "numpy<2",
+    "numpy<2", # https://github.com/ericmjl/llamabot/issues/56
     "python-frontmatter",
     "diskcache",
     "nbformat",
