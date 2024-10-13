@@ -93,7 +93,7 @@ dependencies = [
     "lancedb",
     "chromadb",
     "tantivy",
-    "numpy",
+    "numpy<2",
     "python-frontmatter",
     "diskcache",
     "nbformat",
