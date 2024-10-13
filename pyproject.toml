@@ -91,7 +91,6 @@ dependencies = [
     "pdfminer.six",
     "rank-bm25",
     "lancedb",
-    "sentence-transformers",
     "chromadb",
     "tantivy",
     "numpy",
