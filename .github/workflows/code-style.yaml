@@ -21,7 +21,7 @@ jobs:
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.32.1
+          pixi-version: latest
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
