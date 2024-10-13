@@ -8,38 +8,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
-    <style>
-        .json-highlight {
-            background-color: #282c34;
-            border-radius: 5px;
-            padding: 15px;
-            overflow-x: auto;
-        }
-        .json-highlight code {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <h1>LlamaBot Log Viewer</h1>
+        <div class="filter-container">
+            <input type="text" id="log-filter" placeholder="Filter logs...">
+        </div>
         <div class="content">
             <div class="log-list">
-                <table>
-                    <thead>
+                <table hx-get="/logs" hx-trigger="load">
+                    <tbody>
                         <tr>
-                            <th>ID</th>
-                            <th>Object Name</th>
-                            <th>Timestamp</th>
-                            <th>Model Name</th>
-                            <th>Temperature</th>
-                        </tr>
-                    </thead>
-                    <tbody hx-get="/logs" hx-trigger="load">
-                        <tr>
-                            <td colspan="5">Loading logs...</td>
+                            <td colspan="6">Loading logs...</td>
                         </tr>
                     </tbody>
                 </table>

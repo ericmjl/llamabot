@@ -60,6 +60,12 @@ def create_app(db_path: Path = here() / "message_log.db"):
                             "timestamp": log.timestamp,
                             "model_name": log.model_name,
                             "temperature": log.temperature,
+                            "message_preview": (
+                                json.loads(log.message_log)[0]["content"][:100]
+                                if log.message_log
+                                else ""
+                            ),
+                            "full_content": log.message_log,  # Include the full message log
                         }
                         for log in logs
                     ],

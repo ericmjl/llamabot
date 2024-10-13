@@ -1,9 +1,24 @@
-{% for log in logs %}
-<tr hx-get="/log/{{ log.id }}" hx-target="#log-details">
-    <td>{{ log.id }}</td>
-    <td>{{ log.object_name }}</td>
-    <td>{{ log.timestamp }}</td>
-    <td>{{ log.model_name }}</td>
-    <td>{{ log.temperature }}</td>
-</tr>
-{% endfor %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Object Name</th>
+            <th>Timestamp</th>
+            <th>Model Name</th>
+            <th>Temperature</th>
+            <th>Message Preview</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr data-full-content="{{ log.full_content }}">
+            <td>{{ log.id }}</td>
+            <td>{{ log.object_name }}</td>
+            <td>{{ log.timestamp }}</td>
+            <td>{{ log.model_name }}</td>
+            <td>{{ log.temperature }}</td>
+            <td>{{ log.message_preview }}...</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
