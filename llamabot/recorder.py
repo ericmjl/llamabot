@@ -265,7 +265,8 @@ def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = 
 
     :param obj: The object to log the messages for.
     :param messages: The messages to log.
-    :param db_path: The path to the database to use. If not specified, defaults to ~/.llamabot/message_log.db
+    :param db_path: The path to the database to use.
+        If not specified, defaults to ~/.llamabot/message_log.db
     """
 
     # Set up the database path
