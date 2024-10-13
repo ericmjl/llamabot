@@ -102,7 +102,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
 ]
-requires-python = ">=3.10"
+requires-python = "<=3.12"
 description = "A Pythonic interface to LLMs."
 readme = "README.md"
 
