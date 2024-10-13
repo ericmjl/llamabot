@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LlamaBot Log Viewer</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+    <style>
+        .json-highlight {
+            background-color: #282c34;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .json-highlight code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LlamaBot Log Viewer</h1>
+        <div class="content">
+            <div class="log-list">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Object Name</th>
+                            <th>Timestamp</th>
+                            <th>Model Name</th>
+                            <th>Temperature</th>
+                        </tr>
+                    </thead>
+                    <tbody hx-get="/logs" hx-trigger="load">
+                        <tr>
+                            <td colspan="5">Loading logs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="log-details" class="log-details">
+                Select a log to view details
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', path='script.js') }}"></script>
+</body>
+</html>
