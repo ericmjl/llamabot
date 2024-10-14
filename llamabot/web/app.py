@@ -25,7 +25,7 @@ def create_app(db_path: Path = here() / "message_log.db"):
     engine = create_engine(f"sqlite:///{db_path}")
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    # Ensure the database is initialized
+    # Ensure the database is initialized and upgraded
     Base.metadata.create_all(engine)
     upgrade_database(engine)
 
