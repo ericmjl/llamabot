@@ -2,6 +2,7 @@
 
 import contextvars
 import json
+import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -15,15 +16,17 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    ForeignKey,
     create_engine,
     inspect,
     text,
 )
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
 from llamabot.components.messages import BaseMessage
+from llamabot.utils import get_object_name
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -186,19 +189,6 @@ def autorecord(prompt: str, response: str):
 # - Full message log as a JSON string of dictionaries.
 
 
-def get_object_name(obj):
-    """
-    Get the name of the object as it's defined in the current namespace.
-
-    :param obj: The object whose name we want to find.
-    :return: The name of the object as a string, or None if not found.
-    """
-    for name, value in globals().items():
-        if value is obj:
-            return name
-    return None
-
-
 Base = declarative_base()
 
 
@@ -213,31 +203,29 @@ class MessageLog(Base):
     message_log = Column(Text)
     model_name = Column(String)
     temperature = Column(Float, nullable=True)
+    prompt_hash = Column(
+        String, ForeignKey("prompts.hash"), nullable=True
+    )  # Add this line
+    prompt = relationship("Prompt")  # Add this line
 
 
 def upgrade_database(engine: Engine):
-    """
-    Upgrade the database schema.
-
-    This function should be called whenever changes are made to the database schema.
-    It will create new tables if they don't exist and add new columns to existing tables.
-
-    :param engine: SQLAlchemy engine instance
-    """
+    """Upgrade the database schema."""
     Base.metadata.create_all(engine)
 
     with engine.connect() as connection:
         inspector = inspect(engine)
-        if inspector.has_table(MessageLog.__tablename__):
-            existing_columns = [
-                c["name"] for c in inspector.get_columns(MessageLog.__tablename__)
-            ]
-            for column in MessageLog.__table__.columns:
-                if column.name not in existing_columns:
-                    try:
-                        add_column(connection, MessageLog.__tablename__, column)
-                    except OperationalError as e:
-                        print(f"Error adding column {column.name}: {e}")
+        for table in [MessageLog, Prompt]:
+            if inspector.has_table(table.__tablename__):
+                existing_columns = [
+                    c["name"] for c in inspector.get_columns(table.__tablename__)
+                ]
+                for column in table.__table__.columns:
+                    if column.name not in existing_columns:
+                        try:
+                            add_column(connection, table.__tablename__, column)
+                        except OperationalError as e:
+                            print(f"Error adding column {column.name}: {e}")
 
 
 def add_column(connection: Connection, table_name: str, column: Column):
@@ -260,11 +248,17 @@ def add_column(connection: Connection, table_name: str, column: Column):
 # add_column(engine, PromptResponseLog.__tablename__, Column('new_column_name', String))
 
 
-def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = None):
+def sqlite_log(
+    obj: Any,
+    messages: list[BaseMessage],
+    prompt_hash: Optional[str] = None,
+    db_path: Optional[Path] = None,
+):
     """Log messages to the sqlite database for further analysis.
 
     :param obj: The object to log the messages for.
     :param messages: The messages to log.
+    :param prompt_hash: The hash of the prompt.
     :param db_path: The path to the database to use.
         If not specified, defaults to ~/.llamabot/message_log.db
     """
@@ -292,9 +286,9 @@ def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = 
     # Create the engine and session
     engine = create_engine(f"sqlite:///{db_path}")
     Base.metadata.create_all(engine)
+    upgrade_database(engine)  # Add this line to ensure the database is upgraded
     Session = sessionmaker(bind=engine)
     session = Session()
-    upgrade_database(engine)
 
     # Get the object name
     object_name = get_object_name(obj)
@@ -312,6 +306,7 @@ def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = 
         message_log=message_log,
         model_name=obj.model_name,
         temperature=obj.temperature if hasattr(obj, "temperature") else None,
+        prompt_hash=prompt_hash,  # Add this line
     )
 
     # Add the new log to the session and commit
@@ -320,3 +315,42 @@ def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = 
 
     # Close the session
     session.close()
+
+
+class Prompt(Base):
+    """A version-controlled prompt template."""
+
+    __tablename__ = "prompts"
+
+    id = Column(Integer, primary_key=True)
+    hash = Column(String, unique=True, index=True)
+    template = Column(Text)
+    previous_version_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
+    previous_version = relationship("Prompt", remote_side=[id])
+
+
+def hash_template(template: str) -> str:
+    """Hash a prompt template."""
+    return hashlib.sha256(template.encode()).hexdigest()
+
+
+def store_prompt_version(session, template: str, previous_hash: Optional[str] = None):
+    """Store a new prompt version in the database."""
+    template_hash = hash_template(template)
+
+    existing_prompt = session.query(Prompt).filter_by(hash=template_hash).first()
+    if existing_prompt:
+        return existing_prompt
+
+    if previous_hash:
+        previous_version = session.query(Prompt).filter_by(hash=previous_hash).first()
+        previous_version_id = previous_version.id if previous_version else None
+    else:
+        previous_version_id = None
+
+    new_prompt = Prompt(
+        hash=template_hash, template=template, previous_version_id=previous_version_id
+    )
+    session.add(new_prompt)
+    session.commit()
+    return new_prompt
