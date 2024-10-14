@@ -12,14 +12,15 @@ import jinja2
 from jinja2 import meta
 import inspect
 from textwrap import dedent
+from llamabot.recorder import store_prompt_version
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from pyprojroot import here
+from llamabot.recorder import Base, upgrade_database
 
 
 def prompt(func):
-    """Wrap a Python function into a Jinja2-templated prompt.
-
-    :param func: The function to wrap.
-    :return: The wrapped function.
-    """
+    """Wrap a Python function into a Jinja2-templated prompt with version control."""
 
     @wraps(func)
     def wrapper(*args, **kwargs) -> str:
@@ -51,6 +52,18 @@ def prompt(func):
         for var in variables:
             if var not in kwargs:
                 raise ValueError(f"Variable '{var}' was not passed into the function")
+
+        # Store the prompt version
+        engine = create_engine(f"sqlite:///{here() / 'message_log.db'}")
+        Base.metadata.create_all(engine)
+        upgrade_database(engine)  # Add this line to ensure the database is upgraded
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        try:
+            _ = store_prompt_version(session, docstring)
+        finally:
+            session.close()
 
         # interpolate docstring with args and kwargs
         template = jinja2.Template(docstring)
