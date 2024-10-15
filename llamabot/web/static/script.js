@@ -37,12 +37,16 @@ function formatContent(content) {
 }
 
 function escapeHtml(unsafe) {
-    return unsafe
+     return unsafe
          .replace(/&/g, "&amp;")
          .replace(/</g, "&lt;")
          .replace(/>/g, "&gt;")
          .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
+         .replace(/'/g, "&#039;")
+         .replace(/`/g, "&#96;")
+         .replace(/{/g, "&#123;")
+         .replace(/}/g, "&#125;")
+         .replace(/,/g, "&#44;");
 }
 
 function addPromptHashClickListeners() {
