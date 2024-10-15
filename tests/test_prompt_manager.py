@@ -29,7 +29,7 @@ def test_prompt_with_args():
 
     assert test_func(1, 2) == BaseMessage(
         role="system",
-        content=test_func.__doc__,
+        content="This function takes two arguments: 1 and 2. # noqa: DAR101",
         prompt_hash=hash_template(test_func.__doc__),
     )
 
@@ -44,7 +44,7 @@ def test_prompt_with_kwargs():
 
     assert test_func(a=3, b=4) == BaseMessage(
         role="system",
-        content=test_func.__doc__,
+        content="This function takes two arguments: 3 and 4. # noqa: DAR101",
         prompt_hash=hash_template(test_func.__doc__),
     )
 
@@ -59,7 +59,7 @@ def test_prompt_with_args_and_kwargs():
 
     assert test_func(1, b=3) == BaseMessage(
         role="system",
-        content=test_func.__doc__,
+        content="This function takes two arguments: 1 and 3. # noqa: DAR101",
         prompt_hash=hash_template(test_func.__doc__),
     )
 
