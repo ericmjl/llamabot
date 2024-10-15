@@ -247,14 +247,12 @@ def add_column(connection: Connection, table_name: str, column: Column):
 def sqlite_log(
     obj: Any,
     messages: list[BaseMessage],
-    prompt_hash: Optional[str] = None,
     db_path: Optional[Path] = None,
 ):
     """Log messages to the sqlite database for further analysis.
 
     :param obj: The object to log the messages for.
     :param messages: The messages to log.
-    :param prompt_hash: The hash of the prompt.
     :param db_path: The path to the database to use.
         If not specified, defaults to ~/.llamabot/message_log.db
     """
@@ -297,7 +295,9 @@ def sqlite_log(
             {
                 "role": message.role,
                 "content": message.content,
-                "prompt_hash": message.prompt_hash,
+                "prompt_hash": (
+                    message.prompt_hash if hasattr(message, "prompt_hash") else None
+                ),
             }
             for message in messages
         ]

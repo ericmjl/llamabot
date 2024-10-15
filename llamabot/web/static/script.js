@@ -15,6 +15,12 @@ document.body.addEventListener('htmx:afterSwap', function(event) {
                     ${logDetails.message_log.map(message => `
                         <div class="message ${message.role}">
                             <p class="role">${message.role}</p>
+                            ${message.prompt_hash ? `
+                                <p class="prompt-info">
+                                    <span class="prompt-name">${message.prompt_name || 'Unknown'}</span>
+                                    <span class="prompt-hash">${message.prompt_hash.substring(0, 6)}</span>
+                                </p>
+                            ` : ''}
                             <p class="content">${formatContent(message.content)}</p>
                         </div>
                     `).join('')}

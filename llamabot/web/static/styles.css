@@ -100,3 +100,40 @@ tr:hover {
     border: 1px solid #ddd;
     border-radius: 4px;
 }
+
+.prompt-hash {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.prompt-hash-tag {
+    display: inline-block;
+    font-size: 0.7em;
+    background-color: #f0f0f0;
+    color: #666;
+    padding: 2px 5px;
+    border-radius: 3px;
+    text-decoration: none;
+    margin-bottom: 5px;
+}
+
+.prompt-hash-tag:hover {
+    background-color: #e0e0e0;
+}
+
+.prompt-info {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: -5px;
+    margin-bottom: 5px;
+}
+
+.prompt-name {
+    font-style: italic;
+    margin-right: 5px;
+}
+
+.prompt-hash {
+    font-family: monospace;
+}

@@ -10,7 +10,7 @@ from pathlib import Path
 import json
 from pyprojroot import here
 
-from llamabot.recorder import MessageLog, Base, upgrade_database
+from llamabot.recorder import MessageLog, Base, upgrade_database, Prompt
 
 templates = Jinja2Templates(directory="llamabot/web/templates")
 
@@ -42,10 +42,7 @@ def create_app(db_path: Path = here() / "message_log.db"):
 
     @app.get("/logs")
     async def get_logs():
-        """Get all logs.
-
-        :return: A list of all logs.
-        """
+        """Get all logs."""
         db = SessionLocal()
         try:
             logs = db.query(MessageLog).all()
@@ -65,7 +62,7 @@ def create_app(db_path: Path = here() / "message_log.db"):
                                 if log.message_log
                                 else ""
                             ),
-                            "full_content": log.message_log,  # Include the full message log
+                            "full_content": log.message_log,
                         }
                         for log in logs
                     ],
@@ -78,20 +75,30 @@ def create_app(db_path: Path = here() / "message_log.db"):
 
     @app.get("/log/{log_id}")
     async def get_log(log_id: int):
-        """Get a single log by ID.
-
-        :param log_id: The ID of the log to get.
-        """
+        """Get a single log by ID."""
         db = SessionLocal()
         try:
             log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
             if log is None:
                 raise HTTPException(status_code=404, detail="Log not found")
+            message_log = json.loads(log.message_log)
+
+            # Fetch prompt names for each message with a prompt_hash
+            for message in message_log:
+                if message.get("prompt_hash"):
+                    prompt = (
+                        db.query(Prompt)
+                        .filter(Prompt.hash == message["prompt_hash"])
+                        .first()
+                    )
+                    if prompt:
+                        message["prompt_name"] = prompt.function_name
+
             return {
                 "id": log.id,
                 "object_name": log.object_name,
                 "timestamp": log.timestamp,
-                "message_log": json.loads(log.message_log) if log.message_log else [],
+                "message_log": message_log,
                 "model_name": log.model_name,
                 "temperature": log.temperature,
             }
