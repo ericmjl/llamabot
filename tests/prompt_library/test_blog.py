@@ -32,5 +32,5 @@ def test_prompt_library(prompt_func, args, expected_role):
     assert result.prompt_hash is not None
 
     # Test that the content is as expected
-    expected_content = prompt_func.__wrapped__(*args)
+    expected_content = prompt_func.__wrapped__(*args).content
     assert result.content == expected_content
