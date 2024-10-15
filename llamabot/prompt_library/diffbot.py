@@ -59,7 +59,7 @@ def get_github_diff(pr_url: str):
     return content
 
 
-@prompt
+@prompt(role="user")
 def summarize(diff: str) -> str:
     """Please provide a summary of the diff.
 
@@ -72,7 +72,7 @@ def summarize(diff: str) -> str:
     """
 
 
-@prompt
+@prompt(role="user")
 def describe_advantages(diff: str) -> str:
     """Postulate how the how the following code changes
     provides an advantage over the existing codebase.
@@ -82,7 +82,7 @@ def describe_advantages(diff: str) -> str:
     """
 
 
-@prompt
+@prompt(role="user")
 def suggest_improvements(diff: str) -> str:
     """Suggest improvements to the following code changes.
 

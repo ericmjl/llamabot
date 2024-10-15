@@ -203,10 +203,6 @@ class MessageLog(Base):
     message_log = Column(Text)
     model_name = Column(String)
     temperature = Column(Float, nullable=True)
-    prompt_hash = Column(
-        String, ForeignKey("prompts.hash"), nullable=True
-    )  # Add this line
-    prompt = relationship("Prompt")  # Add this line
 
 
 def upgrade_database(engine: Engine):
@@ -262,7 +258,6 @@ def sqlite_log(
     :param db_path: The path to the database to use.
         If not specified, defaults to ~/.llamabot/message_log.db
     """
-
     # Set up the database path
     if db_path is None:
         try:
@@ -296,8 +291,17 @@ def sqlite_log(
     # Get the current timestamp
     timestamp = datetime.now().isoformat()
 
-    # Convert messages to a JSON string
-    message_log = json.dumps([message.model_dump() for message in messages])
+    # Convert messages to a JSON string, including prompt_hash
+    message_log = json.dumps(
+        [
+            {
+                "role": message.role,
+                "content": message.content,
+                "prompt_hash": message.prompt_hash,
+            }
+            for message in messages
+        ]
+    )
 
     # Create a new MessageLog instance
     new_log = MessageLog(
@@ -306,7 +310,6 @@ def sqlite_log(
         message_log=message_log,
         model_name=obj.model_name,
         temperature=obj.temperature if hasattr(obj, "temperature") else None,
-        prompt_hash=prompt_hash,  # Add this line
     )
 
     # Add the new log to the session and commit

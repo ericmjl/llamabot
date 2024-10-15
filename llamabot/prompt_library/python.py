@@ -36,7 +36,7 @@ def codebot() -> SimpleBot:
     )
 
 
-@prompt
+@prompt(role="user")
 def ghostwriter(desired_functionality, language):
     """I would like to accomplish the following.
 
@@ -57,7 +57,7 @@ def ghostwriter(desired_functionality, language):
     """
 
 
-@prompt
+@prompt(role="user")
 def docstring(code, style="sphinx"):
     """Please help me write docstrings for the following code.
 
@@ -82,7 +82,7 @@ def docstring(code, style="sphinx"):
     """
 
 
-@prompt
+@prompt(role="user")
 def module_doc(source_file_contents, source_file_fpath=None, file_tree=None):
     """Please help me write module-level docstrings for the following code.
 
@@ -113,7 +113,7 @@ def module_doc(source_file_contents, source_file_fpath=None, file_tree=None):
     """
 
 
-@prompt
+@prompt(role="user")
 def tests(code, source_file_txt: str, dependent_source_files: str):
     """I need help writing unit tests.
 

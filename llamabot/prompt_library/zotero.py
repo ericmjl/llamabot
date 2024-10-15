@@ -3,12 +3,12 @@
 from llamabot.prompt_manager import prompt
 
 
-@prompt
+@prompt(role="system")
 def retrieverbot_sysprompt():
     """You are an expert in retrieving information from JSON files."""
 
 
-@prompt
+@prompt(role="system")
 def docbot_sysprompt():
     """You are an expert in answering questions about any paper.
 
@@ -17,7 +17,7 @@ def docbot_sysprompt():
     """
 
 
-@prompt
+@prompt(role="user")
 def paper_summary():
     """Please synthesize a summary of this paper using the information provided to you.
 
@@ -27,7 +27,7 @@ def paper_summary():
     """
 
 
-@prompt
+@prompt(role="user")
 def get_key(query: str = ""):
     """Based on the context provided,
     return for me all of the keys that were provided for the query.
