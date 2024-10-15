@@ -21,7 +21,7 @@ document.body.addEventListener('htmx:afterSwap', function(event) {
                                     <a href="#" class="prompt-hash" data-hash="${message.prompt_hash}" data-template="${escapeHtml(message.prompt_template || '')}">${message.prompt_hash.substring(0, 8)}...</a>
                                 </p>
                             ` : ''}
-                            <p class="content">${formatContent(message.content)}</p>
+                            <pre class="content">${escapeHtml(message.content)}</pre>
                         </div>
                     `).join('')}
                 </div>

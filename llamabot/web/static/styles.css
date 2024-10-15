@@ -79,6 +79,12 @@ tr:hover {
 .message .content {
     white-space: pre-wrap;
     word-wrap: break-word;
+    font-family: monospace;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    overflow-x: auto;
 }
 
 .message.user {
