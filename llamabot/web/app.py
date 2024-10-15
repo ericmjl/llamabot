@@ -83,7 +83,7 @@ def create_app(db_path: Path = here() / "message_log.db"):
                 raise HTTPException(status_code=404, detail="Log not found")
             message_log = json.loads(log.message_log)
 
-            # Fetch prompt names for each message with a prompt_hash
+            # Fetch prompt names and templates for each message with a prompt_hash
             for message in message_log:
                 if message.get("prompt_hash"):
                     prompt = (
@@ -93,6 +93,7 @@ def create_app(db_path: Path = here() / "message_log.db"):
                     )
                     if prompt:
                         message["prompt_name"] = prompt.function_name
+                        message["prompt_template"] = prompt.template
 
             return {
                 "id": log.id,

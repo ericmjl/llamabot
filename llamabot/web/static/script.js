@@ -18,7 +18,7 @@ document.body.addEventListener('htmx:afterSwap', function(event) {
                             ${message.prompt_hash ? `
                                 <p class="prompt-info">
                                     <span class="prompt-name">${message.prompt_name || 'Unknown'}</span>
-                                    <span class="prompt-hash">${message.prompt_hash.substring(0, 6)}</span>
+                                    <a href="#" class="prompt-hash" data-hash="${message.prompt_hash}" data-template="${escapeHtml(message.prompt_template || '')}">${message.prompt_hash.substring(0, 8)}...</a>
                                 </p>
                             ` : ''}
                             <p class="content">${formatContent(message.content)}</p>
@@ -28,6 +28,7 @@ document.body.addEventListener('htmx:afterSwap', function(event) {
             </div>
         `;
         event.detail.target.innerHTML = formattedHtml;
+        addPromptHashClickListeners();
     }
 });
 
@@ -35,24 +36,65 @@ function formatContent(content) {
     return content.replace(/\n/g, '<br>');
 }
 
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+function addPromptHashClickListeners() {
+    const promptHashes = document.querySelectorAll('.prompt-hash');
+    promptHashes.forEach(hash => {
+        hash.addEventListener('click', function(event) {
+            event.preventDefault();
+            const template = this.getAttribute('data-template');
+            showModal(template);
+        });
+    });
+}
+
+function showModal(content) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <pre>${escapeHtml(content)}</pre>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const closeBtn = modal.querySelector('.close');
+    closeBtn.onclick = function() {
+        document.body.removeChild(modal);
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            document.body.removeChild(modal);
+        }
+    }
+}
+
 function addRowClickListeners() {
     const rows = document.querySelectorAll('tbody tr');
     rows.forEach(row => {
         row.addEventListener('click', function(event) {
-            if (!event.target.closest('input[type="checkbox"]')) {
-                const logId = this.cells[0].textContent;
-                fetch(`/log/${logId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const logDetailsElement = document.getElementById('log-details');
-                        logDetailsElement.innerHTML = JSON.stringify(data);
-                        const event = new CustomEvent('htmx:afterSwap', {
-                            detail: { target: logDetailsElement }
-                        });
-                        document.body.dispatchEvent(event);
-                    })
-                    .catch(error => console.error('Error:', error));
-            }
+            const logId = this.cells[0].textContent;
+            fetch(`/log/${logId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const logDetailsElement = document.getElementById('log-details');
+                    logDetailsElement.innerHTML = JSON.stringify(data);
+                    const event = new CustomEvent('htmx:afterSwap', {
+                        detail: { target: logDetailsElement }
+                    });
+                    document.body.dispatchEvent(event);
+                })
+                .catch(error => console.error('Error:', error));
         });
     });
 }
