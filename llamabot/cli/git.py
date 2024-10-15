@@ -169,6 +169,7 @@ def commitbot(model_name: str = default_language_model()) -> StructuredBot:
         You are going to be given a diff as input,
         and you will generate a structured JSON output
         based on the pydantic model provided.
+        Ensure that your commit message is formatted as a conventional commit message.
         """
 
     bot = StructuredBot(
