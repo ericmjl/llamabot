@@ -21,10 +21,11 @@ from llamabot.components.messages import BaseMessage
 from typing import Literal
 
 
-def version_prompt(template: str) -> str:
+def version_prompt(template: str, function_name: str) -> str:
     """Version a prompt template and return its hash.
 
     :param template: The prompt template to version.
+    :param function_name: The name of the function being decorated.
     :return: The hash of the prompt template.
     """
     engine = create_engine(f"sqlite:///{here() / 'message_log.db'}")
@@ -34,7 +35,7 @@ def version_prompt(template: str) -> str:
     session = Session()
 
     try:
-        stored_prompt = store_prompt_version(session, template)
+        stored_prompt = store_prompt_version(session, template, function_name)
         return stored_prompt.hash
     finally:
         session.close()
@@ -88,7 +89,7 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
                     )
 
             # Version the prompt template
-            prompt_hash = version_prompt(docstring)
+            prompt_hash = version_prompt(docstring, func.__name__)
 
             # interpolate docstring with args and kwargs
             template = jinja2.Template(docstring)

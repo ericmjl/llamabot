@@ -328,6 +328,7 @@ class Prompt(Base):
     id = Column(Integer, primary_key=True)
     hash = Column(String, unique=True, index=True)
     template = Column(Text)
+    function_name = Column(String)  # Add this line
     previous_version_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
     previous_version = relationship("Prompt", remote_side=[id])
 
@@ -337,7 +338,9 @@ def hash_template(template: str) -> str:
     return hashlib.sha256(template.encode()).hexdigest()
 
 
-def store_prompt_version(session, template: str, previous_hash: Optional[str] = None):
+def store_prompt_version(
+    session, template: str, function_name: str, previous_hash: Optional[str] = None
+):
     """Store a new prompt version in the database."""
     template_hash = hash_template(template)
 
@@ -352,7 +355,10 @@ def store_prompt_version(session, template: str, previous_hash: Optional[str] = 
         previous_version_id = None
 
     new_prompt = Prompt(
-        hash=template_hash, template=template, previous_version_id=previous_version_id
+        hash=template_hash,
+        template=template,
+        function_name=function_name,  # Add this line
+        previous_version_id=previous_version_id,
     )
     session.add(new_prompt)
     session.commit()
