@@ -102,6 +102,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "sentence-transformers",
+    "tenacity",
 ]
 requires-python = "<=3.12"
 description = "A Pythonic interface to LLMs."
