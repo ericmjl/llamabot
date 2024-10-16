@@ -66,7 +66,7 @@ function showModal(content) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close">&times;</span>
-            <pre>${escapeHtml(content)}</pre>
+            <pre class="modal-pre">${escapeHtml(content)}</pre>
         </div>
     `;
     document.body.appendChild(modal);
@@ -81,6 +81,9 @@ function showModal(content) {
             document.body.removeChild(modal);
         }
     }
+
+    // Show the modal
+    modal.style.display = 'block';
 }
 
 function addRowClickListeners() {
