@@ -22,6 +22,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
 
@@ -260,6 +261,7 @@ def add_column(connection: Connection, table_name: str, column: Column):
 # add_column(engine, PromptResponseLog.__tablename__, Column('new_column_name', String))
 
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
 def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = None):
     """Log messages to the sqlite database for further analysis.
 

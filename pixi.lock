@@ -6357,9 +6357,9 @@ packages:
   requires_python: '>=3.8,!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*'
 - kind: pypi
   name: llamabot
-  version: 0.8.5
+  version: 0.8.6
   path: .
-  sha256: 409849ba36572a1eed90c25f2d32c1346a00bec05f2387a46e71eeaab81d2f53
+  sha256: fa5c71f0c693e59c53180fc55e983c6e5eeecdecbd06acc10d136955b433e029
   requires_dist:
   - openai
   - panel
@@ -6398,6 +6398,7 @@ packages:
   - fastapi
   - uvicorn
   - sentence-transformers
+  - tenacity
   - ics ; extra == 'notebooks'
   - tzlocal ; extra == 'notebooks'
   requires_python: <=3.12
