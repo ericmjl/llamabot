@@ -62,7 +62,7 @@ namespaces = false
 
 [project]
 name = "llamabot"
-version = "0.8.6"
+version = "0.8.8"
 # Runtime dependencies below
 dependencies = [
     "openai",
@@ -102,6 +102,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "sentence-transformers",
+    "tenacity",
 ]
 requires-python = "<=3.12"
 description = "A Pythonic interface to LLMs."

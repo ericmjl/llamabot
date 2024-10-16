@@ -1,5 +1,6 @@
 """Create a FastAPI app to visualize and compare prompts and messages."""
 
+from typing import Optional
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,11 +20,14 @@ logger = logging.getLogger(__name__)
 templates = Jinja2Templates(directory="llamabot/web/templates")
 
 
-def create_app(db_path: Path = here() / "message_log.db"):
+def create_app(db_path: Optional[Path] = None):
     """Create a FastAPI app to visualize and compare prompts and messages.
 
     :param db_path: The path to the database to use.
     """
+    if db_path is None:
+        db_path = here() / "message_log.db"
+
     app = FastAPI()
 
     engine = create_engine(f"sqlite:///{db_path}")

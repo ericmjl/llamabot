@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.8.1
@@ -30,7 +30,7 @@ jobs:
         run: pixi run build-docs
 
       - name: Deploy website
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           # https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-set-personal-access-token-personal_token
 
