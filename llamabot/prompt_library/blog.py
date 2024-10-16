@@ -27,7 +27,7 @@ def blogging_bot():
     return bot
 
 
-@prompt
+@prompt(role="user")
 def blog_title_tags_summary(blog_post, blog_info_model):
     """This is a blog post that I just wrote.
 
@@ -55,7 +55,7 @@ def blog_title_tags_summary(blog_post, blog_info_model):
     """
 
 
-@prompt
+@prompt(role="user")
 def compose_linkedin_post(blog_post):
     """This is a blog post that I just wrote:
 
@@ -78,7 +78,7 @@ def compose_linkedin_post(blog_post):
     """
 
 
-@prompt
+@prompt(role="user")
 def compose_patreon_post(blog_post):
     """This is a blog post that I just wrote:
 
@@ -104,7 +104,7 @@ def compose_patreon_post(blog_post):
     """
 
 
-@prompt
+@prompt(role="user")
 def compose_twitter_post(blog_post):
     """This is a blog post that I just wrote:
 

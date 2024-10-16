@@ -8,7 +8,7 @@ from llamabot.prompt_manager import prompt
 from .simplebot import SimpleBot
 
 
-@prompt
+@prompt(role="system")
 def kgbot_sysprompt() -> str:
     """You are an expert ontologist. You are tasked with taking in a chunk of text
     and extrapolating as many relationships as possible from that text.

@@ -1,13 +1,14 @@
 """Definitions for the different types of messages that can be sent."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BaseMessage(BaseModel):
-    """Base class for all messages."""
+    """A base message class."""
 
-    content: str
     role: str
+    content: str
+    prompt_hash: str | None = Field(default=None)
 
     # Implement slicing for message contents so that I can get content[:-i].
     def __getitem__(self, index):

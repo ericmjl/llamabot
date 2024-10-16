@@ -6,7 +6,7 @@
             <th>Timestamp</th>
             <th>Model Name</th>
             <th>Temperature</th>
-            <th>Message Preview</th>
+            <th>Prompts Used</th>
         </tr>
     </thead>
     <tbody>
@@ -17,7 +17,7 @@
             <td>{{ log.timestamp }}</td>
             <td>{{ log.model_name }}</td>
             <td>{{ log.temperature }}</td>
-            <td>{{ log.message_preview }}...</td>
+            <td><pre>{{ log.prompt_names }}</pre></td>
         </tr>
         {% endfor %}
     </tbody>

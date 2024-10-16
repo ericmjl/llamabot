@@ -6,7 +6,7 @@ from llamabot import SimpleBot
 from llamabot.prompt_manager import prompt
 
 
-@prompt
+@prompt(role="system")
 def output_formatter_sysprompt():
     """You are an output formatter.
 

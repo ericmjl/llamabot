@@ -8,7 +8,7 @@ from llamabot.bot.simplebot import SimpleBot
 from llamabot.prompt_manager import prompt
 
 
-@prompt
+@prompt(role="system")
 def notebook_bot_sysprompt():
     """You are an expert at explaining Jupyter notebook code.
     You will be given a notebook code cell and the rest of the notebook.
@@ -39,7 +39,7 @@ def explainer_bot(model_name: str = "o1-preview") -> SimpleBot:
 app = typer.Typer()
 
 
-@prompt
+@prompt(role="user")
 def provide_content(cell_source: str, previous_cells: list, upcoming_cells: list):
     """Here is the code context for you to work with:
 

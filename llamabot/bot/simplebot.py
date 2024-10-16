@@ -53,7 +53,10 @@ class SimpleBot:
                 f"stream_target must be one of ('stdout', 'panel', 'api', 'none'), got {stream_target}."
             )
 
-        self.system_prompt = SystemMessage(content=system_prompt)
+        self.system_prompt = system_prompt
+        if isinstance(system_prompt, str):
+            self.system_prompt = SystemMessage(content=system_prompt)
+
         self.model_name = model_name
         self.stream_target = stream_target
         self.temperature = temperature

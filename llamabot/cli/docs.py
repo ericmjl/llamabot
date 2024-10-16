@@ -160,7 +160,7 @@ class DocsOutOfDate(BaseModel):
         )
 
 
-@prompt
+@prompt(role="system")
 def ood_checker_sysprompt() -> str:
     """You are an expert in documentation management.
     You will be provided information about a written documentation file,
@@ -170,7 +170,7 @@ def ood_checker_sysprompt() -> str:
     """
 
 
-@prompt
+@prompt(role="user")
 def documentation_information(source_file: MarkdownSourceFile) -> str:
     """Here, I will provide you with contextual information to do your work.
 
@@ -206,7 +206,7 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
     """
 
 
-@prompt
+@prompt(role="system")
 def docwriter_sysprompt():
     """
     [[ Persona ]]
@@ -244,7 +244,7 @@ def docwriter_bot(model_name: str = "gpt-4o") -> StructuredBot:
     )
 
 
-@prompt
+@prompt(role="system")
 def refine_bot_sysprompt():
     """
     You are an expert in documentation writing.

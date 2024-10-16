@@ -148,7 +148,7 @@ class CommitMessage(BaseModel):
         return _fmt(self)
 
 
-@prompt
+@prompt(role="system")
 def _fmt(cm) -> str:
     """{{ cm.commit_type.value }}({{ cm.scope }}){{ cm.emoji }}{%if cm.breaking_change %}!{% else %}{% endif %}: {{ cm.description }}
 
@@ -162,13 +162,14 @@ def _fmt(cm) -> str:
 def commitbot(model_name: str = default_language_model()) -> StructuredBot:
     """Return a structured bot for writing commit messages."""
 
-    @prompt
+    @prompt(role="system")
     def commitbot_sysprompt() -> str:
         """You are an expert software developer
         who writes excellent and accurate commit messages.
         You are going to be given a diff as input,
         and you will generate a structured JSON output
         based on the pydantic model provided.
+        Ensure that your commit message is formatted as a conventional commit message.
         """
 
     bot = StructuredBot(
@@ -231,10 +232,11 @@ def compose(model_name: str = default_language_model()):
         response = bot(diff, verbose=True)
         print(response.format())
         with open(".git/COMMIT_EDITMSG", "w") as f:
-            f.write(response.format())
+            f.write(response.format().content)
     except Exception as e:
         typer.echo(f"Error encountered: {e}", err=True)
         typer.echo("Please write your own commit message.", err=True)
+        raise e
 
 
 @gitapp.command()

@@ -14,7 +14,7 @@ from tqdm.auto import tqdm
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-@prompt
+@prompt(role="system")
 def jeopardy_bot_sysprompt() -> str:
     """
     You are an expert at taking texts and constructing questions from them.
@@ -35,7 +35,7 @@ def jeopardy_bot_sysprompt() -> str:
     """
 
 
-@prompt
+@prompt(role="user")
 def q_and_a_prompt(query, q_and_a_results, relevant_documents) -> str:
     """Q&A Results:
 
