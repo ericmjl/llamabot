@@ -28,4 +28,4 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - uses: pre-commit/action@v2.0.0
+      - uses: pre-commit/action@v3.0.1
