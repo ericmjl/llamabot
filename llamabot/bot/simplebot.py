@@ -67,7 +67,9 @@ class SimpleBot:
 
         # Set special cases for for o1 models.
         if model_name in ["o1-preview", "o1-mini"]:
-            self.system_prompt = HumanMessage(content=system_prompt)
+            self.system_prompt = HumanMessage(
+                content=system_prompt.content, prompt_hash=system_prompt.prompt_hash
+            )
             self.temperature = 1.0
             self.stream_target = "none"
 

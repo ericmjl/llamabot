@@ -10,6 +10,7 @@ from pyprojroot import here
 from pydantic import ConfigDict
 
 from llamabot.bot.simplebot import SimpleBot
+from llamabot.components.messages import AIMessage
 
 
 app = Typer()
@@ -323,7 +324,7 @@ def write(
 
     if refine:
         refiner = refine_bot(model_name=refiner_model_name)
-        response: str = refiner(src_file.post.content, verbose=verbose)
-        src_file.post.content = response
+        response: AIMessage = refiner(src_file.post.content)
+        src_file.post.content = response.content
 
     src_file.save()
