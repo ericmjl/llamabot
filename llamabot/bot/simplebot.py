@@ -71,14 +71,18 @@ class SimpleBot:
             self.temperature = 1.0
             self.stream_target = "none"
 
-    def __call__(self, human_message: str) -> Union[AIMessage, Generator]:
+    def __call__(
+        self, human_message: Union[str, BaseMessage]
+    ) -> Union[AIMessage, Generator]:
         """Call the SimpleBot.
 
         :param human_message: The human message to use.
         :return: The response to the human message, primed by the system prompt.
         """
+        if isinstance(human_message, str):
+            human_message = HumanMessage(content=human_message)
 
-        messages = [self.system_prompt, HumanMessage(content=human_message)]
+        messages = [self.system_prompt, human_message]
         match self.stream_target:
             case "stdout":
                 return self.stream_stdout(messages)
