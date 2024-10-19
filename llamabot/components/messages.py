@@ -19,6 +19,24 @@ class BaseMessage(BaseModel):
         """Get the length of the message."""
         return len(self.content)
 
+    def __radd__(self, other: str) -> "BaseMessage":
+        """Right add operation for BaseMessage.
+
+        :param other: The string to add to the content.
+        :returns: A new BaseMessage with the updated content.
+        """
+        if isinstance(other, str):
+            return self.__class__(content=other + self.content, role=self.role)
+
+    def __add__(self, other: str) -> "BaseMessage":
+        """Left add operation for BaseMessage.
+
+        :param other: The string to add to the content.
+        :returns: A new BaseMessage with the updated content.
+        """
+        if isinstance(other, str):
+            return self.__class__(content=self.content + other, role=self.role)
+
 
 class SystemMessage(BaseMessage):
     """A message from the system."""
