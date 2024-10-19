@@ -4,7 +4,7 @@ from llamabot import SimpleBot
 from llamabot.prompt_manager import prompt
 
 
-@prompt
+@prompt(role="system")
 def sembr_bot_system_prompt():
     """You are a SEMBR (semantic line breaks) bot. These are the SEMBR specification:
 
@@ -40,7 +40,7 @@ def sembr_bot():
     return bot
 
 
-@prompt
+@prompt(role="user")
 def sembr(text):
     """Here is some text:
 

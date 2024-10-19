@@ -4,7 +4,7 @@ from llamabot import SimpleBot
 from llamabot.prompt_manager import prompt
 
 
-@prompt
+@prompt(role="system")
 def tutorialbot_system_prompt():
     """
     You are an expert python tutorial writer.
@@ -31,7 +31,7 @@ def tutorialbot() -> SimpleBot:
     return SimpleBot(tutorialbot_system_prompt())
 
 
-@prompt
+@prompt(role="user")
 def module_tutorial_writer(source_file):
     """Please help me write a tutorial for the following code.
 
@@ -43,7 +43,7 @@ def module_tutorial_writer(source_file):
     """
 
 
-@prompt
+@prompt(role="user")
 def typer_cli_tutorial(source_file, additional_notes):
     """I have the following CLI source file.
 

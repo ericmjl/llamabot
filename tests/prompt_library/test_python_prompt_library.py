@@ -4,6 +4,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from llamabot.bot.simplebot import SimpleBot
+from llamabot.components.messages import BaseMessage
 from llamabot.prompt_library.python import codebot, docstring, ghostwriter
 
 
@@ -63,8 +64,8 @@ def test_ghostwriter(desired_functionality: str, language: str):
     :param language: The language to pass to ghostwriter.
     """
     result = ghostwriter(desired_functionality, language)
-    assert isinstance(result, str)
-    assert result != ""
+    assert isinstance(result, BaseMessage)
+    assert result.content != ""
 
 
 @given(code=st.text(), style=st.sampled_from(["sphinx", "numpy", "google"]))
@@ -76,5 +77,5 @@ def test_docstring(code: str, style: str):
     :param style: The style to pass to the docstring function.
     """
     docstring_prompt = docstring(code, style)
-    assert isinstance(docstring_prompt, str)
-    assert docstring_prompt != ""
+    assert isinstance(docstring_prompt, BaseMessage)
+    assert docstring_prompt.content != ""

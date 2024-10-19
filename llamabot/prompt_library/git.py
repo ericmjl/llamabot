@@ -20,7 +20,7 @@ def commitbot():
     )
 
 
-@prompt
+@prompt(role="user")
 def write_commit_message(diff: str):
     """Please write a commit message for the following diff.
 
@@ -77,7 +77,7 @@ def write_commit_message(diff: str):
     """
 
 
-@prompt
+@prompt(role="user")
 def compose_git_activity_report(log_info: str, hours: int) -> str:
     """Given the following git log information for the last {{ hours }} hours,
     please write a concise report summarizing the work done during this period.
@@ -128,7 +128,7 @@ def compose_git_activity_report(log_info: str, hours: int) -> str:
     """
 
 
-@prompt
+@prompt(role="user")
 def compose_release_notes(commit_log: str) -> str:
     """Here is a commit log:
 
