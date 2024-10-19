@@ -6357,9 +6357,9 @@ packages:
   requires_python: '>=3.8,!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*'
 - kind: pypi
   name: llamabot
-  version: 0.8.8
+  version: 0.9.0
   path: .
-  sha256: e12b29aa9a7eb1b96d0d753761098176d49e3f44d66cc62da61a9fcce98484fa
+  sha256: 6d65f889045b5001462cf2b9920339293ae51b50500f46605ffc28d37d9a2455
   requires_dist:
   - openai
   - panel
@@ -6401,7 +6401,7 @@ packages:
   - tenacity
   - ics ; extra == 'notebooks'
   - tzlocal ; extra == 'notebooks'
-  requires_python: <=3.12
+  requires_python: <3.13
   editable: true
 - kind: pypi
   name: loguru

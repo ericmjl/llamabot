@@ -104,7 +104,7 @@ dependencies = [
     "sentence-transformers",
     "tenacity",
 ]
-requires-python = "<=3.12"
+requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
 readme = "README.md"
 
