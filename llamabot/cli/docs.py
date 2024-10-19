@@ -203,6 +203,10 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
     {% for intent in source_file.post.get("intents", []) %}- {{ intent }}
     {% endfor %}
     [[ INTENTS ENDS ]]
+
+    ## Instructions
+
+    Now please write the docs.
     """
 
 
@@ -312,7 +316,7 @@ def write(
     if not src_file.post.content or result:
         docwriter = docwriter_bot(model_name=docwriter_model_name)
         response: DocumentationContent = docwriter(
-            documentation_information(src_file) + "\nNow please write the docs.",
+            documentation_information(src_file),
             verbose=verbose,
         )
         src_file.post.content = response.content
