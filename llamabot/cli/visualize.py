@@ -1,5 +1,6 @@
 """Launch the web app to visualize and compare prompts and messages."""
 
+from typing import Optional
 import typer
 import uvicorn
 from pathlib import Path
@@ -10,11 +11,13 @@ app = typer.Typer()
 
 
 @app.command()
-def launch(db_path: Path = here() / "message_log.db"):
+def launch(db_path: Optional[Path] = None):
     """Launch the web app to visualize and compare prompts and messages.
 
     :param db_path: The path to the database to use.
     """
+    if db_path is None:
+        db_path = here() / "message_log.db"
 
     fastapi_app = create_app(db_path)
     uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
