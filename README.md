@@ -139,13 +139,13 @@ from llamabot import SimpleBot
 system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
 bot = SimpleBot(
     system_prompt,
-    model_name="ollama/llama2:13b"
+    model_name="ollama_chat/llama2:13b"
 )
 ```
 
 Simply specify the `model_name` keyword argument following the `<provider>/<model name>` format. For example:
 
-* `ollama/` as the prefix, and
+* `ollama_chat/` as the prefix, and
 * a model name from the [Ollama library of models](https://ollama.ai/library)
 
 All you need to do is make sure Ollama is running locally;
@@ -174,7 +174,7 @@ feynman = ChatBot(
   # Optional:
   # model_name="gpt-3.5-turbo"
   # or
-  # model_name="ollama/mistral"
+  # model_name="ollama_chat/mistral"
 )
 ```
 
@@ -234,7 +234,7 @@ bot = QueryBot(
   # Optional:
   # model_name="gpt-3.5-turbo"
   # or
-  # model_name="ollama/mistral"
+  # model_name="ollama_chat/mistral"
 ) # This creates a new embedding for my blog text.
 result = bot("Do you have any advice for me on career development?")
 ```
@@ -250,7 +250,7 @@ bot = QueryBot(
   # Optional:
   # model_name="gpt-3.5-turbo"
   # or
-  # model_name="ollama/mistral"
+  # model_name="ollama_chat/mistral"
 )  # This loads my previously-embedded blog text.
 result = bot("Do you have any advice for me on career development?")
 ```
