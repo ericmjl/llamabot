@@ -18,26 +18,23 @@ on:
 
 env:
   UV_SYSTEM_PYTHON: 1
-
+  DEFAULT_VERSION_NAME: patch
 
 jobs:
   deploy-package:
     runs-on: ubuntu-latest
     name: Publish Python Package to PyPI
 
-    # https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
     defaults:
       run:
         shell: bash -l {0}
     steps:
-      # https://github.com/actions/checkout
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      # https://github.com/actions/setup-python
       - name: Setup Python environment
         uses: actions/setup-python@v5
         with:
@@ -51,18 +48,19 @@ jobs:
           uv python install
           uv pip install bumpversion
 
+      - name: Set version name
+        run: echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
+
       - name: Dry run bumpversion
         run: |
-          bumpversion --dry-run ${{ github.event.inputs.version_name }} --allow-dirty --verbose
+          bumpversion --dry-run ${{ env.VERSION_NAME }} --allow-dirty --verbose
 
-      # This is lifted directly from the bump2version docs.
-      # Version number will be saved in `env` section of each consecutive stage
       - name: Store new version number
-        run: echo "version_number=`bumpversion --dry-run --list ${{ github.event.inputs.version_name }} | grep new_version | sed -r s,"^.*=",,`" >> $GITHUB_ENV
+        run: echo "version_number=`bumpversion --dry-run --list ${{ env.VERSION_NAME }} | grep new_version | sed -r s,"^.*=",,`" >> $GITHUB_ENV
 
       - name: Display new version number
         run: |
-          echo "version_name: ${{ github.event.inputs.version_name }}"
+          echo "version_name: ${{ env.VERSION_NAME }}"
           echo "version_number: v${{ env.version_number }}"
 
       - name: Ensure repo status is clean
@@ -74,7 +72,7 @@ jobs:
           git config user.email github-actions@github.com
 
       - name: Run bumpversion
-        run: bumpversion ${{ github.event.inputs.version_name }} --verbose
+        run: bumpversion ${{ env.VERSION_NAME }} --verbose
 
       - name: Ensure tag creation
         run: git tag | grep ${{ env.version_number }}
@@ -107,14 +105,11 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-      # Ensure that GH Actions is allowed to write to repo.
       - name: Push changes with tags
         if: github.event_name != 'pull_request'
         run: |
           git push && git push --tags
 
-      # This will create an actual pointer in the "Release" section of the GitHub repo
-      # The intent is to always have "latest" point to <this> release
       - name: Create release in GitHub repo
         if: github.event_name != 'pull_request'
         uses: ncipollo/release-action@v1
