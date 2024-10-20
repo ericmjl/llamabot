@@ -2,3 +2,5 @@
 # https://wiki.python.org/moin/Distutils/Tutorial
 # https://stackoverflow.com/a/24727824/1274908
 include llamabot/bot/ollama_model_names.txt
+include llamabot/web/static/*
+include llamabot/web/templates/*
