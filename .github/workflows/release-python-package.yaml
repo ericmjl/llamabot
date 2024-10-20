@@ -23,7 +23,7 @@ env:
 jobs:
   deploy-package:
     runs-on: ubuntu-latest
-    name: Publish Python Package to PyPI
+    name: ${{ github.event_name == 'pull_request' && '(Dry Run) ' || '' }}Publish Python Package to PyPI
 
     defaults:
       run:
