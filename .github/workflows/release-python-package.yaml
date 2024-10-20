@@ -96,7 +96,7 @@ jobs:
       - name: Build package
         run: |
           uv pip install build wheel
-          uv python -m build -w -s
+          python -m build -w -s
 
       - name: Publish package
         if: github.event_name != 'pull_request'
