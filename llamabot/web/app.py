@@ -17,7 +17,7 @@ from llamabot.recorder import MessageLog, Base, upgrade_database, Prompt
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-templates = Jinja2Templates(directory="llamabot/web/templates")
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 
 def create_app(db_path: Optional[Path] = None):
