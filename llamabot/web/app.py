@@ -37,7 +37,11 @@ def create_app(db_path: Optional[Path] = None):
     Base.metadata.create_all(engine)
     upgrade_database(engine)
 
-    app.mount("/static", StaticFiles(directory="llamabot/web/static"), name="static")
+    app.mount(
+        "/static",
+        StaticFiles(directory=Path(__file__).parent / "static"),
+        name="static",
+    )
 
     @app.get("/", response_class=HTMLResponse)
     async def root(request: Request):
