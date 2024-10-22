@@ -115,20 +115,18 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/prompt_functions')
         .then(response => response.json())
         .then(data => {
-            data.function_names.forEach(name => {
+            data.function_names.forEach(item => {
                 const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
+                option.value = item.name;
+                option.textContent = `${item.name} (${item.count} versions)`;
                 functionNameSelect.appendChild(option);
             });
         })
         .catch(error => console.error('Error fetching function names:', error));
 
-    // Prompt history loading functionality
-    const loadPromptHistoryButton = document.getElementById('load-prompt-history');
+    // Load prompt history when a function is selected
     const promptHistoryContainer = document.getElementById('prompt-history-container');
-
-    loadPromptHistoryButton.addEventListener('click', () => {
+    functionNameSelect.addEventListener('change', () => {
         const functionName = functionNameSelect.value;
         if (functionName) {
             fetch(`/prompt_history/${functionName}`)
