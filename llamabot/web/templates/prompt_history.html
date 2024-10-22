@@ -1,7 +1,7 @@
 <h2>Prompt History for {{ function_name }}</h2>
 {% for prompt in prompt_history %}
-    <div class="prompt-version">
-        <h3>Version {{ prompt.id }} ({{ prompt.hash[:8] }})</h3>
+    <div class="prompt-version mb-4">
+        <h3>Version {{ prompt.hash[:8] }}</h3>
         <pre><code class="language-plaintext">{{ prompt.template }}</code></pre>
         {% if prompt.diff %}
             <h4>Diff from previous version:</h4>

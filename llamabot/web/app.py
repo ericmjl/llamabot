@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import create_engine, desc
+from sqlalchemy import create_engine, desc, func
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 import json
@@ -169,15 +169,14 @@ def create_app(db_path: Optional[Path] = None):
                         unified_diff(
                             prompts[i + 1].template.splitlines(),
                             prompt.template.splitlines(),
-                            fromfile=f"Version {prompts[i+1].id}",
-                            tofile=f"Version {prompt.id}",
+                            fromfile=f"Version {prompts[i+1].hash[:8]}",
+                            tofile=f"Version {prompt.hash[:8]}",
                             lineterm="",
                         )
                     )
 
                 prompt_history.append(
                     {
-                        "id": prompt.id,
                         "hash": prompt.hash,
                         "template": prompt.template,
                         "diff": diff,
@@ -199,11 +198,21 @@ def create_app(db_path: Optional[Path] = None):
 
     @app.get("/prompt_functions")
     async def get_prompt_functions():
-        """Get all unique prompt function names."""
+        """Get all unique prompt function names with their version counts."""
         db = SessionLocal()
         try:
-            function_names = db.query(Prompt.function_name).distinct().all()
-            return {"function_names": [name[0] for name in function_names]}
+            function_counts = (
+                db.query(
+                    Prompt.function_name, func.count(Prompt.id).label("version_count")
+                )
+                .group_by(Prompt.function_name)
+                .all()
+            )
+            return {
+                "function_names": [
+                    {"name": name, "count": count} for name, count in function_counts
+                ]
+            }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
         finally:
