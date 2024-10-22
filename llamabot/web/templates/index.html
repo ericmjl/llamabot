@@ -12,22 +12,36 @@
 <body>
     <div class="container">
         <h1>LlamaBot Log Viewer</h1>
-        <div class="filter-container">
-            <input type="text" id="log-filter" placeholder="Filter logs...">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="logs">Logs</button>
+            <button class="tab-button" data-tab="prompts">Compare Prompts</button>
         </div>
-        <div class="content">
-            <div class="log-list">
-                <table hx-get="/logs" hx-trigger="load">
-                    <tbody>
-                        <tr>
-                            <td colspan="6">Loading logs...</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="tab-content" id="logs-tab">
+            <div class="filter-container">
+                <input type="text" id="log-filter" placeholder="Filter logs...">
             </div>
-            <div id="log-details" class="log-details">
-                Select a log to view details
+            <div class="content">
+                <div class="log-list">
+                    <table hx-get="/logs" hx-trigger="load">
+                        <tbody>
+                            <tr>
+                                <td colspan="6">Loading logs...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="log-details" class="log-details">
+                    Select a log to view details
+                </div>
             </div>
+        </div>
+        <div class="tab-content" id="prompts-tab" style="display: none;">
+            <h2>Compare Prompts</h2>
+            <select id="function-name-select">
+                <option value="">Select a function name</option>
+            </select>
+            <button id="load-prompt-history">Load Prompt History</button>
+            <div id="prompt-history-container"></div>
         </div>
     </div>
     <script src="{{ url_for('static', path='script.js') }}"></script>

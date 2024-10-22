@@ -1,3 +1,5 @@
+granite3-dense
+granite3-moe
 nemotron
 shieldgemma
 llama-guard3
