@@ -110,22 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterInput = document.getElementById('log-filter');
     filterInput.addEventListener('input', filterLogs);
 
-    // Tab switching functionality
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabName = button.getAttribute('data-tab');
-
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.style.display = 'none');
-
-            button.classList.add('active');
-            document.getElementById(`${tabName}-tab`).style.display = 'block';
-        });
-    });
-
     // Fetch and populate function names
     const functionNameSelect = document.getElementById('function-name-select');
     fetch('/prompt_functions')
