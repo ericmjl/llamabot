@@ -5,12 +5,13 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 import json
 from pyprojroot import here
 import logging
+from difflib import unified_diff
 
 from llamabot.recorder import MessageLog, Base, upgrade_database, Prompt
 
@@ -138,6 +139,71 @@ def create_app(db_path: Optional[Path] = None):
                 "model_name": log.model_name,
                 "temperature": log.temperature,
             }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            db.close()
+
+    @app.get("/prompt_history/{function_name}")
+    async def get_prompt_history(function_name: str):
+        """Get the history of prompts for a given function name."""
+        db = SessionLocal()
+        try:
+            prompts = (
+                db.query(Prompt)
+                .filter(Prompt.function_name == function_name)
+                .order_by(desc(Prompt.id))
+                .all()
+            )
+
+            if not prompts:
+                raise HTTPException(
+                    status_code=404, detail="No prompts found for this function name"
+                )
+
+            prompt_history = []
+            for i, prompt in enumerate(prompts):
+                diff = ""
+                if i < len(prompts) - 1:
+                    diff = "\n".join(
+                        unified_diff(
+                            prompts[i + 1].template.splitlines(),
+                            prompt.template.splitlines(),
+                            fromfile=f"Version {prompts[i+1].id}",
+                            tofile=f"Version {prompt.id}",
+                            lineterm="",
+                        )
+                    )
+
+                prompt_history.append(
+                    {
+                        "id": prompt.id,
+                        "hash": prompt.hash,
+                        "template": prompt.template,
+                        "diff": diff,
+                    }
+                )
+
+            return templates.TemplateResponse(
+                "prompt_history.html",
+                {
+                    "request": {},
+                    "function_name": function_name,
+                    "prompt_history": prompt_history,
+                },
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            db.close()
+
+    @app.get("/prompt_functions")
+    async def get_prompt_functions():
+        """Get all unique prompt function names."""
+        db = SessionLocal()
+        try:
+            function_names = db.query(Prompt.function_name).distinct().all()
+            return {"function_names": [name[0] for name in function_names]}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
         finally:

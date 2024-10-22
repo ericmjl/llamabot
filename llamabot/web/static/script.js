@@ -109,6 +109,60 @@ function addRowClickListeners() {
 document.addEventListener('DOMContentLoaded', function() {
     const filterInput = document.getElementById('log-filter');
     filterInput.addEventListener('input', filterLogs);
+
+    // Tab switching functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.style.display = 'none');
+
+            button.classList.add('active');
+            document.getElementById(`${tabName}-tab`).style.display = 'block';
+        });
+    });
+
+    // Fetch and populate function names
+    const functionNameSelect = document.getElementById('function-name-select');
+    fetch('/prompt_functions')
+        .then(response => response.json())
+        .then(data => {
+            data.function_names.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                functionNameSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching function names:', error));
+
+    // Prompt history loading functionality
+    const loadPromptHistoryButton = document.getElementById('load-prompt-history');
+    const promptHistoryContainer = document.getElementById('prompt-history-container');
+
+    loadPromptHistoryButton.addEventListener('click', () => {
+        const functionName = functionNameSelect.value;
+        if (functionName) {
+            fetch(`/prompt_history/${functionName}`)
+                .then(response => response.text())
+                .then(html => {
+                    promptHistoryContainer.innerHTML = html;
+                    hljs.highlightAll();
+                })
+                .catch(error => {
+                    promptHistoryContainer.innerHTML = `<p>Error loading prompt history: ${error}</p>`;
+                });
+        } else {
+            promptHistoryContainer.innerHTML = '<p>Please select a function name.</p>';
+        }
+    });
+
+    // Initial call to add listeners when the page loads
+    addRowClickListeners();
 });
 
 function filterLogs() {
@@ -125,6 +179,3 @@ function filterLogs() {
         }
     });
 }
-
-// Initial call to add listeners when the page loads
-document.addEventListener('DOMContentLoaded', addRowClickListeners);
