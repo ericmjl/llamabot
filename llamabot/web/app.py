@@ -2,16 +2,18 @@
 
 from typing import Optional
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import create_engine, desc, func
+from sqlalchemy import create_engine, desc, func, text, or_
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 import json
 from pyprojroot import here
 import logging
 from difflib import unified_diff
+import yaml
+from tempfile import NamedTemporaryFile
 
 from llamabot.recorder import MessageLog, Base, upgrade_database, Prompt
 
@@ -54,35 +56,71 @@ def create_app(db_path: Optional[Path] = None):
         return templates.TemplateResponse("index.html", {"request": request})
 
     @app.get("/logs")
-    async def get_logs():
-        """Get all logs."""
+    async def get_logs(function_name: Optional[str] = None):
+        """Get all logs, optionally filtered by function name."""
+        logger.debug(f"Received request for logs with function_name: {function_name}")
         db = SessionLocal()
         try:
-            logs = db.query(MessageLog).order_by(MessageLog.timestamp.desc()).all()
+            query = db.query(MessageLog).order_by(MessageLog.timestamp.desc())
+
+            if function_name:
+                logger.debug(f"Filtering logs for function name: {function_name}")
+                prompt_hashes = (
+                    db.query(Prompt.hash)
+                    .filter(Prompt.function_name == function_name)
+                    .all()
+                )
+                prompt_hashes = [hash[0] for hash in prompt_hashes]
+
+                logger.debug(
+                    f"Found prompt hashes for function {function_name}: {prompt_hashes}"
+                )
+
+                if prompt_hashes:
+                    conditions = [
+                        MessageLog.message_log.like(f"%{hash}%")
+                        for hash in prompt_hashes
+                    ]
+                    query = query.filter(or_(*conditions))
+                else:
+                    logger.warning(
+                        f"No prompts found for function name: {function_name}"
+                    )
+                    return templates.TemplateResponse(
+                        "log_table.html",
+                        {
+                            "request": {},
+                            "logs": [],
+                        },
+                    )
+
+            logs = query.all()
             logger.debug(f"Found {len(logs)} logs")
 
             log_data = []
             for log in logs:
-                message_log = json.loads(log.message_log)
-                prompt_hashes = set()
-                for message in message_log:
-                    if "prompt_hash" in message:
-                        prompt_hashes.add(message["prompt_hash"])
+                try:
+                    message_log_content = (
+                        json.loads(log.message_log) if log.message_log else []
+                    )
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse message_log for log {log.id}")
+                    message_log_content = []
 
-                logger.debug(f"Log {log.id} has prompt hashes: {prompt_hashes}")
+                prompt_hashes = set()
+                for message in message_log_content:
+                    if isinstance(message, dict) and "prompt_hash" in message:
+                        prompt_hash = message["prompt_hash"]
+                        if prompt_hash is not None:
+                            prompt_hashes.add(prompt_hash)
 
                 prompts = db.query(Prompt).filter(Prompt.hash.in_(prompt_hashes)).all()
-                logger.debug(f"Found prompts: {[p.function_name for p in prompts]}")
-
                 prompt_names = [
                     f"- {prompt.function_name} ({prompt.hash[:6]})"
                     for prompt in prompts
                 ]
                 formatted_prompt_names = (
                     "\n".join(prompt_names) if prompt_names else "No prompts used"
-                )
-                logger.debug(
-                    f"Prompt names for log {log.id}:\n{formatted_prompt_names}"
                 )
 
                 log_data.append(
@@ -93,10 +131,12 @@ def create_app(db_path: Optional[Path] = None):
                         "model_name": log.model_name,
                         "temperature": log.temperature,
                         "prompt_names": formatted_prompt_names,
+                        "prompt_hashes": ",".join(filter(None, prompt_hashes)),
                         "full_content": log.message_log,
                     }
                 )
 
+            logger.debug(f"Returning {len(log_data)} logs")
             return templates.TemplateResponse(
                 "log_table.html",
                 {
@@ -105,6 +145,7 @@ def create_app(db_path: Optional[Path] = None):
                 },
             )
         except Exception as e:
+            logger.error(f"Error in get_logs: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             db.close()
@@ -117,7 +158,7 @@ def create_app(db_path: Optional[Path] = None):
             log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
             if log is None:
                 raise HTTPException(status_code=404, detail="Log not found")
-            message_log = json.loads(log.message_log)
+            message_log = json.loads(log.message_log if log.message_log else "[]")
 
             # Fetch prompt names and templates for each message with a prompt_hash
             for message in message_log:
@@ -140,6 +181,7 @@ def create_app(db_path: Optional[Path] = None):
                 "temperature": log.temperature,
             }
         except Exception as e:
+            logger.error(f"Error in get_log: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             db.close()
@@ -214,6 +256,100 @@ def create_app(db_path: Optional[Path] = None):
                 ]
             }
         except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            db.close()
+
+    @app.get("/prompts")
+    async def get_prompts():
+        """Get all unique prompt function names."""
+        db = SessionLocal()
+        try:
+            prompts = db.query(Prompt.function_name).distinct().all()
+            return templates.TemplateResponse(
+                "prompt_dropdown.html",
+                {
+                    "request": {},
+                    "prompts": prompts,
+                },
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            db.close()
+
+    @app.get("/debug_logs")
+    async def debug_logs():
+        """Debug endpoint to view raw message logs."""
+        db = SessionLocal()
+        try:
+            logs = db.query(MessageLog).order_by(text("timestamp DESC")).limit(10).all()
+            return {
+                "log_count": len(logs),
+                "sample_logs": [
+                    {
+                        "id": log.id,
+                        "object_name": log.object_name,
+                        "timestamp": log.timestamp,
+                        "message_log": log.message_log,
+                    }
+                    for log in logs
+                ],
+            }
+        finally:
+            db.close()
+
+    @app.get("/export_logs")
+    async def export_logs(function_name: Optional[str] = None):
+        """Export logs as YAML file."""
+        db = SessionLocal()
+        try:
+            query = db.query(MessageLog).order_by(MessageLog.timestamp.desc())
+
+            if function_name:
+                prompt_hashes = (
+                    db.query(Prompt.hash)
+                    .filter(Prompt.function_name == function_name)
+                    .all()
+                )
+                prompt_hashes = [hash[0] for hash in prompt_hashes]
+                if prompt_hashes:
+                    conditions = [
+                        MessageLog.message_log.like(f"%{hash}%")
+                        for hash in prompt_hashes
+                    ]
+                    query = query.filter(or_(*conditions))
+
+            logs = query.all()
+
+            log_data = []
+            for log in logs:
+                log_entry = {
+                    "id": log.id,
+                    "object_name": log.object_name,
+                    "timestamp": log.timestamp,
+                    "model_name": log.model_name,
+                    "temperature": log.temperature,
+                    "message_log": (
+                        json.loads(log.message_log) if log.message_log else []
+                    ),
+                }
+                log_data.append(log_entry)
+
+            with NamedTemporaryFile(
+                mode="w", delete=False, suffix=".yaml"
+            ) as temp_file:
+                yaml.dump(log_data, temp_file, default_flow_style=False)
+                temp_file_path = temp_file.name
+
+            return FileResponse(
+                temp_file_path,
+                media_type="application/octet-stream",
+                filename="exported_logs.yaml",
+            )
+
+        except Exception as e:
+            logger.error(f"Error in export_logs: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             db.close()

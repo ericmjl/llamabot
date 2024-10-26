@@ -5,7 +5,7 @@ import json
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 from pyprojroot import here
 from sqlalchemy import (
@@ -13,10 +13,10 @@ from sqlalchemy import (
     Connection,
     Engine,
     Float,
+    ForeignKey,
     Integer,
     String,
     Text,
-    ForeignKey,
     create_engine,
     inspect,
     text,
@@ -28,6 +28,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
 from llamabot.utils import get_object_name
+from loguru import logger
+
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -36,7 +38,7 @@ class PromptRecorder:
     """Prompt recorder to support recording of prompts and responses."""
 
     def __init__(self):
-        self.prompts_and_responses = []
+        self.prompts: List[Dict[str, Any]] = []
 
     def __enter__(self):
         """Enter the context manager.
@@ -61,7 +63,7 @@ class PromptRecorder:
         :param prompt: The human prompt.
         :param response: A the response from the bot.
         """
-        self.prompts_and_responses.append({"prompt": prompt, "response": response})
+        self.prompts.append({"prompt": prompt, "response": response})
 
     def __repr__(self):
         """Return a string representation of the prompt recorder.
@@ -70,7 +72,7 @@ class PromptRecorder:
         """
         import pandas as pd
 
-        return pd.DataFrame(self.prompts_and_responses).__str__()
+        return pd.DataFrame(self.prompts).__str__()
 
     def _repr_html_(self):
         """Return an HTML representation of the prompt recorder.
@@ -86,7 +88,7 @@ class PromptRecorder:
         """
         import pandas as pd
 
-        return pd.DataFrame(self.prompts_and_responses)
+        return pd.DataFrame(self.prompts)
 
     def save(self, path: Path):
         """Save the prompt recorder to a path.
@@ -95,10 +97,8 @@ class PromptRecorder:
         """
         path = Path(path)  # coerce to pathlib.Path
         with path.open("w+") as f:
-            for prompt_and_response in self.prompts_and_responses:
-                f.write(
-                    f"**{prompt_and_response['prompt']}**\n\n{prompt_and_response['response']}\n\n"
-                )
+            for prompt in self.prompts:
+                f.write(f"**{prompt['prompt']}**\n\n{prompt['response']}\n\n")
 
     def panel(self):
         """Return a panel representation of the prompt recorder.
@@ -117,14 +117,12 @@ class PromptRecorder:
         buttons = pn.Row(prev_button, next_button)
 
         prompt_header = pn.pane.Markdown("# Prompt")
-        prompt_display = pn.pane.Markdown(self.prompts_and_responses[index]["prompt"])
+        prompt_display = pn.pane.Markdown(self.prompts[index]["prompt"])
 
         prompt = pn.Column(prompt_header, prompt_display)
 
         response_header = pn.pane.Markdown("# Response")
-        response_display = pn.pane.Markdown(
-            self.prompts_and_responses[index]["response"]
-        )
+        response_display = pn.pane.Markdown(self.prompts[index]["response"])
         response = pn.Column(response_header, response_display)
 
         display = pn.Row(prompt, response)
@@ -134,8 +132,8 @@ class PromptRecorder:
 
             :param index: The index of the prompt and response to update.
             """
-            prompt_display.object = self.prompts_and_responses[index]["prompt"]
-            response_display.object = self.prompts_and_responses[index]["response"]
+            prompt_display.object = self.prompts[index]["prompt"]
+            response_display.object = self.prompts[index]["response"]
 
         def next_button_callback(event):
             """Callback function for the next button.
@@ -144,8 +142,8 @@ class PromptRecorder:
             """
             global index
             index += 1
-            if index > len(self.prompts_and_responses) - 1:
-                index = len(self.prompts_and_responses) - 1
+            if index > len(self.prompts) - 1:
+                index = len(self.prompts) - 1
 
             update_objects(index)
 
@@ -198,12 +196,35 @@ class MessageLog(Base):
 
     __tablename__ = "message_log"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(String, index=True)
     object_name = Column(String)
-    timestamp = Column(String)
-    message_log = Column(Text)
     model_name = Column(String)
-    temperature = Column(Float, nullable=True)
+    temperature = Column(Float)
+    message_log = Column(Text)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._message_log_dict = None
+
+    @property
+    def message_log_dict(self) -> Dict[str, Any]:
+        """
+        Returns the message log as a dictionary.
+
+        If the message log is not already parsed, it attempts to parse it from JSON.
+        If parsing fails, it returns an empty dictionary.
+
+        :return: The message log as a dictionary.
+        """
+        if not hasattr(self, "_message_log_dict"):
+            try:
+                self._message_log_dict = (
+                    json.loads(self.message_log) if self.message_log else {}
+                )
+            except json.JSONDecodeError:
+                self._message_log_dict = {}
+        return self._message_log_dict
 
 
 def upgrade_database(engine: Engine):
@@ -323,12 +344,14 @@ class Prompt(Base):
 
     __tablename__ = "prompts"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     hash = Column(String, unique=True, index=True)
+    function_name = Column(String)
     template = Column(Text)
-    function_name = Column(String)  # Add this line
     previous_version_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
-    previous_version = relationship("Prompt", remote_side=[id])
+    previous_version = relationship(
+        "Prompt", remote_side=[id], backref="next_version", uselist=False
+    )
 
 
 def hash_template(template: str) -> str:
@@ -340,24 +363,29 @@ def store_prompt_version(
     session, template: str, function_name: str, previous_hash: Optional[str] = None
 ):
     """Store a new prompt version in the database."""
+    logger.debug(f"Storing prompt version for function: {function_name}")
     template_hash = hash_template(template)
 
     existing_prompt = session.query(Prompt).filter_by(hash=template_hash).first()
     if existing_prompt:
+        logger.debug(f"Existing prompt found with hash: {template_hash}")
         return existing_prompt
 
+    previous_version = None
     if previous_hash:
         previous_version = session.query(Prompt).filter_by(hash=previous_hash).first()
-        previous_version_id = previous_version.id if previous_version else None
-    else:
-        previous_version_id = None
+        logger.debug(
+            f"Previous version found: {previous_version.id if previous_version else None}"
+        )
 
     new_prompt = Prompt(
         hash=template_hash,
         template=template,
-        function_name=function_name,  # Add this line
-        previous_version_id=previous_version_id,
+        function_name=function_name,
+        previous_version=previous_version,
     )
     session.add(new_prompt)
-    session.commit()
+    logger.debug(f"New prompt added to session with hash: {template_hash}")
+    session.flush()
+    logger.debug(f"Session flushed, new prompt id: {new_prompt.id}")
     return new_prompt

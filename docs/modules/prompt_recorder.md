@@ -5,11 +5,11 @@
 
 The prompt recorder is a class named `PromptRecorder` that helps in recording prompts and responses. It works as a context manager, allowing you to record prompts and responses within a specific context. Here's a brief overview of how it works:
 
-1. The `PromptRecorder` class is initialized with an empty list called `prompts_and_responses` to store the prompts and responses.
+1. The `PromptRecorder` class is initialized with an empty list called `prompts` to store the prompts and responses.
 
 2. When entering the context manager using the `with` statement, the `__enter__()` method is called, which sets the current instance of the `PromptRecorder` as the active recorder in the `prompt_recorder_var` context variable.
 
-3. To log a prompt and response, the `log()` method is called with the prompt and response as arguments. This method appends the prompt and response as a dictionary to the `prompts_and_responses` list.
+3. To log a prompt and response, the `log()` method is called with the prompt and response as arguments. This method appends the prompt and response as a dictionary to the `prompts` list.
 
 4. The `autorecord()` function is provided to be called within every bot. It checks if there is an active `PromptRecorder` instance in the context and logs the prompt and response using the `log()` method.
 
