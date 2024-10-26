@@ -13,10 +13,10 @@ from jinja2 import meta
 import inspect
 from textwrap import dedent
 from llamabot.recorder import store_prompt_version
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from pyprojroot import here
-from llamabot.recorder import Base, upgrade_database
+from llamabot.recorder import Base, Prompt, upgrade_database
 from llamabot.components.messages import BaseMessage
 from typing import Literal
 
@@ -35,7 +35,21 @@ def version_prompt(template: str, function_name: str) -> str:
     session = Session()
 
     try:
-        stored_prompt = store_prompt_version(session, template, function_name)
+        # Check for the latest entry with the same function name but different hash
+        latest_prompt = (
+            session.query(Prompt)
+            .filter(Prompt.function_name == function_name)
+            .order_by(desc(Prompt.id))
+            .first()
+        )
+
+        previous_hash = None
+        if latest_prompt and latest_prompt.template != template:
+            previous_hash = latest_prompt.hash
+
+        stored_prompt = store_prompt_version(
+            session, template, function_name, previous_hash
+        )
         return stored_prompt.hash
     finally:
         session.close()
