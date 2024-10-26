@@ -13,6 +13,7 @@ from sqlalchemy import (
     Connection,
     Engine,
     Float,
+    ForeignKey,
     Integer,
     String,
     Text,
@@ -22,7 +23,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
@@ -345,6 +346,10 @@ class Prompt(Base):
     hash = Column(String, unique=True, index=True)
     function_name = Column(String)
     template = Column(Text)
+    previous_version_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
+    previous_version = relationship(
+        "Prompt", remote_side=[id], backref="next_version", uselist=False
+    )
 
 
 def hash_template(template: str) -> str:
@@ -362,17 +367,15 @@ def store_prompt_version(
     if existing_prompt:
         return existing_prompt
 
+    previous_version = None
     if previous_hash:
         previous_version = session.query(Prompt).filter_by(hash=previous_hash).first()
-        previous_version_id = previous_version.id if previous_version else None
-    else:
-        previous_version_id = None
 
     new_prompt = Prompt(
         hash=template_hash,
         template=template,
         function_name=function_name,
-        previous_version_id=previous_version_id,
+        previous_version=previous_version,
     )
     session.add(new_prompt)
     session.commit()
