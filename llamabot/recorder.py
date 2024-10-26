@@ -210,16 +210,16 @@ class MessageLog(Base):
 
     @property
     @property
-    def message_log_dict(self) -> Dict:
-        """Get the message log as a dictionary.
+    def message_log_dict(self) -> Dict[str, Any]:
+        """
+        Returns the message log as a dictionary.
 
-        This property attempts to parse the `message_log` attribute as a JSON string
-        and returns the resulting dictionary. If the parsing fails, it returns an empty
-        dictionary.
+        If the message log is not already parsed, it attempts to parse it from JSON.
+        If parsing fails, it returns an empty dictionary.
 
         :return: The message log as a dictionary.
         """
-        if self._message_log_dict is None:
+        if not hasattr(self, "_message_log_dict"):
             try:
                 self._message_log_dict = (
                     json.loads(self.message_log) if self.message_log else {}

@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import create_engine, desc, func, text
+from sqlalchemy import create_engine, desc, func, text, or_
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 import json
@@ -56,42 +56,54 @@ def create_app(db_path: Optional[Path] = None):
     @app.get("/logs")
     async def get_logs(function_name: Optional[str] = None):
         """Get all logs, optionally filtered by function name."""
+        logger.debug(f"Received request for logs with function_name: {function_name}")
         db = SessionLocal()
         try:
-            # Start with a base query for MessageLog
             query = db.query(MessageLog).order_by(MessageLog.timestamp.desc())
 
             if function_name:
                 logger.debug(f"Filtering logs for function name: {function_name}")
-                # Join with Prompt table only when filtering by function_name
-                query = query.join(
-                    Prompt,
-                    func.json_extract(MessageLog.message_log, "$.prompt_hash")
-                    == Prompt.hash,
-                ).filter(Prompt.function_name == function_name)
+                # Get all prompt hashes for the given function name
+                prompt_hashes = (
+                    db.query(Prompt.hash)
+                    .filter(Prompt.function_name == function_name)
+                    .all()
+                )
+                prompt_hashes = [hash[0] for hash in prompt_hashes]
+
+                logger.debug(
+                    f"Found prompt hashes for function {function_name}: {prompt_hashes}"
+                )
+
+                if prompt_hashes:
+                    # Create conditions to check for each hash in the message_log
+                    conditions = [
+                        MessageLog.message_log.like(f"%{hash}%")
+                        for hash in prompt_hashes
+                    ]
+                    query = query.filter(or_(*conditions))
+                else:
+                    logger.warning(
+                        f"No prompts found for function name: {function_name}"
+                    )
+                    return templates.TemplateResponse(
+                        "log_table.html",
+                        {
+                            "request": {},
+                            "logs": [],
+                        },
+                    )
 
             logs = query.all()
             logger.debug(f"Found {len(logs)} logs")
 
-            if len(logs) == 0:
-                logger.warning(f"No logs found for function name: {function_name}")
-                return templates.TemplateResponse(
-                    "log_table.html",
-                    {
-                        "request": {},
-                        "logs": [],
-                    },
-                )
-
             log_data = []
             for log in logs:
                 try:
-                    message_log_content = (
-                        json.loads(log.message_log) if log.message_log else []
-                    )
-                except json.JSONDecodeError:
-                    logger.warning(f"Failed to parse message_log for log {log.id}")
-                    message_log_content = []
+                    message_log_content = log.message_log_dict
+                except AttributeError:
+                    logger.warning(f"Failed to get message_log_dict for log {log.id}")
+                    message_log_content = {}
 
                 prompt_hashes = set()
                 for message in message_log_content:
