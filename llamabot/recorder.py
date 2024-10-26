@@ -60,7 +60,7 @@ class PromptRecorder:
         :param prompt: The human prompt.
         :param response: A the response from the bot.
         """
-        self.prompts_and_responses.append({"prompt": prompt, "response": response})
+        self.prompts.append({"prompt": prompt, "response": response})
 
     def __repr__(self):
         """Return a string representation of the prompt recorder.
@@ -69,7 +69,7 @@ class PromptRecorder:
         """
         import pandas as pd
 
-        return pd.DataFrame(self.prompts_and_responses).__str__()
+        return pd.DataFrame(self.prompts).__str__()
 
     def _repr_html_(self):
         """Return an HTML representation of the prompt recorder.
@@ -85,7 +85,7 @@ class PromptRecorder:
         """
         import pandas as pd
 
-        return pd.DataFrame(self.prompts_and_responses)
+        return pd.DataFrame(self.prompts)
 
     def save(self, path: Path):
         """Save the prompt recorder to a path.
@@ -94,10 +94,8 @@ class PromptRecorder:
         """
         path = Path(path)  # coerce to pathlib.Path
         with path.open("w+") as f:
-            for prompt_and_response in self.prompts_and_responses:
-                f.write(
-                    f"**{prompt_and_response['prompt']}**\n\n{prompt_and_response['response']}\n\n"
-                )
+            for prompt in self.prompts:
+                f.write(f"**{prompt['prompt']}**\n\n{prompt['response']}\n\n")
 
     def panel(self):
         """Return a panel representation of the prompt recorder.
@@ -116,14 +114,12 @@ class PromptRecorder:
         buttons = pn.Row(prev_button, next_button)
 
         prompt_header = pn.pane.Markdown("# Prompt")
-        prompt_display = pn.pane.Markdown(self.prompts_and_responses[index]["prompt"])
+        prompt_display = pn.pane.Markdown(self.prompts[index]["prompt"])
 
         prompt = pn.Column(prompt_header, prompt_display)
 
         response_header = pn.pane.Markdown("# Response")
-        response_display = pn.pane.Markdown(
-            self.prompts_and_responses[index]["response"]
-        )
+        response_display = pn.pane.Markdown(self.prompts[index]["response"])
         response = pn.Column(response_header, response_display)
 
         display = pn.Row(prompt, response)
@@ -133,8 +129,8 @@ class PromptRecorder:
 
             :param index: The index of the prompt and response to update.
             """
-            prompt_display.object = self.prompts_and_responses[index]["prompt"]
-            response_display.object = self.prompts_and_responses[index]["response"]
+            prompt_display.object = self.prompts[index]["prompt"]
+            response_display.object = self.prompts[index]["response"]
 
         def next_button_callback(event):
             """Callback function for the next button.
@@ -143,8 +139,8 @@ class PromptRecorder:
             """
             global index
             index += 1
-            if index > len(self.prompts_and_responses) - 1:
-                index = len(self.prompts_and_responses) - 1
+            if index > len(self.prompts) - 1:
+                index = len(self.prompts) - 1
 
             update_objects(index)
 
@@ -208,7 +204,6 @@ class MessageLog(Base):
         super().__init__(**kwargs)
         self._message_log_dict = None
 
-    @property
     @property
     def message_log_dict(self) -> Dict[str, Any]:
         """
