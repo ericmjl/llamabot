@@ -1,4 +1,4 @@
-<table>
+<table class="table table-hover">
     <thead>
         <tr>
             <th>ID</th>
@@ -10,15 +10,21 @@
         </tr>
     </thead>
     <tbody>
-        {% for log in logs %}
-        <tr data-full-content="{{ log.full_content }}">
-            <td>{{ log.id }}</td>
-            <td>{{ log.object_name }}</td>
-            <td>{{ log.timestamp }}</td>
-            <td>{{ log.model_name }}</td>
-            <td>{{ log.temperature }}</td>
-            <td><pre>{{ log.prompt_names }}</pre></td>
-        </tr>
-        {% endfor %}
+        {% if logs %}
+            {% for log in logs %}
+            <tr class="log-row" data-prompt-hashes="{{ log.prompt_hashes }}" hx-get="/log/{{ log.id }}" hx-target="#log-details">
+                <td>{{ log.id }}</td>
+                <td>{{ log.object_name }}</td>
+                <td>{{ log.timestamp }}</td>
+                <td>{{ log.model_name }}</td>
+                <td>{{ log.temperature }}</td>
+                <td>{{ log.prompt_names | safe }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="6">No logs found</td>
+            </tr>
+        {% endif %}
     </tbody>
 </table>

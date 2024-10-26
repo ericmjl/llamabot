@@ -26,6 +26,11 @@
                 <div class="mb-3">
                     <input type="text" id="log-filter" class="form-control" placeholder="Filter logs...">
                 </div>
+                <div class="mb-3">
+                    <select id="prompt-select" class="form-select" hx-get="/prompts" hx-trigger="load">
+                        <option value="">Select a prompt</option>
+                    </select>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="log-list">

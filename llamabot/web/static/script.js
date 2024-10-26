@@ -106,7 +106,7 @@ function addRowClickListeners() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', (event) => {
     const filterInput = document.getElementById('log-filter');
     filterInput.addEventListener('input', filterLogs);
 
@@ -143,8 +143,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initial call to add listeners when the page loads
-    addRowClickListeners();
+    // Initial load of all logs
+    reloadLogs();
+
+    // Handle prompt selection
+    const promptSelect = document.getElementById('prompt-select');
+    if (promptSelect) {
+        promptSelect.addEventListener('change', (event) => {
+            const selectedFunctionName = event.target.value;
+            reloadLogs(selectedFunctionName);
+        });
+    }
 });
 
 function filterLogs() {
@@ -160,4 +169,31 @@ function filterLogs() {
             row.style.display = 'none';
         }
     });
+}
+
+function filterLogsByPrompt(promptHash) {
+    const logRows = document.querySelectorAll('.log-row');
+    logRows.forEach(row => {
+        const promptNames = row.getAttribute('data-prompt-names');
+        if (promptNames && promptNames.includes(promptHash)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function showAllLogs() {
+    const logRows = document.querySelectorAll('.log-row');
+    logRows.forEach(row => {
+        row.style.display = '';
+    });
+}
+
+function reloadLogs(functionName = '') {
+    const logList = document.querySelector('.log-list');
+    if (logList) {
+        const url = functionName ? `/logs?function_name=${encodeURIComponent(functionName)}` : '/logs';
+        htmx.ajax('GET', url, {target: '.log-list', swap: 'innerHTML'});
+    }
 }

@@ -1,0 +1,4 @@
+<option value="">Select a prompt function</option>
+{% for prompt in prompts %}
+    <option value="{{ prompt.function_name }}">{{ prompt.function_name }}</option>
+{% endfor %}

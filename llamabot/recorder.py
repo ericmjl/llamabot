@@ -5,7 +5,7 @@ import json
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 from pyprojroot import here
 from sqlalchemy import (
@@ -16,14 +16,13 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    ForeignKey,
     create_engine,
     inspect,
     text,
 )
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
@@ -36,7 +35,7 @@ class PromptRecorder:
     """Prompt recorder to support recording of prompts and responses."""
 
     def __init__(self):
-        self.prompts_and_responses = []
+        self.prompts: List[Dict[str, Any]] = []
 
     def __enter__(self):
         """Enter the context manager.
@@ -198,12 +197,36 @@ class MessageLog(Base):
 
     __tablename__ = "message_log"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(String, index=True)
     object_name = Column(String)
-    timestamp = Column(String)
-    message_log = Column(Text)
     model_name = Column(String)
-    temperature = Column(Float, nullable=True)
+    temperature = Column(Float)
+    message_log = Column(Text)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._message_log_dict = None
+
+    @property
+    @property
+    def message_log_dict(self) -> Dict:
+        """Get the message log as a dictionary.
+
+        This property attempts to parse the `message_log` attribute as a JSON string
+        and returns the resulting dictionary. If the parsing fails, it returns an empty
+        dictionary.
+
+        :return: The message log as a dictionary.
+        """
+        if self._message_log_dict is None:
+            try:
+                self._message_log_dict = (
+                    json.loads(self.message_log) if self.message_log else {}
+                )
+            except json.JSONDecodeError:
+                self._message_log_dict = {}
+        return self._message_log_dict
 
 
 def upgrade_database(engine: Engine):
@@ -323,12 +346,10 @@ class Prompt(Base):
 
     __tablename__ = "prompts"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     hash = Column(String, unique=True, index=True)
+    function_name = Column(String)
     template = Column(Text)
-    function_name = Column(String)  # Add this line
-    previous_version_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
-    previous_version = relationship("Prompt", remote_side=[id])
 
 
 def hash_template(template: str) -> str:
@@ -355,7 +376,7 @@ def store_prompt_version(
     new_prompt = Prompt(
         hash=template_hash,
         template=template,
-        function_name=function_name,  # Add this line
+        function_name=function_name,
         previous_version_id=previous_version_id,
     )
     session.add(new_prompt)
