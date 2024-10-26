@@ -37,16 +37,14 @@ def session(engine):
 def test_init():
     """Test that the PromptRecorder is initialized correctly."""
     recorder = PromptRecorder()
-    assert recorder.prompts_and_responses == []
+    assert recorder.prompts == []
 
 
 def test_log():
     """Test that the PromptRecorder logs prompts and responses correctly."""
     recorder = PromptRecorder()
     recorder.log("prompt1", "response1")
-    assert recorder.prompts_and_responses == [
-        {"prompt": "prompt1", "response": "response1"}
-    ]
+    assert recorder.prompts == [{"prompt": "prompt1", "response": "response1"}]
 
 
 def test_repr():
@@ -77,9 +75,9 @@ def test_autorecord_with_context():
     recorder = PromptRecorder()
     with recorder:
         autorecord(prompt, response)
-    assert len(recorder.prompts_and_responses) == 1
-    assert recorder.prompts_and_responses[0]["prompt"] == prompt
-    assert recorder.prompts_and_responses[0]["response"] == response
+    assert len(recorder.prompts) == 1
+    assert recorder.prompts[0]["prompt"] == prompt
+    assert recorder.prompts[0]["response"] == response
 
 
 def test_autorecord_multiple_with_context():
@@ -90,10 +88,10 @@ def test_autorecord_multiple_with_context():
     with recorder:
         for p, r in zip(prompts, responses):
             autorecord(p, r)
-    assert len(recorder.prompts_and_responses) == 2
+    assert len(recorder.prompts) == 2
     for i, (p, r) in enumerate(zip(prompts, responses)):
-        assert recorder.prompts_and_responses[i]["prompt"] == p
-        assert recorder.prompts_and_responses[i]["response"] == r
+        assert recorder.prompts[i]["prompt"] == p
+        assert recorder.prompts[i]["response"] == r
 
 
 def test_message_log_creation(session):
