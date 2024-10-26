@@ -6,9 +6,10 @@ from sqlalchemy.orm import sessionmaker
 from llamabot.components.messages import BaseMessage
 from llamabot.prompt_manager import prompt, version_prompt
 from llamabot.recorder import hash_template, Base, Prompt
+import logging
 
 # Setup a test database
-TEST_DB_PATH = "sqlite:///:memory:"
+TEST_DB_PATH = "sqlite:////tmp/test_message_log.db"
 
 
 @pytest.fixture(scope="function")
@@ -101,7 +102,7 @@ def test_prompt_with_missing_kwargs():
         test_func(a=3)
 
 
-def test_version_prompt(db_session, monkeypatch):
+def test_version_prompt(caplog):
     """
     Test the version_prompt function for creating and updating prompt versions.
 
@@ -110,48 +111,72 @@ def test_version_prompt(db_session, monkeypatch):
     2. Updating an existing prompt
     3. Attempting to create a duplicate prompt (which should return the existing one)
 
-    :param db_session: The database session fixture.
-    :param monkeypatch: PyTest's monkeypatch fixture for mocking.
+    :param caplog: PyTest's caplog fixture for capturing logs.
     """
-
-    # Mock the create_engine function to use our test database
-    def mock_create_engine(url):
-        return create_engine(TEST_DB_PATH)
-
-    monkeypatch.setattr("sqlalchemy.create_engine", mock_create_engine)
+    caplog.set_level(logging.DEBUG)
 
     # Test case 1: New prompt
     template1 = "This is a test prompt template"
     function_name = "test_function"
 
-    hash1 = version_prompt(template1, function_name)
+    hash1 = version_prompt(template1, function_name, db_path=TEST_DB_PATH)
+    print(f"Generated hash: {hash1}")
+    print("Captured logs:")
+    print(caplog.text)
+
+    # Create a session to verify the database contents
+    engine = create_engine(TEST_DB_PATH)
+    Base.metadata.create_all(engine)  # Create tables
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
     # Check if a new prompt was created
-    prompt1 = db_session.query(Prompt).filter_by(hash=hash1).first()
-    assert prompt1 is not None
-    assert prompt1.function_name == function_name
-    assert prompt1.template == template1
-    assert prompt1.previous_version is None
+    prompt1 = session.query(Prompt).filter_by(hash=hash1).first()
+    assert prompt1 is not None, "Prompt was not created in the database"
+    assert (
+        prompt1.function_name == function_name
+    ), f"Expected function name {function_name}, got {prompt1.function_name}"
+    assert (
+        prompt1.template == template1
+    ), f"Expected template {template1}, got {prompt1.template}"
+    assert prompt1.previous_version is None, "Expected previous_version to be None"
 
     # Test case 2: Updated prompt
     template2 = "This is an updated test prompt template"
 
-    hash2 = version_prompt(template2, function_name)
+    hash2 = version_prompt(template2, function_name, db_path=TEST_DB_PATH)
+    print(f"Generated hash for updated prompt: {hash2}")
 
     # Check if a new version was created
-    prompt2 = db_session.query(Prompt).filter_by(hash=hash2).first()
-    assert prompt2 is not None
-    assert prompt2.function_name == function_name
-    assert prompt2.template == template2
-    assert prompt2.previous_version.id == prompt1.id
+    prompt2 = session.query(Prompt).filter_by(hash=hash2).first()
+    assert prompt2 is not None, "Updated prompt was not created in the database"
+    assert (
+        prompt2.function_name == function_name
+    ), f"Expected function name {function_name}, got {prompt2.function_name}"
+    assert (
+        prompt2.template == template2
+    ), f"Expected template {template2}, got {prompt2.template}"
+    assert (
+        prompt2.previous_version.id == prompt1.id
+    ), f"Expected previous_version.id to be {prompt1.id}, got {prompt2.previous_version.id if prompt2.previous_version else None}"
 
     # Test case 3: Same prompt (no change)
-    hash3 = version_prompt(template2, function_name)
+    hash3 = version_prompt(template2, function_name, db_path=TEST_DB_PATH)
+    print(f"Generated hash for duplicate prompt: {hash3}")
 
     # Check if no new version was created
-    assert hash3 == hash2
-    prompt_count = db_session.query(Prompt).count()
-    assert prompt_count == 2  # Still only two prompts in the database
+    assert hash3 == hash2, f"Expected hash3 ({hash3}) to be equal to hash2 ({hash2})"
+    prompt_count = session.query(Prompt).count()
+    assert prompt_count == 2, f"Expected 2 prompts in the database, got {prompt_count}"
+
+    # Print all prompts in the database for debugging
+    all_prompts = session.query(Prompt).all()
+    for individual_prompt in all_prompts:
+        print(
+            f"Prompt: id={individual_prompt.id}, hash={individual_prompt.hash}, function_name={individual_prompt.function_name}, template={individual_prompt.template}"
+        )
+
+    session.close()
 
 
 def test_version_prompt_error_handling(db_session, monkeypatch):

@@ -28,6 +28,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
 from llamabot.utils import get_object_name
+from loguru import logger
+
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -361,15 +363,20 @@ def store_prompt_version(
     session, template: str, function_name: str, previous_hash: Optional[str] = None
 ):
     """Store a new prompt version in the database."""
+    logger.debug(f"Storing prompt version for function: {function_name}")
     template_hash = hash_template(template)
 
     existing_prompt = session.query(Prompt).filter_by(hash=template_hash).first()
     if existing_prompt:
+        logger.debug(f"Existing prompt found with hash: {template_hash}")
         return existing_prompt
 
     previous_version = None
     if previous_hash:
         previous_version = session.query(Prompt).filter_by(hash=previous_hash).first()
+        logger.debug(
+            f"Previous version found: {previous_version.id if previous_version else None}"
+        )
 
     new_prompt = Prompt(
         hash=template_hash,
@@ -378,5 +385,7 @@ def store_prompt_version(
         previous_version=previous_version,
     )
     session.add(new_prompt)
-    session.commit()
+    logger.debug(f"New prompt added to session with hash: {template_hash}")
+    session.flush()
+    logger.debug(f"Session flushed, new prompt id: {new_prompt.id}")
     return new_prompt
