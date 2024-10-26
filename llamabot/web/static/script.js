@@ -154,6 +154,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
             reloadLogs(selectedFunctionName);
         });
     }
+
+    const exportButton = document.getElementById('export-logs');
+    if (exportButton) {
+        exportButton.addEventListener('click', exportLogs);
+    }
 });
 
 function filterLogs() {
@@ -196,4 +201,12 @@ function reloadLogs(functionName = '') {
         const url = functionName ? `/logs?function_name=${encodeURIComponent(functionName)}` : '/logs';
         htmx.ajax('GET', url, {target: '.log-list', swap: 'innerHTML'});
     }
+}
+
+function exportLogs() {
+    const promptSelect = document.getElementById('prompt-select');
+    const functionName = promptSelect.value;
+    const url = functionName ? `/export_logs?function_name=${encodeURIComponent(functionName)}` : '/export_logs';
+
+    window.location.href = url;
 }

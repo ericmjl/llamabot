@@ -2,7 +2,7 @@
 
 from typing import Optional
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import create_engine, desc, func, text, or_
@@ -12,6 +12,8 @@ import json
 from pyprojroot import here
 import logging
 from difflib import unified_diff
+import yaml
+from tempfile import NamedTemporaryFile
 
 from llamabot.recorder import MessageLog, Base, upgrade_database, Prompt
 
@@ -63,7 +65,6 @@ def create_app(db_path: Optional[Path] = None):
 
             if function_name:
                 logger.debug(f"Filtering logs for function name: {function_name}")
-                # Get all prompt hashes for the given function name
                 prompt_hashes = (
                     db.query(Prompt.hash)
                     .filter(Prompt.function_name == function_name)
@@ -76,7 +77,6 @@ def create_app(db_path: Optional[Path] = None):
                 )
 
                 if prompt_hashes:
-                    # Create conditions to check for each hash in the message_log
                     conditions = [
                         MessageLog.message_log.like(f"%{hash}%")
                         for hash in prompt_hashes
@@ -100,10 +100,12 @@ def create_app(db_path: Optional[Path] = None):
             log_data = []
             for log in logs:
                 try:
-                    message_log_content = log.message_log_dict
-                except AttributeError:
-                    logger.warning(f"Failed to get message_log_dict for log {log.id}")
-                    message_log_content = {}
+                    message_log_content = (
+                        json.loads(log.message_log) if log.message_log else []
+                    )
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse message_log for log {log.id}")
+                    message_log_content = []
 
                 prompt_hashes = set()
                 for message in message_log_content:
@@ -294,6 +296,61 @@ def create_app(db_path: Optional[Path] = None):
                     for log in logs
                 ],
             }
+        finally:
+            db.close()
+
+    @app.get("/export_logs")
+    async def export_logs(function_name: Optional[str] = None):
+        """Export logs as YAML file."""
+        db = SessionLocal()
+        try:
+            query = db.query(MessageLog).order_by(MessageLog.timestamp.desc())
+
+            if function_name:
+                prompt_hashes = (
+                    db.query(Prompt.hash)
+                    .filter(Prompt.function_name == function_name)
+                    .all()
+                )
+                prompt_hashes = [hash[0] for hash in prompt_hashes]
+                if prompt_hashes:
+                    conditions = [
+                        MessageLog.message_log.like(f"%{hash}%")
+                        for hash in prompt_hashes
+                    ]
+                    query = query.filter(or_(*conditions))
+
+            logs = query.all()
+
+            log_data = []
+            for log in logs:
+                log_entry = {
+                    "id": log.id,
+                    "object_name": log.object_name,
+                    "timestamp": log.timestamp,
+                    "model_name": log.model_name,
+                    "temperature": log.temperature,
+                    "message_log": (
+                        json.loads(log.message_log) if log.message_log else []
+                    ),
+                }
+                log_data.append(log_entry)
+
+            with NamedTemporaryFile(
+                mode="w", delete=False, suffix=".yaml"
+            ) as temp_file:
+                yaml.dump(log_data, temp_file, default_flow_style=False)
+                temp_file_path = temp_file.name
+
+            return FileResponse(
+                temp_file_path,
+                media_type="application/octet-stream",
+                filename="exported_logs.yaml",
+            )
+
+        except Exception as e:
+            logger.error(f"Error in export_logs: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
         finally:
             db.close()
 
