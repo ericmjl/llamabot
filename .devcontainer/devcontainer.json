@@ -7,9 +7,9 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "python.defaultInterpreterPath": "/opt/conda/envs/llamabot",
+                "python.defaultInterpreterPath": "/.pixi/envs/default/bin/python",
                 "python.terminal.activateEnvironment": true,
-                "python.terminal.activateEnvInCurrentTerminal": true
+                "python.terminal.activateEnvInCurrentTerminal": true,
             },
             "extensions": [
                 "arcticicestudio.nord-visual-studio-code",
@@ -31,6 +31,6 @@
     "forwardPorts": [
         8888
     ],
-    "postCreateCommand": "/opt/conda/envs/llamabot/bin/pre-commit install && /opt/conda/envs/llamabot/bin/python -m ipykernel install --user --name llamabot",
+    "postCreateCommand": "/.pixi/envs/default/bin/pre-commit install && /.pixi/envs/default/bin/python -m ipykernel install --user --name llamabot",
     "postStartCommand": "ollama serve"
 }
