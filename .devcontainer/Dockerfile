@@ -21,7 +21,7 @@ COPY tests tests
 
 # Install curl to get ollama
 # Install build-essential for C++ (needed for ChromaDB)
-RUN apt-get update && apt-get install -y curl build-essential
+RUN apt-get update && apt-get install -y curl build-essential git git-lfs
 
 # Configure apt and install packages
 RUN /usr/local/bin/pixi install --manifest-path pyproject.toml
