@@ -6,9 +6,10 @@ from typing import Optional
 from dotenv import load_dotenv
 
 from llamabot.config import default_language_model
+
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage, HumanMessage
-from llamabot.components.docstore import LanceDBDocStore
+from llamabot.components.docstore import LanceDBDocStore, SQLiteVecDocStore
 from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
@@ -23,7 +24,15 @@ prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
 class QueryBot(SimpleBot, ChatUIMixin):
-    """QueryBot is a bot that uses the DocumentStore to answer questions about a document."""
+    """Initialize QueryBot.
+
+    :param system_prompt: The system prompt to use.
+    :param collection_name: The name of the collection to use.
+    :param document_paths: The paths to the documents to use.
+    :param docstore_type: The type of document store to use ("lancedb", "sqlitevec", etc.)
+    :param mock_response: A mock response to use for testing.
+    :param stream_target: The target to stream to ("panel" or "stdout").
+    """
 
     def __init__(
         self,
@@ -31,6 +40,8 @@ class QueryBot(SimpleBot, ChatUIMixin):
         collection_name: str,
         initial_message: Optional[str] = None,
         document_paths: Optional[Path | list[Path]] = None,
+        docstore_type: str = "lancedb",  # Add this parameter
+        mock_response: str | None = None,
         temperature: float = 0.0,
         model_name: str = default_language_model(),
         stream_target: str = "stdout",
@@ -41,13 +52,28 @@ class QueryBot(SimpleBot, ChatUIMixin):
             system_prompt=system_prompt,
             temperature=temperature,
             model_name=model_name,
+            mock_response=mock_response,
             stream_target=stream_target,
             **kwargs,
         )
-        self.lancedb_store = LanceDBDocStore(table_name=slugify(collection_name))
-        self.lancedb_store.reset()
+
+        # Initialize the appropriate document store
+        if docstore_type == "lancedb":
+            self.docstore = LanceDBDocStore(
+                table_name=slugify(collection_name),
+                storage_path=Path.home() / ".llamabot" / "lancedb",
+            )
+        elif docstore_type == "sqlitevec":
+            self.docstore = SQLiteVecDocStore(
+                db_path=Path.home() / ".llamabot" / "sqlite_vec.db",
+                table_name=slugify(collection_name),
+            )
+        else:
+            raise ValueError(f"Unknown docstore type: {docstore_type}")
+
+        # Add documents to the store
         if document_paths:
-            self.lancedb_store.add_documents(document_paths=document_paths)
+            self.docstore.add_documents(document_paths=document_paths)
 
         self.response_budget = 2_000
 
@@ -62,13 +88,9 @@ class QueryBot(SimpleBot, ChatUIMixin):
         """
         messages = [self.system_prompt]
 
-        # context_budget = model_context_window_sizes.get(
-        #     self.model_name, DEFAULT_TOKEN_BUDGET
-        # )
-
         retreived_messages = set()
         retrieved_messages = retreived_messages.union(
-            self.lancedb_store.retrieve(query, n_results)
+            self.docstore.retrieve(query, n_results)
         )
         retrieved = [RetrievedMessage(content=chunk) for chunk in retrieved_messages]
         messages.extend(retrieved)

@@ -3,6 +3,8 @@
 from llamabot.bot.querybot import QueryBot
 from hypothesis import HealthCheck, strategies as st, given, settings
 import re
+from pathlib import Path
+import tempfile
 
 
 @given(
@@ -32,3 +34,45 @@ def test_querybot(
 
     bot("How are you doing?")
     bot.lancedb_store.reset()
+
+
+def test_querybot_with_sqlitevec():
+    """Test QueryBot with SQLiteVecDocStore."""
+    from llamabot.bot.querybot import QueryBot
+
+    # Create a temporary file with some test content
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+        f.write(
+            """
+        A young wizard discovers he has magical powers and attends a school of witchcraft and wizardry.
+        Two hobbits journey to destroy a powerful ring in a volcano while being pursued by dark forces.
+        A group of superheroes must work together to save Earth from an alien invasion.
+        """
+        )
+        temp_path = Path(f.name)
+
+    try:
+        # Initialize QueryBot with SQLiteVecDocStore
+        bot = QueryBot(
+            system_prompt="You are a helpful assistant that answers questions about movies.",
+            collection_name="test_movies",
+            document_paths=temp_path,
+            docstore_type="sqlitevec",  # Specify SQLiteVecDocStore
+            mock_response="This is a test response",  # For testing purposes
+            stream_target="stdout",
+        )
+
+        # Test querying
+        response = bot("Tell me about fantasy stories")
+        assert response is not None
+
+        # Test with a different query
+        response = bot("What superhero content do you have?")
+        assert response is not None
+
+        # Clean up
+        bot.docstore.reset()
+
+    finally:
+        # Clean up temporary file
+        temp_path.unlink()
