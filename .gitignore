@@ -159,3 +159,4 @@ scratch_notebooks/*.html
 
 # SQLite database
 message_log.db
+example_docs.db
