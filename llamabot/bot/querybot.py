@@ -57,16 +57,18 @@ class QueryBot(SimpleBot, ChatUIMixin):
             **kwargs,
         )
 
+        collection_name = slugify(collection_name, separator="_")
+
         # Initialize the appropriate document store
         if docstore_type == "lancedb":
             self.docstore = LanceDBDocStore(
-                table_name=slugify(collection_name),
+                table_name=collection_name,
                 storage_path=Path.home() / ".llamabot" / "lancedb",
             )
         elif docstore_type == "sqlitevec":
             self.docstore = SQLiteVecDocStore(
                 db_path=Path.home() / ".llamabot" / "sqlite_vec.db",
-                table_name=slugify(collection_name),
+                table_name=collection_name,
             )
         else:
             raise ValueError(f"Unknown docstore type: {docstore_type}")
