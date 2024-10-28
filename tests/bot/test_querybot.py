@@ -33,7 +33,7 @@ def test_querybot(
     )
 
     bot("How are you doing?")
-    bot.lancedb_store.reset()
+    bot.docstore.reset()
 
 
 def test_querybot_with_sqlitevec():
