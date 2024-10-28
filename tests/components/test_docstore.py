@@ -1,7 +1,12 @@
 """Tests for the document store."""
 
 from pathlib import Path
-from llamabot.components.docstore import BM25DocStore, ChromaDBDocStore, LanceDBDocStore
+from llamabot.components.docstore import (
+    BM25DocStore,
+    ChromaDBDocStore,
+    LanceDBDocStore,
+    SQLiteVecDocStore,
+)
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 
@@ -24,10 +29,20 @@ def bm25():
     return BM25DocStore()
 
 
+def sqlitevec():
+    """Return a SQLiteVecDocStore."""
+    store = SQLiteVecDocStore(
+        db_path=Path("/tmp/test_sqlite_vec.db"), table_name="test_documents"
+    )
+    store.reset()
+    return store
+
+
 docstore_strategies = [
     st.just(lancedb()),
     st.just(chromadb()),
     st.just(bm25()),
+    st.just(sqlitevec()),
 ]
 
 
@@ -36,7 +51,6 @@ docstore_strategies = [
 def test_add_documents(tmp_path: Path, docstore):
     """Test the add_documents method of DocumentStore."""
     # Add a single document
-    # document_path = Path("path/to/document.txt")
     document_path = tmp_path / "document.txt"
     document_path.touch()
     document_path.write_text("content of the document")
@@ -63,3 +77,44 @@ def test_add_documents(tmp_path: Path, docstore):
 
     # Clean up the temporary collection
     docstore.reset()
+
+
+def test_sqlitevec_specific():
+    """Test SQLiteVecDocStore specific functionality."""
+    store = sqlitevec()
+
+    # Test document addition and retrieval
+    documents = [
+        "The quick brown fox jumps over the lazy dog",
+        "A quick brown dog jumps over the lazy fox",
+        "The lazy fox sleeps while the quick brown dog works",
+    ]
+
+    # Add documents one by one
+    for doc in documents:
+        store.append(doc)
+
+    # Test semantic search capabilities
+    results = store.retrieve("fox and dog", n_results=2)
+    assert len(results) == 2
+    assert all(isinstance(doc, str) for doc in results)
+
+    # Test exact document exists
+    results = store.retrieve(documents[0], n_results=1)
+    assert results[0] == documents[0]
+
+    # Test extend functionality
+    new_documents = ["New document about animals", "Another document about jumping"]
+    store.extend(new_documents)
+
+    # Test retrieval after extend
+    results = store.retrieve("jumping animals", n_results=1)
+    assert len(results) == 1
+
+    # Test reset functionality
+    store.reset()
+    results = store.retrieve("fox", n_results=1)
+    assert len(results) == 0
+
+    # Clean up
+    store.reset()
