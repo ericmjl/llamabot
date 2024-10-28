@@ -39,7 +39,7 @@ def version_prompt(
     if db_path is None:
         db_path = here() / "message_log.db"
     if str(db_path).startswith("sqlite:///"):
-        db_path = db_path.replace("sqlite:///", "")
+        db_path = Path(str(db_path).replace("sqlite:///", ""))
     engine = create_engine(f"sqlite:///{db_path}")
     Base.metadata.create_all(engine)
     upgrade_database(engine)
