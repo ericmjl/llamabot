@@ -24,7 +24,8 @@
                 "GitHub.codespaces",
                 "GitHub.vscode-pull-request-github",
                 "DavidAnson.vscode-markdownlint",
-                "johnpapa.vscode-peacock"
+                "johnpapa.vscode-peacock",
+                "eamodio.gitlens"
             ]
         }
     },
@@ -32,5 +33,5 @@
         8888
     ],
     "postCreateCommand": "/.pixi/envs/default/bin/pre-commit install && /.pixi/envs/default/bin/python -m ipykernel install --user --name llamabot",
-    // "postStartCommand": "ollama serve"
+    "postStartCommand": "ollama serve"
 }
