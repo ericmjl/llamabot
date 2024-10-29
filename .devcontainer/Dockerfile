@@ -1,4 +1,4 @@
-FROM ghcr.io/prefix-dev/pixi:latest
+FROM --platform=linux/amd64 ghcr.io/prefix-dev/pixi:latest
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
