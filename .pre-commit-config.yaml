@@ -47,7 +47,7 @@ repos:
     hooks:
       - id: pixi-install
         name: pixi-install
-        entry: pixi install --manifest-path /pyproject.toml
+        entry: pwd
         language: system
         always_run: true
         require_serial: true

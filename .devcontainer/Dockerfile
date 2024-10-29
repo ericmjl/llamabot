@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y curl build-essential git git-lfs
 RUN /usr/local/bin/pixi install --manifest-path pyproject.toml
 
 # Install Ollama within Docker container to run large language models locally
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Always the final command
 COPY . .
