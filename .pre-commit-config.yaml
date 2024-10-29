@@ -47,7 +47,11 @@ repos:
     hooks:
       - id: pixi-install
         name: pixi-install
-        entry: pwd
+        entry: |
+          echo "Current environment variables:"
+          env
+          echo "Running pixi install..."
+          pixi install --manifest-path $CWD/pyproject.toml
         language: system
         always_run: true
         require_serial: true
