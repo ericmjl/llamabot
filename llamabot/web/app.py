@@ -531,4 +531,23 @@ def create_app(db_path: Optional[Path] = None):
         finally:
             db.close()
 
+    @app.get("/prompt/{prompt_hash}")
+    async def get_prompt(prompt_hash: str):
+        """Get prompt details by hash."""
+        db = SessionLocal()
+        try:
+            prompt = db.query(Prompt).filter(Prompt.hash == prompt_hash).first()
+            if prompt is None:
+                raise HTTPException(status_code=404, detail="Prompt not found")
+
+            return templates.TemplateResponse(
+                "prompt_modal.html",
+                {
+                    "request": {},
+                    "prompt": prompt,
+                },
+            )
+        finally:
+            db.close()
+
     return app

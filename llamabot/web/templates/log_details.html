@@ -37,8 +37,10 @@
                         <div class="prompt-info">
                             <span class="prompt-name">{{ message.prompt_name }}</span>
                             <a href="#" class="prompt-hash"
-                               data-hash="{{ message.prompt_hash }}"
-                               data-template="{{ message.prompt_template }}">
+                               hx-get="/prompt/{{ message.prompt_hash }}"
+                               hx-target="#modal-content"
+                               hx-trigger="click"
+                               hx-swap="innerHTML">
                                 {{ message.prompt_hash[:8] }}...
                             </a>
                         </div>
@@ -47,5 +49,13 @@
                 </div>
             {% endfor %}
         </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="prompt-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modal-content"></div>
     </div>
 </div>
