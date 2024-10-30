@@ -22,15 +22,30 @@ The development container is built using the Dockerfile located at `.devcontaine
 
 The Dockerfile includes the following key steps:
 
-1. Copies necessary files and directories into the container, including the `tests` directory and the `llamabot` directory.
+1. pull the base image on an amd platform (we specified the platform at this step because some of the dependencies are not supported on arm)
 2. Installs `curl` and `build-essential` for C++ (needed for ChromaDB).
-3. Configures apt and installs packages using `pixi` based on the `pyproject.toml` file.
-4. Installs Ollama within the Docker container.
-5. Sets the final command and switches back to dialog for any ad-hoc use of `apt-get`.
+3. Installs Ollama within the Docker container.
+4. Sets the final command and switches back to dialog for any ad-hoc use of `apt-get`.
+
+### Devcontainer.json Contents
+
+The `devcontainer.json` file located at `.devcontainer/devcontainer.json` influences the development container by specifying the build context, customizations for Visual Studio Code, forward ports, and post-create and post-start commands.
+
+1. Specifies the Dockerfile and build context.
+2. Customizes Visual Studio Code settings and extensions for the development environment.
+3. Forwards port `8888` for the development environment.
+4. Mount the `.pixi` directory into a volume. This is needed since the `.pixi` directory shouldn't be on a case insensitive filesystem (default on macOS, Windows) but instead in its own volume.
+5. Specifies post-create commands. This includes installing the project within the mounted repo (`/workspaces/llamabot`). installing `pre-commit` hooks and `ipykernel` for setting up the environment and.
+6. Specifies post-start commands for running the Llamabot server.
+
+### Purpose of postCreateCommand and postStartCommand
+
+The 'postCreateCommand' is executed after the development container is created to install the pixi project, set up the environment, and the 'postStartCommand' is executed after the container is started to run the Llamabot server.
 
 ### Ollama Software
-
 The 'ollama' software is used to run large language models locally within the Docker container and is installed using the command `RUN curl -fsSL https://ollama.com/install.sh | sh`. Ollama is a crucial component for running large language models within the development container.
+
+## Directories within the repo
 
 ### Tests Directory
 
@@ -39,25 +54,6 @@ The `tests` directory contains the software tests to get started with developmen
 ### Llamabot Directory
 
 The 'llamabot' directory contains the source code and documentation for the Llamabot project, highlighting its significance in the development container.
-
-## Devcontainer.json Influence
-
-The `devcontainer.json` file located at `.devcontainer/devcontainer.json` influences the development container by specifying the build context, customizations for Visual Studio Code, forward ports, and post-create and post-start commands.
-
-### Devcontainer.json Contents
-
-- Specifies the Dockerfile and build context.
-- Customizes Visual Studio Code settings and extensions for the development environment.
-- Forwards port 8888 for the development environment.
-- Specifies post-create and post-start commands for setting up the environment and running the Llamabot server.
-
-### Devcontainer.json Commands
-
-The 'postCreateCommand' is used to install pre-commit and set up the Python environment, while the 'postStartCommand' is used to start the 'ollama' server.
-
-### Purpose of postCreateCommand and postStartCommand
-
-The 'postCreateCommand' is executed after the development container is created to set up the environment, and the 'postStartCommand' is executed after the container is started to run the Llamabot server.
 
 ## Build Process
 
