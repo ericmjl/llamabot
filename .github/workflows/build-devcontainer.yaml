@@ -18,6 +18,10 @@ jobs:
         steps:
         -   uses: actions/checkout@v4
 
+        -   name: Print repository owner
+            run: |
+                echo "Repository owner: ${{ github.repository_owner }}"
+
         -   name: Set up QEMU
             uses: docker/setup-qemu-action@v3
 
