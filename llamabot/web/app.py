@@ -53,7 +53,23 @@ def create_app(db_path: Optional[Path] = None):
         :param request: The FastAPI request object.
         :return: The root page.
         """
-        return templates.TemplateResponse("index.html", {"request": request})
+        db = SessionLocal()
+        try:
+            # Get unique function names from prompts table
+            prompts = (
+                db.query(Prompt.function_name)
+                .distinct()
+                .order_by(Prompt.function_name)
+                .all()
+            )
+            # Convert from list of tuples to list of strings
+            prompts = [{"function_name": p[0]} for p in prompts]
+
+            return templates.TemplateResponse(
+                "index.html", {"request": request, "prompts": prompts}
+            )
+        finally:
+            db.close()
 
     @app.get("/logs")
     async def get_logs(function_name: Optional[str] = None):
@@ -186,9 +202,19 @@ def create_app(db_path: Optional[Path] = None):
         finally:
             db.close()
 
-    @app.get("/prompt_history/{function_name}")
-    async def get_prompt_history(function_name: str):
+    @app.get("/prompt_history")
+    async def get_prompt_history(request: Request, function_name: str = ""):
         """Get the history of prompts for a given function name."""
+        if not function_name:
+            return templates.TemplateResponse(
+                "prompt_history.html",
+                {
+                    "request": request,
+                    "function_name": "",
+                    "prompt_history": [],
+                },
+            )
+
         db = SessionLocal()
         try:
             prompts = (
@@ -199,8 +225,13 @@ def create_app(db_path: Optional[Path] = None):
             )
 
             if not prompts:
-                raise HTTPException(
-                    status_code=404, detail="No prompts found for this function name"
+                return templates.TemplateResponse(
+                    "prompt_history.html",
+                    {
+                        "request": request,
+                        "function_name": function_name,
+                        "prompt_history": [],
+                    },
                 )
 
             prompt_history = []
@@ -228,7 +259,7 @@ def create_app(db_path: Optional[Path] = None):
             return templates.TemplateResponse(
                 "prompt_history.html",
                 {
-                    "request": {},
+                    "request": request,
                     "function_name": function_name,
                     "prompt_history": prompt_history,
                 },
@@ -351,6 +382,91 @@ def create_app(db_path: Optional[Path] = None):
         except Exception as e:
             logger.error(f"Error in export_logs: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            db.close()
+
+    @app.get("/filtered_logs")
+    async def get_filtered_logs(
+        request: Request, text_filter: str = "", function_name: str = ""
+    ):
+        """Get filtered logs based on text search and function name."""
+        db = SessionLocal()
+        try:
+            query = db.query(MessageLog).order_by(MessageLog.timestamp.desc())
+
+            # Apply function name filter if provided
+            if function_name:
+                prompt_hashes = (
+                    db.query(Prompt.hash)
+                    .filter(Prompt.function_name == function_name)
+                    .all()
+                )
+                prompt_hashes = [hash[0] for hash in prompt_hashes]
+                if prompt_hashes:
+                    conditions = [
+                        MessageLog.message_log.like(f"%{hash}%")
+                        for hash in prompt_hashes
+                    ]
+                    query = query.filter(or_(*conditions))
+
+            # Apply text filter if provided
+            if text_filter:
+                text_filter = text_filter.lower()
+                query = query.filter(
+                    or_(
+                        MessageLog.object_name.ilike(f"%{text_filter}%"),
+                        MessageLog.message_log.ilike(f"%{text_filter}%"),
+                        MessageLog.model_name.ilike(f"%{text_filter}%"),
+                    )
+                )
+
+            logs = query.all()
+            log_data = []
+
+            for log in logs:
+                try:
+                    message_log_content = (
+                        json.loads(log.message_log) if log.message_log else []
+                    )
+                except json.JSONDecodeError:
+                    message_log_content = []
+
+                prompt_hashes = set()
+                for message in message_log_content:
+                    if isinstance(message, dict) and "prompt_hash" in message:
+                        prompt_hash = message["prompt_hash"]
+                        if prompt_hash is not None:
+                            prompt_hashes.add(prompt_hash)
+
+                prompts = db.query(Prompt).filter(Prompt.hash.in_(prompt_hashes)).all()
+                prompt_names = [
+                    f"- {prompt.function_name} ({prompt.hash[:6]})"
+                    for prompt in prompts
+                ]
+                formatted_prompt_names = (
+                    "\n".join(prompt_names) if prompt_names else "No prompts used"
+                )
+
+                # Ensure data is ordered according to table columns
+                log_data.append(
+                    {
+                        "id": log.id,  # Column 1
+                        "object_name": log.object_name,  # Column 2
+                        "timestamp": log.timestamp,  # Column 3
+                        "model_name": log.model_name,  # Column 4
+                        "temperature": log.temperature,  # Column 5
+                        "prompt_names": formatted_prompt_names,  # Column 6
+                        "rating": log.rating,
+                    }
+                )
+
+            return templates.TemplateResponse(
+                "log_tbody.html",
+                {
+                    "request": request,
+                    "logs": log_data,
+                },
+            )
         finally:
             db.close()
 
