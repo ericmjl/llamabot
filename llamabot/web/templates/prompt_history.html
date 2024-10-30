@@ -1,11 +1,38 @@
-<h2>Prompt History for {{ function_name }}</h2>
-{% for prompt in prompt_history %}
-    <div class="prompt-version mb-4">
-        <h3>Version {{ prompt.hash[:8] }}</h3>
-        <pre><code class="language-plaintext">{{ prompt.template }}</code></pre>
-        {% if prompt.diff %}
-            <h4>Diff from previous version:</h4>
-            <pre><code class="language-diff">{{ prompt.diff }}</code></pre>
+<div class="card">
+    <div class="card-body">
+        {% if function_name %}
+            <h3>Prompt History for {{ function_name }}</h3>
+            {% if prompt_history %}
+                <div class="prompt-timeline">
+                    {% for prompt in prompt_history %}
+                        <div class="prompt-version">
+                            <div class="version-header">
+                                <span class="version-badge">Version {{ prompt_history|length - loop.index0 }}</span>
+                                <span class="version-hash">({{ prompt.hash[:8] }})</span>
+                            </div>
+
+                            <div class="template-content">
+                                <pre><code class="language-plaintext">{{ prompt.template }}</code></pre>
+                            </div>
+
+                            {% if prompt.diff %}
+                                <div class="version-changes">
+                                    <h5>Changes from previous version:</h5>
+                                    <pre><code class="language-diff">{{ prompt.diff }}</code></pre>
+                                </div>
+                            {% endif %}
+
+                            {% if not loop.last %}
+                                <div class="timeline-connector"></div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No history found for this prompt.</p>
+            {% endif %}
+        {% else %}
+            <p class="text-muted">Select a prompt function to view its history.</p>
         {% endif %}
     </div>
-{% endfor %}
+</div>

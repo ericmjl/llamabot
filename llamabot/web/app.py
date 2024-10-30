@@ -293,8 +293,10 @@ def create_app(db_path: Optional[Path] = None):
             db.close()
 
     @app.get("/prompt_history")
-    async def get_prompt_history(request: Request, function_name: str = ""):
+    async def get_prompt_history(request: Request, function_name: str):
         """Get the history of prompts for a given function name."""
+        logger.debug(f"Getting prompt history for function: {function_name}")
+
         if not function_name:
             return templates.TemplateResponse(
                 "prompt_history.html",
@@ -307,12 +309,15 @@ def create_app(db_path: Optional[Path] = None):
 
         db = SessionLocal()
         try:
+            # Get all prompts for this function, ordered by ID descending (newest first)
             prompts = (
                 db.query(Prompt)
                 .filter(Prompt.function_name == function_name)
                 .order_by(desc(Prompt.id))
                 .all()
             )
+
+            logger.debug(f"Found {len(prompts)} prompts for function {function_name}")
 
             if not prompts:
                 return templates.TemplateResponse(
@@ -337,6 +342,7 @@ def create_app(db_path: Optional[Path] = None):
                             lineterm="",
                         )
                     )
+                    logger.debug(f"Generated diff between versions {i+1} and {i}")
 
                 prompt_history.append(
                     {
@@ -355,6 +361,7 @@ def create_app(db_path: Optional[Path] = None):
                 },
             )
         except Exception as e:
+            logger.error(f"Error getting prompt history: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             db.close()

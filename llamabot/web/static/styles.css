@@ -303,3 +303,152 @@ pre code {
 .collapse {
     transition: height 0.3s ease-out;
 }
+
+/* Add these styles for the prompt history */
+.prompt-version {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.template-content pre,
+.diff-content pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.diff-content pre {
+    background-color: #f8f9fa;
+    font-family: monospace;
+}
+
+/* Style diff content */
+.language-diff {
+    color: #24292e;
+}
+
+.language-diff .deletion {
+    background-color: #ffeef0;
+    color: #b31d28;
+}
+
+.language-diff .addition {
+    background-color: #e6ffed;
+    color: #22863a;
+}
+
+/* Make the prompt history container scrollable */
+#prompt-history-container {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Style headings in prompt history */
+.prompt-version h4 {
+    color: #0066cc;
+    margin-bottom: 1rem;
+}
+
+.prompt-version h5 {
+    color: #666;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Style the horizontal rule */
+.prompt-version hr {
+    margin: 2rem 0;
+    border-color: #eee;
+}
+
+/* Timeline styles for prompt history */
+.prompt-timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.prompt-version {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.version-header {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.version-badge {
+    background-color: #0066cc;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.version-hash {
+    color: #666;
+    font-family: monospace;
+}
+
+.timeline-connector {
+    position: absolute;
+    left: 50%;
+    bottom: -30px;
+    width: 2px;
+    height: 30px;
+    background-color: #ddd;
+}
+
+.version-changes {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.version-changes h5 {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+/* Style the diff content */
+.language-diff {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
+.language-diff .deletion {
+    color: #b31d28;
+    background-color: #ffeef0;
+}
+
+.language-diff .addition {
+    color: #22863a;
+    background-color: #e6ffed;
+}
+
+/* Make code blocks look better */
+.template-content pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 0;
+    overflow-x: auto;
+}
+
+.template-content code {
+    font-family: monospace;
+    white-space: pre-wrap;
+}
