@@ -22,11 +22,9 @@ jobs:
               run: |
                   if [[ -z "${{ secrets.DOCKERHUB_USERNAME }}" || -z "${{ secrets.DOCKERHUB_TOKEN }}" ]]; then
                       echo "Secrets are not set. Skipping build."
-                      echo "secrets_available=false" >> $GITHUB_ENV
-                      echo "::set-output name=secrets_available::false"
+                      echo "secrets_available=false" >> "$GITHUB_OUTPUT"
                   else
-                      echo "secrets_available=true" >> $GITHUB_ENV
-                      echo "::set-output name=secrets_available::true"
+                      echo "secrets_available=false" >> "$GITHUB_OUTPUT"
                   fi
 
     build-container:
