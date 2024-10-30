@@ -32,11 +32,18 @@
         <div class="message-log">
             {% for message in log.message_log %}
                 <div class="message {% if message.role == 'assistant' %}assistant{% else %}user{% endif %}">
-                    <strong>{{ message.role }}:</strong>
+                    <div class="role">{{ message.role }}</div>
                     {% if message.prompt_name %}
-                        <br><em>Using prompt: {{ message.prompt_name }}</em>
+                        <div class="prompt-info">
+                            <span class="prompt-name">{{ message.prompt_name }}</span>
+                            <a href="#" class="prompt-hash"
+                               data-hash="{{ message.prompt_hash }}"
+                               data-template="{{ message.prompt_template }}">
+                                {{ message.prompt_hash[:8] }}...
+                            </a>
+                        </div>
                     {% endif %}
-                    <pre><code>{{ message.content }}</code></pre>
+                    <div class="content">{{ message.content }}</div>
                 </div>
             {% endfor %}
         </div>

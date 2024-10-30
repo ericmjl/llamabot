@@ -188,14 +188,21 @@ def create_app(db_path: Optional[Path] = None):
                         message["prompt_name"] = prompt.function_name
                         message["prompt_template"] = prompt.template
 
-            return {
-                "id": log.id,
-                "object_name": log.object_name,
-                "timestamp": log.timestamp,
-                "message_log": message_log,
-                "model_name": log.model_name,
-                "temperature": log.temperature,
-            }
+            return templates.TemplateResponse(
+                "log_details.html",
+                {
+                    "request": {},
+                    "log": {
+                        "id": log.id,
+                        "object_name": log.object_name,
+                        "timestamp": log.timestamp,
+                        "message_log": message_log,
+                        "model_name": log.model_name,
+                        "temperature": log.temperature,
+                        "rating": log.rating,
+                    },
+                },
+            )
         except Exception as e:
             logger.error(f"Error in get_log: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
