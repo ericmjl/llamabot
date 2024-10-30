@@ -95,6 +95,10 @@ tr:hover {
     background-color: #f0f0f0;
 }
 
+.message.system {
+    background-color: #e8f5e9;
+}
+
 .filter-container {
     margin-bottom: 20px;
 }
@@ -201,10 +205,19 @@ pre code {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body {
+    padding: 1.25rem;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .table-responsive {
-    max-height: 70vh;
+    max-height: calc(70vh - 2.5rem);
     overflow-y: auto;
 }
 
@@ -230,13 +243,11 @@ pre code {
 
 /* Update existing styles */
 .log-details {
-    height: 70vh;
+    max-height: 70vh;
     overflow-y: auto;
-}
-
-/* Add some padding to the card body */
-.card-body {
-    padding: 1.25rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Style the placeholder text */
@@ -244,4 +255,51 @@ pre code {
     color: #6c757d;
     text-align: center;
     margin-top: 2rem;
+}
+
+/* Add these styles to your existing CSS */
+.message-header {
+    cursor: pointer;
+    user-select: none;
+    padding: 5px 10px;
+    border-radius: 4px 4px 0 0;
+    margin-bottom: 0;
+}
+
+.message-header:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.collapse-icon {
+    display: inline-block;
+    transition: transform 0.2s;
+    margin-right: 5px;
+}
+
+.message-header[aria-expanded="false"] .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+/* Style headers for each message type */
+.message.user .message-header {
+    background-color: #e3f2fd;
+}
+
+.message.assistant .message-header {
+    background-color: #f0f0f0;
+}
+
+.message.system .message-header {
+    background-color: #e8f5e9;
+}
+
+/* Style content for all messages */
+.message .content {
+    margin-top: 0;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+.collapse {
+    transition: height 0.3s ease-out;
 }
