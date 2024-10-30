@@ -13,7 +13,7 @@ on:
 
 jobs:
     build-container:
-        if: github.repository_owner == 'ericmjl' || github.repository_owner == 'amirmolavi'
+        if: github.repository_owner == 'ericmjl'
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v4
