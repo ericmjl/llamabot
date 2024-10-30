@@ -29,6 +29,22 @@
             </div>
         </div>
 
+        <!-- Expand/Collapse All buttons -->
+        <div class="mb-3">
+            <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-outline-secondary"
+                        hx-get="/log/{{ log.id }}/expand"
+                        hx-target="#log-details">
+                    Expand All
+                </button>
+                <button class="btn btn-sm btn-outline-secondary"
+                        hx-get="/log/{{ log.id }}/collapse"
+                        hx-target="#log-details">
+                    Collapse All
+                </button>
+            </div>
+        </div>
+
         <div class="message-log">
             {% for message in log.message_log %}
                 <div class="message {% if message.role == 'assistant' %}assistant{% elif message.role == 'system' %}system{% else %}user{% endif %}">
@@ -36,7 +52,7 @@
                          role="button"
                          data-bs-toggle="collapse"
                          data-bs-target="#message-{{ loop.index }}"
-                         aria-expanded="true">
+                         aria-expanded="{{ 'true' if expanded else 'false' }}">
                         <div class="role">
                             <i class="collapse-icon">▼</i> {{ message.role }}
                         </div>
@@ -53,7 +69,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="collapse show" id="message-{{ loop.index }}">
+                    <div class="collapse {{ 'show' if expanded else '' }}" id="message-{{ loop.index }}">
                         <div class="content">{{ message.content }}</div>
                     </div>
                 </div>

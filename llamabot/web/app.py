@@ -167,7 +167,7 @@ def create_app(db_path: Optional[Path] = None):
             db.close()
 
     @app.get("/log/{log_id}")
-    async def get_log(log_id: int):
+    async def get_log(log_id: int, expanded: bool = True):
         """Get a single log by ID."""
         db = SessionLocal()
         try:
@@ -201,11 +201,94 @@ def create_app(db_path: Optional[Path] = None):
                         "temperature": log.temperature,
                         "rating": log.rating,
                     },
+                    "expanded": expanded,  # Pass the expanded state to the template
                 },
             )
         except Exception as e:
             logger.error(f"Error in get_log: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            db.close()
+
+    @app.get("/log/{log_id}/expand")
+    async def expand_log(log_id: int, request: Request):
+        """Get log details with all messages expanded."""
+        db = SessionLocal()
+        try:
+            log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
+            if log is None:
+                raise HTTPException(status_code=404, detail="Log not found")
+            message_log = json.loads(log.message_log if log.message_log else "[]")
+
+            # Fetch prompt names and templates for each message with a prompt_hash
+            for message in message_log:
+                if message.get("prompt_hash"):
+                    prompt = (
+                        db.query(Prompt)
+                        .filter(Prompt.hash == message["prompt_hash"])
+                        .first()
+                    )
+                    if prompt:
+                        message["prompt_name"] = prompt.function_name
+                        message["prompt_template"] = prompt.template
+
+            return templates.TemplateResponse(
+                "log_details.html",
+                {
+                    "request": request,
+                    "log": {
+                        "id": log.id,
+                        "object_name": log.object_name,
+                        "timestamp": log.timestamp,
+                        "message_log": message_log,
+                        "model_name": log.model_name,
+                        "temperature": log.temperature,
+                        "rating": log.rating,
+                    },
+                    "expanded": True,
+                },
+            )
+        finally:
+            db.close()
+
+    @app.get("/log/{log_id}/collapse")
+    async def collapse_log(log_id: int, request: Request):
+        """Get log details with all messages collapsed."""
+        db = SessionLocal()
+        try:
+            log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
+            if log is None:
+                raise HTTPException(status_code=404, detail="Log not found")
+            message_log = json.loads(log.message_log if log.message_log else "[]")
+
+            # Fetch prompt names and templates for each message with a prompt_hash
+            for message in message_log:
+                if message.get("prompt_hash"):
+                    prompt = (
+                        db.query(Prompt)
+                        .filter(Prompt.hash == message["prompt_hash"])
+                        .first()
+                    )
+                    if prompt:
+                        message["prompt_name"] = prompt.function_name
+                        message["prompt_template"] = prompt.template
+
+            return templates.TemplateResponse(
+                "log_details.html",
+                {
+                    "request": request,
+                    "log": {
+                        "id": log.id,
+                        "object_name": log.object_name,
+                        "timestamp": log.timestamp,
+                        "message_log": message_log,
+                        "model_name": log.model_name,
+                        "temperature": log.temperature,
+                        "rating": log.rating,
+                    },
+                    "expanded": False,
+                },
+            )
         finally:
             db.close()
 
