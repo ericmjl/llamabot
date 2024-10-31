@@ -272,12 +272,19 @@ pre code {
 
 .collapse-icon {
     display: inline-block;
-    transition: transform 0.2s;
-    margin-right: 5px;
+    transition: transform 0.2s ease-in-out;
 }
 
-.message-header[aria-expanded="false"] .collapse-icon {
+/* When the collapse is not shown (closed) */
+.collapse:not(.show) ~ .message-header .collapse-icon,
+[data-bs-toggle="collapse"][aria-expanded="false"] .collapse-icon {
     transform: rotate(-90deg);
+}
+
+/* When the collapse is shown (open) */
+.collapse.show ~ .message-header .collapse-icon,
+[data-bs-toggle="collapse"][aria-expanded="true"] .collapse-icon {
+    transform: rotate(0deg);
 }
 
 /* Style headers for each message type */
