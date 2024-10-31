@@ -1,0 +1,19 @@
+<div class="mb-3" id="rating-buttons-{{ log.id }}">
+    <strong>Rate this response:</strong><br>
+    <div class="btn-group mt-2" role="group">
+        <button class="btn btn-outline-success me-2 rating-btn"
+                hx-post="/log/{{ log.id }}/rate"
+                hx-vals='{"rating": 1}'
+                hx-target="#rating-buttons-{{ log.id }}"
+                {% if log.rating == 1 %}disabled{% endif %}>
+            👍 Helpful
+        </button>
+        <button class="btn btn-outline-danger rating-btn"
+                hx-post="/log/{{ log.id }}/rate"
+                hx-vals='{"rating": 0}'
+                hx-target="#rating-buttons-{{ log.id }}"
+                {% if log.rating == 0 %}disabled{% endif %}>
+            👎 Not Helpful
+        </button>
+    </div>
+</div>
