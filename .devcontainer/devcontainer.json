@@ -7,7 +7,7 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "python.defaultInterpreterPath": "/opt/conda/envs/llamabot",
+                "python.defaultInterpreterPath": "/workspaces/llamabot/.pixi/envs/default/bin/python",
                 "python.terminal.activateEnvironment": true,
                 "python.terminal.activateEnvInCurrentTerminal": true
             },
@@ -24,13 +24,15 @@
                 "GitHub.codespaces",
                 "GitHub.vscode-pull-request-github",
                 "DavidAnson.vscode-markdownlint",
-                "johnpapa.vscode-peacock"
+                "johnpapa.vscode-peacock",
+                "eamodio.gitlens"
             ]
         }
     },
     "forwardPorts": [
         8888
     ],
-    "postCreateCommand": "/opt/conda/envs/llamabot/bin/pre-commit install && /opt/conda/envs/llamabot/bin/python -m ipykernel install --user --name llamabot",
+    "mounts": ["source=${localWorkspaceFolderBasename}-pixi,target=${containerWorkspaceFolder}/.pixi,type=volume"],
+    "postCreateCommand": "pixi install && /workspaces/llamabot/.pixi/envs/default/bin/pre-commit install && /workspaces/llamabot/.pixi/envs/default/bin/python -m ipykernel install --user --name llamabot",
     "postStartCommand": "ollama serve"
 }

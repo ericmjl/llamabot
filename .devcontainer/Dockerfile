@@ -1,4 +1,4 @@
-FROM ghcr.io/prefix-dev/pixi:latest
+FROM --platform=linux/amd64 ghcr.io/prefix-dev/pixi:latest
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
@@ -11,26 +11,14 @@ ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# Copy lockfile and config file for pixi to install env
-COPY pixi.lock .
-COPY pyproject.toml .
-# Copy docs source, llamabot source, and software tests to get started with development
-COPY docs docs
-COPY llamabot llamabot
-COPY tests tests
 
 # Install curl to get ollama
 # Install build-essential for C++ (needed for ChromaDB)
-RUN apt-get update && apt-get install -y curl build-essential
-
-# Configure apt and install packages
-RUN /usr/local/bin/pixi install --manifest-path pyproject.toml
+RUN apt-get update && apt-get install -y curl build-essential git git-lfs
 
 # Install Ollama within Docker container to run large language models locally
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Always the final command
-COPY . .
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
