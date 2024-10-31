@@ -29,6 +29,9 @@
             ]
         }
     },
+    "containerEnv": {
+        "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
+    },
     "forwardPorts": [
         8888
     ],
