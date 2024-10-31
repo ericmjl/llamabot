@@ -174,7 +174,7 @@ def create_app(db_path: Optional[Path] = None):
             log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
             if log is None:
                 raise HTTPException(status_code=404, detail="Log not found")
-            message_log = json.loads(log.message_log if log.message_log else "[]")
+            message_log = json.loads(str(log.message_log) if log.message_log else "[]")
 
             # Fetch prompt names and templates for each message with a prompt_hash
             for message in message_log:
@@ -201,12 +201,11 @@ def create_app(db_path: Optional[Path] = None):
                         "temperature": log.temperature,
                         "rating": log.rating,
                     },
-                    "expanded": expanded,  # Pass the expanded state to the template
+                    "expanded": expanded,
+                    "log_id": log.id,
+                    "rating": log.rating,
                 },
             )
-        except Exception as e:
-            logger.error(f"Error in get_log: {str(e)}")
-            raise HTTPException(status_code=500, detail=str(e))
         finally:
             db.close()
 
@@ -218,7 +217,7 @@ def create_app(db_path: Optional[Path] = None):
             log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
             if log is None:
                 raise HTTPException(status_code=404, detail="Log not found")
-            message_log = json.loads(log.message_log if log.message_log else "[]")
+            message_log = json.loads(str(log.message_log) if log.message_log else "[]")
 
             # Fetch prompt names and templates for each message with a prompt_hash
             for message in message_log:
@@ -233,17 +232,12 @@ def create_app(db_path: Optional[Path] = None):
                         message["prompt_template"] = prompt.template
 
             return templates.TemplateResponse(
-                "log_details.html",
+                "message_log.html",
                 {
                     "request": request,
                     "log": {
                         "id": log.id,
-                        "object_name": log.object_name,
-                        "timestamp": log.timestamp,
                         "message_log": message_log,
-                        "model_name": log.model_name,
-                        "temperature": log.temperature,
-                        "rating": log.rating,
                     },
                     "expanded": True,
                 },
@@ -259,7 +253,7 @@ def create_app(db_path: Optional[Path] = None):
             log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
             if log is None:
                 raise HTTPException(status_code=404, detail="Log not found")
-            message_log = json.loads(log.message_log if log.message_log else "[]")
+            message_log = json.loads(str(log.message_log) if log.message_log else "[]")
 
             # Fetch prompt names and templates for each message with a prompt_hash
             for message in message_log:
@@ -274,17 +268,12 @@ def create_app(db_path: Optional[Path] = None):
                         message["prompt_template"] = prompt.template
 
             return templates.TemplateResponse(
-                "log_details.html",
+                "message_log.html",
                 {
                     "request": request,
                     "log": {
                         "id": log.id,
-                        "object_name": log.object_name,
-                        "timestamp": log.timestamp,
                         "message_log": message_log,
-                        "model_name": log.model_name,
-                        "temperature": log.temperature,
-                        "rating": log.rating,
                     },
                     "expanded": False,
                 },
@@ -568,7 +557,10 @@ def create_app(db_path: Optional[Path] = None):
             db.close()
 
     @app.post("/log/{log_id}/rate")
-    async def rate_log(log_id: int, rating: int = Form(...)):
+    async def rate_log(
+        log_id: int,
+        rating: int = Form(...),
+    ):
         """Rate a log entry as helpful (1) or not helpful (0).
 
         :param log_id: The ID of the log to rate
@@ -581,38 +573,16 @@ def create_app(db_path: Optional[Path] = None):
                 raise HTTPException(status_code=404, detail="Log not found")
 
             # Update the rating
-            log.rating = rating
+            setattr(log, "rating", rating)  # Use setattr to avoid type checking issues
             db.commit()
 
-            # Fetch the updated log details to return
-            message_log = json.loads(log.message_log if log.message_log else "[]")
-
-            # Fetch prompt names and templates for each message
-            for message in message_log:
-                if message.get("prompt_hash"):
-                    prompt = (
-                        db.query(Prompt)
-                        .filter(Prompt.hash == message["prompt_hash"])
-                        .first()
-                    )
-                    if prompt:
-                        message["prompt_name"] = prompt.function_name
-                        message["prompt_template"] = prompt.template
-
-            # Return the updated log details template
+            # Return just the updated rating buttons
             return templates.TemplateResponse(
-                "log_details.html",
+                "rating_buttons.html",
                 {
                     "request": {},
-                    "log": {
-                        "id": log.id,
-                        "object_name": log.object_name,
-                        "timestamp": log.timestamp,
-                        "message_log": message_log,
-                        "model_name": log.model_name,
-                        "temperature": log.temperature,
-                        "rating": rating,  # Include the new rating
-                    },
+                    "log_id": log_id,
+                    "rating": rating,
                 },
             )
         except Exception as e:

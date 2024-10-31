@@ -9,43 +9,25 @@
         </div>
 
         <!-- Rating buttons -->
-        <div class="mb-3" id="rating-buttons-{{ log.id }}">
-            <strong>Rate this response:</strong><br>
-            <div class="btn-group mt-2" role="group">
-                <button class="btn btn-outline-success me-2 rating-btn"
-                        hx-post="/log/{{ log.id }}/rate"
-                        hx-vals='{"rating": 1}'
-                        hx-target="#log-details"
-                        {% if log.rating == 1 %}disabled{% endif %}>
-                    👍 Helpful
-                </button>
-                <button class="btn btn-outline-danger rating-btn"
-                        hx-post="/log/{{ log.id }}/rate"
-                        hx-vals='{"rating": 0}'
-                        hx-target="#log-details"
-                        {% if log.rating == 0 %}disabled{% endif %}>
-                    👎 Not Helpful
-                </button>
-            </div>
-        </div>
+        {% include "rating_buttons.html" with context %}
 
         <!-- Expand/Collapse All buttons -->
         <div class="mb-3">
             <div class="btn-group" role="group">
                 <button class="btn btn-sm btn-outline-secondary"
                         hx-get="/log/{{ log.id }}/expand"
-                        hx-target="#log-details">
+                        hx-target="#message-log-{{ log.id }}">
                     Expand All
                 </button>
                 <button class="btn btn-sm btn-outline-secondary"
                         hx-get="/log/{{ log.id }}/collapse"
-                        hx-target="#log-details">
+                        hx-target="#message-log-{{ log.id }}">
                     Collapse All
                 </button>
             </div>
         </div>
 
-        <div class="message-log">
+        <div class="message-log" id="message-log-{{ log.id }}">
             {% for message in log.message_log %}
                 <div class="message {% if message.role == 'assistant' %}assistant{% elif message.role == 'system' %}system{% else %}user{% endif %}">
                     <div class="message-header"
