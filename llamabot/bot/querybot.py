@@ -9,7 +9,7 @@ from llamabot.config import default_language_model
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage, HumanMessage
-from llamabot.components.docstore import LanceDBDocStore, SQLiteVecDocStore
+from llamabot.components.docstore import LanceDBDocStore
 from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
@@ -64,11 +64,6 @@ class QueryBot(SimpleBot, ChatUIMixin):
             self.docstore = LanceDBDocStore(
                 table_name=collection_name,
                 storage_path=Path.home() / ".llamabot" / "lancedb",
-            )
-        elif docstore_type == "sqlitevec":
-            self.docstore = SQLiteVecDocStore(
-                db_path=Path.home() / ".llamabot" / "sqlite_vec.db",
-                table_name=collection_name,
             )
         else:
             raise ValueError(f"Unknown docstore type: {docstore_type}")
