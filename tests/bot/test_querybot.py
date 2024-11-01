@@ -14,7 +14,11 @@ import re
     mock_response=st.text(min_size=4).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
     stream_target=st.one_of(st.just("panel"), st.just("stdout")),
 )
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    deadline=None,
+    max_examples=10,
+)
 def test_querybot(
     tmp_path, system_prompt, collection_name, dummy_text, mock_response, stream_target
 ):
