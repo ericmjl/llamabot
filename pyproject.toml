@@ -48,10 +48,11 @@ addopts = "-v --cov --cov-report term-missing -m 'not llm_eval'"
 testpaths = [
     "tests",
 ]
+norecursedirs = ["archive/*"]
 
 [tool.isort]
 profile = "black"
-float_to_top = true
+float-to-top = true
 
 [tool.setuptools]
 include-package-data = true
