@@ -1,3 +1,5 @@
+smollm2
+granite3-guardian
 aya-expanse
 granite3-moe
 granite3-dense
