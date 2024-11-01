@@ -44,14 +44,15 @@ whitelist-regex = []
 color = true
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report term-missing -m 'not llm_eval'"
+addopts = "-v --cov --cov-report term-missing -m 'not llm_eval' --durations=10"
 testpaths = [
     "tests",
 ]
+norecursedirs = ["archive/*"]
 
 [tool.isort]
 profile = "black"
-float_to_top = true
+float-to-top = true
 
 [tool.setuptools]
 include-package-data = true
@@ -102,7 +103,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "sentence-transformers",
-    "tenacity", "sqlite-vec>=0.1.3,<0.2",
+    "tenacity",
 ]
 requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
@@ -132,6 +133,7 @@ pytest = "*"
 hypothesis = "*"
 pytest-cov = "*"
 pytest-mock = "*"
+tuna = "*"
 
 [tool.pixi.feature.devtools.dependencies]
 pre-commit = "*"
