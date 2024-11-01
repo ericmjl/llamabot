@@ -168,3 +168,6 @@ build-docs = "mkdocs build"
 default = ["tests", "devtools", "docs", "notebooks"]
 docs = ["docs"]
 notebooks = ["notebooks"] # for those who just want to run notebooks
+
+[tool.pixi.dependencies]
+python-multipart = ">=0.0.16,<0.0.17"

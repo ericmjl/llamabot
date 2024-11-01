@@ -1,0 +1,10 @@
+{% for log in logs %}
+<tr class="log-row" data-prompt-hashes="{{ log.prompt_hashes }}" hx-get="/log/{{ log.id }}" hx-target="#log-details">
+    <td>{{ log.id }}</td>
+    <td>{{ log.object_name }}</td>
+    <td>{{ log.timestamp }}</td>
+    <td>{{ log.model_name }}</td>
+    <td>{{ log.temperature }}</td>
+    <td><pre style="white-space: pre-wrap;">{{ log.prompt_names | safe }}</pre></td>
+</tr>
+{% endfor %}

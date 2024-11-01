@@ -1,0 +1,69 @@
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Log Details</h5>
+        <div class="mb-3">
+            <strong>Object Name:</strong> {{ log.object_name }}<br>
+            <strong>Timestamp:</strong> {{ log.timestamp }}<br>
+            <strong>Model:</strong> {{ log.model_name }}<br>
+            <strong>Temperature:</strong> {{ log.temperature }}
+        </div>
+
+        <!-- Rating buttons -->
+        {% include "rating_buttons.html" with context %}
+
+        <!-- Expand/Collapse All buttons -->
+        <div class="mb-3">
+            <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-outline-secondary"
+                        hx-get="/log/{{ log.id }}/expand"
+                        hx-target="#message-log-{{ log.id }}">
+                    Expand All
+                </button>
+                <button class="btn btn-sm btn-outline-secondary"
+                        hx-get="/log/{{ log.id }}/collapse"
+                        hx-target="#message-log-{{ log.id }}">
+                    Collapse All
+                </button>
+            </div>
+        </div>
+
+        <div class="message-log" id="message-log-{{ log.id }}">
+            {% for message in log.message_log %}
+                <div class="message {% if message.role == 'assistant' %}assistant{% elif message.role == 'system' %}system{% else %}user{% endif %}">
+                    <div class="message-header">
+                        <div class="role"
+                             role="button"
+                             data-bs-toggle="collapse"
+                             data-bs-target="#message-{{ loop.index }}"
+                             aria-expanded="{{ 'true' if expanded else 'false' }}">
+                            <i class="collapse-icon">▼</i> {{ message.role }}
+                        </div>
+                        {% if message.prompt_name %}
+                            <div class="prompt-info">
+                                <span class="prompt-name">{{ message.prompt_name }}</span>
+                                <a href="#" class="prompt-hash"
+                                   hx-get="/prompt/{{ message.prompt_hash }}"
+                                   hx-target="#modal-content"
+                                   hx-trigger="click"
+                                   hx-swap="innerHTML">
+                                    {{ message.prompt_hash[:8] }}...
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="collapse {{ 'show' if expanded else '' }}" id="message-{{ loop.index }}">
+                        <div class="content">{{ message.content }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="prompt-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modal-content"></div>
+    </div>
+</div>

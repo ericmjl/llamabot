@@ -202,6 +202,7 @@ class MessageLog(Base):
     model_name = Column(String)
     temperature = Column(Float)
     message_log = Column(Text)
+    rating = Column(Integer, nullable=True)  # 1 for thumbs up, 0 for thumbs down
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -244,6 +245,16 @@ def upgrade_database(engine: Engine):
                             add_column(connection, table.__tablename__, column)
                         except OperationalError as e:
                             print(f"Error adding column {column.name}: {e}")
+
+    # Add rating column if it doesn't exist
+    inspector = inspect(engine)
+    if "message_log" in inspector.get_table_names():
+        columns = [col["name"] for col in inspector.get_columns("message_log")]
+        if "rating" not in columns:
+            with engine.begin() as connection:
+                connection.execute(
+                    text("ALTER TABLE message_log ADD COLUMN rating INTEGER")
+                )
 
 
 def add_column(connection: Connection, table_name: str, column: Column):

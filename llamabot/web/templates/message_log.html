@@ -1,0 +1,28 @@
+{% for message in log.message_log %}
+    <div class="message {% if message.role == 'assistant' %}assistant{% elif message.role == 'system' %}system{% else %}user{% endif %}">
+        <div class="message-header">
+            <div class="role"
+                 role="button"
+                 data-bs-toggle="collapse"
+                 data-bs-target="#message-{{ loop.index }}"
+                 aria-expanded="{{ 'true' if expanded else 'false' }}">
+                <i class="collapse-icon">▼</i> {{ message.role }}
+            </div>
+            {% if message.prompt_name %}
+                <div class="prompt-info">
+                    <span class="prompt-name">{{ message.prompt_name }}</span>
+                    <a href="#" class="prompt-hash"
+                       hx-get="/prompt/{{ message.prompt_hash }}"
+                       hx-target="#modal-content"
+                       hx-trigger="click"
+                       hx-swap="innerHTML">
+                        {{ message.prompt_hash[:8] }}...
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        <div class="collapse {{ 'show' if expanded else '' }}" id="message-{{ loop.index }}">
+            <div class="content">{{ message.content }}</div>
+        </div>
+    </div>
+{% endfor %}

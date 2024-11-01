@@ -95,6 +95,10 @@ tr:hover {
     background-color: #f0f0f0;
 }
 
+.message.system {
+    background-color: #e8f5e9;
+}
+
 .filter-container {
     margin-bottom: 20px;
 }
@@ -154,13 +158,12 @@ tr:hover {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
@@ -170,21 +173,7 @@ tr:hover {
     border: 1px solid #888;
     width: 80%;
     max-width: 800px;
-    max-height: 80vh;
-    overflow: auto;
-}
-
-.modal-pre {
-    white-space: pre;
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 60vh;
-    padding: 10px;
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    line-height: 1.4;
+    border-radius: 8px;
 }
 
 .close {
@@ -192,6 +181,7 @@ tr:hover {
     float: right;
     font-size: 28px;
     font-weight: bold;
+    cursor: pointer;
 }
 
 .close:hover,
@@ -199,4 +189,273 @@ tr:hover {
     color: black;
     text-decoration: none;
     cursor: pointer;
+}
+
+pre code {
+    display: block;
+    padding: 1em;
+    background: #f5f5f5;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* Add these styles to your existing CSS */
+.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body {
+    padding: 1.25rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.table-responsive {
+    max-height: calc(70vh - 2.5rem);
+    overflow-y: auto;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.table tbody tr:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Update existing styles */
+.log-details {
+    max-height: 70vh;
+    overflow-y: auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the placeholder text */
+.text-muted {
+    color: #6c757d;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+/* Add these styles to your existing CSS */
+.message-header {
+    cursor: pointer;
+    user-select: none;
+    padding: 5px 10px;
+    border-radius: 4px 4px 0 0;
+    margin-bottom: 0;
+}
+
+.message-header:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.collapse-icon {
+    display: inline-block;
+    transition: transform 0.2s ease-in-out;
+}
+
+/* When the collapse is not shown (closed) */
+.collapse:not(.show) ~ .message-header .collapse-icon,
+[data-bs-toggle="collapse"][aria-expanded="false"] .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+/* When the collapse is shown (open) */
+.collapse.show ~ .message-header .collapse-icon,
+[data-bs-toggle="collapse"][aria-expanded="true"] .collapse-icon {
+    transform: rotate(0deg);
+}
+
+/* Style headers for each message type */
+.message.user .message-header {
+    background-color: #e3f2fd;
+}
+
+.message.assistant .message-header {
+    background-color: #f0f0f0;
+}
+
+.message.system .message-header {
+    background-color: #e8f5e9;
+}
+
+/* Style content for all messages */
+.message .content {
+    margin-top: 0;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+.collapse {
+    transition: height 0.3s ease-out;
+}
+
+/* Add these styles for the prompt history */
+.prompt-version {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.template-content pre,
+.diff-content pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.diff-content pre {
+    background-color: #f8f9fa;
+    font-family: monospace;
+}
+
+/* Style diff content */
+.language-diff {
+    color: #24292e;
+}
+
+.language-diff .deletion {
+    background-color: #ffeef0;
+    color: #b31d28;
+}
+
+.language-diff .addition {
+    background-color: #e6ffed;
+    color: #22863a;
+}
+
+/* Make the prompt history container scrollable */
+#prompt-history-container {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Style headings in prompt history */
+.prompt-version h4 {
+    color: #0066cc;
+    margin-bottom: 1rem;
+}
+
+.prompt-version h5 {
+    color: #666;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Style the horizontal rule */
+.prompt-version hr {
+    margin: 2rem 0;
+    border-color: #eee;
+}
+
+/* Timeline styles for prompt history */
+.prompt-timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.prompt-version {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.version-header {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.version-badge {
+    background-color: #0066cc;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.version-hash {
+    color: #666;
+    font-family: monospace;
+}
+
+.timeline-connector {
+    position: absolute;
+    left: 50%;
+    bottom: -30px;
+    width: 2px;
+    height: 30px;
+    background-color: #ddd;
+}
+
+.version-changes {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.version-changes h5 {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+/* Style the diff content */
+.language-diff {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
+.language-diff .deletion {
+    color: #b31d28;
+    background-color: #ffeef0;
+}
+
+.language-diff .addition {
+    color: #22863a;
+    background-color: #e6ffed;
+}
+
+/* Make code blocks look better */
+.template-content pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 0;
+    overflow-x: auto;
+}
+
+.template-content code {
+    font-family: monospace;
+    white-space: pre-wrap;
 }
