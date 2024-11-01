@@ -44,7 +44,7 @@ whitelist-regex = []
 color = true
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report term-missing -m 'not llm_eval'"
+addopts = "-v --cov --cov-report term-missing -m 'not llm_eval' --durations=10"
 testpaths = [
     "tests",
 ]
