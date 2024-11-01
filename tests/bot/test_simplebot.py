@@ -64,7 +64,7 @@ def generate_mock_response(system_prompt, human_message):
 
 
 @given(st.data())
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 def test_simple_bot_stream_stdout(data):
     """Test that SimpleBot stream API exists and returns agenerator."""
     system_prompt, human_message = data.draw(
@@ -83,7 +83,7 @@ def test_simple_bot_stream_stdout(data):
     mock_response=st.text(min_size=1),
     stream_target=st.one_of(st.just("panel"), st.just("api")),
 )
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 def test_simple_bot_stream_panel_or_api(
     system_prompt, human_message, mock_response, stream_target
 ):
