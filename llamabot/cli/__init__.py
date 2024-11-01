@@ -21,9 +21,9 @@ from . import (
     serve,
     docs,
     notebook,
+    logviewer,
 )
 from .utils import exit_if_asked, uniform_prompt
-from .visualize import app as visualize_app
 
 app = typer.Typer()
 app.add_typer(
@@ -61,7 +61,7 @@ app.add_typer(
 )
 app.add_typer(notebook.app, name="notebook", help="Explain your notebooks.")
 app.add_typer(cache.app, name="cache", help="Clear the LlamaBot cache.")
-app.add_typer(visualize_app, name="visualize")
+app.add_typer(logviewer.app, name="log-viewer", help="Visualize the LlamaBot logs.")
 
 
 @app.command()
