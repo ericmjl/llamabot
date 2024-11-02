@@ -28,7 +28,7 @@
         <div class="tab-content" id="myTabContent">
             <!-- Logs Tab -->
             <div class="tab-pane fade show active" id="logs" role="tabpanel" aria-labelledby="logs-tab">
-                <!-- Filter Controls -->
+                <!-- Filter Controls First -->
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <input type="text"
@@ -37,19 +37,44 @@
                                placeholder="Filter logs..."
                                hx-get="/filtered_logs"
                                hx-trigger="keyup changed delay:500ms"
-                               hx-target="#logs-tbody">
+                               hx-target="#logs-tbody"
+                               hx-include="[name='function_name']">
                     </div>
                     <div class="col-md-6">
                         <select class="form-select"
                                 name="function_name"
                                 hx-get="/filtered_logs"
                                 hx-trigger="change"
-                                hx-target="#logs-tbody">
+                                hx-target="#logs-tbody"
+                                hx-include="[name='text_filter']">
                             <option value="">Select a prompt function</option>
                             {% for prompt in prompts %}
                                 <option value="{{ prompt.function_name }}">{{ prompt.function_name }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                </div>
+
+                <!-- Add this right after the filter controls div and before the Logs Table and Details -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center gap-3">
+                            <label class="mb-0">Export Format:</label>
+                            <select id="export-format" class="form-select form-select-sm" style="width: auto;">
+                                <option value="openai">OpenAI Format</option>
+                            </select>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="positive-only">
+                                <label class="form-check-label" for="positive-only">
+                                    Export only helpful responses
+                                </label>
+                            </div>
+                            <button
+                                class="btn btn-sm btn-primary"
+                                onclick="exportLogs()">
+                                Export
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -112,5 +137,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="{{ url_for('static', path='script.js') }}"></script>
+
+    <!-- Add this script section at the end of the body -->
+    <script>
+    function exportLogs() {
+        const format = document.getElementById('export-format').value;
+        const positiveOnly = document.getElementById('positive-only').checked;
+        const textFilter = document.querySelector('[name="text_filter"]').value;
+        const functionName = document.querySelector('[name="function_name"]').value;
+
+        const url = `/export/${format}?text_filter=${encodeURIComponent(textFilter)}&function_name=${encodeURIComponent(functionName)}&positive_only=${positiveOnly}`;
+        window.location.href = url;
+    }
+    </script>
 </body>
 </html>
