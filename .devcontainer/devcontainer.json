@@ -25,7 +25,8 @@
                 "GitHub.vscode-pull-request-github",
                 "DavidAnson.vscode-markdownlint",
                 "johnpapa.vscode-peacock",
-                "eamodio.gitlens"
+                "eamodio.gitlens",
+                "tamasfe.even-better-toml"
             ]
         }
     },
