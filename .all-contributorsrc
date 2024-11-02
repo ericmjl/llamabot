@@ -103,6 +103,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "amirmolavi",
+      "name": "Amir Molavi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19491452?v=4",
+      "profile": "https://github.com/amirmolavi",
+      "contributions": [
+        "infra",
+        "doc"
+      ]
     }
   ]
 }
