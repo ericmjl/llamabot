@@ -123,7 +123,7 @@ notebooks = ["ics", "tzlocal"]
 name = "llamabot"
 description = "A Pythonic interface to LLMs"
 channels = ["conda-forge"]
-platforms = ["osx-arm64", "linux-64", "osx-64"]
+platforms = ["osx-arm64", "linux-64", "osx-64", "linux-aarch64"]
 
 [tool.pixi.pypi-dependencies]
 llamabot = { path = ".", editable = true }
