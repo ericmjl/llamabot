@@ -173,7 +173,7 @@ def create_app(db_path: Optional[Path] = None):
             db.close()
 
     @app.get("/log/{log_id}")
-    async def get_log(log_id: int, expanded: bool = True):
+    async def get_log(log_id: int, expanded: bool):
         """Get a single log by ID."""
         db = SessionLocal()
         try:
