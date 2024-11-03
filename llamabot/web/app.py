@@ -1,7 +1,7 @@
 """Create a FastAPI app to visualize and compare prompts and messages."""
 
 from typing import Optional
-from fastapi import FastAPI, Request, HTTPException, Form
+from fastapi import FastAPI, Request, HTTPException, Form, Query
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,10 +12,16 @@ import json
 from pyprojroot import here
 import logging
 from difflib import unified_diff
-import yaml
 from tempfile import NamedTemporaryFile
+from enum import Enum
 
 from llamabot.recorder import MessageLog, Base, upgrade_database, Prompt
+from llamabot.components.messages import (
+    SystemMessage,
+    HumanMessage,
+    AIMessage,
+    ToolMessage,
+)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -167,7 +173,7 @@ def create_app(db_path: Optional[Path] = None):
             db.close()
 
     @app.get("/log/{log_id}")
-    async def get_log(log_id: int, expanded: bool = True):
+    async def get_log(log_id: int, expanded: bool):
         """Get a single log by ID."""
         db = SessionLocal()
         try:
@@ -416,13 +422,34 @@ def create_app(db_path: Optional[Path] = None):
         finally:
             db.close()
 
-    @app.get("/export_logs")
-    async def export_logs(function_name: Optional[str] = None):
-        """Export logs as YAML file."""
+    class ExportFormat(str, Enum):
+        """Export formats supported by the API."""
+
+        OPENAI = "openai"
+        # Placeholders for future formats
+        # LLAMA = "llama"
+        # ANTHROPIC = "anthropic"
+
+    @app.get("/export/{format}")
+    async def export_logs(
+        format: ExportFormat,
+        text_filter: str = Query(default=""),
+        function_name: str = Query(default=""),
+        positive_only: bool = Query(default=False),
+    ):
+        """Export logs in various formats.
+
+        :param format: Format to export in (openai, llama, anthropic)
+        :param text_filter: Text to filter logs by
+        :param function_name: Function name to filter logs by
+        :param positive_only: Whether to export only positively rated logs
+        """
         db = SessionLocal()
         try:
+            # Start with base query
             query = db.query(MessageLog).order_by(MessageLog.timestamp.desc())
 
+            # Apply filters to match what's visible in the table
             if function_name:
                 prompt_hashes = (
                     db.query(Prompt.hash)
@@ -437,32 +464,76 @@ def create_app(db_path: Optional[Path] = None):
                     ]
                     query = query.filter(or_(*conditions))
 
+            if text_filter:
+                query = query.filter(
+                    or_(
+                        MessageLog.object_name.ilike(f"%{text_filter}%"),
+                        MessageLog.message_log.ilike(f"%{text_filter}%"),
+                        MessageLog.model_name.ilike(f"%{text_filter}%"),
+                    )
+                )
+
+            # Apply positive rating filter if requested
+            if positive_only:
+                query = query.filter(MessageLog.rating == 1)
+
             logs = query.all()
 
-            log_data = []
-            for log in logs:
-                log_entry = {
-                    "id": log.id,
-                    "object_name": log.object_name,
-                    "timestamp": log.timestamp,
-                    "model_name": log.model_name,
-                    "temperature": log.temperature,
-                    "message_log": (
-                        json.loads(log.message_log) if log.message_log else []
-                    ),
-                }
-                log_data.append(log_entry)
+            # Create temporary file for output
+            suffix = ".jsonl" if format == ExportFormat.OPENAI else ".json"
+            with NamedTemporaryFile(mode="w", delete=False, suffix=suffix) as temp_file:
+                for log in logs:
+                    try:
+                        # Convert SQLAlchemy Column to string safely
+                        message_log_str = (
+                            str(log.message_log)
+                            if log.message_log is not None
+                            else "[]"
+                        )
+                        messages = []
 
-            with NamedTemporaryFile(
-                mode="w", delete=False, suffix=".yaml"
-            ) as temp_file:
-                yaml.dump(log_data, temp_file, default_flow_style=False)
+                        for msg in json.loads(message_log_str):
+                            role = msg.get("role", "")
+                            content = msg.get("content", "")
+
+                            # Create message objects based on role
+                            message = None
+                            if role == "system":
+                                message = SystemMessage(content=content)
+                            elif role == "user":
+                                message = HumanMessage(content=content)
+                            elif role == "assistant":
+                                message = AIMessage(content=content)
+                            elif role == "tool":
+                                message = ToolMessage(content=content)
+
+                            if message:
+                                messages.append(message.dict(exclude={"prompt_hash"}))
+
+                        if messages:
+                            if format == ExportFormat.OPENAI:
+                                # OpenAI format
+                                json.dump({"messages": messages}, temp_file)
+                                temp_file.write("\n")
+                            elif format == ExportFormat.LLAMA:
+                                # Placeholder for Llama format
+                                # TODO: Implement Llama format
+                                pass
+                            elif format == ExportFormat.ANTHROPIC:
+                                # Placeholder for Anthropic format
+                                # TODO: Implement Anthropic format
+                                pass
+
+                    except (json.JSONDecodeError, KeyError) as e:
+                        logger.warning(f"Failed to process log {log.id}: {str(e)}")
+                        continue
+
                 temp_file_path = temp_file.name
 
             return FileResponse(
                 temp_file_path,
                 media_type="application/octet-stream",
-                filename="exported_logs.yaml",
+                filename=f"conversations{suffix}",
             )
 
         except Exception as e:
