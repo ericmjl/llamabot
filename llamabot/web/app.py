@@ -173,14 +173,22 @@ def create_app(db_path: Optional[Path] = None):
             db.close()
 
     @app.get("/log/{log_id}")
-    async def get_log(log_id: int, expanded: bool):
-        """Get a single log by ID."""
+    async def get_log(log_id: int, expanded: bool = False):
+        """Get a single log by ID.
+
+        :param log_id: The ID of the log to retrieve
+        :param expanded: Whether to show expanded messages (default: False)
+        """
         db = SessionLocal()
         try:
             log = db.query(MessageLog).filter(MessageLog.id == log_id).first()
             if log is None:
                 raise HTTPException(status_code=404, detail="Log not found")
-            message_log = json.loads(str(log.message_log) if log.message_log else "[]")
+
+            message_log_str = (
+                str(log.message_log) if log.message_log is not None else "[]"
+            )
+            message_log = json.loads(message_log_str)
 
             # Fetch prompt names and templates for each message with a prompt_hash
             for message in message_log:
