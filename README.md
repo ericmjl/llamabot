@@ -10,7 +10,7 @@ All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are suppor
 To install LlamaBot:
 
 ```python
-pip install llamabot
+pip install llamabot==0.9.15
 ```
 
 ## Get access to LLMs
@@ -356,7 +356,7 @@ Please use the issue tracker on GitHub.
       <td align="center" valign="top" width="14.28%"><a href="https://ericmjl.github.io/"><img src="https://avatars.githubusercontent.com/u/2631566?v=4?s=100" width="100px;" alt="Eric Ma"/><br /><sub><b>Eric Ma</b></sub></a><br /><a href="#ideas-ericmjl" title="Ideas, Planning, & Feedback">🤔</a> <a href="#design-ericmjl" title="Design">🎨</a> <a href="#code-ericmjl" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://stackoverflow.com/users/116/mark-harrison"><img src="https://avatars.githubusercontent.com/u/7154?v=4?s=100" width="100px;" alt="Mark Harrison"/><br /><sub><b>Mark Harrison</b></sub></a><br /><a href="#ideas-marhar" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/reka"><img src="https://avatars.githubusercontent.com/u/382113?v=4?s=100" width="100px;" alt="reka"/><br /><sub><b>reka</b></sub></a><br /><a href="#doc-reka" title="Documentation">📖</a> <a href="#code-reka" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anujsinha3"><img src="https://avatars.githubusercontent.com/u/21972901?v=4?s=100" width="100px;" alt="anujsinha3"/><br /><sub><b>anujsinha3</b></sub></a><br /><a href="#code-anujsinha3" title="Code">💻</a> <a href="#doc-anujsinha3" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anujsinha3"><img src="https://avatars.githubusercontent.com/u/21972901?v=4?s=100" width="100px;" alt="anujsinha3"/><br /><sub><b>anujsinha3</b></sub></a><br /><a href="#code-anujsinha3" title="Code">��</a> <a href="#doc-anujsinha3" title="Documentation">📖</a></td>
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ElliotSalisbury"><img src="https://avatars.githubusercontent.com/u/2605537?v=4?s=100" width="100px;" alt="Elliot Salisbury"/><br /><sub><b>Elliot Salisbury</b></sub></a><br /><a href="#doc-ElliotSalisbury" title="Documentation">📖</a></td>
