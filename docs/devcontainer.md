@@ -43,6 +43,7 @@ The `devcontainer.json` file located at `.devcontainer/devcontainer.json` influe
 The 'postCreateCommand' is executed after the development container is created to install the pixi project, set up the environment, and the 'postStartCommand' is executed after the container is started to run the Llamabot server.
 
 ### Ollama Software
+
 The 'ollama' software is used to run large language models locally within the Docker container and is installed using the command `RUN curl -fsSL https://ollama.com/install.sh | sh`. Ollama is a crucial component for running large language models within the development container.
 
 ## Directories within the repo

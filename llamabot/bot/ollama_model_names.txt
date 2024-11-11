@@ -1,3 +1,4 @@
+opencoder
 llama3.2-vision
 smollm2
 granite3-guardian
