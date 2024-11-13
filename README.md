@@ -285,17 +285,18 @@ Llamabot comes with CLI demos of what can be built with it and a bit of supporti
 
 Here is one where I expose a chatbot directly at the command line using `llamabot chat`:
 
-<script async id="asciicast-594332" src="https://asciinema.org/a/594332.js"></script>
+[![Watch the terminal session on Asciinema](https://asciinema.org/a/594332.png)](https://asciinema.org/a/594332)
 
 And here is another one where `llamabot` is used as part of the backend of a CLI app
 to chat with one's Zotero library using `llamabot zotero chat`:
 
-<script async id="asciicast-594326" src="https://asciinema.org/a/594326.js"></script>
+[![Watch the terminal session on Asciinema](https://asciinema.org/a/594326.png)](https://asciinema.org/a/594326)
+
 
 And finally, here is one where I use `llamabot`'s `SimpleBot` to create a bot
 that automatically writes commit messages for me.
 
-<script async id="asciicast-594334" src="https://asciinema.org/a/594334.js"></script>
+[![Watch the terminal session on Asciinema](https://asciinema.org/a/594334.png)](https://asciinema.org/a/594334)
 
 ## Caching
 
