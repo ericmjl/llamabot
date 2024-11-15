@@ -11,12 +11,13 @@ Use it to control the top-level API of your Python data science project.
 from pathlib import Path
 
 from .bot.chatbot import ChatBot
+from .bot.imagebot import ImageBot
 from .bot.querybot import QueryBot
 from .bot.simplebot import SimpleBot
-from .bot.imagebot import ImageBot
 from .bot.structuredbot import StructuredBot
-from .recorder import PromptRecorder
+from .experiments import Experiment, metric
 from .prompt_manager import prompt
+from .recorder import PromptRecorder
 
 __all__ = [
     "ChatBot",
@@ -26,6 +27,8 @@ __all__ = [
     "PromptRecorder",
     "StructuredBot",
     "prompt",
+    "Experiment",
+    "metric",
 ]
 
 

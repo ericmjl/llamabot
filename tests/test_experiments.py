@@ -11,9 +11,7 @@ The tests verify that:
 
 import pytest
 
-from llamabot import SimpleBot
-from llamabot.experiments import Experiment, metric
-from llamabot.prompt import prompt
+from llamabot import SimpleBot, prompt, Experiment, metric
 
 
 def test_metric_decorator():
