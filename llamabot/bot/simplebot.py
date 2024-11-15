@@ -12,7 +12,6 @@ from llamabot.components.messages import (
 )
 from llamabot.recorder import autorecord, sqlite_log
 from llamabot.config import default_language_model
-from llamabot.cache import cache
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -96,7 +95,7 @@ class SimpleBot:
                 return self.stream_none(messages)
         return AIMessage(content="")
 
-    @cache.memoize(ignore={0})
+    # @cache.memoize(ignore={0})
     def stream_stdout(self, messages: list[BaseMessage]) -> AIMessage:
         """Stream the response to stdout.
 
@@ -129,7 +128,7 @@ class SimpleBot:
         autorecord(messages[-1].content, response_message)
         sqlite_log(self, messages + [AIMessage(content=response_message)])
 
-    @cache.memoize(ignore={0})
+    # @cache.memoize(ignore={0})
     def stream_none(self, messages: list[BaseMessage]) -> AIMessage:
         """Stream the response to None.
 
@@ -158,7 +157,7 @@ class SimpleBot:
         autorecord(messages[-1].content, response_message)
         sqlite_log(self, messages + [AIMessage(content=response_message)])
 
-    @cache.memoize(ignore={0})
+    # @cache.memoize(ignore={0})
     def generate_response(self, messages: list[BaseMessage]) -> AIMessage:
         """Generate a response from the given messages.
 

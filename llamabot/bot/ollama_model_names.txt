@@ -1,3 +1,4 @@
+athene-v2
 opencoder
 llama3.2-vision
 smollm2
