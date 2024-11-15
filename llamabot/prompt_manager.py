@@ -7,20 +7,21 @@ and return the Jinja2 templated docstrings as strings when called.
 Inspired from the Outlines library.
 """
 
+import inspect
+import logging
 from functools import wraps
+from pathlib import Path
+from textwrap import dedent
+from typing import Callable, Literal, Optional
+
 import jinja2
 from jinja2 import meta
-import inspect
-from textwrap import dedent
-from llamabot.recorder import store_prompt_version
+from pyprojroot import here
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
-from pyprojroot import here
-from llamabot.recorder import Base, Prompt, upgrade_database
+
 from llamabot.components.messages import BaseMessage
-from typing import Literal, Optional
-import logging
-from pathlib import Path
+from llamabot.recorder import Base, Prompt, store_prompt_version, upgrade_database
 
 logger = logging.getLogger(__name__)
 
@@ -92,12 +93,15 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
     :return: The prompt decorator.
     """
 
-    def decorator(func):
+    def decorator(func) -> Callable:
         """Decorator function.
 
         :param func: The function to wrap.
         :return: The wrapped function.
         """
+        # get the function's docstring and version it immediately
+        docstring = func.__doc__
+        prompt_hash = version_prompt(docstring, func.__name__)
 
         @wraps(func)
         def wrapper(*args, **kwargs) -> BaseMessage:
@@ -109,9 +113,6 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
             :raises ValueError: If a variable in the docstring
                 is not passed into the function.
             """
-            # get the function's docstring.
-            docstring = func.__doc__
-
             # map args and kwargs onto func's signature.
             signature = inspect.signature(func)
             kwargs = signature.bind(*args, **kwargs).arguments
@@ -132,9 +133,6 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
                         f"Variable '{var}' was not passed into the function"
                     )
 
-            # Version the prompt template
-            prompt_hash = version_prompt(docstring, func.__name__)
-
             # interpolate docstring with args and kwargs
             template = jinja2.Template(docstring)
             string = template.render(**kwargs)
@@ -153,6 +151,11 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
             return BaseMessage(
                 role=role, content=dedented_string, prompt_hash=prompt_hash
             )
+
+        # Set attributes on the wrapper function
+        wrapper._prompt_hash = prompt_hash
+        wrapper._prompt_template = docstring
+        wrapper._decorator_name = "prompt"
 
         return wrapper
 
