@@ -1,164 +1,212 @@
 """Tests for the experiments module.
 
 This module contains tests for the experiment tracking functionality,
-including metric recording, bot tracking, and prompt template tracking.
-The tests verify that:
-
-- Metric decorators properly validate and record scalar metrics
-- Experiment context managers correctly track bot configurations
-- Prompt templates are properly registered within experiments
+including metric recording, message logging, and prompt tracking.
 """
 
+from pathlib import Path
+
 import pytest
-from typing import Any
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import sessionmaker
 
-from llamabot import SimpleBot, prompt, Experiment, metric
+from llamabot import prompt, Experiment, metric
+from llamabot.experiments import ExperimentRun, Base
+from llamabot.recorder import sqlite_log
+from llamabot.components.messages import BaseMessage
 
 
-def test_metric_decorator():
-    """Test that the metric decorator properly validates and records metrics."""
+@pytest.fixture
+def db_path(tmp_path) -> Path:
+    """Create a temporary database path.
+
+    :param tmp_path: pytest fixture for temporary directory
+    :return: Path to test database
+    """
+    return tmp_path / "test.db"
+
+
+@pytest.fixture
+def engine(db_path):
+    """Create a test database engine.
+
+    :param db_path: Path to test database
+    :return: SQLAlchemy engine
+    """
+    engine = create_engine(f"sqlite:///{db_path}")
+    Base.metadata.create_all(engine)
+    return engine
+
+
+@pytest.fixture
+def session(engine):
+    """Create a test database session.
+
+    :param engine: SQLAlchemy engine
+    :return: SQLAlchemy session
+    """
+    Session = sessionmaker(bind=engine)
+    return Session()
+
+
+def test_metric_recording(db_path):
+    """Test that metrics are properly recorded in experiment runs."""
 
     @metric
-    def valid_metric(x: int) -> float:
-        """Return a constant value for testing.
+    def test_metric(x: int) -> float:
+        """Test metric that returns a constant.
 
-        :param x: An integer input that is not used.
-        :returns: A constant float value of 42.0.
+        :param x: Input value (unused)
+        :return: Constant value of 42.0
         """
-
         return 42.0
 
-    # Test that non-numeric return values raise ValueError
-    with pytest.raises(ValueError):
-        # Define this without the decorator to avoid type checking
-        def bad_metric(x: Any) -> Any:
-            """Return a non-numeric value to test metric validation.
+    with Experiment("test_metrics", db_path=db_path) as exp:
+        value = test_metric(0)
+        assert value == 42.0
 
-            :param x: An input parameter that is not used.
-            :returns: A string value that should trigger a ValueError when used with @metric.
-            """
-            return "not a number"
-
-        metric(bad_metric)(0)
-
-    # Test valid metric outside experiment context
-    assert valid_metric(0) == 42.0
-
-    # Test metric recording within experiment
-    with Experiment("test_metrics") as exp:
-        _ = valid_metric(0)
-        assert exp.current_run is not None
-        assert "valid_metric" in exp.current_run.metrics
-        assert exp.current_run.metrics["valid_metric"] == 42.0
+        # Check that the metric was recorded
+        assert exp.run is not None
+        assert "test_metric" in exp.run.run_data["metrics"]
+        assert exp.run.run_data["metrics"]["test_metric"]["value"] == 42.0
 
 
-def test_experiment_tracks_bots():
-    """Test that the experiment context properly tracks bot creation and usage."""
-    with Experiment("test_bots") as exp:
-        bot = SimpleBot(
-            system_prompt="You are a test bot.",
-            model_name="gpt-3.5-turbo",
-            temperature=0.7,
-            mock_response="aloha aloha!",
-        )
-        bot("hello!")
+def test_message_logging(db_path):
+    """Test that message logs are properly linked to experiment runs."""
 
-        assert exp.current_run is not None
-        assert "bot" in exp.current_run.bots
-        bot_config = exp.current_run.bots["bot"]
-        assert bot_config["class_name"] == "SimpleBot"
-        assert bot_config["model_name"] == "gpt-3.5-turbo"
-        assert bot_config["temperature"] == 0.7
+    with Experiment("test_messages", db_path=db_path) as exp:
+        messages = [
+            BaseMessage(role="user", content="Hello"),
+            BaseMessage(role="assistant", content="Hi there!"),
+        ]
+
+        # Log messages
+        log_id = sqlite_log(object(), messages, db_path)
+
+        # Check that the message log was linked
+        assert exp.run is not None
+        assert log_id in exp.run.run_data["message_log_ids"]
 
 
-def test_experiment_tracks_prompts():
-    """Test that the experiment context properly tracks prompt templates."""
+def test_prompt_tracking(db_path):
+    """Test that prompts are properly tracked in experiment runs."""
 
     @prompt("system")
     def test_prompt(x: str) -> str:
-        """This is a test prompt with {{ x }}"""
+        """Test prompt with parameter {{ x }}."""
         return f"Test prompt with {x}"
 
-    with Experiment("test_prompts") as exp:
+    with Experiment("test_prompts", db_path=db_path) as exp:
         _ = test_prompt("hello")
 
-        assert exp.current_run is not None
-        assert "test_prompt" in exp.current_run.prompt_templates
-        template_info = exp.current_run.prompt_templates["test_prompt"]
-        assert template_info["docstring"] == "This is a test prompt with {{ x }}"
+        # Check that the prompt was tracked
+        assert exp.run is not None
+        assert len(exp.run.run_data["prompts"]) == 1
+        prompt_info = exp.run.run_data["prompts"][0]
+        assert "hash" in prompt_info
+        assert "id" in prompt_info
 
 
-def test_experiment_multiple_runs():
-    """Test that experiment properly handles multiple runs and metrics."""
-    exp = Experiment("multiple_runs")
+def test_experiment_metadata(db_path):
+    """Test that experiment metadata is properly stored."""
+    metadata = {"test_key": "test_value"}
 
-    @metric
-    def count_items(x: list) -> int:
-        """Count the number of items in a list.
+    with Experiment("test_metadata", metadata=metadata, db_path=db_path) as exp:
+        assert exp.run is not None
+        assert exp.run.run_data["metadata"] == metadata
 
-        :param x: List of items to count
-        :returns: Number of items in the list
-        """
-        return len(x)
+
+def test_multiple_runs(db_path):
+    """Test that multiple runs are properly tracked."""
+    engine = create_engine(f"sqlite:///{db_path}")
+    Session = sessionmaker(bind=engine)
 
     # First run
-    with exp:
-        items = [1, 2, 3]
-        count_items(items)
+    with Experiment("multiple_runs", db_path=db_path):
+        pass
 
     # Second run
-    with exp:
-        items = [1, 2, 3, 4]
-        count_items(items)
+    with Experiment("multiple_runs", db_path=db_path):
+        pass
 
-    assert len(exp.runs) == 2
-    assert exp.runs[0].metrics["count_items"] == 3
-    assert exp.runs[1].metrics["count_items"] == 4
+    # Check that both runs were recorded
+    session = Session()
+    runs = (
+        session.execute(
+            select(ExperimentRun).where(
+                ExperimentRun.experiment_name == "multiple_runs"
+            )
+        )
+        .scalars()
+        .all()
+    )
 
-
-def test_experiment_nested_contexts():
-    """Test that nested experiment contexts work properly."""
-    with Experiment("outer") as outer_exp:
-        with Experiment("inner") as inner_exp:
-
-            @metric
-            def test_metric(x: int) -> int:
-                """Test metric function that always returns 1.
-
-                :param x: An integer input that is not used.
-                :returns: Always returns 1
-                """
-                return 1
-
-            _ = test_metric(0)
-
-            assert inner_exp.current_run is not None
-            assert "test_metric" in inner_exp.current_run.metrics
-
-        # After inner context
-        assert outer_exp.current_run is not None
-        assert inner_exp.current_run is None
+    assert len(runs) == 2
+    session.close()
 
 
-def test_experiment_context_cleanup():
-    """Test that experiment context is properly cleaned up after exit."""
-    exp = Experiment("cleanup_test")
+def test_experiment_cleanup(db_path):
+    """Test that experiment resources are properly cleaned up."""
+    exp = Experiment("cleanup_test", db_path=db_path)
 
     with exp:
-        assert exp.current_run is not None
-        assert Experiment.get_current() is exp
+        assert exp.run is not None
+        assert exp.session is not None
 
-    assert exp.current_run is None
-    assert Experiment.get_current() is None
+    # After context exit
+    assert exp.run is None
+
+    # Try to use the session (should raise an error)
+    with pytest.raises(Exception):
+        exp.session.query(ExperimentRun).all()
 
 
-def test_experiment_with_exception():
-    """Test that experiment handles exceptions properly."""
-    exp = Experiment("exception_test")
+def test_experiment_exception_handling(db_path):
+    """Test that experiments handle exceptions properly."""
+    exp = Experiment("exception_test", db_path=db_path)
 
     with pytest.raises(ValueError):
         with exp:
             raise ValueError("Test exception")
 
-    assert exp.current_run is None
-    assert len(exp.runs) == 0
+    # Session should be closed
+    with pytest.raises(Exception):
+        exp.session.query(ExperimentRun).all()
+
+
+def test_run_data_structure(db_path):
+    """Test that the run_data JSON structure is correct."""
+    with Experiment("structure_test", db_path=db_path) as exp:
+        assert exp.run is not None
+        run_data = exp.run.run_data
+
+        # Check structure
+        assert "metadata" in run_data
+        assert "message_log_ids" in run_data
+        assert "prompts" in run_data
+        assert "metrics" in run_data
+
+        # Check types
+        assert isinstance(run_data["metadata"], dict)
+        assert isinstance(run_data["message_log_ids"], list)
+        assert isinstance(run_data["prompts"], list)
+        assert isinstance(run_data["metrics"], dict)
+
+
+def test_concurrent_experiments(db_path):
+    """Test that nested experiment contexts work properly."""
+    with Experiment("outer", db_path=db_path) as outer_exp:
+        with Experiment("inner", db_path=db_path) as inner_exp:
+            assert outer_exp.run is not None
+            assert inner_exp.run is not None
+
+            # Log something in inner experiment
+            messages = [
+                BaseMessage(role="user", content="Hello"),
+                BaseMessage(role="assistant", content="Hi!"),
+            ]
+            log_id = sqlite_log(object(), messages, db_path)
+
+            # Check that the log is associated with the inner experiment
+            assert log_id in inner_exp.run.run_data["message_log_ids"]
+            assert log_id not in outer_exp.run.run_data["message_log_ids"]
