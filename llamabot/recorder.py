@@ -278,13 +278,16 @@ def add_column(connection: Connection, table_name: str, column: Column):
 
 
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
-def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = None):
+def sqlite_log(
+    obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = None
+) -> int:
     """Log messages to the sqlite database for further analysis.
 
     :param obj: The object to log the messages for.
     :param messages: The messages to log.
     :param db_path: The path to the database to use.
         If not specified, defaults to ~/.llamabot/message_log.db
+    :return: ID of the created message log entry
     """
     # Set up the database path
     if db_path is None:
@@ -313,41 +316,55 @@ def sqlite_log(obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = 
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    # Get the object name
-    object_name = get_object_name(obj)
+    try:
+        # Get the object name
+        object_name = get_object_name(obj)
 
-    # Get the current timestamp
-    timestamp = datetime.now().isoformat()
+        # Get the current timestamp
+        timestamp = datetime.now().isoformat()
 
-    # Convert messages to a JSON string, including prompt_hash
-    message_log = json.dumps(
-        [
-            {
-                "role": message.role,
-                "content": message.content,
-                "prompt_hash": (
-                    message.prompt_hash if hasattr(message, "prompt_hash") else None
-                ),
-            }
-            for message in messages
-        ]
-    )
+        # Convert messages to a JSON string, including prompt_hash
+        message_log = json.dumps(
+            [
+                {
+                    "role": message.role,
+                    "content": message.content,
+                    "prompt_hash": (
+                        message.prompt_hash if hasattr(message, "prompt_hash") else None
+                    ),
+                }
+                for message in messages
+            ]
+        )
 
-    # Create a new MessageLog instance
-    new_log = MessageLog(
-        object_name=object_name,
-        timestamp=timestamp,
-        message_log=message_log,
-        model_name=obj.model_name,
-        temperature=obj.temperature if hasattr(obj, "temperature") else None,
-    )
+        # Create a new MessageLog instance
+        new_log = MessageLog(
+            object_name=object_name,
+            timestamp=timestamp,
+            message_log=message_log,
+            model_name=obj.model_name,
+            temperature=obj.temperature if hasattr(obj, "temperature") else None,
+        )
 
-    # Add the new log to the session and commit
-    session.add(new_log)
-    session.commit()
+        # Add the new log to the session and commit
+        session.add(new_log)
+        session.commit()
 
-    # Close the session
-    session.close()
+        # Get the ID before we do anything else
+        log_id = new_log.id
+
+        # If we're in an experiment context, add this message log to the run
+        from .experiments import current_run
+
+        experiment = current_run.get(None)
+        if experiment is not None:
+            experiment.add_message_log(log_id)
+
+        return log_id
+
+    finally:
+        # Always close the session
+        session.close()
 
 
 class Prompt(Base):

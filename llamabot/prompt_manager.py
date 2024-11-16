@@ -28,13 +28,13 @@ logger = logging.getLogger(__name__)
 
 def version_prompt(
     template: str, function_name: str, db_path: Optional[Path] = None
-) -> str:
-    """Version a prompt template and return its hash.
+) -> tuple[str, int]:
+    """Version a prompt template and return its hash and ID.
 
     :param template: The prompt template to version.
     :param function_name: The name of the function being decorated.
     :param db_path: The path to the database file. Defaults to 'message_log.db' in the project root.
-    :return: The hash of the prompt template.
+    :return: A tuple of (hash, id) for the prompt template.
     """
     logger.debug(f"Versioning prompt for function: {function_name}")
     if db_path is None:
@@ -77,7 +77,7 @@ def version_prompt(
         else:
             logger.error("Failed to verify prompt storage")
 
-        return stored_prompt.hash
+        return stored_prompt.hash, stored_prompt.id
     except Exception as e:
         logger.error(f"Error in version_prompt: {str(e)}")
         raise
@@ -101,7 +101,7 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
         """
         # get the function's docstring and version it immediately
         docstring = func.__doc__
-        prompt_hash = version_prompt(docstring, func.__name__)
+        prompt_hash, prompt_id = version_prompt(docstring, func.__name__)
 
         @wraps(func)
         def wrapper(*args, **kwargs) -> BaseMessage:
@@ -113,6 +113,13 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
             :raises ValueError: If a variable in the docstring
                 is not passed into the function.
             """
+            # Get current experiment if one exists
+            from .experiments import current_run
+
+            experiment = current_run.get(None)
+            if experiment is not None:
+                experiment.add_prompt(prompt_hash, prompt_id)
+
             # map args and kwargs onto func's signature.
             signature = inspect.signature(func)
             kwargs = signature.bind(*args, **kwargs).arguments
@@ -154,6 +161,7 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
 
         # Set attributes on the wrapper function
         wrapper._prompt_hash = prompt_hash
+        wrapper._prompt_id = prompt_id
         wrapper._prompt_template = docstring
         wrapper._decorator_name = "prompt"
 
