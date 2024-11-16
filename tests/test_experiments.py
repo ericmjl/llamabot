@@ -10,6 +10,7 @@ The tests verify that:
 """
 
 import pytest
+from typing import Any
 
 from llamabot import SimpleBot, prompt, Experiment, metric
 
@@ -27,21 +28,21 @@ def test_metric_decorator():
 
         return 42.0
 
-    @metric
-    def invalid_metric(x: str) -> str:
-        """Return a string value to test metric validation.
+    # Test that non-numeric return values raise ValueError
+    with pytest.raises(ValueError):
+        # Define this without the decorator to avoid type checking
+        def bad_metric(x: Any) -> Any:
+            """Return a non-numeric value to test metric validation.
 
-        :param x: A string input that is not used.
-        :returns: A constant string value that should fail metric validation.
-        """
-        return "not a number"
+            :param x: An input parameter that is not used.
+            :returns: A string value that should trigger a ValueError when used with @metric.
+            """
+            return "not a number"
+
+        metric(bad_metric)(0)
 
     # Test valid metric outside experiment context
     assert valid_metric(0) == 42.0
-
-    # Test invalid metric
-    with pytest.raises(ValueError):
-        invalid_metric("test")
 
     # Test metric recording within experiment
     with Experiment("test_metrics") as exp:
@@ -121,14 +122,15 @@ def test_experiment_nested_contexts():
         with Experiment("inner") as inner_exp:
 
             @metric
-            def test_metric() -> int:
+            def test_metric(x: int) -> int:
                 """Test metric function that always returns 1.
 
-                :returns: Integer value 1
+                :param x: An integer input that is not used.
+                :returns: Always returns 1
                 """
                 return 1
 
-            _ = test_metric()
+            _ = test_metric(0)
 
             assert inner_exp.current_run is not None
             assert "test_metric" in inner_exp.current_run.metrics

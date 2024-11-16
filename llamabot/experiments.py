@@ -140,6 +140,10 @@ class Experiment:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit the experiment context and inspect frames for bots and prompts."""
         try:
+            if exc_type is not None:
+                # Don't store the run if there was an exception
+                return
+
             if self.current_run:
                 # Inspect all frames in the call stack
                 frame = inspect.currentframe()
@@ -175,7 +179,7 @@ class Experiment:
                 )
                 logger.info(f"Tracked bots: {self.current_run.bots.keys()}")
 
-                # Store the completed run
+                # Store the completed run only if there was no exception
                 self.runs.append(self.current_run)
         finally:
             self.current_run = None
