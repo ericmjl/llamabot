@@ -15,12 +15,12 @@
         <div class="mb-3">
             <div class="btn-group" role="group">
                 <button class="btn btn-sm btn-outline-secondary"
-                        hx-get="/log/{{ log.id }}/expand"
+                        hx-get="/logs/{{ log.id }}/expand"
                         hx-target="#message-log-{{ log.id }}">
                     Expand All
                 </button>
                 <button class="btn btn-sm btn-outline-secondary"
-                        hx-get="/log/{{ log.id }}/collapse"
+                        hx-get="/logs/{{ log.id }}/collapse"
                         hx-target="#message-log-{{ log.id }}">
                     Collapse All
                 </button>
@@ -42,7 +42,7 @@
                             <div class="prompt-info">
                                 <span class="prompt-name">{{ message.prompt_name }}</span>
                                 <a href="#" class="prompt-hash"
-                                   hx-get="/prompt/{{ message.prompt_hash }}"
+                                   hx-get="/prompts/{{ message.prompt_hash }}"
                                    hx-target="#modal-content"
                                    hx-trigger="click"
                                    hx-swap="innerHTML">

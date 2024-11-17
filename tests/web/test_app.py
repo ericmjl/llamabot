@@ -100,7 +100,7 @@ def test_root_endpoint(test_client):
 
 def test_get_logs(test_client):
     """Test getting all logs."""
-    response = test_client.get("/logs")
+    response = test_client.get("/logs/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
@@ -108,20 +108,20 @@ def test_get_logs(test_client):
 def test_get_filtered_logs(test_client):
     """Test filtering logs."""
     # Test with text filter
-    response = test_client.get("/filtered_logs", params={"text_filter": "test"})
+    response = test_client.get("/logs/filtered_logs", params={"text_filter": "test"})
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
     # Test with function name filter
     response = test_client.get(
-        "/filtered_logs", params={"function_name": "test_function"}
+        "/logs/filtered_logs", params={"function_name": "test_function"}
     )
     assert response.status_code == 200
 
 
 def test_export_openai_format(test_client):
     """Test exporting logs in OpenAI format."""
-    response = test_client.get("/export/openai")
+    response = test_client.get("/logs/export/openai")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/octet-stream"
 
@@ -139,7 +139,7 @@ def test_export_openai_format(test_client):
 
 def test_export_positive_only(test_client):
     """Test exporting only positively rated logs."""
-    response = test_client.get("/export/openai", params={"positive_only": "true"})
+    response = test_client.get("/logs/export/openai", params={"positive_only": "true"})
     assert response.status_code == 200
 
     # Parse the content and verify only positive ratings are included
@@ -150,29 +150,31 @@ def test_export_positive_only(test_client):
 
 def test_rate_log(test_client):
     """Test rating a log."""
-    response = test_client.post("/log/1/rate", data={"rating": 1})
+    response = test_client.post("/logs/1/rate", data={"rating": 1})
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
 
 def test_get_prompt_functions(test_client):
     """Test getting prompt functions."""
-    response = test_client.get("/prompt_functions")
+    response = test_client.get("/prompts/functions")
     assert response.status_code == 200
     data = response.json()
     assert "function_names" in data
 
 
-def test_get_prompts(test_client):
-    """Test getting all prompts."""
-    response = test_client.get("/prompts")
+def test_get_prompt_history(test_client):
+    """Test getting prompt history."""
+    response = test_client.get(
+        "/prompts/history", params={"function_name": "test_function"}
+    )
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
 
 def test_get_log_details(test_client):
     """Test getting log details."""
-    response = test_client.get("/log/1", params={"expanded": True})
+    response = test_client.get("/logs/1", params={"expanded": True})
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
@@ -180,11 +182,39 @@ def test_get_log_details(test_client):
 def test_expand_collapse_log(test_client):
     """Test expanding and collapsing log details."""
     # Test expand
-    response = test_client.get("/log/1/expand")
+    response = test_client.get("/logs/1/expand")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
     # Test collapse
-    response = test_client.get("/log/1/collapse")
+    response = test_client.get("/logs/1/collapse")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
+
+
+def test_get_prompt_details(test_client):
+    """Test getting prompt details."""
+    response = test_client.get("/prompts/test_hash")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
+def test_debug_logs(test_client):
+    """Test debug logs endpoint."""
+    response = test_client.get("/logs/debug")
+    assert response.status_code == 200
+    data = response.json()
+    assert "log_count" in data
+    assert "sample_logs" in data
+
+
+def test_nonexistent_log(test_client):
+    """Test accessing a nonexistent log."""
+    response = test_client.get("/logs/999")
+    assert response.status_code == 404
+
+
+def test_nonexistent_prompt(test_client):
+    """Test accessing a nonexistent prompt."""
+    response = test_client.get("/prompts/nonexistent_hash")
+    assert response.status_code == 404

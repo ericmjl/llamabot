@@ -1,5 +1,5 @@
 {% for log in logs %}
-<tr class="log-row" data-prompt-hashes="{{ log.prompt_hashes }}" hx-get="/log/{{ log.id }}?expanded=false" hx-target="#log-details">
+<tr class="log-row" data-prompt-hashes="{{ log.prompt_hashes }}" hx-get="/logs/{{ log.id }}?expanded=false" hx-target="#log-details">
     <td>{{ log.id }}</td>
     <td>{{ log.object_name }}</td>
     <td>{{ log.timestamp }}</td>
