@@ -14,6 +14,7 @@ from llamabot import prompt, Experiment, metric
 from llamabot.experiments import ExperimentRun, Base
 from llamabot.recorder import sqlite_log
 from llamabot.components.messages import BaseMessage
+from llamabot.bot.simplebot import SimpleBot
 
 
 @pytest.fixture
@@ -74,14 +75,17 @@ def test_metric_recording(db_path):
 def test_message_logging(db_path):
     """Test that message logs are properly linked to experiment runs."""
 
+    # Create a SimpleBot instance for testing
+    test_bot = SimpleBot(system_prompt="Test system prompt")
+
     with Experiment("test_messages", db_path=db_path) as exp:
         messages = [
             BaseMessage(role="user", content="Hello"),
             BaseMessage(role="assistant", content="Hi there!"),
         ]
 
-        # Log messages
-        log_id = sqlite_log(object(), messages, db_path)
+        # Log messages using the test_bot instead of object()
+        log_id = sqlite_log(test_bot, messages, db_path)
 
         # Check that the message log was linked
         assert exp.run is not None
