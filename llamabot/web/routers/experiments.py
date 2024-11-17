@@ -85,7 +85,7 @@ async def list_experiments(db: Session = Depends(get_db)):
             Runs.experiment_name.label("name"),
             func.count("*").label("count"),
         )
-        .filter(Runs.experiment_name.isnot_(None))
+        .filter(Runs.experiment_name.isnot(None))
         .group_by(Runs.experiment_name)
         .all()
     )

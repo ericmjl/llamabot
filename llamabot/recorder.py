@@ -17,7 +17,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    JSON,
     create_engine,
     inspect,
     text,
@@ -237,8 +236,8 @@ class Runs(Base):
     id = Column(Integer, primary_key=True)
     experiment_name = Column(String)
     timestamp = Column(String)
-    run_metadata = Column(JSON)
-    run_data = Column(JSON)
+    run_metadata = Column(Text)
+    run_data = Column(Text)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
