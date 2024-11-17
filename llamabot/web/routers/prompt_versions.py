@@ -86,18 +86,23 @@ async def get_prompt_history(
 
 
 @router.get("/functions", response_class=HTMLResponse)
-async def get_prompt_functions(db: DbSession):
+async def get_prompt_functions(request: Request, db: DbSession):
     """Get all unique prompt function names with their version counts."""
     function_counts = (
         db.query(Prompt.function_name, func.count(Prompt.id).label("version_count"))
         .group_by(Prompt.function_name)
         .all()
     )
-    return {
-        "function_names": [
-            {"name": name, "count": count} for name, count in function_counts
-        ]
-    }
+    return templates.TemplateResponse(
+        "prompt_dropdown.html",
+        {
+            "request": request,
+            "prompts": [
+                {"function_name": name, "count": count}
+                for name, count in function_counts
+            ],
+        },
+    )
 
 
 @router.get("/{prompt_hash}", response_class=HTMLResponse)
