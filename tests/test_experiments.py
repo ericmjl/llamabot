@@ -199,6 +199,9 @@ def test_run_data_structure(db_path):
 
 def test_concurrent_experiments(db_path):
     """Test that nested experiment contexts work properly."""
+    # Create a SimpleBot instance for testing
+    test_bot = SimpleBot(system_prompt="Test system prompt")
+
     with Experiment("outer", db_path=db_path) as outer_exp:
         with Experiment("inner", db_path=db_path) as inner_exp:
             assert outer_exp.run is not None
@@ -209,7 +212,7 @@ def test_concurrent_experiments(db_path):
                 BaseMessage(role="user", content="Hello"),
                 BaseMessage(role="assistant", content="Hi!"),
             ]
-            log_id = sqlite_log(object(), messages, db_path)
+            log_id = sqlite_log(test_bot, messages, db_path)
 
             # Check that the log is associated with the inner experiment
             assert log_id in inner_exp.run.run_data["message_log_ids"]
