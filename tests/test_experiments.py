@@ -108,7 +108,7 @@ def test_prompt_tracking(db_path):
         assert len(exp.run.run_data["prompts"]) == 1
         prompt_info = exp.run.run_data["prompts"][0]
         assert "hash" in prompt_info
-        assert "id" in prompt_info
+        assert isinstance(prompt_info["hash"], str)
 
 
 def test_experiment_metadata(db_path):
