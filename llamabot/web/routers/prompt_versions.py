@@ -93,14 +93,23 @@ async def get_prompt_functions(request: Request, db: DbSession):
         .group_by(Prompt.function_name)
         .all()
     )
+
+    # Convert SQLAlchemy result to list of dicts
+    prompts = [
+        {
+            "function_name": name,
+            "count": count,
+        }
+        for name, count in function_counts
+    ]
+
+    logger.debug(f"Found {len(prompts)} functions with counts: {prompts}")
+
     return templates.TemplateResponse(
         "prompt_dropdown.html",
         {
             "request": request,
-            "prompts": [
-                {"function_name": name, "count": count}
-                for name, count in function_counts
-            ],
+            "prompts": prompts,
         },
     )
 
