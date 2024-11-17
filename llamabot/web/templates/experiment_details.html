@@ -1,0 +1,63 @@
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Experiment: {{ experiment_name }}</h5>
+
+        <!-- Metrics Table -->
+        <div class="table-responsive mb-4">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Run ID</th>
+                        {% for metric in metrics_columns %}
+                            <th>{{ metric }}</th>
+                        {% endfor %}
+                        <th>Message Logs</th>
+                        <th>Prompts</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                    <tr>
+                        <td>{{ run.id }}</td>
+                        {% for metric in metrics_columns %}
+                            <td>{{ run.metrics[metric].value if metric in run.metrics else '-' }}</td>
+                        {% endfor %}
+                        <td>
+                            {% for log_id in run.message_log_ids %}
+                                <a href="#"
+                                   class="badge bg-primary me-1"
+                                   hx-get="/logs/{{ log_id }}"
+                                   hx-target="#modal-content"
+                                   hx-trigger="click">
+                                    {{ log_id }}
+                                </a>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for prompt in run.prompts %}
+                                <a href="#"
+                                   class="badge bg-secondary me-1"
+                                   hx-get="/prompts/{{ prompt.hash }}"
+                                   hx-target="#modal-content"
+                                   hx-trigger="click">
+                                    {{ prompt.hash[:8] }}...
+                                </a>
+                            {% endfor %}
+                        </td>
+                        <td>{{ run.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="prompt-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modal-content"></div>
+    </div>
+</div>
