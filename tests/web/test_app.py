@@ -266,7 +266,10 @@ def test_get_prompt_details(test_client):
 
 def test_debug_logs(test_client):
     """Test debug logs endpoint."""
-    response = test_client.get("/logs/debug")
+    # Add required query parameters
+    response = test_client.get(
+        "/logs/debug", params={"text_filter": "", "function_name": ""}
+    )
     assert response.status_code == 200
     data = response.json()
     assert "log_count" in data
