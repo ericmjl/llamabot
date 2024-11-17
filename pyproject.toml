@@ -104,6 +104,7 @@ dependencies = [
     "uvicorn",
     "sentence-transformers",
     "tenacity",
+    "python-multipart",
 ]
 requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
