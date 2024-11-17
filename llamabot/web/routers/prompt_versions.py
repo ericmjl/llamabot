@@ -1,18 +1,33 @@
 """Router for prompt version-related endpoints."""
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from sqlalchemy import desc, func
 from pathlib import Path
 from difflib import unified_diff
 from loguru import logger
+from sqlalchemy.orm import Session
 
 from llamabot.recorder import Prompt
-from llamabot.web.database import DbSession
+from llamabot.web.database import DbSession, get_db
 
 router = APIRouter(tags=["prompts"])
 templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+
+
+async def list_prompts(db: Session):
+    """List all prompts with their version counts.
+
+    :param db: Database session
+    :return: List of dictionaries containing function names and their version counts
+    """
+    prompts = (
+        db.query(Prompt.function_name, func.count(Prompt.function_name).label("count"))
+        .group_by(Prompt.function_name)
+        .all()
+    )
+    return [{"function_name": p.function_name, "count": p.count} for p in prompts]
 
 
 @router.get("/history", response_class=HTMLResponse)
@@ -86,23 +101,9 @@ async def get_prompt_history(
 
 
 @router.get("/functions", response_class=HTMLResponse)
-async def get_prompt_functions(request: Request, db: DbSession):
+async def get_prompt_functions(request: Request, db: Session = Depends(get_db)):
     """Get all unique prompt function names with their version counts."""
-    function_counts = (
-        db.query(Prompt.function_name, func.count(Prompt.id).label("version_count"))
-        .group_by(Prompt.function_name)
-        .all()
-    )
-
-    # Convert SQLAlchemy result to list of dicts
-    prompts = [
-        {
-            "function_name": name,
-            "count": count,
-        }
-        for name, count in function_counts
-    ]
-
+    prompts = await list_prompts(db)
     logger.debug(f"Found {len(prompts)} functions with counts: {prompts}")
 
     return templates.TemplateResponse(
