@@ -8,8 +8,8 @@ import tempfile
 from datetime import datetime
 
 from llamabot.web.app import create_app
-from llamabot.recorder import Base, MessageLog, Prompt
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer, String, JSON
+from llamabot.recorder import Base, MessageLog, Prompt, Runs
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
@@ -97,26 +97,16 @@ def test_experiment_data(test_db):
     engine, SessionLocal, _ = test_db
     session = SessionLocal()
 
-    # Create the runs table if it doesn't exist
-    metadata = MetaData()
-    runs_table = Table(
-        "runs",
-        metadata,
-        Column("id", Integer, primary_key=True),
-        Column("experiment_name", String),
-        Column("timestamp", String),
-        Column("run_metadata", JSON),
-        Column("run_data", JSON),
-    )
-    metadata.create_all(engine)
+    # Create all tables
+    Base.metadata.create_all(engine)
 
     # Add test experiment runs
     test_runs = [
-        {
-            "experiment_name": "test_experiment",
-            "timestamp": "2024-03-17T10:00:00",
-            "run_metadata": {},
-            "run_data": {
+        Runs(
+            experiment_name="test_experiment",
+            timestamp="2024-03-17T10:00:00",
+            run_metadata={},
+            run_data={
                 "metrics": {
                     "accuracy": {"value": 0.95, "timestamp": "2024-03-17T10:00:00"},
                     "loss": {"value": 0.1, "timestamp": "2024-03-17T10:00:00"},
@@ -124,12 +114,12 @@ def test_experiment_data(test_db):
                 "message_log_ids": [1, 2],
                 "prompts": [{"hash": "test_hash"}],
             },
-        },
-        {
-            "experiment_name": "test_experiment",
-            "timestamp": "2024-03-17T11:00:00",
-            "run_metadata": {},
-            "run_data": {
+        ),
+        Runs(
+            experiment_name="test_experiment",
+            timestamp="2024-03-17T11:00:00",
+            run_metadata={},
+            run_data={
                 "metrics": {
                     "accuracy": {"value": 0.97, "timestamp": "2024-03-17T11:00:00"},
                     "loss": {"value": 0.05, "timestamp": "2024-03-17T11:00:00"},
@@ -137,24 +127,23 @@ def test_experiment_data(test_db):
                 "message_log_ids": [3],
                 "prompts": [{"hash": "test_hash"}],
             },
-        },
-        {
-            "experiment_name": "another_experiment",
-            "timestamp": "2024-03-17T12:00:00",
-            "run_metadata": {},
-            "run_data": {
+        ),
+        Runs(
+            experiment_name="another_experiment",
+            timestamp="2024-03-17T12:00:00",
+            run_metadata={},
+            run_data={
                 "metrics": {
                     "f1_score": {"value": 0.88, "timestamp": "2024-03-17T12:00:00"}
                 },
                 "message_log_ids": [4],
                 "prompts": [{"hash": "test_hash"}],
             },
-        },
+        ),
     ]
 
-    for run_data in test_runs:
-        stmt = runs_table.insert().values(**run_data)
-        session.execute(stmt)
+    for run in test_runs:
+        session.add(run)
 
     session.commit()
     session.close()
