@@ -157,16 +157,15 @@ class Experiment:
             self.run.run_data = self._run_data
             self.session.commit()
 
-    def add_prompt(self, prompt_hash: str, prompt_id: int):
-        """Add a prompt hash and ID to the current run.
+    def add_prompt(self, prompt_hash: str):
+        """Add a prompt hash to the current run.
 
         :param prompt_hash: Hash of the prompt template
-        :param prompt_id: ID of the prompt in the database
         """
         if self.run is None:
             raise RuntimeError("No active run")
 
-        prompt_info = {"hash": prompt_hash, "id": prompt_id}
+        prompt_info = {"hash": prompt_hash}
         if prompt_info not in self._run_data["prompts"]:
             self._run_data["prompts"].append(prompt_info)
 
