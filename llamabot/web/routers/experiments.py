@@ -10,28 +10,15 @@ It includes functionality for:
 from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func, Table, MetaData, Column, Integer, String, JSON
-import json
+from sqlalchemy import func
 
 from llamabot.web.database import get_db
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from llamabot.recorder import Prompt
+from llamabot.recorder import Prompt, Runs
 
 router = APIRouter(prefix="/experiments")
 templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
-
-# Define the runs table
-metadata = MetaData()
-Runs = Table(
-    "runs",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("experiment_name", String),
-    Column("timestamp", String),
-    Column("run_metadata", JSON),
-    Column("run_data", JSON),
-)
 
 
 @router.get("/details", response_class=HTMLResponse)
@@ -43,8 +30,8 @@ async def get_experiment_details(
     # Query all runs for this experiment
     runs = (
         db.query(Runs)
-        .filter(Runs.c.experiment_name == experiment_name)
-        .order_by(Runs.c.timestamp.desc())
+        .filter(Runs.experiment_name == experiment_name)
+        .order_by(Runs.timestamp.desc())
         .all()
     )
 
@@ -53,11 +40,7 @@ async def get_experiment_details(
     metrics_set = set()
 
     for run in runs:
-        run_data = (
-            run.run_data
-            if isinstance(run.run_data, dict)
-            else json.loads(run.run_data or "{}")
-        )
+        run_data = run.run_data_dict
         metrics = run_data.get("metrics", {})
         metrics_set.update(metrics.keys())
 
@@ -99,11 +82,11 @@ async def list_experiments(db: Session = Depends(get_db)):
     """Get list of all experiments with their run counts."""
     experiments = (
         db.query(
-            Runs.c.experiment_name.label("name"),
+            Runs.experiment_name.label("name"),
             func.count("*").label("count"),
         )
-        .filter(Runs.c.experiment_name.isnot(None))
-        .group_by(Runs.c.experiment_name)
+        .filter(Runs.experiment_name.isnot_(None))
+        .group_by(Runs.experiment_name)
         .all()
     )
 

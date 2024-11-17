@@ -17,6 +17,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    JSON,
     create_engine,
     inspect,
     text,
@@ -228,13 +229,48 @@ class MessageLog(Base):
         return self._message_log_dict
 
 
+class Runs(Base):
+    """A record of an experiment run."""
+
+    __tablename__ = "runs"
+
+    id = Column(Integer, primary_key=True)
+    experiment_name = Column(String)
+    timestamp = Column(String)
+    run_metadata = Column(JSON)
+    run_data = Column(JSON)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._run_data_dict = None
+
+    @property
+    def run_data_dict(self) -> Dict[str, Any]:
+        """
+        Returns the run data as a dictionary.
+
+        If the run data is not already parsed, it attempts to parse it from JSON.
+        If parsing fails, it returns an empty dictionary.
+
+        :return: The run data as a dictionary.
+        """
+        if not hasattr(self, "_run_data_dict"):
+            try:
+                self._run_data_dict = json.loads(self.run_data) if self.run_data else {}
+            except json.JSONDecodeError:
+                self._run_data_dict = {}
+        return self._run_data_dict
+
+
 def upgrade_database(engine: Engine):
     """Upgrade the database schema."""
+    # Create all tables from Base (now includes Runs)
     Base.metadata.create_all(engine)
 
+    # Add new columns to existing tables if needed
     with engine.connect() as connection:
         inspector = inspect(engine)
-        for table in [MessageLog, Prompt]:
+        for table in [MessageLog, Prompt, Runs]:
             if inspector.has_table(table.__tablename__):
                 existing_columns = [
                     c["name"] for c in inspector.get_columns(table.__tablename__)
