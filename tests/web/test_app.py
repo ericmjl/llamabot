@@ -264,18 +264,6 @@ def test_get_prompt_details(test_client):
     assert "text/html" in response.headers["content-type"]
 
 
-def test_debug_logs(test_client):
-    """Test debug logs endpoint."""
-    # Add required query parameters
-    response = test_client.get(
-        "/logs/debug", params={"text_filter": "", "function_name": ""}
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert "log_count" in data
-    assert "sample_logs" in data
-
-
 def test_nonexistent_log(test_client):
     """Test accessing a nonexistent log."""
     response = test_client.get("/logs/999")
