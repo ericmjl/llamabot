@@ -117,6 +117,8 @@ class Experiment:
             self.session.commit()
         self.session.close()
         current_run.set(None)
+        # Set self.run to None after cleanup
+        self.run = None
 
     def log_metric(self, name: str, value: float):
         """Log a metric for the current run.
