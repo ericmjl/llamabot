@@ -35,7 +35,7 @@
                                class="form-control"
                                name="text_filter"
                                placeholder="Filter logs..."
-                               hx-get="/filtered_logs"
+                               hx-get="/logs/filtered_logs"
                                hx-trigger="keyup changed delay:500ms"
                                hx-target="#logs-tbody"
                                hx-include="[name='function_name']">
@@ -43,7 +43,7 @@
                     <div class="col-md-6">
                         <select class="form-select"
                                 name="function_name"
-                                hx-get="/filtered_logs"
+                                hx-get="/logs/filtered_logs"
                                 hx-trigger="change"
                                 hx-target="#logs-tbody"
                                 hx-include="[name='text_filter']">
@@ -96,7 +96,7 @@
                                             </tr>
                                         </thead>
                                         <tbody id="logs-tbody"
-                                               hx-get="/filtered_logs"
+                                               hx-get="/logs/filtered_logs"
                                                hx-trigger="load">
                                         </tbody>
                                     </table>
@@ -119,7 +119,7 @@
                     <select id="function-name-select"
                             class="form-select"
                             name="function_name"
-                            hx-get="/prompt_history"
+                            hx-get="/prompts/history"
                             hx-trigger="change"
                             hx-target="#prompt-history-container">
                         <option value="">Select a function name</option>
@@ -146,7 +146,7 @@
         const textFilter = document.querySelector('[name="text_filter"]').value;
         const functionName = document.querySelector('[name="function_name"]').value;
 
-        const url = `/export/${format}?text_filter=${encodeURIComponent(textFilter)}&function_name=${encodeURIComponent(functionName)}&positive_only=${positiveOnly}`;
+        const url = `/logs/export/${format}?text_filter=${encodeURIComponent(textFilter)}&function_name=${encodeURIComponent(functionName)}&positive_only=${positiveOnly}`;
         window.location.href = url;
     }
     </script>
