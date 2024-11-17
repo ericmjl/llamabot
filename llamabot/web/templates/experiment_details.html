@@ -40,8 +40,9 @@
                                    class="badge bg-secondary me-1"
                                    hx-get="/prompts/{{ prompt.hash }}"
                                    hx-target="#modal-content"
-                                   hx-trigger="click">
-                                    {{ prompt.hash[:8] }}...
+                                   hx-trigger="click"
+                                   title="{{ prompt.function_name }}">
+                                    {{ prompt.function_name }} ({{ prompt.hash[:6] }})
                                 </a>
                             {% endfor %}
                         </td>

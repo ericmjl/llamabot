@@ -16,6 +16,7 @@ import json
 from llamabot.web.database import get_db
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
+from llamabot.recorder import Prompt
 
 router = APIRouter(prefix="/experiments")
 templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
@@ -60,12 +61,24 @@ async def get_experiment_details(
         metrics = run_data.get("metrics", {})
         metrics_set.update(metrics.keys())
 
+        # Get prompt details for each prompt hash
+        prompts_data = []
+        for prompt_info in run_data.get("prompts", []):
+            prompt_hash = prompt_info.get("hash")
+            prompt = db.query(Prompt).filter(Prompt.hash == prompt_hash).first()
+            prompts_data.append(
+                {
+                    "hash": prompt_hash,
+                    "function_name": prompt.function_name if prompt else "Unknown",
+                }
+            )
+
         processed_runs.append(
             {
                 "id": run.id,
                 "metrics": metrics,
                 "message_log_ids": run_data.get("message_log_ids", []),
-                "prompts": run_data.get("prompts", []),
+                "prompts": prompts_data,
                 "timestamp": run.timestamp,
             }
         )
