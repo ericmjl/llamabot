@@ -9,7 +9,7 @@ from datetime import datetime
 
 from llamabot.web.app import create_app
 from llamabot.recorder import Base, MessageLog, Prompt
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker
 
 
@@ -89,6 +89,75 @@ def test_client(test_db):
 
     # Cleanup
     temp_db.close()
+
+
+@pytest.fixture
+def test_experiment_data(test_db):
+    """Add test experiment data to the database."""
+    engine, SessionLocal, _ = test_db
+    session = SessionLocal()
+
+    # Create the runs table if it doesn't exist
+    metadata = MetaData()
+    runs_table = Table(
+        "runs",
+        metadata,
+        Column("id", Integer, primary_key=True),
+        Column("experiment_name", String),
+        Column("timestamp", String),
+        Column("run_metadata", JSON),
+        Column("run_data", JSON),
+    )
+    metadata.create_all(engine)
+
+    # Add test experiment runs
+    test_runs = [
+        {
+            "experiment_name": "test_experiment",
+            "timestamp": "2024-03-17T10:00:00",
+            "run_metadata": {},
+            "run_data": {
+                "metrics": {
+                    "accuracy": {"value": 0.95, "timestamp": "2024-03-17T10:00:00"},
+                    "loss": {"value": 0.1, "timestamp": "2024-03-17T10:00:00"},
+                },
+                "message_log_ids": [1, 2],
+                "prompts": [{"hash": "test_hash"}],
+            },
+        },
+        {
+            "experiment_name": "test_experiment",
+            "timestamp": "2024-03-17T11:00:00",
+            "run_metadata": {},
+            "run_data": {
+                "metrics": {
+                    "accuracy": {"value": 0.97, "timestamp": "2024-03-17T11:00:00"},
+                    "loss": {"value": 0.05, "timestamp": "2024-03-17T11:00:00"},
+                },
+                "message_log_ids": [3],
+                "prompts": [{"hash": "test_hash"}],
+            },
+        },
+        {
+            "experiment_name": "another_experiment",
+            "timestamp": "2024-03-17T12:00:00",
+            "run_metadata": {},
+            "run_data": {
+                "metrics": {
+                    "f1_score": {"value": 0.88, "timestamp": "2024-03-17T12:00:00"}
+                },
+                "message_log_ids": [4],
+                "prompts": [{"hash": "test_hash"}],
+            },
+        },
+    ]
+
+    for run_data in test_runs:
+        stmt = runs_table.insert().values(**run_data)
+        session.execute(stmt)
+
+    session.commit()
+    session.close()
 
 
 def test_root_endpoint(test_client):
@@ -219,3 +288,106 @@ def test_nonexistent_prompt(test_client):
     """Test accessing a nonexistent prompt."""
     response = test_client.get("/prompts/nonexistent_hash")
     assert response.status_code == 404
+
+
+def test_list_experiments(test_client, test_experiment_data):
+    """Test listing all experiments."""
+    response = test_client.get("/experiments/list")
+    assert response.status_code == 200
+    data = response.json()
+
+    # Check that we get the expected experiments
+    assert len(data) == 2  # We added two different experiments
+
+    # Check the structure and content
+    experiments = {exp["name"]: exp["count"] for exp in data}
+    assert experiments["test_experiment"] == 2
+    assert experiments["another_experiment"] == 1
+
+
+def test_get_experiment_details(test_client, test_experiment_data):
+    """Test getting details for a specific experiment."""
+    response = test_client.get(
+        "/experiments/details", params={"experiment_name": "test_experiment"}
+    )
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+    # Check that the response contains expected content
+    content = response.text
+    assert "test_experiment" in content
+    assert "accuracy" in content
+    assert "loss" in content
+    assert "0.95" in content
+    assert "0.97" in content
+
+
+def test_get_experiment_details_nonexistent(test_client, test_experiment_data):
+    """Test getting details for a nonexistent experiment."""
+    response = test_client.get(
+        "/experiments/details", params={"experiment_name": "nonexistent_experiment"}
+    )
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+    # Should return empty table
+    content = response.text
+    assert "nonexistent_experiment" in content
+    assert len(response.text) > 0  # Should still return the template
+
+
+def test_experiment_details_metrics(test_client, test_experiment_data):
+    """Test that experiment details correctly displays all metrics."""
+    response = test_client.get(
+        "/experiments/details", params={"experiment_name": "test_experiment"}
+    )
+    assert response.status_code == 200
+
+    content = response.text
+    # Check for all metrics
+    assert "accuracy" in content
+    assert "loss" in content
+    assert "0.95" in content
+    assert "0.1" in content
+    assert "0.97" in content
+    assert "0.05" in content
+
+
+def test_experiment_details_message_logs(test_client, test_experiment_data):
+    """Test that experiment details correctly displays message log IDs."""
+    response = test_client.get(
+        "/experiments/details", params={"experiment_name": "test_experiment"}
+    )
+    assert response.status_code == 200
+
+    content = response.text
+    # Check for message log IDs
+    assert "1" in content
+    assert "2" in content
+    assert "3" in content
+
+
+def test_experiment_details_prompts(test_client, test_experiment_data):
+    """Test that experiment details correctly displays prompt information."""
+    response = test_client.get(
+        "/experiments/details", params={"experiment_name": "test_experiment"}
+    )
+    assert response.status_code == 200
+
+    content = response.text
+    # Check for prompt hash
+    assert "test_hash" in content
+    assert "test_function" in content  # From the test_prompt fixture
+
+
+def test_experiment_details_timestamps(test_client, test_experiment_data):
+    """Test that experiment details correctly displays timestamps."""
+    response = test_client.get(
+        "/experiments/details", params={"experiment_name": "test_experiment"}
+    )
+    assert response.status_code == 200
+
+    content = response.text
+    # Check for timestamps
+    assert "2024-03-17T10:00:00" in content
+    assert "2024-03-17T11:00:00" in content
