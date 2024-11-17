@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from pyprojroot import here
+from sqlalchemy import func
 
 from llamabot.recorder import Base, upgrade_database, Prompt
 from llamabot.web.routers import logs, prompt_versions
@@ -46,13 +47,18 @@ def create_app(db_path: Optional[Path] = None):
     @app.get("/")
     async def root(request: Request, db: DbSession):
         """The root page."""
-        prompts = (
-            db.query(Prompt.function_name)
-            .distinct()
+        # Get unique function names with their counts
+        function_counts = (
+            db.query(Prompt.function_name, func.count(Prompt.id).label("version_count"))
+            .group_by(Prompt.function_name)
             .order_by(Prompt.function_name)
             .all()
         )
-        prompts = [{"function_name": p[0]} for p in prompts]
+
+        # Convert to list of dicts with count information
+        prompts = [
+            {"function_name": name, "count": count} for name, count in function_counts
+        ]
 
         return templates.TemplateResponse(
             "index.html", {"request": request, "prompts": prompts}

@@ -159,8 +159,9 @@ def test_get_prompt_functions(test_client):
     """Test getting prompt functions."""
     response = test_client.get("/prompts/functions")
     assert response.status_code == 200
-    data = response.json()
-    assert "function_names" in data
+    assert "text/html" in response.headers["content-type"]
+    # Check that the response contains the expected text
+    assert "test_function (1 versions)" in response.text
 
 
 def test_get_prompt_history(test_client):
