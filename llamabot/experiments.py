@@ -111,14 +111,18 @@ class Experiment:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit the experiment context."""
-        if self.run is not None:
-            # Update run data before closing
-            self.run.run_data = self._run_data
-            self.session.commit()
-        self.session.close()
-        current_run.set(None)
-        # Set self.run to None after cleanup
-        self.run = None
+        try:
+            if self.run is not None:
+                # Update run data before closing
+                self.run.run_data = self._run_data
+                self.session.commit()
+        finally:
+            # Always close and invalidate the session
+            self.session.close()
+            self.session.bind.dispose()  # Dispose the engine connection
+            self.session = None  # Invalidate the session
+            current_run.set(None)
+            self.run = None
 
     def log_metric(self, name: str, value: float):
         """Log a metric for the current run.
