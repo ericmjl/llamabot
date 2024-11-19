@@ -34,12 +34,11 @@ jobs:
         run: pixi run build-docs
 
       - name: Deploy website
+        if: github.ref_name == 'main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           # https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-set-personal-access-token-personal_token
-
           personal_token: ${{ secrets.GHPAGES_DEPLOY_KEY }}
-
           publish_dir: ./site
           publish_branch: gh-pages
           allow_empty_commit: false
@@ -48,7 +47,7 @@ jobs:
           enable_jekyll: false
 
       - name: Deploy PR Preview
-        if: github.event_name == 'pull_request' && github.ref_name == 'main'
+        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
         uses: rossjrw/pr-preview-action@v1.4.8
         with:
           source-dir: ./site
