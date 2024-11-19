@@ -26,10 +26,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download Ollama
+      - name: Update apt and install curl
         run: |
-          sudo apt-get update && sudo apt-get install -y curl
-          curl -fsSL https://ollama.com/install.sh | sh
+          sudo apt-get update
+          sudo apt-get install -y curl
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
 
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.8.1
