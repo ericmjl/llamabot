@@ -279,6 +279,37 @@ filepath = bot("A painting of a dog.")
 If you're in a Jupyter Notebook,
 you'll see the image show up magically as part of the output cell as well.
 
+### Experimentation
+
+Automagically record your prompt experimentation locally on your system
+by using llamabot's `Experiment` context manager:
+
+```python
+from llamabot import Experiment, prompt, metric
+
+@prompt
+def sysprompt():
+    """You are a funny llama."""
+
+@prompt
+def joke_about(topic):
+    """Tell me a joke about {{ topic }}."""
+
+@metric
+def response_length(response) -> int:
+    return len(response.content)
+
+with Experiment(name="llama_jokes") as exp:
+    # You would have written this outside of the context manager anyways!
+    bot = SimpleBot(sysprompt(), model_name="gpt-4o")
+    response = bot(joke_about("cars"))
+    _ = response_length(response)
+```
+
+And now they will be viewable in the locally-stored message logs:
+
+![](./docs/cli/log-viewer/experiments.webp)
+
 ## CLI Demos
 
 Llamabot comes with CLI demos of what can be built with it and a bit of supporting code.
