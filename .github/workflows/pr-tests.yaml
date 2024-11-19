@@ -31,8 +31,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl
 
-      - name: Install Ollama
-        run: curl -fsSL https://ollama.com/install.sh | sh
+      - name: Download Ollama installation script
+        run: curl -fsSL https://ollama.com/install.sh -o install.sh
+
+      - name: Run Ollama installation script
+        run: bash install.sh
 
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.8.1
