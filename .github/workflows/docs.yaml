@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
 
 jobs:
   build-docs:
@@ -42,3 +46,7 @@ jobs:
           keep_files: false
           force_orphan: true
           enable_jekyll: false
+
+      - name: Deploy PR Preview
+        if: github.event_name == 'pull_request' && github.ref_name == 'main'
+        uses: rossjrw/pr-preview-action@v1.4.8
