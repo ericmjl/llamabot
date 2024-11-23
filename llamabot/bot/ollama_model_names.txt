@@ -1,3 +1,5 @@
+marco-o1
+tulu3
 athene-v2
 opencoder
 llama3.2-vision
