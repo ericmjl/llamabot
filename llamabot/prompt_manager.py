@@ -86,14 +86,16 @@ def version_prompt(
         logger.debug("Session closed")
 
 
-def prompt(role: Literal["system", "user", "assistant"] = "system"):
+class prompt:
     """Wrap a Python function into a Jinja2-templated prompt with version control.
 
     :param role: The role of the prompt.
-    :return: The prompt decorator.
     """
 
-    def decorator(func) -> Callable:
+    def __init__(self, role: Literal["system", "user", "assistant"] = "system"):
+        self.role = role
+
+    def __call__(self, func: Callable) -> Callable:
         """Decorator function.
 
         :param func: The function to wrap.
@@ -156,7 +158,7 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
 
             # Return a BaseMessage with the specified role
             return BaseMessage(
-                role=role, content=dedented_string, prompt_hash=prompt_hash
+                role=self.role, content=dedented_string, prompt_hash=prompt_hash
             )
 
         # Set attributes on the wrapper function
@@ -165,5 +167,3 @@ def prompt(role: Literal["system", "user", "assistant"] = "system"):
         wrapper._decorator_name = "prompt"
 
         return wrapper
-
-    return decorator
