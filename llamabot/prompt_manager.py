@@ -101,9 +101,9 @@ class prompt:
         :param func: The function to wrap.
         :return: The wrapped function.
         """
-        # get the function's docstring and version it immediately
+        # get the function's docstring
         docstring = func.__doc__
-        prompt_hash = version_prompt(docstring, func.__name__)
+        prompt_hash_value = None  # Closure variable to store the hash
 
         @wraps(func)
         def wrapper(*args, **kwargs) -> BaseMessage:
@@ -115,54 +115,45 @@ class prompt:
             :raises ValueError: If a variable in the docstring
                 is not passed into the function.
             """
+            nonlocal prompt_hash_value
+            # Only compute prompt_hash on first call
+            if prompt_hash_value is None:
+                prompt_hash_value = version_prompt(docstring, func.__name__)
+
             # Get current experiment if one exists
             from .experiments import current_run
 
             experiment = current_run.get(None)
             if experiment is not None:
-                experiment.add_prompt(prompt_hash)
+                experiment.add_prompt(prompt_hash_value)
 
-            # map args and kwargs onto func's signature.
+            # Rest of the wrapper function remains the same
             signature = inspect.signature(func)
             kwargs = signature.bind(*args, **kwargs).arguments
 
-            # create a Jinja2 environment
             env = jinja2.Environment()
-
-            # parse the docstring
             parsed_content = env.parse(docstring)
-
-            # get all variables in the docstring
             variables = meta.find_undeclared_variables(parsed_content)
 
-            # check if all variables are in kwargs
             for var in variables:
                 if var not in kwargs:
                     raise ValueError(
                         f"Variable '{var}' was not passed into the function"
                     )
 
-            # interpolate docstring with args and kwargs
             template = jinja2.Template(docstring)
             string = template.render(**kwargs)
 
-            # dedent the string
-            # Split the string into lines
             lines = string.split("\n")
-
-            # Dedent each line
             dedented_lines = [dedent(line) for line in lines]
-
-            # Join the lines back into a single string
             dedented_string = "\n".join(dedented_lines).strip()
 
-            # Return a BaseMessage with the specified role
             return BaseMessage(
-                role=self.role, content=dedented_string, prompt_hash=prompt_hash
+                role=self.role, content=dedented_string, prompt_hash=prompt_hash_value
             )
 
-        # Set attributes on the wrapper function
-        wrapper._prompt_hash = prompt_hash
+        # Set attributes on the wrapper function after computing hash
+        wrapper._prompt_hash = prompt_hash_value
         wrapper._prompt_template = docstring
         wrapper._decorator_name = "prompt"
 
