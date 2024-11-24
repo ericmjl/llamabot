@@ -4,7 +4,7 @@ from typing import Optional
 import typer
 import uvicorn
 from pathlib import Path
-from pyprojroot import here
+from llamabot.prompt_manager import find_or_set_db_path
 from llamabot.web.app import create_app
 
 app = typer.Typer()
@@ -22,8 +22,7 @@ def launch(
     :param host: The host to bind the server to.
     :param port: The port to run the server on.
     """
-    if db_path is None:
-        db_path = here() / "message_log.db"
+    db_path = find_or_set_db_path(db_path)
 
     fastapi_app = create_app(db_path)
     uvicorn.run(fastapi_app, host=host, port=port)
