@@ -27,6 +27,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
+from llamabot.prompt_manager import find_or_set_db_path
 from llamabot.utils import get_object_name
 from loguru import logger
 
@@ -312,6 +313,28 @@ def add_column(connection: Connection, table_name: str, column: Column):
 # add_column(engine, PromptResponseLog.__tablename__, Column('new_column_name', String))
 
 
+def ensure_db_in_gitignore(db_path: Path) -> None:
+    """Ensure the database file is listed in .gitignore.
+
+    :param db_path: Path to the database file
+    """
+    try:
+        repo_root = here()
+        gitignore_path = repo_root / ".gitignore"
+        db_filename = db_path.name
+
+        if gitignore_path.exists():
+            with open(gitignore_path, "r+") as f:
+                content = f.read()
+                if db_filename not in content:
+                    f.write(f"\n# SQLite database\n{db_filename}\n")
+        else:
+            with open(gitignore_path, "w") as f:
+                f.write(f"# SQLite database\n{db_filename}\n")
+    except Exception as e:
+        logger.debug(f"Could not update .gitignore: {e}")
+
+
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
 def sqlite_log(
     obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = None
@@ -325,24 +348,10 @@ def sqlite_log(
     :return: ID of the created message log entry
     """
     # Set up the database path
-    if db_path is None:
-        try:
-            repo_root = here()
-            db_path = repo_root / "message_log.db"
+    db_path = find_or_set_db_path(db_path)
 
-            # Ensure message_log.db is in .gitignore
-            gitignore_path = repo_root / ".gitignore"
-            if gitignore_path.exists():
-                with open(gitignore_path, "r+") as f:
-                    content = f.read()
-                    if "message_log.db" not in content:
-                        f.write("\n# SQLite database\nmessage_log.db\n")
-            else:
-                with open(gitignore_path, "w") as f:
-                    f.write("# SQLite database\nmessage_log.db\n")
-        except Exception:
-            # If we're not in a git repo, use the home directory
-            db_path = Path.home() / ".llamabot" / "message_log.db"
+    # Ensure database is in .gitignore if we're in a git repo
+    ensure_db_in_gitignore(db_path)
 
     # Create the engine and session
     engine = create_engine(f"sqlite:///{db_path}")

@@ -37,8 +37,7 @@ def version_prompt(
     :return: The hash for the prompt template.
     """
     logger.debug(f"Versioning prompt for function: {function_name}")
-    if db_path is None:
-        db_path = here() / "message_log.db"
+    db_path = find_or_set_db_path(db_path)
     if str(db_path).startswith("sqlite:///"):
         db_path = Path(str(db_path).replace("sqlite:///", ""))
     engine = create_engine(f"sqlite:///{db_path}")
@@ -84,6 +83,23 @@ def version_prompt(
     finally:
         session.close()
         logger.debug("Session closed")
+
+
+def find_or_set_db_path(db_path: Optional[Path] = None) -> Path:
+    """Find or set the database path for message logging.
+
+    If no path is provided, attempts to create the database in the current project root.
+    Falls back to user's home directory if project root cannot be determined.
+
+    :param db_path: Optional path to the database file. If None, uses default locations.
+    :return: Path to the database file.
+    """
+    if db_path is None:
+        try:
+            db_path = here() / "message_log.db"
+        except Exception:
+            db_path = Path.home() / "message_log.db"
+    return db_path
 
 
 class prompt:

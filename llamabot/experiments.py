@@ -8,9 +8,10 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
 
-from pyprojroot import here
 from sqlalchemy import JSON, Column, Integer, String, create_engine, inspect, text
 from sqlalchemy.orm import declarative_base, sessionmaker
+
+from llamabot.prompt_manager import find_or_set_db_path
 
 # Type alias for metric functions
 MetricFunc = TypeVar("MetricFunc", bound=Callable[..., Union[int, float]])
@@ -71,7 +72,7 @@ class Experiment:
     ):
         self.name = name
         self.metadata = metadata or {}
-        self.db_path = db_path or here() / "message_log.db"
+        self.db_path = find_or_set_db_path(db_path)
 
         # Set up database connection
         self.engine = create_engine(f"sqlite:///{self.db_path}")

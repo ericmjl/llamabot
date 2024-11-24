@@ -5,13 +5,13 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from pyprojroot import here
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from llamabot.recorder import Base, upgrade_database
 from llamabot.web.routers import logs, prompt_versions, experiments
 from llamabot.web.database import get_engine, init_sessionmaker, get_db
+from llamabot.prompt_manager import find_or_set_db_path
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
@@ -21,8 +21,7 @@ def create_app(db_path: Optional[Path] = None):
 
     :param db_path: The path to the database to use.
     """
-    if db_path is None:
-        db_path = here() / "message_log.db"
+    db_path = find_or_set_db_path(db_path)
 
     app = FastAPI()
 
