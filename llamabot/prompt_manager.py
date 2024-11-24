@@ -16,12 +16,12 @@ from typing import Callable, Literal, Optional
 
 import jinja2
 from jinja2 import meta
-from pyprojroot import here
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
 from llamabot.components.messages import BaseMessage
 from llamabot.recorder import Base, Prompt, store_prompt_version, upgrade_database
+from llamabot.utils import find_or_set_db_path
 
 logger = logging.getLogger(__name__)
 
@@ -83,23 +83,6 @@ def version_prompt(
     finally:
         session.close()
         logger.debug("Session closed")
-
-
-def find_or_set_db_path(db_path: Optional[Path] = None) -> Path:
-    """Find or set the database path for message logging.
-
-    If no path is provided, attempts to create the database in the current project root.
-    Falls back to user's home directory if project root cannot be determined.
-
-    :param db_path: Optional path to the database file. If None, uses default locations.
-    :return: Path to the database file.
-    """
-    if db_path is None:
-        try:
-            db_path = here() / "message_log.db"
-        except Exception:
-            db_path = Path.home() / "message_log.db"
-    return db_path
 
 
 class prompt:

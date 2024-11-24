@@ -7,8 +7,10 @@ This is the file from which you can do:
 Use it to control the top-level API of your Python data science project.
 """
 
-# Ensure that ~/.llamabotrc exists.
+import os
 from pathlib import Path
+
+from loguru import logger
 
 from .bot.chatbot import ChatBot
 from .bot.imagebot import ImageBot
@@ -18,6 +20,20 @@ from .bot.structuredbot import StructuredBot
 from .experiments import Experiment, metric
 from .prompt_manager import prompt
 from .recorder import PromptRecorder
+
+# Configure logger
+log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
+level_map = {
+    "DEBUG": "DEBUG",
+    "INFO": "INFO",
+    "WARNING": "WARNING",
+    "ERROR": "ERROR",
+    "CRITICAL": "CRITICAL",
+}
+
+# Remove default logger configuration and set the desired level
+logger.remove()
+logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNING"))
 
 __all__ = [
     "ChatBot",
@@ -31,5 +47,5 @@ __all__ = [
     "metric",
 ]
 
-
+# Ensure ~/.llamabot directory exists
 (Path.home() / ".llamabot").mkdir(parents=True, exist_ok=True)

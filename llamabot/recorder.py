@@ -27,8 +27,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
-from llamabot.prompt_manager import find_or_set_db_path
-from llamabot.utils import get_object_name
+from llamabot.utils import find_or_set_db_path, get_object_name
 from loguru import logger
 
 
