@@ -11,9 +11,35 @@ from pydantic import ConfigDict
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage
+from enum import Enum
+import requests
 
 
 app = Typer()
+
+
+class DiataxisType(Enum):
+    """The type of diataxis to use for the documentation.
+
+    Based on the Diátaxis framework (https://diataxis.fr/), which defines four modes of documentation:
+    - Tutorials: Learning-oriented, practical steps for newcomers
+    - How-to guides: Problem-oriented, practical steps for specific goals
+    - Reference: Information-oriented, theoretical knowledge
+    - Explanation: Understanding-oriented, background and context
+    """
+
+    TUTORIAL = "tutorial"  # Learning-oriented guides for beginners
+    HOWTO = "howto"  # Task-oriented guides for specific problems
+    REFERENCE = "reference"  # Technical reference documentation
+    EXPLANATION = "explanation"  # Background and conceptual guides
+
+
+diataxis_sources = {
+    DiataxisType.HOWTO: "https://raw.githubusercontent.com/evildmp/diataxis-documentation-framework/refs/heads/main/how-to-guides.rst",
+    DiataxisType.REFERENCE: "https://raw.githubusercontent.com/evildmp/diataxis-documentation-framework/refs/heads/main/reference.rst",
+    DiataxisType.TUTORIAL: "https://raw.githubusercontent.com/evildmp/diataxis-documentation-framework/refs/heads/main/tutorials.rst",
+    DiataxisType.EXPLANATION: "https://raw.githubusercontent.com/evildmp/diataxis-documentation-framework/refs/heads/main/explanation.rst",
+}
 
 
 class MarkdownSourceFile(BaseModel):
@@ -22,6 +48,12 @@ class MarkdownSourceFile(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     file_path: Path = Field(..., description="Path to the Markdown source file.")
     post: frontmatter.Post = Field(..., description="The Markdown content.")
+    diataxis_type: DiataxisType | None = Field(
+        None, description="The type of diataxis to use for the documentation."
+    )
+    diataxis_source: str | None = Field(
+        None, description="The source text for the diataxis documentation type."
+    )
 
     linked_files: dict[str, str] = Field(
         {},
@@ -32,15 +64,25 @@ class MarkdownSourceFile(BaseModel):
     )
 
     def __init__(self, file_path: Path):
-        super().__init__(file_path=file_path, post=frontmatter.load(file_path))
+        # Initialize with basic file info first
+        file_post = frontmatter.load(str(file_path))  # Convert Path to str
+        super().__init__(file_path=file_path, post=file_post)
 
+        # Handle linked files
         for fpath in self.post.get("linked_files", []):
             with open(here() / fpath, "r+") as f:
                 self.linked_files[fpath] = f.read()
 
-        # self.post.content = "\n".join(f"{i+1}: {line}" for i, line in enumerate(self.post.content.splitlines()))
+        # Handle diataxis type and source
+        if self.post.get("diataxis_type"):
+            self.diataxis_type = DiataxisType(self.post.get("diataxis_type"))
+            if self.diataxis_type in diataxis_sources:
+                response = requests.get(diataxis_sources[self.diataxis_type])
+                if response.status_code == 200:
+                    self.diataxis_source = response.text
+
+        # Handle raw content
         with open(file_path, "r+") as f:
-            # Read in the file contents with line numbers added in.
             self.raw_content = "".join(
                 f"{i+1}: {line}" for i, line in enumerate(f.readlines())
             )
@@ -205,9 +247,21 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
     {% endfor %}
     [[ INTENTS ENDS ]]
 
+    {% if source_file.diataxis_type and source_file.diataxis_source %}
+    ## Diataxis Framework Guide
+
+    This documentation should follow the {{ source_file.diataxis_type.value }} style from the Diataxis framework.
+    Here is the relevant guide:
+
+    [[ DIATAXIS GUIDE BEGINS ]]
+    {{ source_file.diataxis_source }}
+    [[ DIATAXIS GUIDE ENDS ]]
+    {% endif %}
+
     ## Instructions
 
-    Now please write the docs.
+    Now please write the docs as requested according to the intents and diataxis guide.
+    Where relevant, leverage any commentary present in the source files.
     """
 
 
