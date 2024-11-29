@@ -18,7 +18,7 @@ from llamabot.cli.docs import (
 )
 from pyprojroot import here
 from unittest.mock import patch
-
+import tempfile
 
 ### Evals
 system_prompt1 = """You are an expert in documentation management.
@@ -244,8 +244,8 @@ diataxis_type: howto
         mock_get.return_value.status_code = 200
         mock_get.return_value.text = "Mock diataxis guide content"
 
-        with pytest.tmp_path() as tmp_path:
-            test_file = tmp_path / "test.md"
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            test_file = Path(tmp_dir) / "test.md"
             test_file.write_text(test_content)
 
             # Create MarkdownSourceFile instance
