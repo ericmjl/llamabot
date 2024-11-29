@@ -13,8 +13,12 @@ from llamabot.cli.docs import (
     DocsContainFactuallyIncorrectMaterial,
     SourceContainsContentNotCoveredInDocs,
     DocsDoNotCoverIntendedMaterial,
+    DiataxisType,
+    diataxis_sources,
 )
 from pyprojroot import here
+from unittest.mock import patch
+
 
 ### Evals
 system_prompt1 = """You are an expert in documentation management.
@@ -225,3 +229,31 @@ def test_out_of_date_when_source_changes(
     assert doc_issue.status == expected_status
     if doc_issue.status:
         assert doc_issue.reasons
+
+
+def test_markdown_source_file_diataxis():
+    """Test that the MarkdownSourceFile can correctly identify the diataxis type and source."""
+    # Create a temporary markdown file with diataxis type
+    test_content = """---
+diataxis_type: howto
+---
+# Test Content
+"""
+    with patch("requests.get") as mock_get:
+        # Mock the response from the diataxis source
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.text = "Mock diataxis guide content"
+
+        with pytest.tmp_path() as tmp_path:
+            test_file = tmp_path / "test.md"
+            test_file.write_text(test_content)
+
+            # Create MarkdownSourceFile instance
+            md_file = MarkdownSourceFile(test_file)
+
+            # Check if diataxis type and source are properly set
+            assert md_file.diataxis_type == DiataxisType.HOWTO
+            assert md_file.diataxis_source == "Mock diataxis guide content"
+
+            # Check if the request was made with the correct URL
+            mock_get.assert_called_once_with(diataxis_sources[DiataxisType.HOWTO])
