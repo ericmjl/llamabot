@@ -11,14 +11,12 @@ ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-
 # Install curl to get ollama
 # Install build-essential for C++ (needed for ChromaDB)
 RUN apt-get update && apt-get install -y curl build-essential git git-lfs
 
 # Install Ollama within Docker container to run large language models locally
 RUN curl -fsSL https://ollama.com/install.sh | sh
-
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
