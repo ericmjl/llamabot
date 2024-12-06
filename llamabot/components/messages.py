@@ -1,5 +1,11 @@
 """Definitions for the different types of messages that can be sent."""
 
+import base64
+import mimetypes
+from pathlib import Path
+from typing import Union
+
+import httpx
 from pydantic import BaseModel, Field
 
 
@@ -73,6 +79,61 @@ class RetrievedMessage(BaseMessage):
     role: str = "system"
 
 
+class ImageMessage(BaseMessage):
+    """A message containing an image.
+
+    :param content: Path to image file or URL of image
+    :param role: Role of the message sender, defaults to "user"
+    """
+
+    content: str
+    role: str = "user"
+
+    def __init__(self, content: Union[str, Path], role: str = "user"):
+        if isinstance(content, Path):
+            path = content
+        elif content.startswith(("http://", "https://")):
+            # Download image from URL to temporary bytes
+
+            response = httpx.get(content)
+            image_bytes = response.content
+            mime_type = response.headers["content-type"]
+            encoded = base64.b64encode(image_bytes).decode("utf-8")
+            super().__init__(content=encoded, role=role)
+            self._mime_type = mime_type
+            return
+        else:
+            path = Path(content)
+
+        # Handle local file
+        if not path.exists():
+            raise FileNotFoundError(f"Image file not found: {path}")
+
+        mime_type = mimetypes.guess_type(path)[0]
+        if not mime_type or not mime_type.startswith("image/"):
+            raise ValueError(f"Not a valid image file: {path}")
+
+        with open(path, "rb") as image_file:
+            encoded = base64.b64encode(image_file.read()).decode("utf-8")
+
+        super().__init__(content=encoded, role=role)
+        self._mime_type = mime_type
+
+    def model_dump(self):
+        """Convert message to format expected by LiteLLM and OpenAI."""
+        return {
+            "role": self.role,
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{self._mime_type};base64,{self.content}"
+                    },
+                }
+            ],
+        }
+
+
 def retrieve_messages_up_to_budget(
     messages: list[BaseMessage], character_budget: int
 ) -> list[BaseMessage]:
@@ -96,3 +157,37 @@ def retrieve_messages_up_to_budget(
             break
         retrieved_messages.append(message)
     return retrieved_messages
+
+
+def process_messages(
+    messages: tuple[Union[str, BaseMessage, list[Union[str, BaseMessage]], ...]]
+) -> list[BaseMessage]:
+    """Process a tuple of messages into a list of BaseMessage objects.
+
+    Handles nested lists and converts strings to HumanMessages.
+
+    :param messages: Tuple of messages to process
+    :return: List of BaseMessage objects
+    """
+    processed_messages = []
+
+    def process_message(msg: Union[str, BaseMessage, list]) -> None:
+        """Process a single message or list of messages into BaseMessage objects.
+
+        Recursively processes nested lists and converts strings to HumanMessages.
+        Appends processed messages to the outer scope processed_messages list.
+
+        :param msg: Message to process - can be a string, BaseMessage, or list of messages
+        """
+        if isinstance(msg, list):
+            for m in msg:
+                process_message(m)
+        elif isinstance(msg, str):
+            processed_messages.append(HumanMessage(content=msg))
+        else:
+            processed_messages.append(msg)
+
+    for msg in messages:
+        process_message(msg)
+
+    return processed_messages
