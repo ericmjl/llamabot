@@ -1,3 +1,6 @@
+llama3.3
+snowflake-arctic-embed2
+sailor2
 qwq
 marco-o1
 tulu3
