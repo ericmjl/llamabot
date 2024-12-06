@@ -13,6 +13,7 @@ from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
+    process_messages,
 )
 from pydantic import BaseModel, ValidationError
 from llamabot.config import default_language_model
@@ -92,21 +93,24 @@ class StructuredBot(SimpleBot):
 
     def __call__(
         self,
-        message: Union[str, BaseMessage],
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
         num_attempts: int = 10,
         verbose: bool = False,
     ) -> BaseModel | None:
-        """Process the input message and return an instance of the Pydantic model.
+        """Process the input messages and return an instance of the Pydantic model.
 
-        :param message: The text on which to parse to generate the structured response.
+        :param messages: One or more messages to process. Can be strings or BaseMessage objects.
+        :param num_attempts: Number of attempts to try getting a valid response.
+        :param verbose: Whether to show verbose output.
+        :return: An instance of the specified Pydantic model.
         """
-        if isinstance(message, str):
-            message = HumanMessage(content=message)
+        processed_messages = process_messages(messages)
 
-        messages = [
+        # Compose the full message list
+        full_messages = [
             self.system_prompt,
             self.task_message(),
-            message,
+            *processed_messages,
         ]
 
         # we'll attempt to get the response from the model and validate it
@@ -114,9 +118,9 @@ class StructuredBot(SimpleBot):
             try:
                 match self.stream_target:
                     case "stdout":
-                        response = self.stream_stdout(messages)
+                        response = self.stream_stdout(full_messages)
                     case "none":
-                        response = self.stream_none(messages)
+                        response = self.stream_none(full_messages)
 
                 # parse the response, and validate it against the pydantic model
                 codeblock = self._extract_json_from_response(response)
@@ -125,10 +129,10 @@ class StructuredBot(SimpleBot):
 
             except ValidationError as e:
                 # we're on our last try, so we raise the error
-                if attempt == num_attempts:
+                if attempt == num_attempts - 1:
                     raise e
 
                 # Otherwise, if we failed, give the LLM the validation error and try again.
                 if verbose:
                     logger.info(e)
-                messages.extend([response, self.get_validation_error_message(e)])
+                full_messages.extend([response, self.get_validation_error_message(e)])

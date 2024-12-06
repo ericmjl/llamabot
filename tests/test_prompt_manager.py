@@ -7,6 +7,8 @@ from llamabot.components.messages import BaseMessage
 from llamabot.prompt_manager import prompt, version_prompt
 from llamabot.recorder import hash_template, Base, Prompt
 import logging
+from llamabot import user
+from llamabot.components.messages import HumanMessage, ImageMessage
 
 # Setup a test database
 TEST_DB_PATH = "sqlite:////tmp/test_message_log.db"
@@ -204,3 +206,41 @@ def test_version_prompt_error_handling(db_session, monkeypatch):
 
     with pytest.raises(Exception):
         version_prompt("Test template", "test_function")
+
+
+def test_user_message_with_string():
+    """Test that user() correctly creates a HumanMessage from a string.
+
+    :param None: No parameters needed.
+    """
+    message = user("Hello, world!")
+    assert isinstance(message, HumanMessage)
+    assert message.content == "Hello, world!"
+
+
+def test_user_message_with_text_file(tmp_path):
+    """Test that user() correctly creates a HumanMessage from a text file.
+
+    :param tmp_path: Pytest fixture providing a temporary directory path.
+    """
+    # Create a temporary text file
+    text_file = tmp_path / "test.txt"
+    text_file.write_text("Hello from file!")
+
+    message = user(text_file)
+    assert isinstance(message, HumanMessage)
+    assert message.content == "Hello from file!"
+
+
+def test_user_message_with_image_file(tmp_path):
+    """Test that user() correctly creates an ImageMessage from an image file.
+
+    :param tmp_path: Pytest fixture providing a temporary directory path.
+    """
+    # Create a dummy image file
+    image_file = tmp_path / "test.png"
+    image_file.write_bytes(b"fake image content")
+
+    message = user(image_file)
+    assert isinstance(message, ImageMessage)
+    assert message.content == image_file

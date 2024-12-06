@@ -9,6 +9,7 @@ from llamabot.components.messages import (
     HumanMessage,
     SystemMessage,
     BaseMessage,
+    process_messages,
 )
 from llamabot.recorder import autorecord, sqlite_log
 from llamabot.config import default_language_model
@@ -73,17 +74,15 @@ class SimpleBot:
             self.stream_target = "none"
 
     def __call__(
-        self, human_message: Union[str, BaseMessage]
+        self, *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]]
     ) -> Union[AIMessage, Generator]:
         """Call the SimpleBot.
 
-        :param human_message: The human message to use.
-        :return: The response to the human message, primed by the system prompt.
+        :param human_messages: One or more human messages to use, or lists of messages.
+        :return: The response to the human messages, primed by the system prompt.
         """
-        if isinstance(human_message, str):
-            human_message = HumanMessage(content=human_message)
-
-        messages = [self.system_prompt, human_message]
+        processed_messages = process_messages(human_messages)
+        messages = [self.system_prompt] + processed_messages
         match self.stream_target:
             case "stdout":
                 return self.stream_stdout(messages)
