@@ -243,4 +243,4 @@ def test_user_message_with_image_file(tmp_path):
 
     message = user(image_file)
     assert isinstance(message, ImageMessage)
-    assert message.content == image_file
+    assert message.content == "ZmFrZSBpbWFnZSBjb250ZW50"
