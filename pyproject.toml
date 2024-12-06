@@ -105,6 +105,7 @@ dependencies = [
     "sentence-transformers",
     "tenacity",
     "python-multipart",
+    "httpx",
 ]
 requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
