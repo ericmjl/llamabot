@@ -1,125 +1,133 @@
-"""A component that provides tools to the chatbot."""
+"""Tools for AgentBots to call on.
 
-import inspect
-from openai.types.chat import ChatCompletionMessageToolCall
-import typing
-import json
+The design of a tool is as follows:
 
+1. It is a function that is callable.
+2. It is decorated with @tool.
+3. Being decorated by @tool,
+   it will immediately have a pydantic model created for it
+   that is attached as an attribute.
+"""
 
-def python_type_to_json_type(python_type):
-    """Map Python types to JSON Schema types."""
-    type_map = {
-        str: "string",
-        int: "integer",
-        float: "number",
-        bool: "boolean",
-        list: "array",
-        dict: "object",
-        # Add more mappings as needed
-    }
-    return type_map.get(python_type, "any")
+from typing import Any, Callable, Dict, List, Optional, Type
+from pydantic import BaseModel, Field
 
 
-def type_to_str(type_hint):
-    """Convert type hints to JSON-friendly string representations."""
-    if type_hint == inspect.Parameter.empty:
-        return "any"
-    if getattr(type_hint, "__origin__", None) is typing.Literal:
-        # Handling typing.Literal to convert it to JSON enum format
-        return {"enum": list(type_hint.__args__)}
-    if hasattr(type_hint, "__origin__"):  # For handling generic types like List[str]
-        origin = type_hint.__origin__
-        if origin is list:
-            # Assuming only simple types like List[str], not nested like List[List[str]]
-            args = type_hint.__args__[0]
-            return f"array of {python_type_to_json_type(args)}"
-        # Handle other generic types (like Dict, Tuple) here as needed
-    return python_type_to_json_type(type_hint)
+class Function(BaseModel):
+    """Schema for a function.
 
-
-def describe_function(func):
-    """Describe a function as a JSON Schema.
-
-    :param func: The function to describe.
-    :return: A JSON Schema describing the function.
+    :param name: Name of the function.
+    :param description: Description/docstring of the function.
+    :param parameters: Parameters of the function, including both args and kwargs.
+    :param required: List of required parameter names.
+    :param return_type: Return type annotation of the function.
     """
-    # Extract the signature of the function
-    signature = inspect.signature(func)
-    docstring = inspect.getdoc(func)
 
-    # Assuming the first line of the docstring is the function description
-    function_description = docstring.split("\n")[0]
+    name: str = Field(..., description="Name of the function")
+    description: str = Field(..., description="Description/docstring of the function")
+    parameters: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Parameters of the function, including both args and kwargs",
+    )
+    required: List[str] = Field(
+        default_factory=list, description="List of required parameter names"
+    )
+    return_type: Optional[Any] = Field(
+        None, description="Return type annotation of the function"
+    )
 
-    # Extracting parameter information
-    parameters = {}
-    for name, param in signature.parameters.items():
-        # Assume the description is in the format: `name: description`
-        param_description = [
-            line.split(": ")[1]
-            for line in docstring.split("\n")
-            if line.startswith(name + ":")
-        ]
-        param_description = param_description[0] if param_description else ""
+    @classmethod
+    def from_callable(cls, func: Callable) -> "Function":
+        """Create a Function schema from a callable.
 
-        # Building the parameter info
-        param_type = type_to_str(param.annotation)
-        param_info = {"description": param_description}
-        if isinstance(param_type, dict):
-            # If the type is a dictionary (e.g., for enum), merge it with param_info
-            param_info.update(param_type)
-        else:
-            param_info["type"] = param_type
-
-        parameters[name] = param_info
-
-    # Required parameters are those without default values
-    required_params = [
-        name
-        for name, param in signature.parameters.items()
-        if param.default == param.empty
-    ]
-
-    # Constructing the final description
-    result = {
-        "type": "function",
-        "function": {
-            "name": func.__name__,
-            "description": function_description,
-            "parameters": {
-                "type": "object",
-                "properties": parameters,
-                "required": required_params,
-            },
-        },
-    }
-
-    return result
-
-
-class Tools:
-    """A component that provides tools to the chatbot."""
-
-    def __init__(self, *functions):
-        self._available_tools = {func.__name__: func for func in functions}
-        self._schemas = {func.__name__: describe_function(func) for func in functions}
-
-    def __call__(
-        self, tool_calls: list[ChatCompletionMessageToolCall]
-    ) -> dict[str, any]:
-        """Call on the tools that were provided.
-
-        :param tool_name: The name of the tool to call.
-        :param kwargs: The arguments to pass to the tool.
+        :param func: The callable to create a schema from.
+        :returns: A Function schema.
         """
-        result = {}
-        if tool_calls:
-            for tool_call in tool_calls:
-                func_name = tool_call.function.name
-                func = self._available_tools[func_name]
-                func_kwargs = json.loads(tool_call.function.arguments)
-                result[func_name] = func(**func_kwargs)
-        return result
+        import inspect
+        from typing import get_type_hints
 
-    def schemas(self):
-        """Return the schemas for the tools."""
-        return list(self._schemas.values())
+        # Get function signature
+        sig = inspect.signature(func)
+
+        # Get docstring
+        description = inspect.getdoc(func) or ""
+
+        # Get parameters
+        parameters = {}
+        required = []
+        for name, param in sig.parameters.items():
+            if param.default == inspect.Parameter.empty:
+                required.append(name)
+            parameters[name] = (
+                param.annotation if param.annotation != inspect.Parameter.empty else Any
+            )
+
+        # Get return type
+        type_hints = get_type_hints(func)
+        return_type = type_hints.get("return", None)
+
+        return cls(
+            name=func.__name__,
+            description=description,
+            parameters=parameters,
+            required=required,
+            return_type=return_type,
+        )
+
+    def to_pydantic_model(self) -> Type[BaseModel]:
+        """Create a Pydantic model from the function schema.
+
+        It needs to include the function name as well as all of the parameters to be passed into the function.
+
+        :returns: A Pydantic model class representing the function parameters.
+        """
+        from pydantic import create_model, Field
+
+        # Create field definitions for the model
+        fields = {
+            "function_name": (
+                str,
+                Field(default=self.name, description="Name of the function"),
+            )
+        }
+
+        # Add parameter fields
+        for name, type_annotation in self.parameters.items():
+            # If parameter is required, don't provide a default
+            if name in self.required:
+                fields[name] = (type_annotation, ...)
+            else:
+                fields[name] = (type_annotation, None)
+
+        # Create and return the model class
+        model_name = f"{self.name.title()}Parameters"
+        return create_model(model_name, **fields)
+
+
+def tool(func: Callable) -> Callable:
+    """Decorator to create a tool from a function.
+
+    :param func: The function to decorate.
+    :returns: The decorated function with an attached Function schema.
+    """
+    # Create and attach the schema
+    func.model = Function.from_callable(func).to_pydantic_model()
+    func.json_schema = str(func.model.model_json_schema())
+    return func
+
+
+class FunctionToCall(BaseModel):
+    """Pydantic model representing a function call with its parameters.
+
+    :param function_name: Name of the function to call
+    :param parameters: Dictionary mapping parameter names to their values
+    """
+
+    function_name: str
+    parameters: dict[str, Any]
+
+
+@tool
+def add(a: int, b: int) -> int:
+    """Add two integers."""
+    return a + b
