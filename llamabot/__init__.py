@@ -143,9 +143,13 @@ def user(
                 return _handle_url(item)
 
             # Check if string is a path that exists
-            path = Path(item)
-            if path.exists():
-                return _handle_path(path)
+            try:
+                path = Path(item)
+                if path.exists():
+                    return _handle_path(path)
+            except OSError:
+                # Skip if path is invalid (e.g. too long)
+                pass
 
         return HumanMessage(content=item)
 
