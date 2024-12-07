@@ -94,7 +94,7 @@ dependencies = [
     "lancedb",
     "chromadb",
     "tantivy",
-    "numpy<2", # https://github.com/ericmjl/llamabot/issues/56
+    "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "python-frontmatter",
     "diskcache",
     "nbformat",
@@ -151,6 +151,7 @@ jupyter = "*"
 ipykernel = "*"
 jupyterlab = "*"
 pixi-kernel = "*"
+biopython = "*"
 
 # TASKS BELOW!
 [tool.pixi.tasks]
@@ -172,4 +173,4 @@ docs = ["docs"]
 notebooks = ["notebooks"] # for those who just want to run notebooks
 
 [tool.pixi.dependencies]
-python-multipart = ">=0.0.16,<0.0.17"
+python-multipart = "*"
