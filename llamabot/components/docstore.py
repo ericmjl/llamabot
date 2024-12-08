@@ -195,7 +195,7 @@ class LanceDBDocStore(AbstractDocumentStore):
             ]
         except ValueError:
             self.existing_records = []
-        self.docstore.table.create_fts_index(field_names=["document"])
+        self.table.create_fts_index(field_names=["document"])
 
     def __contains__(self, other: str) -> bool:
         """Returns boolean whether the 'other' document is in the store.
