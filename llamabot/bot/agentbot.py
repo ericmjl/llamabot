@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from llamabot import system, user
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.bot.structuredbot import StructuredBot
-from llamabot.components.messages import BaseMessage
+from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.config import default_language_model
 from llamabot.components.tools import tool
 
@@ -165,6 +165,6 @@ class AgentBot(SimpleBot):
             )
 
             if next_tool.tool_name == "agent_finish":
-                return result
+                return AIMessage(content=result)
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
