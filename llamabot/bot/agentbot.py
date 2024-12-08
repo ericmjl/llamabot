@@ -141,30 +141,36 @@ class AgentBot(SimpleBot):
             iteration += 1
             next_tool = self.decision_bot(
                 user(
+                    "Here are the previous messages and the execution history. "
+                    "Use this to decide which tool to call next. ",
                     *messages,
+                    "Here are the available tools: ",
                     *[func.json_schema for func in self.functions],
+                    "Here is the execution history: ",
                     *execution_history,  # Include full execution history
                 )
             )
 
             args = next_tool.tool_arguments.copy()
 
-            # If we have previous results, look for any None arguments to fill
-            if results:
-                for arg_name, arg_value in args.items():
-                    if arg_value is None:
-                        args[arg_name] = results[-1]  # Use most recent result
+            try:
+                result = self.tools[next_tool.tool_name](**args)
+                print(f"{next_tool.tool_name}: {result}")
 
-            result = self.tools[next_tool.tool_name](**args)
-            print(f"{next_tool.tool_name}: {result}")
+                # Store both result and execution history
+                results.append(result)
+                execution_history.append(
+                    f"Called {next_tool.tool_name}({args}) -> {result}"
+                )
 
-            # Store both result and execution history
-            results.append(result)
-            execution_history.append(
-                f"Called {next_tool.tool_name}({args}) -> {result}"
-            )
+                if next_tool.tool_name == "agent_finish":
+                    return AIMessage(content=result)
 
-            if next_tool.tool_name == "agent_finish":
-                return AIMessage(content=result)
+            except Exception as e:
+                # Add error to execution history so agent can adjust behavior
+                error_msg = f"Error calling {next_tool.tool_name}: {str(e)}"
+                print(error_msg)
+                execution_history.append(error_msg)
+                continue
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
