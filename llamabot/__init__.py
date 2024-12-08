@@ -33,6 +33,7 @@ from .experiments import Experiment, metric
 from .prompt_manager import prompt
 from .recorder import PromptRecorder
 from .components.messages import HumanMessage, ImageMessage, SystemMessage
+from .components.tools import tool
 
 # Configure logger
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
@@ -58,6 +59,7 @@ __all__ = [
     "prompt",
     "Experiment",
     "metric",
+    "tool",
 ]
 
 # Ensure ~/.llamabot directory exists
@@ -143,9 +145,13 @@ def user(
                 return _handle_url(item)
 
             # Check if string is a path that exists
-            path = Path(item)
-            if path.exists():
-                return _handle_path(path)
+            try:
+                path = Path(item)
+                if path.exists():
+                    return _handle_path(path)
+            except OSError:
+                # Skip if path is invalid (e.g. too long)
+                pass
 
         return HumanMessage(content=item)
 

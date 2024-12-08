@@ -94,7 +94,7 @@ dependencies = [
     "lancedb",
     "chromadb",
     "tantivy",
-    "numpy<2", # https://github.com/ericmjl/llamabot/issues/56
+    "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "python-frontmatter",
     "diskcache",
     "nbformat",
@@ -106,6 +106,7 @@ dependencies = [
     "tenacity",
     "python-multipart",
     "httpx",
+    "tqdm",
 ]
 requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
@@ -119,7 +120,11 @@ readme = "README.md"
 llamabot = "llamabot.cli:app"
 
 [project.optional-dependencies]
-notebooks = ["ics", "tzlocal"]
+notebooks = [
+  "ics",
+  "tzlocal",
+  "chonkie[all]>=0.2.2,<0.3"
+]
 
 [tool.pixi.project]
 name = "llamabot"
@@ -151,6 +156,10 @@ jupyter = "*"
 ipykernel = "*"
 jupyterlab = "*"
 pixi-kernel = "*"
+biopython = "*"
+lxml = ">=5.3.0,<6"
+hvplot = ">=0.11.1,<0.12"
+pip = ">=24.3.1,<25"
 
 # TASKS BELOW!
 [tool.pixi.tasks]
@@ -172,4 +181,4 @@ docs = ["docs"]
 notebooks = ["notebooks"] # for those who just want to run notebooks
 
 [tool.pixi.dependencies]
-python-multipart = ">=0.0.16,<0.0.17"
+python-multipart = "*"
