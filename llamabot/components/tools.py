@@ -21,6 +21,7 @@ class Function(BaseModel):
     :param parameters: Parameters of the function, including both args and kwargs.
     :param required: List of required parameter names.
     :param return_type: Return type annotation of the function.
+    :param source_code: Source code of the function if available.
     """
 
     name: str = Field(..., description="Name of the function")
@@ -35,6 +36,10 @@ class Function(BaseModel):
     return_type: Optional[Any] = Field(
         None, description="Return type annotation of the function"
     )
+    source_code: Optional[str] = Field(
+        None, description="Source code of the function if available"
+    )
+    _func: Optional[Callable] = None  # Private field to store the callable
 
     @classmethod
     def from_callable(cls, func: Callable) -> "Function":
@@ -66,18 +71,28 @@ class Function(BaseModel):
         type_hints = get_type_hints(func)
         return_type = type_hints.get("return", None)
 
-        return cls(
+        # Get source code
+        try:
+            source_code = inspect.getsource(func)
+        except (TypeError, OSError):
+            source_code = None
+
+        instance = cls(
             name=func.__name__,
             description=description,
             parameters=parameters,
             required=required,
             return_type=return_type,
+            source_code=source_code,
         )
+        instance._func = func  # Store the callable for later use
+        return instance
 
     def to_pydantic_model(self) -> Type[BaseModel]:
         """Create a Pydantic model from the function schema.
 
-        It needs to include the function name as well as all of the parameters to be passed into the function.
+        It needs to include the function name as well as all of the parameters
+        to be passed into the function.
 
         :returns: A Pydantic model class representing the function parameters.
         """
@@ -88,8 +103,17 @@ class Function(BaseModel):
             "function_name": (
                 str,
                 Field(default=self.name, description="Name of the function"),
-            )
+            ),
         }
+
+        # Add source code field if available
+        if self.source_code is not None:
+            fields["source_code"] = (
+                str,
+                Field(
+                    default=self.source_code, description="Source code of the function"
+                ),
+            )
 
         # Add parameter fields
         for name, type_annotation in self.parameters.items():

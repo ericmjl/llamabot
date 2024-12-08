@@ -15,20 +15,31 @@ from llamabot.bot.simplebot import SimpleBot
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.components.messages import BaseMessage
 from llamabot.config import default_language_model
+from llamabot.components.tools import tool
 
 
-class ToolsToCall(BaseModel):
-    """Pydantic model representing a sequence of tools to be called by the agent.
+@tool
+def agent_finish(message: Any) -> str:
+    """Tool to indicate that the agent has finished processing the user's message."""
 
-    :param tool_names: List of tool names in the order they should be called.
-    :param tool_arguments: Dictionary mapping tool names to their arguments.
+    try:
+        return str(message)
+    except Exception:
+        return repr(message)
+
+
+class ToolToCall(BaseModel):
+    """Pydantic model representing a single tool to be called by the agent.
+
+    :param tool_name: Name of the tool to call.
+    :param tool_arguments: Dictionary mapping argument names to their values.
         Arguments that are not known ahead of time should be None.
     """
 
-    tool_names: List[str] = Field(..., description="The order in which to call tools.")
+    tool_name: str = Field(..., description="The tool to call.")
     tool_arguments: Dict[str, Any | None] = Field(
         ...,
-        description="Arguments to pass to each tool. Use None for arguments that are not known ahead of time.",
+        description="Arguments to pass to the tool. Use None for arguments that are not known ahead of time.",
     )
 
 
@@ -89,22 +100,27 @@ class AgentBot(SimpleBot):
         )
 
         self.decision_bot = StructuredBot(
-            pydantic_model=ToolsToCall,
+            pydantic_model=ToolToCall,
             system_prompt=system(
                 "Given the following message and available tools, "
-                "pick the tool(s) that you need to call on "
-                "and the arguments that you need for those. "
+                "pick the next tool that you need to call "
+                "and the arguments that you need for it. "
                 "Any arguments that you do not know ahead of time, just leave blank. "
-                "Not all tools need to be called."
+                "Only call tools that are relevant to the user's message. "
+                "If the task is complete, use the agent_finish tool."
             ),
-            model_name="gpt-4o-mini",
+            model_name="gpt-4o",
         )
+
+        functions = [agent_finish] + (functions or [])
 
         self.functions = functions
         self.tools = {func.__name__: func for func in self.functions}
 
     def __call__(
-        self, *messages: Union[str, BaseMessage, List[Union[str, BaseMessage]]]
+        self,
+        *messages: Union[str, BaseMessage, List[Union[str, BaseMessage]]],
+        max_iterations: int = 10,
     ) -> str:
         """Process messages and execute the appropriate sequence of tools.
 
@@ -114,27 +130,41 @@ class AgentBot(SimpleBot):
 
         :param messages: One or more messages to process. Can be strings, BaseMessages,
             or lists of either
+        :param max_iterations: Maximum number of iterations to run before raising an error
         :return: The result of the final tool execution in the sequence
+        :raises RuntimeError: If max iterations is reached without completion
         """
-        functions_to_call = self.decision_bot(
-            user(
-                *messages,
-                *[func.json_schema for func in self.functions],
+        results = []  # Keep track of all results
+        execution_history = []  # Keep track of function calls and results
+        iteration = 0
+        while iteration < max_iterations:
+            iteration += 1
+            next_tool = self.decision_bot(
+                user(
+                    *messages,
+                    *[func.json_schema for func in self.functions],
+                    *execution_history,  # Include full execution history
+                )
             )
-        )
 
-        result = None
-        for function in functions_to_call.tool_names:
-            args = functions_to_call.tool_arguments[function].copy()
+            args = next_tool.tool_arguments.copy()
 
-            # If this isn't the first function and we have a previous result,
-            # look for any None/empty arguments to fill with the previous result
-            if result is not None:
+            # If we have previous results, look for any None arguments to fill
+            if results:
                 for arg_name, arg_value in args.items():
                     if arg_value is None:
-                        args[arg_name] = result
+                        args[arg_name] = results[-1]  # Use most recent result
 
-            result = self.tools[function](**args)
-            print(f"{function}: {result}")
+            result = self.tools[next_tool.tool_name](**args)
+            print(f"{next_tool.tool_name}: {result}")
 
-        return result
+            # Store both result and execution history
+            results.append(result)
+            execution_history.append(
+                f"Called {next_tool.tool_name}({args}) -> {result}"
+            )
+
+            if next_tool.tool_name == "agent_finish":
+                return result
+
+        raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
