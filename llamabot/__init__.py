@@ -32,8 +32,9 @@ from .bot.structuredbot import StructuredBot
 from .experiments import Experiment, metric
 from .prompt_manager import prompt
 from .recorder import PromptRecorder
-from .components.messages import HumanMessage, ImageMessage, SystemMessage
+from .components.messages import HumanMessage, ImageMessage, SystemMessage, BaseMessage
 from .components.tools import tool
+
 
 # Configure logger
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
@@ -67,9 +68,12 @@ __all__ = [
 
 
 # High-level API
-def user(
-    *content: Union[str, Path]
-) -> Union[HumanMessage, ImageMessage, list[Union[HumanMessage, ImageMessage]]]:
+def user(*content: Union[str, Path, BaseMessage]) -> Union[
+    HumanMessage,
+    ImageMessage,
+    BaseMessage,
+    list[Union[HumanMessage, ImageMessage, BaseMessage]],
+]:
     """Create one or more user messages from the given content.
 
     This function provides a flexible way to create user messages from various types of content:
@@ -77,6 +81,7 @@ def user(
     - Image file paths become ImageMessages
     - URLs to images become ImageMessages
     - Text file paths become HumanMessages with the file contents
+    - BaseMessage objects are passed through unchanged
     - Multiple inputs return a list of messages
 
     Examples:
@@ -92,11 +97,14 @@ def user(
         >>> user("text.txt")  # Text file
         HumanMessage(content="<file-contents>")
 
+        >>> user(HumanMessage(content="existing message"))  # Pass through BaseMessage
+        HumanMessage(content="existing message")
+
         >>> user("msg1", "msg2")  # Multiple messages
         [HumanMessage(content="msg1"), HumanMessage(content="msg2")]
 
     :param content: One or more pieces of content to convert into messages.
-        Can be strings (text/URLs) or Paths to files.
+        Can be strings (text/URLs), Paths to files, or BaseMessage objects.
     :return: Either a single message or list of messages depending on input type
     :raises FileNotFoundError: If a specified file path doesn't exist
     :raises ValueError: If an image file is invalid
@@ -121,19 +129,23 @@ def user(
             return HumanMessage(content=url)
 
     def _handle_single_content(
-        item: Union[str, Path]
-    ) -> Union[HumanMessage, ImageMessage]:
+        item: Union[str, Path, BaseMessage]
+    ) -> Union[HumanMessage, ImageMessage, BaseMessage]:
         """Handle a single content item and convert it to an appropriate message type.
 
         This helper function processes a single piece of content and determines whether it should
-        be treated as a Path, URL, or plain text content.
+        be treated as a Path, URL, plain text content, or passed through as a BaseMessage.
 
-        :param item: The content item to process, either a string or Path object
-        :return: Either a HumanMessage or ImageMessage depending on the content type
+        :param item: The content item to process, either a string, Path object, or BaseMessage
+        :return: Either a HumanMessage, ImageMessage, or the original BaseMessage
         :raises FileNotFoundError: If a specified file path doesn't exist
         :raises ValueError: If an image file is invalid
         :raises httpx.HTTPError: If an image URL can't be accessed
         """
+        # Pass through BaseMessage objects unchanged
+        if isinstance(item, BaseMessage):
+            return item
+
         # Handle Path objects directly
         if isinstance(item, Path):
             return _handle_path(item)

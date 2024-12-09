@@ -28,6 +28,16 @@ def agent_finish(message: Any) -> str:
         return repr(message)
 
 
+@tool
+def return_error(message: Any) -> str:
+    """Tool to indicate that the agent has encountered an error.
+
+    :param message: The error message or exception to raise
+    :raises Exception: Always raises the provided error message as an exception
+    """
+    raise Exception(str(message))
+
+
 class ToolToCall(BaseModel):
     """Pydantic model representing a single tool to be called by the agent.
 
@@ -112,7 +122,7 @@ class AgentBot(SimpleBot):
             model_name="gpt-4o",
         )
 
-        functions = [agent_finish] + (functions or [])
+        functions = [agent_finish, return_error] + (functions or [])
 
         self.functions = functions
         self.tools = {func.__name__: func for func in self.functions}
@@ -142,7 +152,7 @@ class AgentBot(SimpleBot):
             next_tool = self.decision_bot(
                 user(
                     "Here are the previous messages and the execution history. "
-                    "Use this to decide which tool to call next. ",
+                    "Use this to decide which tool to call next or raise an error if you need to stop. ",
                     *messages,
                     "Here are the available tools: ",
                     *[func.json_schema for func in self.functions],
@@ -165,12 +175,18 @@ class AgentBot(SimpleBot):
 
                 if next_tool.tool_name == "agent_finish":
                     return AIMessage(content=result)
+                elif next_tool.tool_name == "return_error":
+                    # If return_error is called, raise the error message
+                    raise Exception(result)
 
             except Exception as e:
                 # Add error to execution history so agent can adjust behavior
                 error_msg = f"Error calling {next_tool.tool_name}: {str(e)}"
                 print(error_msg)
                 execution_history.append(error_msg)
+                if next_tool.tool_name == "return_error":
+                    # If this was a deliberate error from return_error, re-raise it
+                    raise e
                 continue
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
