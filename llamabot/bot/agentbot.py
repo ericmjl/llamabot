@@ -14,7 +14,6 @@ import json
 from pydantic import BaseModel, Field
 
 from llamabot import system, user
-from llamabot.bot.simplebot import SimpleBot
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.config import default_language_model
@@ -89,7 +88,9 @@ class ToolToCall(BaseModel):
     )
 
 
-class AgentBot(SimpleBot):
+# NOTE: This is a bit of a breaking pattern by not inheriting from any classes.
+# Should probably inherit from StructuredBot.
+class AgentBot:
     """A bot that uses an agent to process messages and execute tools.
 
     Additional attributes:
@@ -108,16 +109,6 @@ class AgentBot(SimpleBot):
         functions: Optional[list[Callable]] = None,
         **completion_kwargs,
     ):
-        # super().__init__(
-        #     system_prompt=system_prompt,
-        #     temperature=temperature,
-        #     model_name=model_name,
-        #     stream_target=stream_target,
-        #     api_key=api_key,
-        #     mock_response=mock_response,
-        #     **completion_kwargs,
-        # )
-
         self.memory: Dict[str, CachedResult] = {}
 
         # Update decision bot prompt to include information about using cached results
