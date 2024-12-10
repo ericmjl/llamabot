@@ -8,7 +8,8 @@ and in what order, making it suitable for complex, multi-step tasks.
 
 from typing import Any, Callable, Dict, List, Optional, Union
 from datetime import datetime
-from uuid import uuid4
+import hashlib
+import json
 
 from pydantic import BaseModel, Field
 
@@ -43,16 +44,27 @@ def return_error(message: Any) -> str:
 class CachedResult(BaseModel):
     """Model for storing cached results from tool executions.
 
-    :param result_id: Unique identifier for the cached result
     :param tool_name: Name of the tool that generated the result
     :param result: The actual result value
     :param timestamp: When the result was generated
+    :param hash_key: SHA256 hash of the stringified result
     """
 
-    result_id: str
     tool_name: str
     result: Any
     timestamp: datetime = Field(default_factory=datetime.now)
+    hash_key: str
+
+
+def hash_result(result: Any) -> str:
+    """Generate a SHA256 hash for a result value.
+
+    :param result: Any result value that can be converted to string
+    :return: SHA256 hash of the stringified result
+    """
+    # Convert result to a consistent string representation
+    result_str = json.dumps(result, sort_keys=True, default=str)
+    return hashlib.sha256(result_str.encode()).hexdigest()
 
 
 class ToolToCall(BaseModel):
@@ -60,7 +72,7 @@ class ToolToCall(BaseModel):
 
     :param tool_name: Name of the tool to call
     :param tool_arguments: Dictionary mapping argument names to their values
-    :param use_cached_results: Dictionary mapping argument names to cached result IDs
+    :param use_cached_results: Dictionary mapping argument names to hash keys
         that should be used as input for those arguments
     """
 
@@ -71,7 +83,7 @@ class ToolToCall(BaseModel):
     )
     use_cached_results: Dict[str, str] = Field(
         default_factory=dict,
-        description="Map of argument names to cached result IDs to use as input.",
+        description="Map of argument names to result hash keys to use as input.",
     )
 
 
@@ -79,7 +91,8 @@ class AgentBot(SimpleBot):
     """A bot that uses an agent to process messages and execute tools.
 
     Additional attributes:
-    :param memory: Dictionary storing cached results from tool executions
+    :param memory: Dictionary storing cached results from tool executions,
+                  indexed by SHA256 hash of the result
     """
 
     def __init__(
@@ -113,7 +126,7 @@ class AgentBot(SimpleBot):
                 "pick the next tool that you need to call "
                 "and the arguments that you need for it. "
                 "You have access to previously cached results - use them when appropriate "
-                "by specifying their result_id in use_cached_results. "
+                "by specifying their hash key in use_cached_results. "
                 "Any arguments that you do not know ahead of time, just leave blank. "
                 "Only call tools that are relevant to the user's message. "
                 "If the task is complete, use the agent_finish tool."
@@ -130,13 +143,19 @@ class AgentBot(SimpleBot):
 
         :param tool_name: Name of the tool that generated the result
         :param result: The result to store
-        :return: The unique ID of the stored result
+        :return: The hash key under which the result is stored
         """
-        result_id = str(uuid4())
-        self.memory[result_id] = CachedResult(
-            result_id=result_id, tool_name=tool_name, result=result
+        result_hash = hash_result(result)
+
+        # If this exact result is already cached, return its hash
+        if result_hash in self.memory:
+            return result_hash
+
+        # Store new result indexed by its hash
+        self.memory[result_hash] = CachedResult(
+            tool_name=tool_name, result=result, hash_key=result_hash
         )
-        return result_id
+        return result_hash
 
     def __call__(
         self,
