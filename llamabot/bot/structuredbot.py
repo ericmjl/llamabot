@@ -13,6 +13,7 @@ from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
     process_messages,
 )
 from pydantic import BaseModel, ValidationError
@@ -50,7 +51,7 @@ class StructuredBot(SimpleBot):
 
     def __init__(
         self,
-        system_prompt: str,
+        system_prompt: Union[str, SystemMessage],
         pydantic_model: BaseModel,
         model_name: str = default_language_model(),
         stream_target: str = "stdout",
