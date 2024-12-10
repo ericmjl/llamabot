@@ -4,105 +4,173 @@ This module contains tests that verify the functionality of the AgentBot,
 particularly its caching mechanism and tool execution capabilities.
 """
 
-from llamabot.bot.agentbot import AgentBot
+from datetime import datetime
+from typing import Dict
+import pytest
+
+from llamabot.bot.agentbot import (
+    AgentBot,
+    CachedResult,
+    hash_result,
+    ToolToCall,
+    agent_finish,
+    return_error,
+)
 from llamabot.components.tools import tool
 
 
-def test_agent_caching():
-    """Test the caching mechanism of AgentBot.
+@tool
+def mock_tool(value: str) -> str:
+    """A mock tool for testing purposes."""
+    return f"Processed: {value}"
 
-    This test verifies that:
-    1. The AgentBot properly caches results from tool executions using SHA256 hashing
-    2. The cached results are correctly stored in the agent's memory
-    3. Duplicate outputs are stored with the same hash key
-    4. The original data is preserved as the value
-    """
 
-    @tool
-    def create_data(size: int) -> list:
-        """Create a list of numbers.
+def test_hash_result():
+    """Test the hash_result function produces consistent hashes."""
+    # Test with simple types
+    assert hash_result("test") == hash_result("test")
+    assert hash_result(123) == hash_result(123)
 
-        :param size: The size of the list to create
-        :return: A list of sequential integers from 0 to size-1
-        """
-        return list(range(size))
+    # Test with dict
+    d1 = {"a": 1, "b": 2}
+    d2 = {"b": 2, "a": 1}  # Same content, different order
+    assert hash_result(d1) == hash_result(d2)
 
-    @tool
-    def sum_data(numbers: list) -> int:
-        """Sum a list of numbers.
 
-        :param numbers: List of numbers to sum
-        :return: The sum of all numbers in the list
-        """
-        return sum(numbers)
-
-    agent = AgentBot(
-        system_prompt="Help me with calculations",
-        functions=[create_data, sum_data],
-        mock_response="mock",
+def test_cached_result_model():
+    """Test the CachedResult pydantic model."""
+    timestamp = datetime.now()
+    cached = CachedResult(
+        tool_name="test_tool",
+        tool_arguments={"arg": "value"},
+        result="test result",
+        timestamp=timestamp,
+        hash_key="abc123",
     )
 
-    # First call should create data and cache it
-    _ = agent("Create a list of 5 numbers and then sum them")
+    assert cached.tool_name == "test_tool"
+    assert cached.tool_arguments == {"arg": "value"}
+    assert cached.result == "test result"
+    assert cached.timestamp == timestamp
+    assert cached.hash_key == "abc123"
 
-    # Store initial memory state
-    initial_memory_size = len(agent.memory)
-    assert initial_memory_size > 0
 
-    # Make another call that should produce the same list
-    _ = agent("Create another list of 5 numbers")
-
-    # Memory size should not increase for duplicate results
-    assert len(agent.memory) == initial_memory_size
-
-    # Verify that one of our cached results is the list [0,1,2,3,4]
-    assert any(
-        isinstance(cached.result, list) and cached.result == [0, 1, 2, 3, 4]
-        for cached in agent.memory.values()
+def test_tool_to_call_model():
+    """Test the ToolToCall pydantic model."""
+    tool = ToolToCall(
+        tool_name="test_tool",
+        tool_arguments={"arg": "value"},
+        use_cached_results={"cached_arg": "hash123"},
     )
 
-    # Create a different sized list to ensure different outputs get different keys
-    _ = agent("Create a list of 3 numbers")
-    assert len(agent.memory) > initial_memory_size
+    assert tool.tool_name == "test_tool"
+    assert tool.tool_arguments == {"arg": "value"}
+    assert tool.use_cached_results == {"cached_arg": "hash123"}
 
 
-def test_agent_caching_different_paths():
-    """Test that different execution paths leading to the same result use the same cache key.
+def test_agent_bot_initialization():
+    """Test AgentBot initialization."""
+    bot = AgentBot(system_prompt="Test prompt", functions=[mock_tool])
 
-    This test verifies that:
-    1. Different ways of producing the same output use the same cache key
-    2. The original execution context is preserved in the cached value
-    """
+    assert isinstance(bot.memory, Dict)
+    assert "mock_tool" in bot.tools
+    assert "agent_finish" in bot.tools
+    assert "return_error" in bot.tools
 
-    @tool
-    def create_data_ascending(size: int) -> list:
-        """Create a list of ascending numbers.
 
-        :param size: The size of the list to create
-        :return: A list of sequential integers from 0 to size-1
-        """
-        return list(range(size))
+def test_store_result():
+    """Test the _store_result method."""
+    bot = AgentBot(system_prompt="Test prompt")
 
-    @tool
-    def create_data_descending(size: int) -> list:
-        """Create a list of descending numbers and sort ascending.
+    # Store a new result
+    result = "test result"
+    hash_key = bot._store_result("test_tool", result, {"arg": "value"})
 
-        :param size: The size of the list to create
-        :return: A list of sequential integers from 0 to size-1
-        """
-        return sorted(list(range(size - 1, -1, -1)))
+    assert hash_key in bot.memory
+    assert bot.memory[hash_key].result == result
+    assert bot.memory[hash_key].tool_name == "test_tool"
+    assert bot.memory[hash_key].tool_arguments == {"arg": "value"}
 
-    agent = AgentBot(
-        system_prompt="Help me with calculations",
-        functions=[create_data_ascending, create_data_descending],
-        mock_response="mock",
+    # Store the same result again - should return same hash
+    new_hash = bot._store_result("test_tool", result, {"arg": "value"})
+    assert new_hash == hash_key
+
+
+def test_agent_finish_tool():
+    """Test the agent_finish tool."""
+    result = agent_finish("Test complete")
+    assert result == "Test complete"
+
+    # Test with non-string input
+    result = agent_finish({"status": "complete"})
+    assert isinstance(result, str)
+
+
+def test_return_error_tool():
+    """Test the return_error tool."""
+    with pytest.raises(Exception) as exc_info:
+        return_error("Test error")
+    assert str(exc_info.value) == "Test error"
+
+
+@pytest.mark.asyncio
+async def test_agent_bot_execution():
+    """Test the AgentBot's execution flow."""
+    bot = AgentBot(
+        system_prompt="Test prompt",
+        functions=[mock_tool],
+        mock_response='{"tool_name": "agent_finish", "tool_arguments": {"message": "Done"}, "use_cached_results": {}}',
     )
 
-    # Both calls should produce the same output [0,1,2] but through different means
-    _ = agent("Create an ascending list of 3 numbers")
-    initial_memory_size = len(agent.memory)
+    result = bot("Test message")
+    assert result.content == "Done"
 
-    _ = agent("Create a descending list of 3 numbers and sort it")
 
-    # Memory size should not increase as both produce [0,1,2]
-    assert len(agent.memory) == initial_memory_size
+@pytest.mark.asyncio
+async def test_agent_bot_max_iterations():
+    """Test that AgentBot respects max_iterations."""
+    bot = AgentBot(
+        system_prompt="Test prompt",
+        functions=[mock_tool],
+        mock_response='{"tool_name": "mock_tool", "tool_arguments": {"value": "test"}, "use_cached_results": {}}',
+    )
+
+    with pytest.raises(RuntimeError) as exc_info:
+        bot("Test message", max_iterations=2)
+    assert "Agent exceeded maximum iterations" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_agent_bot_error_handling():
+    """Test AgentBot's error handling."""
+    bot = AgentBot(
+        system_prompt="Test prompt",
+        functions=[mock_tool],
+        mock_response='{"tool_name": "return_error", "tool_arguments": {"message": "Test error"}, "use_cached_results": {}}',
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        bot("Test message")
+    assert str(exc_info.value) == "Test error"
+
+
+@pytest.mark.asyncio
+async def test_agent_bot_cache_usage():
+    """Test that AgentBot correctly uses cached results."""
+    bot = AgentBot(system_prompt="Test prompt", functions=[mock_tool])
+
+    # First, store a result in cache
+    result = "cached value"
+    hash_key = bot._store_result("mock_tool", result, {"value": "test"})
+
+    # Set up mock response to use cached result
+    bot.decision_bot.mock_response = (
+        "{"
+        f'"tool_name": "agent_finish", '
+        f'"tool_arguments": {{"message": null}}, '
+        f'"use_cached_results": {{"message": "{hash_key}"}}'
+        "}"
+    )
+
+    response = bot("Test message")
+    assert response.content == result
