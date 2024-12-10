@@ -45,12 +45,14 @@ class CachedResult(BaseModel):
     """Model for storing cached results from tool executions.
 
     :param tool_name: Name of the tool that generated the result
+    :param tool_arguments: Dictionary of arguments used to call the tool
     :param result: The actual result value
     :param timestamp: When the result was generated
     :param hash_key: SHA256 hash of the stringified result
     """
 
     tool_name: str
+    tool_arguments: Dict[str, Any]
     result: Any
     timestamp: datetime = Field(default_factory=datetime.now)
     hash_key: str
@@ -144,10 +146,13 @@ class AgentBot(SimpleBot):
         self.functions = functions
         self.tools = {func.__name__: func for func in self.functions}
 
-    def _store_result(self, tool_name: str, result: Any) -> str:
+    def _store_result(
+        self, tool_name: str, result: Any, tool_arguments: Dict[str, Any]
+    ) -> str:
         """Store a tool execution result in memory.
 
         :param tool_name: Name of the tool that generated the result
+        :param tool_arguments: Dictionary of arguments used to call the tool
         :param result: The result to store
         :return: The hash key under which the result is stored
         """
@@ -159,7 +164,10 @@ class AgentBot(SimpleBot):
 
         # Store new result indexed by its hash
         self.memory[result_hash] = CachedResult(
-            tool_name=tool_name, result=result, hash_key=result_hash
+            tool_name=tool_name,
+            tool_arguments=tool_arguments,
+            result=result,
+            hash_key=result_hash,
         )
         return result_hash
 
@@ -208,13 +216,13 @@ class AgentBot(SimpleBot):
             try:
                 tool_name = next_tool.tool_name
                 result = self.tools[tool_name](**args)
-                result_id = self._store_result(tool_name, result)
+                result_id = self._store_result(tool_name, result, args)
 
-                # Log result
-                result_str = f"{tool_name}: {result} (cached as {result_id})"
+                # Log result - only show tool name, args, and result ID for conciseness
+                result_str = f"{tool_name}({args}) -> {result_id}"
                 print(result_str)
                 results.append(result)
-                execution_history.append(f"Called {tool_name}({args}) -> {result_str}")
+                execution_history.append(result_str)
 
                 # Handle special tool cases
                 if tool_name == "agent_finish":
