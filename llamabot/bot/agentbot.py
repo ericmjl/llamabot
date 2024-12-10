@@ -106,15 +106,15 @@ class AgentBot(SimpleBot):
         functions: Optional[list[Callable]] = None,
         **completion_kwargs,
     ):
-        super().__init__(
-            system_prompt=system_prompt,
-            temperature=temperature,
-            model_name=model_name,
-            stream_target=stream_target,
-            api_key=api_key,
-            mock_response=mock_response,
-            **completion_kwargs,
-        )
+        # super().__init__(
+        #     system_prompt=system_prompt,
+        #     temperature=temperature,
+        #     model_name=model_name,
+        #     stream_target=stream_target,
+        #     api_key=api_key,
+        #     mock_response=mock_response,
+        #     **completion_kwargs,
+        # )
 
         self.memory: Dict[str, CachedResult] = {}
 
@@ -122,6 +122,7 @@ class AgentBot(SimpleBot):
         self.decision_bot = StructuredBot(
             pydantic_model=ToolToCall,
             system_prompt=system(
+                system_prompt,
                 "Given the following message and available tools, "
                 "pick the next tool that you need to call "
                 "and the arguments that you need for it. "
@@ -129,9 +130,14 @@ class AgentBot(SimpleBot):
                 "by specifying their hash key in use_cached_results. "
                 "Any arguments that you do not know ahead of time, just leave blank. "
                 "Only call tools that are relevant to the user's message. "
-                "If the task is complete, use the agent_finish tool."
+                "If the task is complete, use the agent_finish tool.",
             ),
             model_name=model_name,
+            temperature=temperature,
+            stream_target=stream_target,
+            api_key=api_key,
+            mock_response=mock_response,
+            **completion_kwargs,
         )
 
         functions = [agent_finish, return_error] + (functions or [])
@@ -195,24 +201,25 @@ class AgentBot(SimpleBot):
             # Prepare arguments, substituting cached results where specified
             args = next_tool.tool_arguments.copy()
             for arg_name, result_id in next_tool.use_cached_results.items():
-                if result_id in self.memory:
-                    args[arg_name] = self.memory[result_id].result
-                else:
+                if result_id not in self.memory:
                     raise ValueError(f"Cached result {result_id} not found")
+                args[arg_name] = self.memory[result_id].result
 
             try:
-                result = self.tools[next_tool.tool_name](**args)
-                result_id = self._store_result(next_tool.tool_name, result)
-                print(f"{next_tool.tool_name}: {result} (cached as {result_id})")
+                tool_name = next_tool.tool_name
+                result = self.tools[tool_name](**args)
+                result_id = self._store_result(tool_name, result)
 
+                # Log result
+                result_str = f"{tool_name}: {result} (cached as {result_id})"
+                print(result_str)
                 results.append(result)
-                execution_history.append(
-                    f"Called {next_tool.tool_name}({args}) -> {result} (cached as {result_id})"
-                )
+                execution_history.append(f"Called {tool_name}({args}) -> {result_str}")
 
-                if next_tool.tool_name == "agent_finish":
+                # Handle special tool cases
+                if tool_name == "agent_finish":
                     return AIMessage(content=str(result))
-                elif next_tool.tool_name == "return_error":
+                if tool_name == "return_error":
                     raise Exception(result)
 
             except Exception as e:

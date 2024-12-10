@@ -1,3 +1,4 @@
+exaone3.5
 llama3.3
 snowflake-arctic-embed2
 sailor2
