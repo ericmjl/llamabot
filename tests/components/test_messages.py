@@ -5,6 +5,7 @@ from llamabot.components.messages import (
     HumanMessage,
     AIMessage,
     ToolMessage,
+    process_messages,
 )
 
 
@@ -42,3 +43,30 @@ def test_tool_message_slicing():
     assert msg[5:].content == "Output"
     assert msg[-6:].content == "Output"
     assert msg[:-7].content == "Tool"
+
+
+def test_process_messages_with_nested_types():
+    """Test that process_messages handles various input types correctly."""
+    from llamabot.components.messages import (
+        HumanMessage,
+        SystemMessage,
+    )
+
+    # Test with a mix of types
+    test_message = SystemMessage(content="system message")
+    messages = (
+        "human message",
+        test_message,
+        ["nested message 1", "nested message 2"],
+    )
+
+    result = process_messages(messages)
+
+    assert len(result) == 4
+    assert isinstance(result[0], HumanMessage)
+    assert result[0].content == "human message"
+    assert result[1] == test_message
+    assert isinstance(result[2], HumanMessage)
+    assert result[2].content == "nested message 1"
+    assert isinstance(result[3], HumanMessage)
+    assert result[3].content == "nested message 2"

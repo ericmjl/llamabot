@@ -160,7 +160,7 @@ def retrieve_messages_up_to_budget(
 
 
 def process_messages(
-    messages: tuple[Union[str, BaseMessage, list[Union[str, BaseMessage]], ...]]
+    messages: tuple[Union[str, BaseMessage, list[Union[str, BaseMessage]]], ...]
 ) -> list[BaseMessage]:
     """Process a tuple of messages into a list of BaseMessage objects.
 
