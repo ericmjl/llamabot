@@ -24,6 +24,7 @@ import httpx
 
 from loguru import logger
 
+from .bot.agentbot import AgentBot
 from .bot.chatbot import ChatBot
 from .bot.imagebot import ImageBot
 from .bot.querybot import QueryBot
@@ -51,6 +52,7 @@ logger.remove()
 logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNING"))
 
 __all__ = [
+    "AgentBot",
     "ChatBot",
     "ImageBot",
     "SimpleBot",
