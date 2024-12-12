@@ -10952,9 +10952,9 @@ packages:
   requires_python: '!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8'
 - kind: pypi
   name: llamabot
-  version: 0.10.1
+  version: 0.10.2
   path: .
-  sha256: 5d503273283cde9c1b6e264e7832371796c215e115d20d52573e4ea01e2b7217
+  sha256: 96bf302ba708d8b12d1eb88f46b39c33101d9812697c318883bf27c60c80aee0
   requires_dist:
   - openai
   - panel
