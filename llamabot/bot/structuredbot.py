@@ -8,7 +8,7 @@ Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 from typing import Union
 from loguru import logger
 
-from llamabot import SimpleBot
+from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
