@@ -6,18 +6,17 @@ The bot uses a decision-making system to determine which tools to call
 and in what order, making it suitable for complex, multi-step tasks.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Union
-from datetime import datetime
 import hashlib
 import json
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from llamabot import system, user
 from llamabot.bot.structuredbot import StructuredBot
-from llamabot.components.messages import AIMessage, BaseMessage
-from llamabot.config import default_language_model
+from llamabot.components.messages import AIMessage, BaseMessage, system, user
 from llamabot.components.tools import tool
+from llamabot.config import default_language_model
 
 
 @tool
