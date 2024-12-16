@@ -31,6 +31,7 @@ from .prompt_manager import prompt
 from .recorder import PromptRecorder
 from .components.messages import user, system
 from .components.tools import tool
+from .components.docstore import BM25DocStore, LanceDBDocStore, ChromaDBDocStore
 
 
 # Configure logger
@@ -61,6 +62,9 @@ __all__ = [
     "tool",
     "user",
     "system",
+    "BM25DocStore",
+    "LanceDBDocStore",
+    "ChromaDBDocStore",
 ]
 
 # Ensure ~/.llamabot directory exists
