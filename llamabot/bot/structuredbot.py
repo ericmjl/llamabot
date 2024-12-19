@@ -5,8 +5,11 @@ Courtesey of Elliot Salisbury (@ElliotSalisbury).
 Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 """
 
+import json
 from typing import Union
+
 from loguru import logger
+from pydantic import BaseModel, ValidationError
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import (
@@ -16,7 +19,6 @@ from llamabot.components.messages import (
     SystemMessage,
     process_messages,
 )
-from pydantic import BaseModel, ValidationError
 from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
 
@@ -55,6 +57,7 @@ class StructuredBot(SimpleBot):
         pydantic_model: BaseModel,
         model_name: str = default_language_model(),
         stream_target: str = "stdout",
+        allow_failed_validation: bool = False,
         **completion_kwargs,
     ):
         super().__init__(
@@ -66,6 +69,7 @@ class StructuredBot(SimpleBot):
         )
 
         self.pydantic_model = pydantic_model
+        self.allow_failed_validation = allow_failed_validation
 
     def task_message(self) -> HumanMessage:
         """Compose instructions for what the bot is supposed to do."""
@@ -81,16 +85,6 @@ class StructuredBot(SimpleBot):
         return HumanMessage(
             content=f"There was a validation error: {exception_msg} try again."
         )
-
-    def _extract_json_from_response(self, response: AIMessage):
-        """Extract JSON content from the LLM response.
-
-        :param response: The LLM response message.
-        """
-        content = response.content
-        first_paren = content.find("{")
-        last_paren = content.rfind("}")
-        return content[first_paren : last_paren + 1]
 
     def __call__(
         self,
@@ -114,6 +108,9 @@ class StructuredBot(SimpleBot):
             *processed_messages,
         ]
 
+        last_response = None
+        last_codeblock = None
+
         # we'll attempt to get the response from the model and validate it
         for attempt in range(num_attempts):
             try:
@@ -124,16 +121,35 @@ class StructuredBot(SimpleBot):
                         response = self.stream_none(full_messages)
 
                 # parse the response, and validate it against the pydantic model
-                codeblock = self._extract_json_from_response(response)
-                obj = self.pydantic_model.model_validate_json(codeblock)
+                last_response = response
+                last_codeblock = extract_json_from_response(response)
+                obj = self.pydantic_model.model_validate_json(last_codeblock)
                 return obj
 
             except ValidationError as e:
-                # we're on our last try, so we raise the error
+                # we're on our last try
                 if attempt == num_attempts - 1:
+                    if self.allow_failed_validation and last_codeblock is not None:
+                        # If we allow failed validation, return the last attempt
+                        return self.pydantic_model.model_construct(
+                            **json.loads(last_codeblock)
+                        )
                     raise e
 
                 # Otherwise, if we failed, give the LLM the validation error and try again.
                 if verbose:
                     logger.info(e)
-                full_messages.extend([response, self.get_validation_error_message(e)])
+                full_messages.extend(
+                    [last_response, self.get_validation_error_message(e)]
+                )
+
+
+def extract_json_from_response(response: AIMessage):
+    """Extract JSON content from the LLM response.
+
+    :param response: The LLM response message.
+    """
+    content = response.content
+    first_paren = content.find("{")
+    last_paren = content.rfind("}")
+    return content[first_paren : last_paren + 1]
