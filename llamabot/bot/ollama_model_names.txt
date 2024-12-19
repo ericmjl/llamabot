@@ -1,3 +1,7 @@
+granite3.1-dense
+granite3.1-moe
+falcon3
+granite-embedding
 exaone3.5
 llama3.3
 snowflake-arctic-embed2
