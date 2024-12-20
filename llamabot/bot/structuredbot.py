@@ -13,7 +13,6 @@ from pydantic import BaseModel, ValidationError
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import (
-    AIMessage,
     BaseMessage,
     HumanMessage,
     SystemMessage,
@@ -24,13 +23,9 @@ from llamabot.prompt_manager import prompt
 
 
 @prompt(role="user")
-def bot_task(schema: str) -> BaseMessage:
+def bot_task() -> BaseMessage:
     """Your task is to return the data in a json object
-    that matches the following json_schema:
-
-    {{ schema }}
-
-    Only return an INSTANCE of the schema, do not return the schema itself.
+    that matches the provided json_schema:
     """
 
 
@@ -71,11 +66,6 @@ class StructuredBot(SimpleBot):
         self.pydantic_model = pydantic_model
         self.allow_failed_validation = allow_failed_validation
 
-    def task_message(self) -> HumanMessage:
-        """Compose instructions for what the bot is supposed to do."""
-        schema = self.pydantic_model.model_json_schema()
-        return bot_task(schema)
-
     def get_validation_error_message(self, exception: ValidationError) -> HumanMessage:
         """Return a validation error message to feed back to the bot.
 
@@ -99,13 +89,10 @@ class StructuredBot(SimpleBot):
         :param verbose: Whether to show verbose output.
         :return: An instance of the specified Pydantic model.
         """
-        processed_messages = process_messages(messages)
-
         # Compose the full message list
         full_messages = [
             self.system_prompt,
-            self.task_message(),
-            *processed_messages,
+            *process_messages(messages),
         ]
 
         last_response = None
@@ -122,8 +109,8 @@ class StructuredBot(SimpleBot):
 
                 # parse the response, and validate it against the pydantic model
                 last_response = response
-                last_codeblock = extract_json_from_response(response)
-                obj = self.pydantic_model.model_validate_json(last_codeblock)
+                last_codeblock = json.loads(last_response.content)
+                obj = self.pydantic_model(**last_codeblock)
                 return obj
 
             except ValidationError as e:
@@ -142,14 +129,3 @@ class StructuredBot(SimpleBot):
                 full_messages.extend(
                     [last_response, self.get_validation_error_message(e)]
                 )
-
-
-def extract_json_from_response(response: AIMessage):
-    """Extract JSON content from the LLM response.
-
-    :param response: The LLM response message.
-    """
-    content = response.content
-    first_paren = content.find("{")
-    last_paren = content.rfind("}")
-    return content[first_paren : last_paren + 1]

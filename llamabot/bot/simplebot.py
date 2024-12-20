@@ -200,7 +200,10 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = T
     """
     from litellm import completion
 
-    messages_dumped: list[dict] = [m.model_dump() for m in messages]
+    messages_dumped: list[dict] = [
+        {k: v for k, v in m.model_dump().items() if k in ("role", "content")}
+        for m in messages
+    ]
     completion_kwargs = dict(
         model=bot.model_name,
         messages=messages_dumped,
@@ -220,13 +223,9 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = T
         if not issubclass(getattr(bot, "pydantic_model"), BaseModel):
             raise ValueError("pydantic_model must be a Pydantic BaseModel class")
 
-        model = getattr(bot, "pydantic_model")
-
-        completion_kwargs["response_format"] = {
-            "type": "json_schema",
-            "json_schema": model.model_json_schema(),
-            "strict": True,
-        }
+        completion_kwargs["response_format"] = getattr(bot, "pydantic_model")
     if bot.api_key:
         completion_kwargs["api_key"] = bot.api_key
+
+    print(completion_kwargs)
     return completion(**completion_kwargs)
