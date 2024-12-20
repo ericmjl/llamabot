@@ -51,7 +51,7 @@ class SystemMessage(BaseMessage):
     """
 
     content: str
-    role: str = "developer"
+    role: str = "system"
 
 
 class DeveloperMessage(BaseMessage):
@@ -380,5 +380,54 @@ def system(*content: Union[str, Path, BaseMessage]) -> SystemMessage:
     return SystemMessage(content=combined_content)
 
 
-# Alias system function as dev for developer messages
-dev = system
+def dev(*content: Union[str, Path, BaseMessage]) -> DeveloperMessage:
+    """Create a DeveloperMessage from one or more pieces of content.
+
+    Similar to the system() function, this combines multiple inputs into a single
+    DeveloperMessage. Content can be provided as strings, file paths, or existing messages.
+
+    Examples:
+        >>> from pathlib import Path
+        >>> import llamabot as lmb
+        >>> lmb.dev("Write tests for this function")
+        DeveloperMessage(content="Write tests for this function")
+
+        >>> dev("Write tests", "with good coverage")
+        DeveloperMessage(content="Write tests with good coverage")
+
+        >>> dev(Path("dev_notes.txt"))  # File containing "Add error handling"
+        DeveloperMessage(content="Add error handling")
+
+        >>> dev(DeveloperMessage(content="Refactor code"), "to be more modular")
+        DeveloperMessage(content="Refactor code to be more modular")
+
+        >>> dev("Add docstrings", Path("style.txt"), DeveloperMessage(content="Follow PEP8"))
+        DeveloperMessage(content="Add docstrings Use formal language Follow PEP8")
+
+    :param content: One or more pieces of content to convert into a developer message.
+        Can be strings, Paths to text files, or BaseMessage objects.
+    :return: A single DeveloperMessage containing all content
+    :raises FileNotFoundError: If a specified file path doesn't exist
+    """
+
+    def _process_item(item: Union[str, Path, BaseMessage]) -> str:
+        """Process a single content item into a string.
+
+        :param item: The item to process. Can be a string, Path to a text file,
+                    or BaseMessage object
+        :return: The string content of the item
+        :raises FileNotFoundError: If a Path item points to a non-existent file
+        """
+        if isinstance(item, DeveloperMessage):
+            return item.content
+        if isinstance(item, BaseMessage):
+            return item.content
+        if isinstance(item, Path):
+            if not item.exists():
+                raise FileNotFoundError(f"File not found: {item}")
+            return item.read_text()
+        return str(item)
+
+    # Process all items and join with spaces
+    combined_content = " ".join(_process_item(item) for item in content)
+    return DeveloperMessage(content=combined_content)
