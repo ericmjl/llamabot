@@ -1,12 +1,12 @@
 """Tests for StructuredBot."""
 
 import pytest
-from typing import Optional
 
+from llamabot.components.messages import SystemMessage
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.prompt_manager import prompt
 from pydantic import BaseModel, Field
-from llamabot.components.messages import SystemMessage
+from typing import Optional
 
 
 @prompt
