@@ -378,3 +378,7 @@ def system(*content: Union[str, Path, BaseMessage]) -> SystemMessage:
     # Process all items and join with spaces
     combined_content = " ".join(_process_item(item) for item in content)
     return SystemMessage(content=combined_content)
+
+
+# Alias system function as dev for developer messages
+dev = system
