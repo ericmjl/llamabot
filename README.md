@@ -10,7 +10,7 @@ All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are suppor
 To install LlamaBot:
 
 ```python
-pip install llamabot==0.10.3
+pip install llamabot==0.10.4
 ```
 
 ## Get access to LLMs
