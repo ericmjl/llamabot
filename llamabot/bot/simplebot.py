@@ -226,6 +226,4 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = T
         completion_kwargs["response_format"] = getattr(bot, "pydantic_model")
     if bot.api_key:
         completion_kwargs["api_key"] = bot.api_key
-
-    print(completion_kwargs)
     return completion(**completion_kwargs)
