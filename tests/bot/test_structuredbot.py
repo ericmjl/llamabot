@@ -45,7 +45,7 @@ def test_structuredbot_allow_failed_validation(mocker):
     """Test that StructuredBot returns partial data when allow_failed_validation=True."""
     # Mock the API response with invalid data (negative number)
     mock_response = mocker.MagicMock()
-    mock_response.content = {"required_field": "test", "number_field": -1}
+    mock_response.content = '{"required_field": "test", "number_field": -1}'
     mocker.patch(
         "llamabot.bot.structuredbot.SimpleBot.stream_none", return_value=mock_response
     )
