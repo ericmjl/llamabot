@@ -29,7 +29,7 @@ from .bot.structuredbot import StructuredBot
 from .experiments import Experiment, metric
 from .prompt_manager import prompt
 from .recorder import PromptRecorder
-from .components.messages import user, system
+from .components.messages import user, system, dev
 from .components.tools import tool
 from .components.docstore import BM25DocStore, LanceDBDocStore, ChromaDBDocStore
 
@@ -62,6 +62,7 @@ __all__ = [
     "tool",
     "user",
     "system",
+    "dev",
     "BM25DocStore",
     "LanceDBDocStore",
     "ChromaDBDocStore",
