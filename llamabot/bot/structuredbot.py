@@ -118,9 +118,7 @@ class StructuredBot(SimpleBot):
                 if attempt == num_attempts - 1:
                     if self.allow_failed_validation and last_codeblock is not None:
                         # If we allow failed validation, return the last attempt
-                        return self.pydantic_model.model_construct(
-                            **json.loads(last_codeblock)
-                        )
+                        return self.pydantic_model.model_construct(**last_codeblock)
                     raise e
 
                 # Otherwise, if we failed, give the LLM the validation error and try again.
