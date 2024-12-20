@@ -45,10 +45,20 @@ class BaseMessage(BaseModel):
 
 
 class SystemMessage(BaseMessage):
-    """A message from the system."""
+    """A message from the system.
+
+    Remains in the library for legacy compatibility.
+    """
 
     content: str
-    role: str = "system"
+    role: str = "developer"
+
+
+class DeveloperMessage(BaseMessage):
+    """A message from the developer."""
+
+    content: str
+    role: str = "developer"
 
 
 class HumanMessage(BaseMessage):
