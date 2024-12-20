@@ -130,7 +130,9 @@ class CommitMessage(BaseModel):
         ..., description="Whether or not there is a breaking change in the commit. "
     )
 
-    footer: str = Field("", description="An optional footer.")
+    footer: str = Field(
+        ..., description="An optional footer. Most of the time should be empty."
+    )
     emoji: str = Field(..., description="An emoji that represents the commit content.")
 
     @model_validator(mode="after")
