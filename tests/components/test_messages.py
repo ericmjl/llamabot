@@ -6,6 +6,8 @@ from llamabot.components.messages import (
     AIMessage,
     ToolMessage,
     process_messages,
+    dev,
+    DeveloperMessage,
 )
 
 
@@ -70,3 +72,51 @@ def test_process_messages_with_nested_types():
     assert result[2].content == "nested message 1"
     assert isinstance(result[3], HumanMessage)
     assert result[3].content == "nested message 2"
+
+
+def test_dev_message_creation(tmp_path):
+    """Test that the dev() function creates DeveloperMessages correctly.
+
+    Tests various input types including strings, paths, and existing messages.
+    """
+    from pytest import raises
+
+    # Create a temporary file for testing
+    test_file = tmp_path / "dev_notes.txt"
+    test_file.write_text("Add error handling")
+
+    # Test single string input
+    msg1 = dev("Write tests")
+    assert isinstance(msg1, DeveloperMessage)
+    assert msg1.content == "Write tests"
+
+    # Test multiple string inputs
+    msg2 = dev("Write tests", "with good coverage")
+    assert isinstance(msg2, DeveloperMessage)
+    assert msg2.content == "Write tests with good coverage"
+
+    # Test file path input
+    msg3 = dev(test_file)
+    assert isinstance(msg3, DeveloperMessage)
+    assert msg3.content == "Add error handling"
+
+    # Test existing DeveloperMessage input
+    existing_msg = DeveloperMessage(content="Refactor code")
+    msg4 = dev(existing_msg, "to be more modular")
+    assert isinstance(msg4, DeveloperMessage)
+    assert msg4.content == "Refactor code to be more modular"
+
+    # Test mixed input types
+    msg5 = dev("Add docstrings", test_file, DeveloperMessage(content="Follow PEP8"))
+    assert isinstance(msg5, DeveloperMessage)
+    assert msg5.content == "Add docstrings Add error handling Follow PEP8"
+
+    # Test with non-existent file
+    with raises(FileNotFoundError):
+        dev(tmp_path / "nonexistent.txt")
+
+    # Test with other message types
+    human_msg = HumanMessage(content="Test message")
+    msg6 = dev(human_msg)
+    assert isinstance(msg6, DeveloperMessage)
+    assert msg6.content == "Test message"
