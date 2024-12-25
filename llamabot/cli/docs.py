@@ -1,19 +1,18 @@
 """CLI for creating and keeping Markdown documentation up-to-date."""
 
-from typer import Typer
+from enum import Enum
 from pathlib import Path
+
 import frontmatter
-from pydantic import BaseModel, Field, model_validator
-from llamabot import prompt, StructuredBot
+import requests
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pyprojroot import here
+from typer import Typer
 
-from pydantic import ConfigDict
-
+import llamabot as lmb
+from llamabot import prompt
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage
-from enum import Enum
-import requests
-
 
 app = Typer()
 
@@ -265,6 +264,16 @@ def documentation_information(source_file: MarkdownSourceFile) -> str:
     """
 
 
+@prompt(role="user")
+def ood_checker_information(ood_result: DocsOutOfDate) -> str:
+    """Here is the out-of-date check result:
+
+    [[ OOD CHECK RESULT BEGINS ]]
+    {{ ood_result.model_dump_json() }}
+    [[ OOD CHECK RESULT ENDS ]]
+    """
+
+
 @prompt(role="system")
 def docwriter_sysprompt():
     """
@@ -285,18 +294,18 @@ def docwriter_sysprompt():
     """
 
 
-def ood_checker_bot(model_name: str = "gpt-4o") -> StructuredBot:
+def ood_checker_bot(model_name: str = "gpt-4o") -> lmb.StructuredBot:
     """Return a StructuredBot for the out-of-date checker."""
-    return StructuredBot(
+    return lmb.StructuredBot(
         system_prompt=ood_checker_sysprompt(),
         pydantic_model=DocsOutOfDate,
         model_name=model_name,
     )
 
 
-def docwriter_bot(model_name: str = "gpt-4o") -> StructuredBot:
+def docwriter_bot(model_name: str = "gpt-4o") -> lmb.StructuredBot:
     """Return a StructuredBot for the documentation writer."""
-    return StructuredBot(
+    return lmb.StructuredBot(
         system_prompt=docwriter_sysprompt(),
         pydantic_model=DocumentationContent,
         model_name=model_name,
@@ -317,7 +326,7 @@ def refine_bot_sysprompt():
 
 def refine_bot(model_name: str = "o1-preview") -> SimpleBot:
     """Return a SimpleBot for the documentation writer."""
-    return SimpleBot(
+    return lmb.SimpleBot(
         system_prompt=refine_bot_sysprompt(),
         model_name=model_name,
     )
@@ -368,10 +377,16 @@ def write(
         documentation_information(src_file), verbose=verbose
     )
 
-    if not src_file.post.content or result:
+    if (not src_file.post.content) or result:
         docwriter = docwriter_bot(model_name=docwriter_model_name)
+        # print("-------")
+        # print("OOD CHECKER INFORMATION:")
+        # print(ood_checker_information(result))
+        # print("-------")
         response: DocumentationContent = docwriter(
-            documentation_information(src_file),
+            lmb.user(
+                documentation_information(src_file), ood_checker_information(result)
+            ),
             verbose=verbose,
         )
         src_file.post.content = response.content
