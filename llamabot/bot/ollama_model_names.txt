@@ -1,3 +1,4 @@
+smallthinker
 granite3.1-dense
 granite3.1-moe
 falcon3
