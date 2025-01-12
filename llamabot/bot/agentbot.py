@@ -10,11 +10,13 @@ import hashlib
 import json
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Union
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.components.messages import AIMessage, BaseMessage, system, user
+from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.components.tools import tool
 from llamabot.config import default_language_model
 
@@ -22,7 +24,6 @@ from llamabot.config import default_language_model
 @tool
 def agent_finish(message: Any) -> str:
     """Tool to indicate that the agent has finished processing the user's message."""
-
     try:
         return str(message)
     except Exception:
@@ -37,6 +38,40 @@ def return_error(message: Any) -> str:
     :raises Exception: Always raises the provided error message as an exception
     """
     raise Exception(str(message))
+
+
+@tool
+def write_and_execute_script(
+    code: str,
+    python_version: str = ">=3.11",
+    dependencies: Optional[List[str]] = None,
+    purpose: str = "",
+    timeout: int = 30,
+) -> Dict[str, Any]:
+    """Write and execute a Python script in a secure sandbox.
+
+    :param code: The Python code to execute
+    :param python_version: Python version requirement
+    :param dependencies: List of pip dependencies
+    :param purpose: Description of script's purpose
+    :param timeout: Execution timeout in seconds
+    :return: Script execution results
+    """
+    # Create metadata
+    metadata = ScriptMetadata(
+        requires_python=python_version,
+        dependencies=dependencies or [],
+        auth=str(uuid4()),  # Generate unique ID for this execution
+        purpose=purpose,
+        timestamp=datetime.now(),
+    )
+
+    # Initialize executor
+    executor = ScriptExecutor()
+
+    # Write and run script
+    script_path = executor.write_script(code, metadata)
+    return executor.run_script(script_path, timeout)
 
 
 class CachedResult(BaseModel):
@@ -87,8 +122,6 @@ class ToolToCall(BaseModel):
     )
 
 
-# NOTE: This is a bit of a breaking pattern by not inheriting from any classes.
-# Should probably inherit from StructuredBot.
 class AgentBot:
     """A bot that uses an agent to process messages and execute tools.
 
@@ -132,7 +165,9 @@ class AgentBot:
             **completion_kwargs,
         )
 
-        functions = [agent_finish, return_error] + (functions or [])
+        functions = [agent_finish, return_error, write_and_execute_script] + (
+            functions or []
+        )
         self.functions = functions
         self.tools = {func.__name__: func for func in self.functions}
 

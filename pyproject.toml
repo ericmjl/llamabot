@@ -107,6 +107,7 @@ dependencies = [
     "python-multipart",
     "httpx",
     "tqdm",
+    "docker",  # For secure script execution
 ]
 requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
