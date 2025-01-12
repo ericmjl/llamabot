@@ -151,9 +151,10 @@ CMD ["uv", "run", "--system-site-packages=false"]
             }
 
             # Run container with security constraints
+            # Use python explicitly to run the script instead of trying to execute it directly
             container = self.docker_client.containers.run(
                 "agent-runner",
-                f"/app/scripts/{script_path.name}",
+                ["python", f"/app/scripts/{script_path.name}"],
                 volumes=volumes,
                 read_only=True,
                 network_mode="none",
