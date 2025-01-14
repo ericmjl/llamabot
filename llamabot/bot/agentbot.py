@@ -44,8 +44,10 @@ def return_error(message: Any) -> str:
 def write_and_execute_script(
     code: str,
     python_version: str = ">=3.11",
-    dependencies: Optional[List[str]] = None,
-    purpose: str = "",
+    dependencies: List[str] = Field(
+        ...,
+        description="List of pip-installable dependencies that go into the embedded script metadata.",
+    ),
     timeout: int = 30,
 ) -> Dict[str, Any]:
     """Write and execute a Python script in a secure sandbox.
@@ -53,7 +55,6 @@ def write_and_execute_script(
     :param code: The Python code to execute
     :param python_version: Python version requirement
     :param dependencies: List of pip dependencies
-    :param purpose: Description of script's purpose
     :param timeout: Execution timeout in seconds
     :return: Script execution results
     """
@@ -62,7 +63,6 @@ def write_and_execute_script(
         requires_python=python_version,
         dependencies=dependencies or [],
         auth=str(uuid4()),  # Generate unique ID for this execution
-        purpose=purpose,
         timestamp=datetime.now(),
     )
 
@@ -109,7 +109,7 @@ class ToolArguments(BaseModel):
     :param value: Value of the argument, can be None if coming from cache
     """
 
-    name: str
+    name: str = Field(..., description="Name of the argument.")
     value: Union[int, str, float, bool, None] = Field(
         description="Argument value. None if coming from cache."
     )
@@ -122,15 +122,20 @@ class CachedArguments(BaseModel):
     :param hash_key: Hash key of the cached result to use
     """
 
-    arg_name: str
-    hash_key: str
+    arg_name: str = Field(
+        ..., description="Name of the argument to populate from cache."
+    )
+    hash_key: str = Field(
+        ...,
+        description="Hash key of the cached result to use. It is a sha256 hash of the result.",
+    )
 
 
 class ToolToCall(BaseModel):
     """Pydantic model representing a single tool to be called by the agent.
 
     :param tool_name: Name of the tool to call
-    :param tool_arguments: List of tool arguments and their values
+    :param tool_args: List of tool arguments and their values
     :param use_cached_results: List of argument names and hash keys
         that should be used as input for those arguments
     """
@@ -207,6 +212,10 @@ class AgentBot:
         """
         result_hash = hash_result(result)
 
+        # Skip caching for write_and_execute_script results
+        if tool_name == "write_and_execute_script":
+            return result_hash
+
         # If this exact result is already cached, return its hash
         if result_hash in self.memory:
             return result_hash
@@ -261,13 +270,15 @@ class AgentBot:
                 if arg.value is not None:
                     args[arg.name] = arg.value
 
-            # Add cached results where specified
-            for cached_arg in next_tool.use_cached_results:
-                if cached_arg.hash_key not in self.memory:
-                    raise ValueError(f"Cached result {cached_arg.hash_key} not found")
-                args[cached_arg.arg_name] = self.memory[cached_arg.hash_key].result
-
             try:
+                # Add cached results where specified
+                for cached_arg in next_tool.use_cached_results:
+                    if cached_arg.hash_key not in self.memory:
+                        raise ValueError(
+                            f"Cached result {cached_arg.hash_key} not found"
+                        )
+                    args[cached_arg.arg_name] = self.memory[cached_arg.hash_key].result
+
                 tool_name = next_tool.tool_name
                 result = self.tools[tool_name](**args)
                 result_id = self._store_result(tool_name, result, args)

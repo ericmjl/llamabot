@@ -23,14 +23,12 @@ class ScriptMetadata(BaseModel):
     :param requires_python: Python version requirement
     :param dependencies: List of pip dependencies
     :param auth: Agent ID hash for authentication
-    :param purpose: Description of script's purpose
     :param timestamp: When the script was generated
     """
 
     requires_python: str
     dependencies: list[str]
     auth: str
-    purpose: str
     timestamp: datetime
 
 
@@ -80,7 +78,6 @@ class ScriptExecutor:
             metadata_block += f'#   "{dep}",\n'
         metadata_block += "# ]\n"
         metadata_block += f'# auth = "{metadata.auth}"\n'
-        metadata_block += f'# purpose = "{metadata.purpose}"\n'
         metadata_block += f'# timestamp = "{metadata.timestamp.isoformat()}"\n'
         metadata_block += "# ///\n\n"
 
