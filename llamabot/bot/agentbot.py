@@ -102,23 +102,47 @@ def hash_result(result: Any) -> str:
     return hashlib.sha256(result_str.encode()).hexdigest()
 
 
+class ToolArguments(BaseModel):
+    """Pydantic model for tool arguments.
+
+    :param name: Name of the argument
+    :param value: Value of the argument, can be None if coming from cache
+    """
+
+    name: str
+    value: Union[int, str, float, bool, None] = Field(
+        description="Argument value. None if coming from cache."
+    )
+
+
+class CachedArguments(BaseModel):
+    """Pydantic model for cached argument references.
+
+    :param arg_name: Name of the argument to populate from cache
+    :param hash_key: Hash key of the cached result to use
+    """
+
+    arg_name: str
+    hash_key: str
+
+
 class ToolToCall(BaseModel):
     """Pydantic model representing a single tool to be called by the agent.
 
     :param tool_name: Name of the tool to call
-    :param tool_arguments: Dictionary mapping argument names to their values
-    :param use_cached_results: Dictionary mapping argument names to hash keys
+    :param tool_arguments: List of tool arguments and their values
+    :param use_cached_results: List of argument names and hash keys
         that should be used as input for those arguments
     """
 
     tool_name: str = Field(..., description="The tool to call.")
-    tool_arguments: Dict[str, Any | None] = Field(
+    tool_args: list[ToolArguments] = Field(
         ...,
         description="Arguments to pass to the tool. Use None for arguments that should come from cache.",
     )
-    use_cached_results: Dict[str, str] = Field(
-        default_factory=dict,
-        description="Map of argument names to result hash keys to use as input.",
+    use_cached_results: list[CachedArguments] = Field(
+        ...,
+        description="List of argument names and result hash keys to use as input.",
     )
 
 
@@ -220,7 +244,7 @@ class AgentBot:
                     "Use this to decide which tool to call next or raise an error if you need to stop. ",
                     *messages,
                     "Here are the available tools: ",
-                    *[func.json_schema for func in self.functions],
+                    *[json.dumps(func.json_schema) for func in self.functions],
                     "Here are the cached results you can use: ",
                     *[
                         f"{k}: {v.tool_name} result from {v.timestamp}"
@@ -231,12 +255,17 @@ class AgentBot:
                 )
             )
 
-            # Prepare arguments, substituting cached results where specified
-            args = next_tool.tool_arguments.copy()
-            for arg_name, result_id in next_tool.use_cached_results.items():
-                if result_id not in self.memory:
-                    raise ValueError(f"Cached result {result_id} not found")
-                args[arg_name] = self.memory[result_id].result
+            # Prepare arguments from tool_args
+            args = {}
+            for arg in next_tool.tool_args:
+                if arg.value is not None:
+                    args[arg.name] = arg.value
+
+            # Add cached results where specified
+            for cached_arg in next_tool.use_cached_results:
+                if cached_arg.hash_key not in self.memory:
+                    raise ValueError(f"Cached result {cached_arg.hash_key} not found")
+                args[cached_arg.arg_name] = self.memory[cached_arg.hash_key].result
 
             try:
                 tool_name = next_tool.tool_name

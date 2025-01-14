@@ -86,7 +86,7 @@ dependencies = [
     "sh",
     "pre-commit",
     "beartype",
-    "litellm>=1.56.10",
+    "litellm>=1.58.1",
     "python-slugify",
     "pydantic>=2.0",
     "pdfminer.six",
@@ -191,3 +191,4 @@ notebooks = ["notebooks"] # for those who just want to run notebooks
 
 [tool.pixi.dependencies]
 python-multipart = "*"
+numpydoc = ">=1.8.0,<2"
