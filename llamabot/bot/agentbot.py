@@ -95,11 +95,11 @@ def hash_result(result: Any) -> str:
     """Generate a SHA256 hash for a result value.
 
     :param result: Any result value that can be converted to string
-    :return: SHA256 hash of the stringified result
+    :return: First 8 characters of the SHA256 hash of the stringified result
     """
     # Convert result to a consistent string representation
     result_str = json.dumps(result, sort_keys=True, default=str)
-    return hashlib.sha256(result_str.encode()).hexdigest()
+    return hashlib.sha256(result_str.encode()).hexdigest()[:8]
 
 
 class ToolArguments(BaseModel):
