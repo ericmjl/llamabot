@@ -13,6 +13,8 @@ from llamabot.bot.agentbot import (
     CachedResult,
     hash_result,
     ToolToCall,
+    ToolArguments,
+    CachedArguments,
     agent_finish,
     return_error,
 )
@@ -59,13 +61,22 @@ def test_tool_to_call_model():
     """Test the ToolToCall pydantic model."""
     tool = ToolToCall(
         tool_name="test_tool",
-        tool_arguments={"arg": "value"},
-        use_cached_results={"cached_arg": "hash123"},
+        tool_args=[
+            ToolArguments(name="arg1", value="value1"),
+            ToolArguments(name="arg2", value=None),
+        ],
+        use_cached_results=[CachedArguments(arg_name="arg2", hash_key="hash123")],
     )
 
     assert tool.tool_name == "test_tool"
-    assert tool.tool_arguments == {"arg": "value"}
-    assert tool.use_cached_results == {"cached_arg": "hash123"}
+    assert len(tool.tool_args) == 2
+    assert tool.tool_args[0].name == "arg1"
+    assert tool.tool_args[0].value == "value1"
+    assert tool.tool_args[1].name == "arg2"
+    assert tool.tool_args[1].value is None
+    assert len(tool.use_cached_results) == 1
+    assert tool.use_cached_results[0].arg_name == "arg2"
+    assert tool.use_cached_results[0].hash_key == "hash123"
 
 
 def test_agent_bot_initialization():
