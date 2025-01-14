@@ -43,25 +43,33 @@ def return_error(message: Any) -> str:
 @tool
 def write_and_execute_script(
     code: str,
+    dependencies_str: Optional[str] = None,
     python_version: str = ">=3.11",
-    dependencies: List[str] = Field(
-        ...,
-        description="List of pip-installable dependencies that go into the embedded script metadata.",
-    ),
     timeout: int = 30,
 ) -> Dict[str, Any]:
     """Write and execute a Python script in a secure sandbox.
 
+    Dependencies should be specified as a comma-separated string, e.g. "requests,beautifulsoup4".
+
+    Script output will be captured from stdout. Use print() to output results.
+
     :param code: The Python code to execute
+    :param dependencies_str: Comma-separated string of pip dependencies
     :param python_version: Python version requirement
-    :param dependencies: List of pip dependencies
     :param timeout: Execution timeout in seconds
-    :return: Script execution results
+    :return: Dictionary containing script execution results
     """
+    # Parse dependencies string into list
+    dependencies = list(
+        dep.strip()
+        for dep in (dependencies_str or "").split(",")
+        if dep.strip()  # Filter out empty strings
+    )
+
     # Create metadata
     metadata = ScriptMetadata(
         requires_python=python_version,
-        dependencies=dependencies or [],
+        dependencies=dependencies,
         auth=str(uuid4()),  # Generate unique ID for this execution
         timestamp=datetime.now(),
     )
@@ -71,7 +79,14 @@ def write_and_execute_script(
 
     # Write and run script
     script_path = executor.write_script(code, metadata)
-    return executor.run_script(script_path, timeout)
+    result = executor.run_script(script_path, timeout)
+
+    # Return structured output
+    return {
+        "stdout": result["stdout"].strip(),
+        "stderr": result["stderr"].strip(),
+        "status": result["status"],
+    }
 
 
 class CachedResult(BaseModel):
@@ -88,7 +103,10 @@ class CachedResult(BaseModel):
     tool_arguments: Dict[str, Any]
     result: Any
     timestamp: datetime = Field(default_factory=datetime.now)
-    hash_key: str
+    hash_key: str = Field(
+        ...,
+        description="SHA256 hash of the stringified result. Length 8 characters.",
+    )
 
 
 def hash_result(result: Any) -> str:

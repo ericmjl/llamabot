@@ -5,7 +5,6 @@ in a secure Docker container environment, following best practices
 for sandboxing and security.
 """
 
-import json
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -82,8 +81,12 @@ class ScriptExecutor:
         metadata_block += "# ///\n\n"
 
         # Write script with metadata
+
+        full_script = metadata_block + code
+        # print(full_script)
+
         with open(script_path, "w") as f:
-            f.write(metadata_block + code)
+            f.write(full_script)
 
         return script_path
 
@@ -134,8 +137,10 @@ CMD ["uv", "run", "--system-site-packages=false"]
 
         :param script_path: Path to the script to run
         :param timeout: Timeout in seconds
-        :return: Script execution results
-        :raises: Various exceptions for execution failures
+        :return: Dictionary containing script execution results
+            - stdout: Captured standard output
+            - stderr: Captured standard error
+            - status: Execution status code
         """
         try:
             # Ensure container image exists
@@ -147,16 +152,22 @@ CMD ["uv", "run", "--system-site-packages=false"]
                 str(self.results_dir): {"bind": "/app/results", "mode": "rw"},
             }
 
+            # Add environment variables for uv
+            env = {
+                "UV_CACHE_DIR": "/tmp/uv-cache",
+                "UV_SYSTEM_PYTHON": "false",
+            }
+
             # Run container with security constraints
-            # Use python explicitly to run the script instead of trying to execute it directly
             container = self.docker_client.containers.run(
                 "agent-runner",
-                ["python", f"/app/scripts/{script_path.name}"],
+                ["uv", "run", f"/app/scripts/{script_path.name}"],
                 volumes=volumes,
+                environment=env,
+                tmpfs={"/tmp": "size=100m,exec"},
                 read_only=True,
-                network_mode="none",
                 mem_limit="512m",
-                nano_cpus=1_000_000_000,  # 1 CPU
+                nano_cpus=1_000_000_000,
                 security_opt=["no-new-privileges"],
                 cap_drop=["ALL"],
                 detach=True,
@@ -165,17 +176,14 @@ CMD ["uv", "run", "--system-site-packages=false"]
             try:
                 # Wait for result with timeout
                 result = container.wait(timeout=timeout)
-                logs = container.logs().decode("utf-8")
+                stdout = container.logs(stdout=True, stderr=False).decode("utf-8")
+                stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
 
-                if result["StatusCode"] != 0:
-                    raise RuntimeError(f"Script failed: {logs}")
-
-                # Parse result from logs
-                try:
-                    return json.loads(logs)
-                except json.JSONDecodeError:
-                    return {"output": logs}
-
+                return {
+                    "stdout": stdout,
+                    "stderr": stderr,
+                    "status": result["StatusCode"],
+                }
             finally:
                 container.remove(force=True)
 
