@@ -1,3 +1,8 @@
+olmo2
+command-r7b
+deepseek-v3
+phi4
+dolphin3
 smallthinker
 granite3.1-dense
 granite3.1-moe
