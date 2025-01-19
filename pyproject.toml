@@ -63,7 +63,7 @@ namespaces = false
 
 [project]
 name = "llamabot"
-version = "0.10.8"
+version = "0.10.9"
 # Runtime dependencies below
 dependencies = [
     "openai",
