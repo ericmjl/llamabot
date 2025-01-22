@@ -19,6 +19,41 @@ from llamabot.components.messages import AIMessage, BaseMessage, system, user
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.components.tools import tool
 from llamabot.config import default_language_model
+from duckduckgo_search import DDGS
+import requests
+from markdownify import markdownify as md
+from bs4 import BeautifulSoup
+
+
+@tool
+def search_internet(
+    search_term: str, max_results: int = 10, backend: str = "lite"
+) -> Dict[str, str]:
+    """Search the internet for a given term and get webpage contents.
+
+    :param search_term: The search term to look up
+    :param max_results: Maximum number of search results to return
+    :param backend: The DuckDuckGo backend to use
+    :return: Dictionary mapping URLs to markdown-formatted webpage contents
+    """
+    ddgs = DDGS()
+    results = ddgs.text(search_term, max_results=max_results, backend=backend)
+
+    webpage_contents = {}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Connection": "keep-alive",
+    }
+    for result in results:
+        response = requests.get(result["href"], headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
+        webpage_contents[result["href"]] = md(soup.get_text())
+
+    return webpage_contents
 
 
 @tool
@@ -65,6 +100,9 @@ def write_and_execute_script(
         for dep in (dependencies_str or "").split(",")
         if dep.strip()  # Filter out empty strings
     )
+    # Modify the Python version if it doesn't have a version specifier
+    if not any(python_version.startswith(op) for op in (">=", "<=", "==", "~=")):
+        python_version = f">={python_version}"
 
     # Create metadata
     metadata = ScriptMetadata(
@@ -120,7 +158,7 @@ def hash_result(result: Any) -> str:
     return hashlib.sha256(result_str.encode()).hexdigest()[:8]
 
 
-class ToolArguments(BaseModel):
+class ToolArgument(BaseModel):
     """Pydantic model for tool arguments.
 
     :param name: Name of the argument
@@ -128,8 +166,11 @@ class ToolArguments(BaseModel):
     """
 
     name: str = Field(..., description="Name of the argument.")
-    value: Union[int, str, float, bool, None] = Field(
-        description="Argument value. None if coming from cache."
+    value: Optional[
+        Union[str, int, float, bool, dict, List[Union[str, int, float, bool, dict]]]
+    ] = Field(
+        ...,
+        description="Argument value. None if coming from cache.",
     )
 
 
@@ -159,7 +200,7 @@ class ToolToCall(BaseModel):
     """
 
     tool_name: str = Field(..., description="The tool to call.")
-    tool_args: list[ToolArguments] = Field(
+    tool_args: list[ToolArgument] = Field(
         ...,
         description="Arguments to pass to the tool. Use None for arguments that should come from cache.",
     )
@@ -212,9 +253,11 @@ class AgentBot:
             **completion_kwargs,
         )
 
-        functions = [agent_finish, return_error, write_and_execute_script] + (
-            functions or []
-        )
+        functions = [
+            agent_finish,
+            return_error,
+            write_and_execute_script,
+        ] + (functions or [])
         self.functions = functions
         self.tools = {func.__name__: func for func in self.functions}
 
@@ -229,10 +272,6 @@ class AgentBot:
         :return: The hash key under which the result is stored
         """
         result_hash = hash_result(result)
-
-        # Skip caching for write_and_execute_script results
-        if tool_name == "write_and_execute_script":
-            return result_hash
 
         # If this exact result is already cached, return its hash
         if result_hash in self.memory:
@@ -267,18 +306,21 @@ class AgentBot:
             iteration += 1
             next_tool = self.decision_bot(
                 user(
-                    "Here are the previous messages and the execution history. "
-                    "Use this to decide which tool to call next or raise an error if you need to stop. ",
+                    "This is the problem you need to solve: ",
                     *messages,
                     "Here are the available tools: ",
                     *[json.dumps(func.json_schema) for func in self.functions],
-                    "Here are the cached results you can use: ",
+                    "You are allowed to write as many different scripts as you need to solve the problem. ",
+                    "If you encounter an error, try taking a step back and thinking about the problem ",
+                    "before calling the next tool."
+                    "Here are previously cached results you can use: ",
                     *[
                         f"{k}: {v.tool_name} result from {v.timestamp}"
                         for k, v in self.memory.items()
                     ],
-                    "Here is the execution history: ",
+                    "Here is the execution history for reference: ",
                     *execution_history,
+                    "If you have the answer, use the agent_finish tool to finish the task and write an answer to the user.",
                 )
             )
 
@@ -299,10 +341,17 @@ class AgentBot:
 
                 tool_name = next_tool.tool_name
                 result = self.tools[tool_name](**args)
+
+                if tool_name == "write_and_execute_script":
+                    print("---SCRIPT EXECUTION RESULT---")
+                    print(result["stdout"])
+                    print("---SCRIPT EXECUTION RESULT---")
+                    result = result["stdout"]
                 result_id = self._store_result(tool_name, result, args)
 
                 # Log result - only show tool name, args, and result ID for conciseness
-                result_str = f"{tool_name}({args}) -> {result_id}"
+                result_str = f"{tool_name}({args}) -> {result_id}, {result}"
+                print()
                 print(result_str)
                 results.append(result)
                 execution_history.append(result_str)
@@ -315,6 +364,7 @@ class AgentBot:
 
             except Exception as e:
                 error_msg = f"Error calling {next_tool.tool_name}: {str(e)}"
+                print()
                 print(error_msg)
                 execution_history.append(error_msg)
                 if next_tool.tool_name == "return_error":

@@ -164,9 +164,12 @@ CMD ["uv", "run", "--system-site-packages=false"]
                 ["uv", "run", f"/app/scripts/{script_path.name}"],
                 volumes=volumes,
                 environment=env,
-                tmpfs={"/tmp": "size=100m,exec"},
+                tmpfs={
+                    "/tmp": "size=2g,exec",  # General tmp space
+                    "/tmp/uv-cache": "size=2g,exec",  # Dedicated space for UV cache
+                },
                 read_only=True,
-                mem_limit="512m",
+                mem_limit="2048m",
                 nano_cpus=1_000_000_000,
                 security_opt=["no-new-privileges"],
                 cap_drop=["ALL"],
