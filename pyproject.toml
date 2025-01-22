@@ -107,7 +107,7 @@ dependencies = [
     "python-multipart",
     "httpx",
     "tqdm",
-    "docker",  # For secure script execution
+    "docker", "duckduckgo-search>=7.2.1,<8", "markdownify>=0.14.1,<0.15",  # For secure script execution
 ]
 requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
