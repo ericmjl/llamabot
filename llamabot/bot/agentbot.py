@@ -256,7 +256,6 @@ class AgentBot:
         functions = [
             agent_finish,
             return_error,
-            write_and_execute_script,
         ] + (functions or [])
         self.functions = functions
         self.tools = {func.__name__: func for func in self.functions}
