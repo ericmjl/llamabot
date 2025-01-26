@@ -1,3 +1,4 @@
+deepseek-r1
 olmo2
 command-r7b
 deepseek-v3
