@@ -10,6 +10,7 @@ from typing import Union
 
 from loguru import logger
 from pydantic import BaseModel, ValidationError
+from litellm import supports_response_schema, get_supported_openai_params
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import (
@@ -55,6 +56,18 @@ class StructuredBot(SimpleBot):
         allow_failed_validation: bool = False,
         **completion_kwargs,
     ):
+        params = get_supported_openai_params(model=model_name)
+        if not (
+            "response_format" in params and supports_response_schema(model=model_name)
+        ):
+            raise ValueError(
+                f"Model {model_name} does not support structured responses. "
+                "Please use a model that supports both `response_format` and `response_schema`; "
+                "`gpt-4o`, `anthropic/claude-3-5-sonnet`, "
+                "and gemini/gemini-1.5-pro-latest are specific examples, "
+                "just make sure you have the appropriate API key for the model."
+            )
+
         super().__init__(
             system_prompt,
             stream_target=stream_target,
