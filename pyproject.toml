@@ -86,7 +86,7 @@ dependencies = [
     "sh",
     "pre-commit",
     "beartype",
-    "litellm>=1.56.10",
+    "litellm>=1.59.8",
     "python-slugify",
     "pydantic>=2.0",
     "pdfminer.six",
