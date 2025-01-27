@@ -70,7 +70,9 @@ def test_tool_to_call_model():
 
 def test_agent_bot_initialization():
     """Test AgentBot initialization."""
-    bot = AgentBot(system_prompt="Test prompt", functions=[mock_tool])
+    bot = AgentBot(
+        model_name="gpt-4o", system_prompt="Test prompt", functions=[mock_tool]
+    )
 
     assert isinstance(bot.memory, Dict)
     assert "mock_tool" in bot.tools
