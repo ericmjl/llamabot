@@ -82,7 +82,7 @@ def test_agent_bot_initialization():
 
 def test_store_result():
     """Test the _store_result method."""
-    bot = AgentBot(system_prompt="Test prompt")
+    bot = AgentBot(model_name="gpt-4o", system_prompt="Test prompt")
 
     # Store a new result
     result = "test result"
