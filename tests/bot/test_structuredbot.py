@@ -41,50 +41,6 @@ class TestModel(BaseModel):
     number_field: int = Field(gt=0)  # must be positive
 
 
-def test_structuredbot_allow_failed_validation(mocker):
-    """Test that StructuredBot returns partial data when allow_failed_validation=True."""
-    # Mock the API response with invalid data (negative number)
-    mock_response = mocker.MagicMock()
-    mock_response.content = '{"required_field": "test", "number_field": -1}'
-    mocker.patch(
-        "llamabot.bot.structuredbot.SimpleBot.stream_none", return_value=mock_response
-    )
-
-    bot = StructuredBot(
-        system_prompt=SystemMessage(content="Test prompt"),
-        pydantic_model=TestModel,
-        allow_failed_validation=True,
-        stream_target="none",
-    )
-
-    # Should return object even with invalid data
-    result = bot("test message")
-    assert isinstance(result, TestModel)
-    assert result.required_field == "test"
-    assert result.number_field == -1  # Invalid value is retained
-
-
-def test_structuredbot_disallow_failed_validation(mocker):
-    """Test that StructuredBot raises validation error when allow_failed_validation=False."""
-    # Mock the API response with invalid data (negative number)
-    mock_response = mocker.MagicMock()
-    mock_response.content = '{"required_field": "test", "number_field": -1}'
-    mocker.patch(
-        "llamabot.bot.structuredbot.SimpleBot.stream_none", return_value=mock_response
-    )
-
-    bot = StructuredBot(
-        system_prompt=SystemMessage(content="Test prompt"),
-        pydantic_model=TestModel,
-        allow_failed_validation=False,
-        stream_target="none",
-    )
-
-    # Should raise ValidationError
-    with pytest.raises(Exception):  # Using general Exception as it might be wrapped
-        bot("test message")
-
-
 def test_structuredbot_valid_data(mocker):
     """Test that StructuredBot correctly processes valid data."""
     # Mock the API response with valid data
@@ -98,9 +54,23 @@ def test_structuredbot_valid_data(mocker):
         system_prompt=SystemMessage(content="Test prompt"),
         pydantic_model=TestModel,
         stream_target="none",
+        model_name="gpt-4o",
     )
 
     result = bot("test message")
     assert isinstance(result, TestModel)
     assert result.required_field == "test"
     assert result.number_field == 1
+
+
+def test_structuredbot_unsupported_model():
+    """Test that StructuredBot raises ValueError for models without structured response support."""
+    with pytest.raises(ValueError) as exc_info:
+        StructuredBot(
+            system_prompt="Test prompt",
+            pydantic_model=TestModel,
+            model_name="mistral/mistral-medium",
+        )
+
+    assert "does not support structured responses" in str(exc_info.value)
+    assert "mistral-medium" in str(exc_info.value)

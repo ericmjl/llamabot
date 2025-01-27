@@ -328,7 +328,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b2/11/c48248f984dfd8dfec0bb074465ca697cf64b6b71b0aa199c15ad0153597/lancedb-0.17.0-cp39-abi3-manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -737,7 +737,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/eb/03/4eb452f02a740ab1cfa334570384f10810890b2670ef6277af7abcb0039d/lancedb-0.17.0-cp39-abi3-manylinux_2_24_aarch64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -1127,7 +1127,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/ed/58e04eaf815acd6b75ad7db8a6a61d01eccc5cb2191d431c0d5f234cf20a/lancedb-0.17.0-cp39-abi3-macosx_10_15_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -1517,7 +1517,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/87/a9/14807f23f0fb415453626ba4ea7431ab62f0906bd0ef1df24680fd5ae2df/lancedb-0.17.0-cp39-abi3-macosx_11_0_arm64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -1781,7 +1781,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e3/a8/67a8dc6fd7a57bde6b9f75b10368805db46b109adc7d634d7ce45bc655f3/lancedb-0.15.0-cp38-abi3-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/04/1e/b832de447dee8b582cac175871d2f6c3d5077cc56d5575cadba1fd1cccfa/linkify_it_py-2.0.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0a/6e/94537acfb5b8f18235d13186d247bca478fea5e87d224644e0fe907df976/lxml-5.3.0-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
@@ -2079,7 +2079,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/76/8d/fb7148ab42227aff5fc72d5f278dadf1c71bda923a44896aa8c9e2e79b48/lancedb-0.15.0-cp38-abi3-manylinux_2_24_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/04/1e/b832de447dee8b582cac175871d2f6c3d5077cc56d5575cadba1fd1cccfa/linkify_it_py-2.0.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/1d/7c/2eeecf87c9a1fca4f84f991067c693e67340f2b7127fc3eca8fa29d75ee3/lxml-5.3.0-cp312-cp312-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
@@ -2354,7 +2354,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6f/b3/c0da4a07137781b35f70d8630baf656a30e5b05be6cbe5dacfe686c69229/lancedb-0.15.0-cp38-abi3-macosx_10_15_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/04/1e/b832de447dee8b582cac175871d2f6c3d5077cc56d5575cadba1fd1cccfa/linkify_it_py-2.0.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/83/26b1864921869784355459f374896dcf8b44d4af3b15d7697e9156cb2de9/lxml-5.3.0-cp312-cp312-macosx_10_9_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
@@ -2627,7 +2627,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/95/cc/8333fd74e82a4a088b522e76dc68f225054b3527d885e01c8ef1806dab3f/lancedb-0.15.0-cp38-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/04/1e/b832de447dee8b582cac175871d2f6c3d5077cc56d5575cadba1fd1cccfa/linkify_it_py-2.0.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/eb/6d/d1f1c5e40c64bf62afd7a3f9b34ce18a586a1cccbf71e783cd0a6d8e8971/lxml-5.3.0-cp312-cp312-macosx_10_9_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
@@ -3026,7 +3026,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b2/11/c48248f984dfd8dfec0bb074465ca697cf64b6b71b0aa199c15ad0153597/lancedb-0.17.0-cp39-abi3-manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -3408,7 +3408,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/eb/03/4eb452f02a740ab1cfa334570384f10810890b2670ef6277af7abcb0039d/lancedb-0.17.0-cp39-abi3-manylinux_2_24_aarch64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -3771,7 +3771,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/ed/58e04eaf815acd6b75ad7db8a6a61d01eccc5cb2191d431c0d5f234cf20a/lancedb-0.17.0-cp39-abi3-macosx_10_15_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -4134,7 +4134,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/47/78/33b2294aad62e5f95b89a89379c5995c2bd978018387ef8bec79f6dc272c/jupyter_bokeh-4.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/a8/17f5e28cecdbd6d48127c22abdb794740803491f422a11905c4569d8e139/kubernetes-31.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/87/a9/14807f23f0fb415453626ba4ea7431ab62f0906bd0ef1df24680fd5ae2df/lancedb-0.17.0-cp39-abi3-macosx_11_0_arm64.whl
-      - pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/22/bc14c6f02e6dccaafb3eba95764c8f096714260c2aa5f76f654fd16a23dd/Mako-1.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/0b/74cec93a7b05edf4fc3ea1c899fe8a37f041d7b9d303c75abf7a162924e0/markdownify-0.14.1-py3-none-any.whl
@@ -9524,10 +9524,10 @@ packages:
   - pkg:pypi/linkify-it-py?source=hash-mapping
   size: 24035
   timestamp: 1707129321841
-- pypi: https://files.pythonhosted.org/packages/e6/cd/bdee40a4beebe92e24550c37b854f368955f96d634b6954676a641c602d0/litellm-1.58.1-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/b9/38/889da058f566ef9ea321aafa25e423249492cf2a508dfdc0e5acfcf04526/litellm-1.59.8-py3-none-any.whl
   name: litellm
-  version: 1.58.1
-  sha256: eae311273dd7b8be9b1fc92f12c6ec521f86166effd7ae2cec2982dbb9a7dc2c
+  version: 1.59.8
+  sha256: 2473914bd2343485a185dfe7eedb12ee5fda32da3c9d9a8b73f6966b9b20cf39
   requires_dist:
   - pyjwt>=2.8.0,<3.0.0 ; extra == 'proxy'
   - aiohttp
@@ -9557,13 +9557,13 @@ packages:
   - rq ; extra == 'proxy'
   - tiktoken>=0.7.0
   - tokenizers
-  - uvicorn>=0.22.0,<0.23.0 ; extra == 'proxy'
+  - uvicorn>=0.29.0,<0.30.0 ; extra == 'proxy'
   - uvloop>=0.21.0,<0.22.0 ; extra == 'proxy'
   requires_python: '!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8'
 - pypi: .
   name: llamabot
-  version: 0.10.8
-  sha256: 438635760bf81f52da44a2e80568edd7c6cea41a6c525fcfeb1ff6c71e523eb5
+  version: 0.10.10
+  sha256: 81afed713f726170ab889b7161518c222008cd371f508f9ed696e81848795e03
   requires_dist:
   - openai
   - panel
@@ -9585,7 +9585,7 @@ packages:
   - sh
   - pre-commit
   - beartype
-  - litellm>=1.58.1
+  - litellm>=1.59.8
   - python-slugify
   - pydantic>=2.0
   - pdfminer-six

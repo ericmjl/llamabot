@@ -63,7 +63,7 @@ namespaces = false
 
 [project]
 name = "llamabot"
-version = "0.10.8"
+version = "0.10.10"
 # Runtime dependencies below
 dependencies = [
     "openai",
@@ -86,7 +86,7 @@ dependencies = [
     "sh",
     "pre-commit",
     "beartype",
-    "litellm>=1.58.1",
+    "litellm>=1.59.8",
     "python-slugify",
     "pydantic>=2.0",
     "pdfminer.six",

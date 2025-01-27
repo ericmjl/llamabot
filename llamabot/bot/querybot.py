@@ -2,13 +2,13 @@
 
 import contextvars
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 from dotenv import load_dotenv
 
 from llamabot.config import default_language_model
 
 from llamabot.bot.simplebot import SimpleBot
-from llamabot.components.messages import AIMessage, HumanMessage
+from llamabot.components.messages import AIMessage, BaseMessage, HumanMessage
 from llamabot.components.docstore import LanceDBDocStore
 from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
@@ -76,7 +76,9 @@ class QueryBot(SimpleBot, ChatUIMixin):
 
         ChatUIMixin.__init__(self, initial_message)
 
-    def __call__(self, query: str, n_results: int = 20) -> AIMessage:
+    def __call__(
+        self, query: Union[str, HumanMessage, BaseMessage], n_results: int = 20
+    ) -> AIMessage:
         """Query documents within QueryBot's document store.
 
         We use RAG to query out documents.
@@ -86,12 +88,16 @@ class QueryBot(SimpleBot, ChatUIMixin):
         messages = [self.system_prompt]
 
         retreived_messages = set()
+
+        q = query
+        if isinstance(query, (BaseMessage, HumanMessage)):
+            q = query.content
         retrieved_messages = retreived_messages.union(
-            self.docstore.retrieve(query, n_results)
+            self.docstore.retrieve(q, n_results)
         )
         retrieved = [RetrievedMessage(content=chunk) for chunk in retrieved_messages]
         messages.extend(retrieved)
-        messages.append(HumanMessage(content=query))
+        messages.append(HumanMessage(content=q))
         if self.stream_target == "stdout":
             response: AIMessage = self.stream_stdout(messages)
             return response

@@ -1,6 +1,7 @@
 """Tests for QueryBot."""
 
 from llamabot.bot.querybot import QueryBot
+from llamabot import user
 from hypothesis import HealthCheck, strategies as st, given, settings
 import re
 
@@ -35,4 +36,6 @@ def test_querybot(
     )
 
     bot("How are you doing?")
+    # Include testing using `lmb.user`.
+    bot(user("How are you doing?"))
     bot.docstore.reset()
