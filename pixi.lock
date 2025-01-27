@@ -9563,7 +9563,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.10.10
-  sha256: 81afed713f726170ab889b7161518c222008cd371f508f9ed696e81848795e03
+  sha256: 01f783918f8adef5b9d8fa174f986b546483786023ca844822342eccea2ee5b4
   requires_dist:
   - openai
   - panel
