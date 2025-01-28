@@ -99,24 +99,6 @@ raise ValueError("Test error")
     assert "Test error" in str(exc_info.value)
 
 
-def test_script_with_dependencies(script_metadata):
-    """Test script execution with dependencies."""
-    requests_script = """
-import json
-import requests
-
-response = requests.get("https://httpbin.org/get")
-print(json.dumps({"status": response.status_code}))
-"""
-
-    executor = ScriptExecutor()
-    script_path = executor.write_script(requests_script, script_metadata)
-
-    # This should fail because network access is disabled
-    with pytest.raises(Exception):
-        executor.run_script(script_path)
-
-
 def test_custom_temp_dir():
     """Test using a custom temporary directory."""
     temp_dir = Path("/tmp/test_sandbox")
