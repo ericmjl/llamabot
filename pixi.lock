@@ -9563,7 +9563,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.10.10
-  sha256: 01f783918f8adef5b9d8fa174f986b546483786023ca844822342eccea2ee5b4
+  sha256: af37451d6b3a6be721e5c176700c3a5f4f3131e40659067a871e35caf1ebe968
   requires_dist:
   - openai
   - panel
@@ -9585,7 +9585,7 @@ packages:
   - sh
   - pre-commit
   - beartype
-  - litellm>=1.59.8
+  - litellm
   - python-slugify
   - pydantic>=2.0
   - pdfminer-six
