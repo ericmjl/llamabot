@@ -8,7 +8,7 @@ for sandboxing and security.
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Mapping
+from typing import Any, Dict, Optional
 
 import docker
 from docker.errors import DockerException
@@ -141,13 +141,14 @@ CMD ["uv", "run", "--system-site-packages=false"]
             - stdout: Captured standard output
             - stderr: Captured standard error
             - status: Execution status code
+        :raises RuntimeError: If the script execution fails
         """
         try:
             # Ensure container image exists
             self.build_container()
 
             # Define volume configuration using proper typing
-            volumes: Mapping[str, Mapping[str, str]] = {
+            volumes: dict[str, dict[str, str]] = {
                 str(self.scripts_dir): {"bind": "/app/scripts", "mode": "ro"},
                 str(self.results_dir): {"bind": "/app/results", "mode": "rw"},
             }
@@ -182,6 +183,11 @@ CMD ["uv", "run", "--system-site-packages=false"]
                 stdout = container.logs(stdout=True, stderr=False).decode("utf-8")
                 stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
 
+                # Check if script execution failed
+                if result["StatusCode"] != 0:
+                    error_msg = stderr if stderr else stdout
+                    raise RuntimeError(f"Script execution failed: {error_msg}")
+
                 return {
                     "stdout": stdout,
                     "stderr": stderr,
@@ -192,4 +198,4 @@ CMD ["uv", "run", "--system-site-packages=false"]
 
         except DockerException as e:
             logger.error(f"Docker execution error: {e}")
-            raise
+            raise RuntimeError(f"Docker execution error: {e}")

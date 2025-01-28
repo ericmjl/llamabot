@@ -61,7 +61,13 @@ def test_run_script(script_metadata, test_script):
 
     result = executor.run_script(script_path)
     assert isinstance(result, dict)
-    assert result["message"] == "Hello from sandbox!"
+    assert result["status"] == 0  # Check successful execution
+
+    # Parse JSON from stdout
+    import json
+
+    output = json.loads(result["stdout"])
+    assert output["message"] == "Hello from sandbox!"
 
 
 def test_script_execution_timeout(script_metadata):
