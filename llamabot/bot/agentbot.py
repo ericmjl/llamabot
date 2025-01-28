@@ -10,19 +10,55 @@ import hashlib
 import json
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Union
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.components.messages import AIMessage, BaseMessage, system, user
+from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.components.tools import tool
 from llamabot.config import default_language_model
+from duckduckgo_search import DDGS
+import requests
+from markdownify import markdownify as md
+from bs4 import BeautifulSoup
+
+
+@tool
+def search_internet(
+    search_term: str, max_results: int = 10, backend: str = "lite"
+) -> Dict[str, str]:
+    """Search the internet for a given term and get webpage contents.
+
+    :param search_term: The search term to look up
+    :param max_results: Maximum number of search results to return
+    :param backend: The DuckDuckGo backend to use
+    :return: Dictionary mapping URLs to markdown-formatted webpage contents
+    """
+    ddgs = DDGS()
+    results = ddgs.text(search_term, max_results=max_results, backend=backend)
+
+    webpage_contents = {}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Connection": "keep-alive",
+    }
+    for result in results:
+        response = requests.get(result["href"], headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
+        webpage_contents[result["href"]] = md(soup.get_text())
+
+    return webpage_contents
 
 
 @tool
 def agent_finish(message: Any) -> str:
     """Tool to indicate that the agent has finished processing the user's message."""
-
     try:
         return str(message)
     except Exception:
@@ -39,6 +75,58 @@ def return_error(message: Any) -> str:
     raise Exception(str(message))
 
 
+@tool
+def write_and_execute_script(
+    code: str,
+    dependencies_str: Optional[str] = None,
+    python_version: str = ">=3.11",
+    timeout: int = 30,
+) -> Dict[str, Any]:
+    """Write and execute a Python script in a secure sandbox.
+
+    Dependencies should be specified as a comma-separated string, e.g. "requests,beautifulsoup4".
+
+    Script output will be captured from stdout. Use print() to output results.
+
+    :param code: The Python code to execute
+    :param dependencies_str: Comma-separated string of pip dependencies
+    :param python_version: Python version requirement
+    :param timeout: Execution timeout in seconds
+    :return: Dictionary containing script execution results
+    """
+    # Parse dependencies string into list
+    dependencies = list(
+        dep.strip()
+        for dep in (dependencies_str or "").split(",")
+        if dep.strip()  # Filter out empty strings
+    )
+    # Modify the Python version if it doesn't have a version specifier
+    if not any(python_version.startswith(op) for op in (">=", "<=", "==", "~=")):
+        python_version = f">={python_version}"
+
+    # Create metadata
+    metadata = ScriptMetadata(
+        requires_python=python_version,
+        dependencies=dependencies,
+        auth=str(uuid4()),  # Generate unique ID for this execution
+        timestamp=datetime.now(),
+    )
+
+    # Initialize executor
+    executor = ScriptExecutor()
+
+    # Write and run script
+    script_path = executor.write_script(code, metadata)
+    result = executor.run_script(script_path, timeout)
+
+    # Return structured output
+    return {
+        "stdout": result["stdout"].strip(),
+        "stderr": result["stderr"].strip(),
+        "status": result["status"],
+    }
+
+
 class CachedResult(BaseModel):
     """Model for storing cached results from tool executions.
 
@@ -53,42 +141,75 @@ class CachedResult(BaseModel):
     tool_arguments: Dict[str, Any]
     result: Any
     timestamp: datetime = Field(default_factory=datetime.now)
-    hash_key: str
+    hash_key: str = Field(
+        ...,
+        description="SHA256 hash of the stringified result. Length 8 characters.",
+    )
 
 
 def hash_result(result: Any) -> str:
     """Generate a SHA256 hash for a result value.
 
     :param result: Any result value that can be converted to string
-    :return: SHA256 hash of the stringified result
+    :return: First 8 characters of the SHA256 hash of the stringified result
     """
     # Convert result to a consistent string representation
     result_str = json.dumps(result, sort_keys=True, default=str)
-    return hashlib.sha256(result_str.encode()).hexdigest()
+    return hashlib.sha256(result_str.encode()).hexdigest()[:8]
+
+
+class ToolArgument(BaseModel):
+    """Pydantic model for tool arguments.
+
+    :param name: Name of the argument
+    :param value: Value of the argument, can be None if coming from cache
+    """
+
+    name: str = Field(..., description="Name of the argument.")
+    value: Optional[
+        Union[str, int, float, bool, dict, List[Union[str, int, float, bool, dict]]]
+    ] = Field(
+        ...,
+        description="Argument value. None if coming from cache.",
+    )
+
+
+class CachedArguments(BaseModel):
+    """Pydantic model for cached argument references.
+
+    :param arg_name: Name of the argument to populate from cache
+    :param hash_key: Hash key of the cached result to use
+    """
+
+    arg_name: str = Field(
+        ..., description="Name of the argument to populate from cache."
+    )
+    hash_key: str = Field(
+        ...,
+        description="Hash key of the cached result to use. It is a sha256 hash of the result.",
+    )
 
 
 class ToolToCall(BaseModel):
     """Pydantic model representing a single tool to be called by the agent.
 
     :param tool_name: Name of the tool to call
-    :param tool_arguments: Dictionary mapping argument names to their values
-    :param use_cached_results: Dictionary mapping argument names to hash keys
+    :param tool_args: List of tool arguments and their values
+    :param use_cached_results: List of argument names and hash keys
         that should be used as input for those arguments
     """
 
     tool_name: str = Field(..., description="The tool to call.")
-    tool_arguments: Dict[str, Any | None] = Field(
+    tool_args: list[ToolArgument] = Field(
         ...,
         description="Arguments to pass to the tool. Use None for arguments that should come from cache.",
     )
-    use_cached_results: Dict[str, str] = Field(
-        default_factory=dict,
-        description="Map of argument names to result hash keys to use as input.",
+    use_cached_results: list[CachedArguments] = Field(
+        ...,
+        description="List of argument names and result hash keys to use as input.",
     )
 
 
-# NOTE: This is a bit of a breaking pattern by not inheriting from any classes.
-# Should probably inherit from StructuredBot.
 class AgentBot:
     """A bot that uses an agent to process messages and execute tools.
 
@@ -132,7 +253,10 @@ class AgentBot:
             **completion_kwargs,
         )
 
-        functions = [agent_finish, return_error] + (functions or [])
+        functions = [
+            agent_finish,
+            return_error,
+        ] + (functions or [])
         self.functions = functions
         self.tools = {func.__name__: func for func in self.functions}
 
@@ -181,35 +305,52 @@ class AgentBot:
             iteration += 1
             next_tool = self.decision_bot(
                 user(
-                    "Here are the previous messages and the execution history. "
-                    "Use this to decide which tool to call next or raise an error if you need to stop. ",
+                    "This is the problem you need to solve: ",
                     *messages,
                     "Here are the available tools: ",
-                    *[func.json_schema for func in self.functions],
-                    "Here are the cached results you can use: ",
+                    *[json.dumps(func.json_schema) for func in self.functions],
+                    "You are allowed to write as many different scripts as you need to solve the problem. ",
+                    "If you encounter an error, try taking a step back and thinking about the problem ",
+                    "before calling the next tool."
+                    "Here are previously cached results you can use: ",
                     *[
                         f"{k}: {v.tool_name} result from {v.timestamp}"
                         for k, v in self.memory.items()
                     ],
-                    "Here is the execution history: ",
+                    "Here is the execution history for reference: ",
                     *execution_history,
+                    "If you have the answer, use the agent_finish tool to finish the task and write an answer to the user.",
                 )
             )
 
-            # Prepare arguments, substituting cached results where specified
-            args = next_tool.tool_arguments.copy()
-            for arg_name, result_id in next_tool.use_cached_results.items():
-                if result_id not in self.memory:
-                    raise ValueError(f"Cached result {result_id} not found")
-                args[arg_name] = self.memory[result_id].result
+            # Prepare arguments from tool_args
+            args = {}
+            for arg in next_tool.tool_args:
+                if arg.value is not None:
+                    args[arg.name] = arg.value
 
             try:
+                # Add cached results where specified
+                for cached_arg in next_tool.use_cached_results:
+                    if cached_arg.hash_key not in self.memory:
+                        raise ValueError(
+                            f"Cached result {cached_arg.hash_key} not found"
+                        )
+                    args[cached_arg.arg_name] = self.memory[cached_arg.hash_key].result
+
                 tool_name = next_tool.tool_name
                 result = self.tools[tool_name](**args)
+
+                if tool_name == "write_and_execute_script":
+                    print("---SCRIPT EXECUTION RESULT---")
+                    print(result["stdout"])
+                    print("---SCRIPT EXECUTION RESULT---")
+                    result = result["stdout"]
                 result_id = self._store_result(tool_name, result, args)
 
                 # Log result - only show tool name, args, and result ID for conciseness
-                result_str = f"{tool_name}({args}) -> {result_id}"
+                result_str = f"{tool_name}({args}) -> {result_id}, {result}"
+                print()
                 print(result_str)
                 results.append(result)
                 execution_history.append(result_str)
@@ -222,6 +363,7 @@ class AgentBot:
 
             except Exception as e:
                 error_msg = f"Error calling {next_tool.tool_name}: {str(e)}"
+                print()
                 print(error_msg)
                 execution_history.append(error_msg)
                 if next_tool.tool_name == "return_error":

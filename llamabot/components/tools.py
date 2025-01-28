@@ -136,7 +136,7 @@ def tool(func: Callable) -> Callable:
     """
     # Create and attach the schema
     func.model = Function.from_callable(func).to_pydantic_model()
-    func.json_schema = str(func.model.model_json_schema())
+    func.json_schema = func.model.model_json_schema()
     return func
 
 

@@ -13,6 +13,8 @@ from llamabot.bot.agentbot import (
     CachedResult,
     hash_result,
     ToolToCall,
+    ToolArgument,
+    CachedArguments,
     agent_finish,
     return_error,
 )
@@ -29,12 +31,15 @@ def test_hash_result():
     """Test the hash_result function produces consistent hashes."""
     # Test with simple types
     assert hash_result("test") == hash_result("test")
+    assert len(hash_result("test")) == 8
     assert hash_result(123) == hash_result(123)
+    assert len(hash_result(123)) == 8
 
     # Test with dict
     d1 = {"a": 1, "b": 2}
     d2 = {"b": 2, "a": 1}  # Same content, different order
     assert hash_result(d1) == hash_result(d2)
+    assert len(hash_result(d1)) == 8
 
 
 def test_cached_result_model():
@@ -45,27 +50,38 @@ def test_cached_result_model():
         tool_arguments={"arg": "value"},
         result="test result",
         timestamp=timestamp,
-        hash_key="abc123",
+        hash_key="abc12345",  # 8 characters
     )
 
     assert cached.tool_name == "test_tool"
     assert cached.tool_arguments == {"arg": "value"}
     assert cached.result == "test result"
     assert cached.timestamp == timestamp
-    assert cached.hash_key == "abc123"
+    assert cached.hash_key == "abc12345"
+    assert len(cached.hash_key) == 8
 
 
 def test_tool_to_call_model():
     """Test the ToolToCall pydantic model."""
     tool = ToolToCall(
         tool_name="test_tool",
-        tool_arguments={"arg": "value"},
-        use_cached_results={"cached_arg": "hash123"},
+        tool_args=[
+            ToolArgument(name="arg1", value="value1"),
+            ToolArgument(name="arg2", value=None),
+        ],
+        use_cached_results=[CachedArguments(arg_name="arg2", hash_key="abc12345")],
     )
 
     assert tool.tool_name == "test_tool"
-    assert tool.tool_arguments == {"arg": "value"}
-    assert tool.use_cached_results == {"cached_arg": "hash123"}
+    assert len(tool.tool_args) == 2
+    assert tool.tool_args[0].name == "arg1"
+    assert tool.tool_args[0].value == "value1"
+    assert tool.tool_args[1].name == "arg2"
+    assert tool.tool_args[1].value is None
+    assert len(tool.use_cached_results) == 1
+    assert tool.use_cached_results[0].arg_name == "arg2"
+    assert tool.use_cached_results[0].hash_key == "abc12345"
+    assert len(tool.use_cached_results[0].hash_key) == 8
 
 
 def test_agent_bot_initialization():
