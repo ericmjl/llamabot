@@ -13,7 +13,7 @@ from llamabot.bot.agentbot import (
     CachedResult,
     hash_result,
     ToolToCall,
-    ToolArguments,
+    ToolArgument,
     CachedArguments,
     agent_finish,
     return_error,
@@ -66,8 +66,8 @@ def test_tool_to_call_model():
     tool = ToolToCall(
         tool_name="test_tool",
         tool_args=[
-            ToolArguments(name="arg1", value="value1"),
-            ToolArguments(name="arg2", value=None),
+            ToolArgument(name="arg1", value="value1"),
+            ToolArgument(name="arg2", value=None),
         ],
         use_cached_results=[CachedArguments(arg_name="arg2", hash_key="abc12345")],
     )
