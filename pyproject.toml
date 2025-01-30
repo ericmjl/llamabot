@@ -86,7 +86,7 @@ dependencies = [
     "sh",
     "pre-commit",
     "beartype",
-    "litellm",
+    "litellm>=1.59.1", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
     "python-slugify",
     "pydantic>=2.0",
     "pdfminer.six",
