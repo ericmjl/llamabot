@@ -57,13 +57,16 @@ class StructuredBot(SimpleBot):
         **completion_kwargs,
     ):
         params = get_supported_openai_params(model=model_name)
-        if not (
+        # Special case for ollama_chat - it supports structured outputs
+        if "ollama_chat" in model_name:
+            pass  # Ollama chat supports structured outputs
+        elif not (
             "response_format" in params and supports_response_schema(model=model_name)
         ):
             raise ValueError(
                 f"Model {model_name} does not support structured responses. "
                 "Please use a model that supports both `response_format` and `response_schema`; "
-                "`gpt-4o`, `anthropic/claude-3-5-sonnet`, "
+                "`gpt-4`, `anthropic/claude-3-5-sonnet`, "
                 "and gemini/gemini-1.5-pro-latest are specific examples, "
                 "just make sure you have the appropriate API key for the model."
             )
