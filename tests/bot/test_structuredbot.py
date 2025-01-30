@@ -74,3 +74,15 @@ def test_structuredbot_unsupported_model():
 
     assert "does not support structured responses" in str(exc_info.value)
     assert "mistral-medium" in str(exc_info.value)
+
+
+def test_ollama_chat_model_initialization():
+    """Test that ollama chat models can be initialized without raising an error."""
+    system_prompt = SystemMessage(content="Test prompt")
+    # Should not raise an error
+    bot = StructuredBot(
+        system_prompt=system_prompt,
+        pydantic_model=TestModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+    assert bot.model_name == "ollama_chat/gemma2:2b"
