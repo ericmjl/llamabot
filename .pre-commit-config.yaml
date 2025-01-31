@@ -18,6 +18,7 @@ repos:
     hooks:
       - id: interrogate
         args: [-c, pyproject.toml]
+        exclude: ^talks/|^talks/.+|talks/.*$
   - repo: https://github.com/jsh9/pydoclint
     rev: 0.5.4
     hooks:
