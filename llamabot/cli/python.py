@@ -24,12 +24,6 @@ Functions:
 
 from pathlib import Path
 
-try:
-    import pyperclip
-except ImportError:
-    raise ImportError(
-        "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
-    )
 from typer import Typer
 
 from llamabot.code_manipulation import (
@@ -60,6 +54,13 @@ def module_docstrings(module_fpath: Path, dirtree_context_path: Path = None):
         directory tree.
         Defaults to the parent directory of the module file.
     """
+    try:
+        import pyperclip
+    except ImportError:
+        raise ImportError(
+            "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     cb = codebot()
     while True:
         source_code = read_file(module_fpath)
@@ -83,6 +84,13 @@ def generate_docstrings(module_fpath: Path, object_name: str, style: str = "sphi
     :param object_name: Name of the object to generate docstrings for.
     :param style: Style of docstring to generate.
     """
+    try:
+        import pyperclip
+    except ImportError:
+        raise ImportError(
+            "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     cb = codebot()
     while True:
         # source_code = read_file(module_fpath)
@@ -108,6 +116,13 @@ def code_generator(request: str):
 
     :param request: A description of what the code should do.
     """
+    try:
+        import pyperclip
+    except ImportError:
+        raise ImportError(
+            "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     cb = codebot()
     while True:
         code = cb(ghostwriter(request, "Python"))
@@ -126,6 +141,13 @@ def test_writer(module_fpath: str, object_name: str):
     :param module_fpath: Path to the module to generate tests for.
     :param object_name: Name of the object to generate tests for.
     """
+    try:
+        import pyperclip
+    except ImportError:
+        raise ImportError(
+            "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     cb = codebot()
     while True:
         file_source = read_file(module_fpath)
