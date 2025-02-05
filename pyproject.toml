@@ -77,14 +77,14 @@ dependencies = [
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "jinja2",
-    "fastapi",
+    "fastapi>=0.104.0",  # This version requires Python >=3.8
     "uvicorn",
     "tenacity",
     "python-multipart",
     "httpx",
     "tqdm",
 ]
-requires-python = "<3.13"
+requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
 readme = "README.md"
 
@@ -125,11 +125,7 @@ cli = [
     "case-converter",
 ]
 all = [
-    "notebooks",
-    "ui",
-    "vectordb",
-    "agent",
-    "cli"
+    "llamabot[notebooks,ui,vectordb,agent,cli]"
 ]
 
 [dependency-groups]
