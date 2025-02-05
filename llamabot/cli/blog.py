@@ -1,6 +1,11 @@
 """Blog Assistant CLI"""
 
-import pyperclip
+try:
+    import pyperclip
+except ImportError:
+    raise ImportError(
+        "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+    )
 import typer
 
 from llamabot.prompt_library.blog import (

@@ -7370,7 +7370,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.10.12
-  sha256: 6e881a3bbd2e3cc1fe86c5418b28324558db6727977498899de10c95dd9a06e8
+  sha256: 203179d389c5483ff590635a7d0923dafe3e0e459d2b6d5af795ec280abef712
   requires_dist:
   - openai
   - loguru
@@ -7410,6 +7410,7 @@ packages:
   - gitpython ; extra == 'cli'
   - prompt-toolkit ; extra == 'cli'
   - case-converter ; extra == 'cli'
+  - pyperclip ; extra == 'cli'
   - llamabot[notebooks,ui,vectordb,agent,cli] ; extra == 'all'
   requires_python: '>=3.9,<3.13'
   editable: true
