@@ -7211,7 +7211,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.10.12
-  sha256: 621124a8dfb4f6045b19f813f2800602bc2af94d5617e3e4ec64a123c23c4366
+  sha256: 296319130c33811d1cfae13cd35bd9b6097c6309e5651b71f8cc569bb9bd9d89
   requires_dist:
   - openai
   - loguru
@@ -7224,7 +7224,7 @@ packages:
   - pydantic>=2.0
   - numpy
   - jinja2
-  - fastapi
+  - fastapi>=0.104.0
   - uvicorn
   - tenacity
   - python-multipart
@@ -7248,12 +7248,8 @@ packages:
   - gitpython ; extra == 'cli'
   - prompt-toolkit ; extra == 'cli'
   - case-converter ; extra == 'cli'
-  - notebooks ; extra == 'all'
-  - ui ; extra == 'all'
-  - vectordb ; extra == 'all'
-  - agent ; extra == 'all'
-  - cli ; extra == 'all'
-  requires_python: <3.13
+  - llamabot[notebooks,ui,vectordb,agent,cli] ; extra == 'all'
+  requires_python: '>=3.9,<3.13'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/osx-64/llvm-openmp-19.1.5-ha54dae1_0.conda
   sha256: e4966acfed5d3358eeec2c30b9f0f51b6c3d05bca680e87a5db210963511dadb
