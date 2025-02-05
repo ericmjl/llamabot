@@ -158,6 +158,8 @@ tuna = "*"
 
 [tool.pixi.feature.devtools.dependencies]
 pre-commit = "*"
+ipython = "*"
+bump2version = "*"
 
 [tool.pixi.feature.docs.dependencies]
 mkdocs = "*"
@@ -198,6 +200,7 @@ build-docs = "mkdocs build"
 default = ["tests", "devtools", "docs", "notebooks", "ui", "vectordb", "agent", "cli"]
 docs = ["docs"]
 notebooks = ["notebooks"] # for those who just want to run notebooks
+bare = ["devtools"]
 
 [tool.pixi.dependencies]
 python-multipart = "*"
