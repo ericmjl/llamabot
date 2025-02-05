@@ -1,14 +1,15 @@
 """CLI for creating and keeping Markdown documentation up-to-date."""
 
-from enum import Enum
-from pathlib import Path
-
 try:
     import frontmatter
 except ImportError:
     raise ImportError(
         "frontmatter is not installed. Please install it with `pip install llamabot[cli]`."
     )
+
+from enum import Enum
+from pathlib import Path
+
 import requests
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pyprojroot import here
@@ -93,6 +94,7 @@ class MarkdownSourceFile(BaseModel):
 
     def save(self):
         """Save the Markdown source file with the updated content."""
+
         with open(self.file_path, "w") as f:
             f.write(frontmatter.dumps(self.post))
 
