@@ -84,7 +84,7 @@ jobs:
         run: git tag | grep ${{ env.version_number }}
 
       - name: Install llamabot package
-        run: uv pip install -e .
+        run: uv pip install -e .[cli]
 
       - name: Write release notes
         if: github.event_name != 'pull_request'
