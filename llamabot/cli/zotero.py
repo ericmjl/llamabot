@@ -4,29 +4,7 @@ from datetime import date
 from pathlib import Path
 
 import typer
-
-try:
-    from caseconverter import snakecase
-except ImportError:
-    raise ImportError(
-        "caseconverter is not installed. Please install it with `pip install llamabot[cli]`."
-    )
 from dotenv import load_dotenv
-
-try:
-    from prompt_toolkit import prompt
-except ImportError:
-    raise ImportError(
-        "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
-    )
-try:
-    from rich.console import Console
-    from rich.progress import Progress, SpinnerColumn, TextColumn
-except ImportError:
-    raise ImportError(
-        "rich is not installed. Please install it with `pip install llamabot[cli]`."
-    )
-
 from slugify import slugify
 
 from llamabot import QueryBot
@@ -43,12 +21,20 @@ app = typer.Typer()
 
 ZOTERO_JSON_DIR = Path.home() / ".llamabot/zotero/zotero_index/"
 ZOTERO_JSON_DIR.mkdir(parents=True, exist_ok=True)
+
+try:
+    from rich.console import Console
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+except ImportError:
+    raise ImportError(
+        "rich is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+
 progress = Progress(
     SpinnerColumn(),
     TextColumn("[progress.description]{task.description}"),
     transient=False,
 )
-
 
 console = Console()
 
@@ -84,6 +70,20 @@ def chat(
     :param sync: Whether or not to synchronize the Zotero library.
     :param model_name: The name of the model to use.
     """
+    try:
+        from caseconverter import snakecase
+    except ImportError:
+        raise ImportError(
+            "caseconverter is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
+    try:
+        from prompt_toolkit import prompt
+    except ImportError:
+        raise ImportError(
+            "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     typer.echo("Llamabot Zotero Chatbot initializing...")
     typer.echo("Use Ctrl+C to exit anytime.")
 
