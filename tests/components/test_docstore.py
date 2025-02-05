@@ -7,11 +7,13 @@ from llamabot.components.docstore import (
     LanceDBDocStore,
 )
 from hypothesis import HealthCheck, given, settings, strategies as st
+import tempfile
 
 
 def lancedb():
     """Return a LanceDBDocStore."""
-    store = LanceDBDocStore(table_name="test_lancedb", storage_path=Path("/tmp"))
+    temp_dir = Path(tempfile.mkdtemp())
+    store = LanceDBDocStore(table_name="test_lancedb", storage_path=temp_dir)
     store.reset()
     return store
 
