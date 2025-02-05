@@ -195,7 +195,7 @@ docs = "mkdocs serve"
 build-docs = "mkdocs build"
 
 [tool.pixi.environments]
-default = ["tests", "devtools", "docs", "notebooks"]
+default = ["tests", "devtools", "docs", "notebooks", "ui", "vectordb", "agent", "cli"]
 docs = ["docs"]
 notebooks = ["notebooks"] # for those who just want to run notebooks
 
