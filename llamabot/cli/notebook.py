@@ -4,12 +4,6 @@ from pathlib import Path
 from tqdm import tqdm
 import typer
 
-try:
-    import nbformat
-except ImportError:
-    raise ImportError(
-        "nbformat is not installed. Please install it with `pip install nbformat`."
-    )
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.prompt_manager import prompt
 
@@ -108,6 +102,13 @@ def explain(
     :param notebook_path: Path to the input Jupyter notebook file.
     :param overwrite: If True, overwrite the original notebook. If False, create a new file with '_explained' suffix.
     """
+    try:
+        import nbformat
+    except ImportError:
+        raise ImportError(
+            "nbformat is not installed. Please install it with `pip install nbformat`."
+        )
+
     # Read the Jupyter notebook
     with open(notebook_path, "r", encoding="utf-8") as notebook_file:
         notebook = nbformat.read(notebook_file, as_version=4)
