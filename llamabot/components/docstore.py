@@ -143,7 +143,13 @@ class ChromaDBDocStore(AbstractDocumentStore):
 
         :param query: The query to use to retrieve documents.
         """
-        import chromadb
+        try:
+            import chromadb
+        except ImportError:
+            raise ImportError(
+                "ChromaDB is required for ChromaDBDocStore. "
+                "Please `pip install llamabot[rag]` to use the ChromaDB document store."
+            )
 
         # Use Vectordb to get documents.
         results: chromadb.QueryResult = self.collection.query(
