@@ -67,20 +67,13 @@ version = "0.10.12"
 # Runtime dependencies below
 dependencies = [
     "openai",
-    "panel",
-    "jupyter_bokeh",
-    "bokeh",
     "loguru",
-    "pyperclip",
-    "astor",
     "python-dotenv",
     "typer",
     "gitpython",
     "pyprojroot",
-    "frozenlist",
     "beautifulsoup4",
     "rich",
-    "pyzotero",
     "case-converter",
     "prompt-toolkit",
     "sh",
@@ -89,25 +82,17 @@ dependencies = [
     "litellm>=1.59.1", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
     "python-slugify",
     "pydantic>=2.0",
-    "pdfminer.six",
-    "rank-bm25",
-    "lancedb",
-    "chromadb",
-    "tantivy",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "python-frontmatter",
-    "diskcache",
     "nbformat",
     "alembic",
     "jinja2",
     "fastapi",
     "uvicorn",
-    "sentence-transformers",
     "tenacity",
     "python-multipart",
     "httpx",
     "tqdm",
-    "docker", "duckduckgo-search>=7.2.1,<8", "markdownify>=0.14.1,<0.15",  # For secure script execution
 ]
 requires-python = "<3.13"
 description = "A Pythonic interface to LLMs."
@@ -126,9 +111,30 @@ notebooks = [
   "tzlocal",
   "chonkie[all]>=0.2.2,<0.3"
 ]
+ui = [
+    "panel",
+    "jupyter_bokeh",
+    "bokeh"
+]
+vectordb = [
+    "lancedb",
+    "chromadb",
+    "tantivy"
+]
+agent = [
+    "docker",
+    "duckduckgo-search>=7.2.1,<8"
+]
+cli = [
+    "pyzotero"
+]
 
 [dependency-groups]
 notebooks = ["ollama>=0.4.4,<0.5"]
+ui = []
+vectordb = []
+agent = []
+cli = []
 
 [tool.pixi.project]
 name = "llamabot"
