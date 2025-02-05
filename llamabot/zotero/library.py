@@ -4,7 +4,13 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pyzotero.zotero import Zotero
+try:
+    from pyzotero.zotero import Zotero
+except ImportError:
+    raise ImportError(
+        "pyzotero is not installed. "
+        "Please install it with: `pip install llamabot[cli]`"
+    )
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from .utils import load_zotero
