@@ -48,7 +48,13 @@ class RAGHistory:
         session_name: str,
         db_path: Path = Path.home() / ".llamabot" / "chroma.db",
     ):
-        import chromadb
+        try:
+            import chromadb
+        except ImportError:
+            raise ImportError(
+                "ChromaDB is required for RAGHistory. "
+                "Please `pip install llamabot[rag]` to use the RAG-enabled history."
+            )
 
         client = chromadb.PersistentClient(path=str(db_path))
         collection = client.create_collection(session_name, get_or_create=True)
