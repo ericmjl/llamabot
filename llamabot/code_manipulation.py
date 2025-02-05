@@ -7,8 +7,20 @@ import sys
 from pathlib import Path
 from typing import Any, Optional, Union
 
-import astor
-from git import GitCommandError, Repo
+try:
+    import astor
+except ImportError:
+    raise ImportError(
+        "astor is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+
+try:
+    from git import GitCommandError, Repo
+except ImportError:
+    raise ImportError(
+        "git is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+
 from pyprojroot import here
 
 
