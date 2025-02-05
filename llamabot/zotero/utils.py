@@ -2,7 +2,13 @@
 
 import os
 
-from pyzotero import zotero
+try:
+    from pyzotero import zotero
+except ImportError:
+    raise ImportError(
+        "pyzotero is not installed. "
+        "Please install it with: `pip install llamabot[cli]`"
+    )
 
 
 def load_zotero():
