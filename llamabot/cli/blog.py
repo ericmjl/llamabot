@@ -1,11 +1,5 @@
 """Blog Assistant CLI"""
 
-try:
-    import pyperclip
-except ImportError:
-    raise ImportError(
-        "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
-    )
 import typer
 
 from llamabot.prompt_library.blog import (
@@ -61,6 +55,13 @@ def social_media(platform: str):
     :param platform: The social media platform to generate posts for.
         Should be one of "linkedin", "patreon", or "twitter".
     """
+    try:
+        import pyperclip
+    except ImportError:
+        raise ImportError(
+            "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     bot = blogging_bot()
     typer.echo("Please paste your blog post below.")
     query = uniform_prompt()
@@ -94,6 +95,13 @@ def social_media(platform: str):
 @app.command()
 def sembr():
     """Apply semantic line breaks to a blog post."""
+    try:
+        import pyperclip
+    except ImportError:
+        raise ImportError(
+            "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     bot = sembr_bot()
     typer.echo("Please paste your blog post below.")
     query = uniform_prompt()
