@@ -7,19 +7,6 @@ import sys
 from pathlib import Path
 from typing import Any, Optional, Union
 
-try:
-    import astor
-except ImportError:
-    raise ImportError(
-        "astor is not installed. Please install it with `pip install llamabot[cli]`."
-    )
-
-try:
-    from git import GitCommandError, Repo
-except ImportError:
-    raise ImportError(
-        "git is not installed. Please install it with `pip install llamabot[cli]`."
-    )
 
 from pyprojroot import here
 
@@ -46,6 +33,13 @@ def replace_object_in_file(
     :raises ValueError: If the object with the specified name
         does not exist in the source file.
     """
+    try:
+        import astor
+    except ImportError:
+        raise ImportError(
+            "astor is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     with open(source_file_path, "r") as source_file:
         source_code = source_file.read()
 
@@ -121,6 +115,12 @@ def insert_docstring(source_file_path: str, object_name: str, new_docstring: str
     :raises SyntaxError: If the source code is not valid Python code.
     :raises ValueError: If the specified object does not exist in the source code.
     """
+    try:
+        import astor
+    except ImportError:
+        raise ImportError(
+            "astor is not installed. Please install it with `pip install llamabot[cli]`."
+        )
     with open(source_file_path, "r") as source_file:
         source_code = source_file.read()
 
@@ -192,6 +192,13 @@ def get_object_source_code(source_file: str, object_name: str) -> Union[str, Non
     """
     with open(source_file, "r+") as file:
         source_code = file.read()
+
+    try:
+        import astor
+    except ImportError:
+        raise ImportError(
+            "astor is not installed. Please install it with `pip install llamabot[cli]`."
+        )
 
     try:
         parsed_ast = ast.parse(source_code)
@@ -364,6 +371,13 @@ def get_git_diff(repo_path: Optional[Union[str, Path]] = None) -> str:
         has no staged or unstaged changes.
     :return: The git diff as a string, or None if there are no staged changes.
     """
+    try:
+        from git import GitCommandError, Repo
+    except ImportError:
+        raise ImportError(
+            "git is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     if repo_path is None:
         repo_path = here()
     try:
