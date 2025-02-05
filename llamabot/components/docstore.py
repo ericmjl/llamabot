@@ -93,7 +93,13 @@ class ChromaDBDocStore(AbstractDocumentStore):
         collection_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
     ):
-        import chromadb
+        try:
+            import chromadb
+        except ImportError:
+            raise ImportError(
+                "ChromaDB is required for ChromaDBDocStore. "
+                "Please `pip install llamabot[rag]` to use the ChromaDB document store."
+            )
 
         client = chromadb.PersistentClient(path=str(storage_path))
         collection = client.create_collection(collection_name, get_or_create=True)
