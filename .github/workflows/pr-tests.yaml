@@ -117,6 +117,10 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
         if: ${{ matrix.environment-type == 'uv' }}
 
+      - name: Set up Python
+        run: uv venv llamabot-env --python ${{ matrix.python-version }}
+        if: ${{ matrix.environment-type == 'uv' }}
+
       - name: Install gemma2:2b
         run: |
           sudo apt-get update
