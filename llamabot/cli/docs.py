@@ -3,7 +3,12 @@
 from enum import Enum
 from pathlib import Path
 
-import frontmatter
+try:
+    import frontmatter
+except ImportError:
+    raise ImportError(
+        "frontmatter is not installed. Please install it with `pip install llamabot[cli]`."
+    )
 import requests
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pyprojroot import here
