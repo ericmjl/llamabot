@@ -92,5 +92,5 @@ jobs:
         if: matrix.environment-type == 'bare' && github.repository_owner == 'ericmjl'
         run: |
           source llamabot-env/bin/activate
-          uv pip install .
+          uv pip install .[all]
           llamabot --help
