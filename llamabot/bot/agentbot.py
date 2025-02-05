@@ -19,9 +19,7 @@ from llamabot.components.messages import AIMessage, BaseMessage, system, user
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.components.tools import tool
 from llamabot.config import default_language_model
-from duckduckgo_search import DDGS
 import requests
-from markdownify import markdownify as md
 from bs4 import BeautifulSoup
 
 
@@ -36,9 +34,18 @@ def search_internet(
     :param backend: The DuckDuckGo backend to use
     :return: Dictionary mapping URLs to markdown-formatted webpage contents
     """
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        raise ImportError("The Python package `duckduckgo_search` cannot be found. Please install it using `pip install llamabot[agent]`.")
+
+    try:
+        from markdownify import markdownify as md
+    except ImportError:
+        raise ImportError("The Python package `markdownify` cannot be found. Please install it using `pip install llamabot[agent]`.")
+
     ddgs = DDGS()
     results = ddgs.text(search_term, max_results=max_results, backend=backend)
-
     webpage_contents = {}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

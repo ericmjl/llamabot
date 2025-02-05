@@ -10,8 +10,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import docker
-from docker.errors import DockerException
 from loguru import logger
 from pydantic import BaseModel
 
@@ -48,6 +46,12 @@ class ScriptExecutor:
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize Docker client
+        try:
+            import docker
+            from docker.errors import DockerException
+        except ImportError:
+            raise ImportError("The Python package `docker` cannot be found. Please install it using `pip install llamabot[agent]`.")
+
         try:
             self.docker_client = docker.from_env()
         except DockerException as e:

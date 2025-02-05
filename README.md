@@ -13,6 +13,16 @@ To install LlamaBot:
 pip install llamabot==0.10.12
 ```
 
+This will give you the minimum set of dependencies for running LlamaBot.
+
+To install all of the optional dependencies, run:
+
+```python
+pip install "llamabot[all]"
+```
+
+
+
 ## Get access to LLMs
 
 ### Option 1: Using local models with Ollama
