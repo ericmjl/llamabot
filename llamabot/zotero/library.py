@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .utils import load_zotero
+
 try:
     from pyzotero.zotero import Zotero
 except ImportError:
@@ -11,15 +13,6 @@ except ImportError:
         "pyzotero is not installed. "
         "Please install it with: `pip install llamabot[cli]`"
     )
-from rich.progress import Progress, SpinnerColumn, TextColumn
-
-from .utils import load_zotero
-
-progress = Progress(
-    SpinnerColumn(),
-    TextColumn("[progress.description]{task.description}"),
-    transient=False,
-)
 
 
 @dataclass
@@ -30,7 +23,7 @@ class ZoteroLibrary:
     """
 
     zot: Zotero = field(default_factory=load_zotero)
-    json_dir: Path = field(default=None)
+    json_dir: Path | None = field(default=None)
     articles_only: bool = False
 
     def __post_init__(
@@ -41,6 +34,19 @@ class ZoteroLibrary:
         If json_dir is set, load the library from the JSON files in that directory
         and skip querying zotero for everything.
         """
+        try:
+            from rich.progress import Progress, SpinnerColumn, TextColumn
+        except ImportError:
+            raise ImportError(
+                "rich is not installed. Please install it with `pip install llamabot[cli]`"
+            )
+
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=False,
+        )
+
         if self.json_dir is not None:
             # Load the library from the JSON files.
             items = []
