@@ -3,7 +3,13 @@
 from pathlib import Path
 from tqdm import tqdm
 import typer
-import nbformat
+
+try:
+    import nbformat
+except ImportError:
+    raise ImportError(
+        "nbformat is not installed. Please install it with `pip install nbformat`."
+    )
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.prompt_manager import prompt
 
