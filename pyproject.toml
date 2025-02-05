@@ -83,9 +83,6 @@ dependencies = [
     "python-slugify",
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
-    "python-frontmatter",
-    "nbformat",
-    "alembic",
     "jinja2",
     "fastapi",
     "uvicorn",
@@ -126,7 +123,9 @@ agent = [
     "duckduckgo-search>=7.2.1,<8"
 ]
 cli = [
-    "pyzotero"
+    "pyzotero",
+    "nbformat",
+    "python-frontmatter",
 ]
 
 [dependency-groups]
