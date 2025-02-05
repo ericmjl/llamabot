@@ -3,8 +3,15 @@
 from openai import OpenAI
 
 import typer
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter
+
+try:
+    from prompt_toolkit import prompt
+    from prompt_toolkit.completion import WordCompleter
+except ImportError:
+    raise ImportError(
+        "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+
 from .utils import configure_environment_variable
 
 

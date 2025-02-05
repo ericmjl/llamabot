@@ -4,8 +4,14 @@ import getpass
 from pathlib import Path
 
 import typer
-from prompt_toolkit import prompt
-from prompt_toolkit.formatted_text import HTML
+
+try:
+    from prompt_toolkit import prompt
+    from prompt_toolkit.formatted_text import HTML
+except ImportError:
+    raise ImportError(
+        "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
+    )
 
 
 def get_valid_input(prompt, valid_inputs=("y", "n")):
