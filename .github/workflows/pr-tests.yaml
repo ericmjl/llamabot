@@ -122,7 +122,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl
           curl -fsSL https://ollama.com/install.sh | sh
-
+          sleep 3
           ollama pull gemma2:2b
 
       - name: Test running llamabot (pixi)
