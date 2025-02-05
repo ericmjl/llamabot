@@ -128,11 +128,11 @@ jobs:
       - name: Test running llamabot (pixi)
         if: ${{ matrix.environment-type == 'pixi' }}
         run: |
-          pixi run -e bare python -c "import llamabot as lmb; bot = lmb.SimpleBot('yo', model_name='ollama_chat:gemma2:2b'); bot('sup?')"
+          pixi run -e bare python scripts/yo.py
 
       - name: Test running llamabot (uv)
         if: ${{ matrix.environment-type == 'uv' }}
         run: |
           source llamabot-env/bin/activate
           uv pip install .
-          llamabot --help
+          python scripts/yo.py
