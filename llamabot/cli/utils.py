@@ -5,14 +5,6 @@ from pathlib import Path
 
 import typer
 
-try:
-    from prompt_toolkit import prompt
-    from prompt_toolkit.formatted_text import HTML
-except ImportError:
-    raise ImportError(
-        "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
-    )
-
 
 def get_valid_input(prompt, valid_inputs=("y", "n")):
     """
@@ -71,11 +63,25 @@ def uniform_prompt():
 
     :return: The prompt, partialled out and ready to accept user input."""
 
+    try:
+        from prompt_toolkit import prompt
+    except ImportError:
+        raise ImportError(
+            "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     def bottom_toolbar():
         """The bottom toolbar for the prompt.
 
         :return: The bottom toolbar.
         """
+        try:
+            from prompt_toolkit.formatted_text import HTML
+        except ImportError:
+            raise ImportError(
+                "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
+            )
+
         return HTML(
             " Multi-line input is enabled. "
             "Use Meta+Enter or Escape->Enter to submit. "
