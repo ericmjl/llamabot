@@ -166,9 +166,15 @@ class LanceDBDocStore(AbstractDocumentStore):
         table_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "lancedb",
     ):
-        import lancedb
-        from lancedb.embeddings import EmbeddingFunctionRegistry, get_registry
-        from lancedb.pydantic import LanceModel, Vector
+        try:
+            import lancedb
+            from lancedb.embeddings import EmbeddingFunctionRegistry, get_registry
+            from lancedb.pydantic import LanceModel, Vector
+        except ImportError:
+            raise ImportError(
+                "LanceDB is required for LanceDBDocStore. "
+                "Please `pip install llamabot[rag]` to use the LanceDB document store."
+            )
 
         registry: EmbeddingFunctionRegistry = get_registry()
         func: Callable = registry.get(name="sentence-transformers").create()
@@ -281,7 +287,14 @@ class BM25DocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
-        from rank_bm25 import BM25Okapi
+
+        try:
+            from rank_bm25 import BM25Okapi
+        except ImportError:
+            raise ImportError(
+                "rank_bm25 is required for BM25DocStore. "
+                "Please install it with `pip install llamabot[rag]`"
+            )
 
         # Use BM25 to get documents.
         tokenized_docs = [doc.split() for doc in self.documents]
