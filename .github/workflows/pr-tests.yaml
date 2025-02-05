@@ -62,7 +62,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.11, 3.12]
-        environment-type: ['pixi', 'bare']
+        environment-type: ['pixi', 'uv']
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -81,16 +81,57 @@ jobs:
 
       - name: Set up Python
         run: uv venv llamabot-env --python ${{ matrix.python-version }}
-        if: ${{ matrix.environment-type == 'bare' }}
+        if: ${{ matrix.environment-type == 'uv' }}
 
       - name: Test CLI (pixi)
         if: matrix.environment-type == 'pixi' && github.repository_owner == 'ericmjl'
         run: |
           pixi run llamabot-cli
 
-      - name: Test CLI (bare)
-        if: matrix.environment-type == 'bare' && github.repository_owner == 'ericmjl'
+      - name: Test CLI (uv)
+        if: matrix.environment-type == 'uv' && github.repository_owner == 'ericmjl'
         run: |
           source llamabot-env/bin/activate
           uv pip install .[all]
+          llamabot --help
+  bare-package-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+        environment-type: ['pixi', 'uv']
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+        if: ${{ matrix.environment-type == 'pixi' }}
+        with:
+          pixi-version: latest
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          environments: bare
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        if: ${{ matrix.environment-type == 'uv' }}
+
+      - name: Install gemma2:2b
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama pull gemma2:2b
+
+      - name: Test running llamabot (pixi)
+        if: ${{ matrix.environment-type == 'pixi' }}
+        run: |
+          pixi run -e bare python -c "import llamabot as lmb; bot = lmb.SimpleBot('yo', model_name='ollama_chat:gemma2:2b'); bot('sup?')"
+
+      - name: Test running llamabot (uv)
+        if: ${{ matrix.environment-type == 'uv' }}
+        run: |
+          source llamabot-env/bin/activate
+          uv pip install .
           llamabot --help
