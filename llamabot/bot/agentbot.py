@@ -349,9 +349,7 @@ class AgentBot:
                 result_id = self._store_result(tool_name, result, args)
 
                 # Log result - only show tool name, args, and result ID for conciseness
-                result_str = f"{tool_name}({args}) -> {result_id}, {result}"
-                print()
-                print(result_str)
+                result_str = f"{tool_name}({args}) -> {result_id}, {str(result)[0:100]}"
                 results.append(result)
                 execution_history.append(result_str)
 
