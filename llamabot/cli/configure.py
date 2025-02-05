@@ -4,14 +4,6 @@ from openai import OpenAI
 
 import typer
 
-try:
-    from prompt_toolkit import prompt
-    from prompt_toolkit.completion import WordCompleter
-except ImportError:
-    raise ImportError(
-        "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
-    )
-
 from .utils import configure_environment_variable
 
 
@@ -28,6 +20,14 @@ def default_model(model_name=None):
 
     :param model_name: The name of the model to be used for default
     """
+    try:
+        from prompt_toolkit import prompt
+        from prompt_toolkit.completion import WordCompleter
+    except ImportError:
+        raise ImportError(
+            "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     from dotenv import load_dotenv
 
     from llamabot.config import llamabotrc_path
