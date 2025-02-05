@@ -37,12 +37,16 @@ def search_internet(
     try:
         from duckduckgo_search import DDGS
     except ImportError:
-        raise ImportError("The Python package `duckduckgo_search` cannot be found. Please install it using `pip install llamabot[agent]`.")
+        raise ImportError(
+            "The Python package `duckduckgo_search` cannot be found. Please install it using `pip install llamabot[agent]`."
+        )
 
     try:
         from markdownify import markdownify as md
     except ImportError:
-        raise ImportError("The Python package `markdownify` cannot be found. Please install it using `pip install llamabot[agent]`.")
+        raise ImportError(
+            "The Python package `markdownify` cannot be found. Please install it using `pip install llamabot[agent]`."
+        )
 
     ddgs = DDGS()
     results = ddgs.text(search_term, max_results=max_results, backend=backend)
