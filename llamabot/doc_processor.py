@@ -2,11 +2,8 @@
 
 from pathlib import Path
 from typing import List
-from pdfminer.high_level import (
-    extract_text,
-)  # from llama_index.core.schema import Document
 
-# from llama_index.core.readers import download_loader
+from pdfminer.high_level import extract_text
 
 
 def pdf_loader(path: Path) -> str:
