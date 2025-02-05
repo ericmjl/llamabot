@@ -6,8 +6,20 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-import git
-import pyperclip
+try:
+    import pyperclip
+except ImportError:
+    raise ImportError(
+        "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+
+try:
+    import git
+except ImportError:
+    raise ImportError(
+        "git is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+
 import typer
 from pydantic import BaseModel, Field, model_validator
 from pyprojroot import here

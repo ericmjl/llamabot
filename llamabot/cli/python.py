@@ -24,7 +24,12 @@ Functions:
 
 from pathlib import Path
 
-import pyperclip
+try:
+    import pyperclip
+except ImportError:
+    raise ImportError(
+        "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+    )
 from typer import Typer
 
 from llamabot.code_manipulation import (
