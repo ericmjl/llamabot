@@ -50,7 +50,9 @@ class ScriptExecutor:
             import docker
             from docker.errors import DockerException
         except ImportError:
-            raise ImportError("The Python package `docker` cannot be found. Please install it using `pip install llamabot[agent]`.")
+            raise ImportError(
+                "The Python package `docker` cannot be found. Please install it using `pip install llamabot[agent]`."
+            )
 
         try:
             self.docker_client = docker.from_env()
@@ -96,6 +98,13 @@ class ScriptExecutor:
 
     def build_container(self) -> None:
         """Build the Docker container for script execution."""
+        try:
+            from docker.errors import DockerException
+        except ImportError:
+            raise ImportError(
+                "The Python package `docker` cannot be found. Please install it using `pip install llamabot[agent]`."
+            )
+
         dockerfile = """
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
@@ -147,6 +156,13 @@ CMD ["uv", "run", "--system-site-packages=false"]
             - status: Execution status code
         :raises RuntimeError: If the script execution fails
         """
+        try:
+            from docker.errors import DockerException
+        except ImportError:
+            raise ImportError(
+                "The Python package `docker` cannot be found. Please install it using `pip install llamabot[agent]`."
+            )
+
         try:
             # Ensure container image exists
             self.build_container()
