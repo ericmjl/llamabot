@@ -7262,7 +7262,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.10.12
-  sha256: 4ba63e26e6d87a9f6fcd5b78096d355447c5e981e34ee23ea6a651691ef217b1
+  sha256: deb0bc17c38ee60cb7b63527521498a5f5b0322eaf7c26d972234561c5f6f625
   requires_dist:
   - openai
   - loguru
@@ -7292,7 +7292,8 @@ packages:
   - chromadb ; extra == 'vectordb'
   - tantivy ; extra == 'vectordb'
   - docker ; extra == 'agent'
-  - duckduckgo-search>=7.2.1,<8 ; extra == 'agent'
+  - duckduckgo-search ; extra == 'agent'
+  - markdownify ; extra == 'agent'
   - pyzotero ; extra == 'cli'
   - nbformat ; extra == 'cli'
   - python-frontmatter ; extra == 'cli'
