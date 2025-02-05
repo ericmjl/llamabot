@@ -11,7 +11,13 @@ class ChatUIMixin:
         initial_message: Optional[str] = None,
         callback_function: Optional[Callable] = None,
     ):
-        import panel as pn
+        try:
+            import panel as pn
+        except ImportError:
+            raise ImportError(
+                "Panel is required for ChatUIMixin. "
+                "Please `pip install llamabot[ui]` to use the chat interface."
+            )
 
         self.callback_function = callback_function
         if callback_function is None:
