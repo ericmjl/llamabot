@@ -6,20 +6,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-try:
-    import pyperclip
-except ImportError:
-    raise ImportError(
-        "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
-    )
-
-try:
-    import git
-except ImportError:
-    raise ImportError(
-        "git is not installed. Please install it with `pip install llamabot[cli]`."
-    )
-
 import typer
 from pydantic import BaseModel, Field, model_validator
 from pyprojroot import here
@@ -260,6 +246,13 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
     :param release_notes_dir: The directory to write the release notes to.
         Defaults to "./docs/releases".
     """
+    try:
+        import git
+    except ImportError:
+        raise ImportError(
+            "git is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     repo = git.Repo(here())
     tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
     if len(tags) == 0:
@@ -318,6 +311,20 @@ def report(
     :param model_name: The model name to use.
         Consult LiteLLM's documentation for options.
     """
+    try:
+        import pyperclip
+    except ImportError:
+        raise ImportError(
+            "pyperclip is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
+    try:
+        import git
+    except ImportError:
+        raise ImportError(
+            "git is not installed. Please install it with `pip install llamabot[cli]`."
+        )
+
     repo = git.Repo(here())
 
     if hours is not None:
