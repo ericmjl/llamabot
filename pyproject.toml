@@ -127,6 +127,7 @@ cli = [
     "prompt-toolkit",
     "case-converter",
     "pyperclip",
+    "astor",
 ]
 all = [
     "llamabot[notebooks,ui,vectordb,agent,cli]"
