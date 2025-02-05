@@ -199,6 +199,7 @@ class LanceDBDocStore(AbstractDocumentStore):
 
         self.schema = DocstoreEntry
         self.table_name = table_name
+        storage_path.mkdir(parents=True, exist_ok=True)  # Ensure storage path exists
         self.db = lancedb.connect(storage_path)
 
         try:
