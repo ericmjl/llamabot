@@ -4,11 +4,29 @@ from datetime import date
 from pathlib import Path
 
 import typer
-from caseconverter import snakecase
+
+try:
+    from caseconverter import snakecase
+except ImportError:
+    raise ImportError(
+        "caseconverter is not installed. Please install it with `pip install llamabot[cli]`."
+    )
 from dotenv import load_dotenv
-from prompt_toolkit import prompt
-from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
+
+try:
+    from prompt_toolkit import prompt
+except ImportError:
+    raise ImportError(
+        "prompt_toolkit is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+try:
+    from rich.console import Console
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+except ImportError:
+    raise ImportError(
+        "rich is not installed. Please install it with `pip install llamabot[cli]`."
+    )
+
 from slugify import slugify
 
 from llamabot import QueryBot
