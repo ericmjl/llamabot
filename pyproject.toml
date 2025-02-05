@@ -83,6 +83,7 @@ dependencies = [
     "python-multipart",
     "httpx",
     "tqdm",
+    "sqlalchemy",
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
