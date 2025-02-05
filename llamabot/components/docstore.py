@@ -204,7 +204,7 @@ class LanceDBDocStore(AbstractDocumentStore):
 
         try:
             self.table = self.db.open_table(table_name)
-        except FileNotFoundError:
+        except Exception:
             self.table = self.db.create_table(table_name, schema=self.schema)
 
         try:
