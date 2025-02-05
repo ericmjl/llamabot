@@ -7211,7 +7211,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.10.12
-  sha256: 509488267dfb2a4ffc5df57cd4dfd0a2ee359fecd53994b7676c7e9851f98e02
+  sha256: 621124a8dfb4f6045b19f813f2800602bc2af94d5617e3e4ec64a123c23c4366
   requires_dist:
   - openai
   - loguru
@@ -7248,6 +7248,11 @@ packages:
   - gitpython ; extra == 'cli'
   - prompt-toolkit ; extra == 'cli'
   - case-converter ; extra == 'cli'
+  - notebooks ; extra == 'all'
+  - ui ; extra == 'all'
+  - vectordb ; extra == 'all'
+  - agent ; extra == 'all'
+  - cli ; extra == 'all'
   requires_python: <3.13
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/osx-64/llvm-openmp-19.1.5-ha54dae1_0.conda

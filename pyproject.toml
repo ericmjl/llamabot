@@ -124,6 +124,13 @@ cli = [
     "prompt-toolkit",
     "case-converter",
 ]
+all = [
+    "notebooks",
+    "ui",
+    "vectordb",
+    "agent",
+    "cli"
+]
 
 [dependency-groups]
 notebooks = ["ollama>=0.4.4,<0.5"]
