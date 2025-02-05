@@ -10,18 +10,17 @@ from llamabot import ChatBot, PromptRecorder
 
 from . import (
     blog,
-    cache,
     configure,
     doc,
+    docs,
     git,
+    logviewer,
+    notebook,
     python,
-    tutorial,
-    zotero,
     repo,
     serve,
-    docs,
-    notebook,
-    logviewer,
+    tutorial,
+    zotero,
 )
 from .utils import exit_if_asked, uniform_prompt
 
@@ -60,7 +59,6 @@ app.add_typer(
     docs.app, name="docs", help="Create Markdown documentation from source files."
 )
 app.add_typer(notebook.app, name="notebook", help="Explain your notebooks.")
-app.add_typer(cache.app, name="cache", help="Clear the LlamaBot cache.")
 app.add_typer(logviewer.app, name="log-viewer", help="Visualize the LlamaBot logs.")
 
 
