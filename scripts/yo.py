@@ -3,7 +3,7 @@
 import llamabot as lmb
 from pydantic import BaseModel
 
-bot = lmb.SimpleBot("yo", model_name="ollama_chat:gemma2:2b")
+bot = lmb.SimpleBot("yo", model_name="ollama_chat/gemma2:2b")
 
 print(bot("sup?"))
 
@@ -16,7 +16,7 @@ class Person(BaseModel):
 
 
 sbot = lmb.StructuredBot(
-    "yo", model_name="ollama_chat:gemma2:2b", pydantic_model=Person
+    "yo", model_name="ollama_chat/gemma2:2b", pydantic_model=Person
 )
 
 print(sbot("what is your name and age?"))
