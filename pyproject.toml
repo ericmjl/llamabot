@@ -108,10 +108,11 @@ ui = [
     "jupyter_bokeh",
     "bokeh"
 ]
-vectordb = [
+rag = [
     "lancedb",
     "chromadb",
-    "tantivy"
+    "tantivy",
+    "rank-bm25",
 ]
 agent = [
     "docker",
@@ -130,13 +131,12 @@ cli = [
     "astor",
 ]
 all = [
-    "llamabot[notebooks,ui,vectordb,agent,cli]"
+    "llamabot[notebooks,ui,rag,agent,cli]"
 ]
 
 [dependency-groups]
 notebooks = ["ollama>=0.4.4,<0.5"]
 ui = []
-vectordb = []
 agent = []
 cli = []
 
@@ -197,7 +197,7 @@ docs = "mkdocs serve"
 build-docs = "mkdocs build"
 
 [tool.pixi.environments]
-default = ["tests", "devtools", "docs", "notebooks", "ui", "vectordb", "agent", "cli"]
+default = ["tests", "devtools", "docs", "notebooks", "ui", "rag", "agent", "cli"]
 docs = ["docs"]
 notebooks = ["notebooks"] # for those who just want to run notebooks
 bare = ["devtools"]
