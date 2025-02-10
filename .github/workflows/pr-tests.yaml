@@ -10,13 +10,19 @@ env:
   OPENAI_API_KEY: dummy_key
 
 jobs:
-  run-tests:
+  test-matrix:
     runs-on: ubuntu-latest
-    name: Run test suite (Python ${{ matrix.python-version }})
+    name: ${{ matrix.test-type }} (Python ${{ matrix.python-version }}, ${{ matrix.environment-type }})
 
     strategy:
       matrix:
         python-version: [3.11, 3.12]
+        environment-type: ['pixi', 'uv']
+        test-type: ['unit-tests', 'smoke-tests', 'bare-package']
+        exclude:
+          # Unit tests only run with pixi
+          - test-type: unit-tests
+            environment-type: uv
 
     defaults:
       run:
@@ -31,112 +37,67 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl
 
-      - name: Download Ollama installation script
-        run: curl -fsSL https://ollama.com/install.sh -o install.sh
-
-      - name: Run Ollama installation script
-        run: bash install.sh
-
+      # Setup Pixi if needed
       - name: Setup Pixi Environment
-        uses: prefix-dev/setup-pixi@v0.8.1
-        with:
-          pixi-version: latest
-          cache: true
-          cache-write: ${{ github.event_name == 'push' }}
-
-      - name: Run tests (pixi)
-        run: |
-            pixi run test
-
-      # https://github.com/codecov/codecov-action
-      - name: Upload code coverage
-        uses: codecov/codecov-action@v4
-        with:
-          # fail_ci_if_error: true # optional (default = false)
-          verbose: true # optional (default = false)
-
-  smoke-tests:
-    runs-on: ubuntu-latest
-    name: Run smoke tests (Python ${{ matrix.python-version }})
-
-    strategy:
-      matrix:
-        python-version: [3.11, 3.12]
-        environment-type: ['pixi', 'uv']
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Pixi Environment
-        uses: prefix-dev/setup-pixi@v0.8.1
         if: ${{ matrix.environment-type == 'pixi' }}
+        uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: latest
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          environments: ${{ matrix.test-type == 'bare-package' && 'bare' || '' }}
 
+      # Setup uv if needed
       - name: Setup uv
-        # Install latest uv version using the installer
+        if: ${{ matrix.environment-type == 'uv' }}
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Set up Python
-        run: uv venv llamabot-env --python ${{ matrix.python-version }}
+      - name: Set up Python for uv
         if: ${{ matrix.environment-type == 'uv' }}
+        run: uv venv llamabot-env --python ${{ matrix.python-version }}
 
-      - name: Test CLI (pixi)
-        if: matrix.environment-type == 'pixi' && github.repository_owner == 'ericmjl'
+      # Install Ollama for tests that need it
+      - name: Install Ollama
+        if: ${{ matrix.test-type == 'unit-tests' || matrix.test-type == 'bare-package' }}
         run: |
-          pixi run llamabot-cli
+          curl -fsSL https://ollama.com/install.sh | sh
+          sleep 3
 
-      - name: Test CLI (uv)
-        if: matrix.environment-type == 'uv' && github.repository_owner == 'ericmjl'
+      # Install Gemma model for bare package test
+      - name: Install gemma2:2b
+        if: ${{ matrix.test-type == 'bare-package' }}
+        run: ollama pull gemma2:2b
+
+      # Run the appropriate test based on matrix variables
+      - name: Run unit tests
+        if: ${{ matrix.test-type == 'unit-tests' }}
+        run: pixi run test
+
+      - name: Run smoke tests (pixi)
+        if: ${{ matrix.test-type == 'smoke-tests' && matrix.environment-type == 'pixi' && github.repository_owner == 'ericmjl' }}
+        run: pixi run llamabot-cli
+
+      - name: Run smoke tests (uv)
+        if: ${{ matrix.test-type == 'smoke-tests' && matrix.environment-type == 'uv' && github.repository_owner == 'ericmjl' }}
         run: |
           source llamabot-env/bin/activate
           uv pip install .[all]
           llamabot --help
-  bare-package-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.11, 3.12]
-        environment-type: ['pixi', 'uv']
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Install pixi
-        uses: prefix-dev/setup-pixi@v0.8.1
-        if: ${{ matrix.environment-type == 'pixi' }}
-        with:
-          pixi-version: latest
-          cache: true
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          environments: bare
+      - name: Run bare package test (pixi)
+        if: ${{ matrix.test-type == 'bare-package' && matrix.environment-type == 'pixi' }}
+        run: pixi run -e bare python scripts/yo.py
 
-      - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-        if: ${{ matrix.environment-type == 'uv' }}
-
-      - name: Set up Python
-        run: uv venv llamabot-env --python ${{ matrix.python-version }}
-        if: ${{ matrix.environment-type == 'uv' }}
-
-      - name: Install gemma2:2b
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl
-          curl -fsSL https://ollama.com/install.sh | sh
-          sleep 3
-          ollama pull gemma2:2b
-
-      - name: Test running llamabot (pixi)
-        if: ${{ matrix.environment-type == 'pixi' }}
-        run: |
-          pixi run -e bare python scripts/yo.py
-
-      - name: Test running llamabot (uv)
-        if: ${{ matrix.environment-type == 'uv' }}
+      - name: Run bare package test (uv)
+        if: ${{ matrix.test-type == 'bare-package' && matrix.environment-type == 'uv' }}
         run: |
           source llamabot-env/bin/activate
           uv pip install .
           python scripts/yo.py
+
+      # Upload code coverage only for unit tests
+      - name: Upload code coverage
+        if: ${{ matrix.test-type == 'unit-tests' }}
+        uses: codecov/codecov-action@v4
+        with:
+          verbose: true
