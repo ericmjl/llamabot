@@ -40,7 +40,7 @@ jobs:
       # Setup Pixi if needed
       - name: Setup Pixi Environment
         if: ${{ matrix.environment-type == 'pixi' }}
-        uses: prefix-dev/setup-pixi@v0.8.1
+        uses: prefix-dev/setup-pixi@v0.8.2
         with:
           pixi-version: latest
           cache: true
