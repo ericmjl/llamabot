@@ -48,7 +48,7 @@ jobs:
 
       - name: Deploy PR Preview
         if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
-        uses: rossjrw/pr-preview-action@v1.4.8
+        uses: rossjrw/pr-preview-action@v1.6.1
         with:
           source-dir: ./site
           preview-branch: gh-pages
