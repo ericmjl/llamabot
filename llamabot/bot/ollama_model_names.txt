@@ -1,3 +1,17 @@
+granite3.3
+deepcoder
+mistral-small3.1
+cogito
+exaone-deep
+command-a
+gemma3
+command-r7b-arabic
+granite3.2-vision
+phi4-mini
+granite3.2
+r1-1776
+deepscaler
+openthinker
 deepseek-r1
 olmo2
 command-r7b
