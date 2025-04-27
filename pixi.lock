@@ -954,6 +954,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/27/2e/29bb28a7102a6f71026a9d70d1d61df926887e36ec797f2e6acfd2dd3867/pyarrow-19.0.1-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c8/f1/d6a797abb14f6283c0ddff96bbdd46937f64122b8c925cab503dd37f8214/pyasn1-0.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/47/8d/d529b5d697919ba8c11ad626e835d4039be708a35b0d22de83a269a6682c/pyasn1_modules-0.4.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7a/89/980c1f85b1e9943c06408dca7b16575de69962a075f8bdb70e39c22d0319/pylance-0.26.0-cp39-abi3-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/30/23/2f0a3efc4d6a32f3b63cdff36cd398d9701d26cda58e3ab97ac79fb5e60d/pyperclip-1.9.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/c7/2c/94ed7b91db81d61d7096ac8f2d325ec562fc75e35f3baea8749c85b28784/PyPika-0.48.9.tar.gz
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
@@ -1350,6 +1351,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fe/4f/a2c0ed309167ef436674782dfee4a124570ba64299c551e38d3fdaf0a17b/pyarrow-19.0.1-cp312-cp312-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/c8/f1/d6a797abb14f6283c0ddff96bbdd46937f64122b8c925cab503dd37f8214/pyasn1-0.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/47/8d/d529b5d697919ba8c11ad626e835d4039be708a35b0d22de83a269a6682c/pyasn1_modules-0.4.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a8/67/1f1e2fc26e3b55dc555d0a7b4c43f8a2e288328f44b9b559637f0cab58f4/pylance-0.26.0-cp39-abi3-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/30/23/2f0a3efc4d6a32f3b63cdff36cd398d9701d26cda58e3ab97ac79fb5e60d/pyperclip-1.9.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/c7/2c/94ed7b91db81d61d7096ac8f2d325ec562fc75e35f3baea8749c85b28784/PyPika-0.48.9.tar.gz
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
@@ -1739,6 +1741,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/3b/4692965e04bb1df55e2c314c4296f1eb12b4f3052d4cf43d29e076aedf66/pyarrow-19.0.1-cp312-cp312-macosx_12_0_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c8/f1/d6a797abb14f6283c0ddff96bbdd46937f64122b8c925cab503dd37f8214/pyasn1-0.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/47/8d/d529b5d697919ba8c11ad626e835d4039be708a35b0d22de83a269a6682c/pyasn1_modules-0.4.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/87/b9/358629991696c8db019aaab0984fc2ed15e346f7892288b54f90c95c60f8/pylance-0.26.0-cp39-abi3-macosx_10_15_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/30/23/2f0a3efc4d6a32f3b63cdff36cd398d9701d26cda58e3ab97ac79fb5e60d/pyperclip-1.9.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/c7/2c/94ed7b91db81d61d7096ac8f2d325ec562fc75e35f3baea8749c85b28784/PyPika-0.48.9.tar.gz
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
@@ -2128,6 +2131,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b4/94e828704b050e723f67d67c3535cf7076c7432cd4cf046e4bb3b96a9c9d/pyarrow-19.0.1-cp312-cp312-macosx_12_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/c8/f1/d6a797abb14f6283c0ddff96bbdd46937f64122b8c925cab503dd37f8214/pyasn1-0.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/47/8d/d529b5d697919ba8c11ad626e835d4039be708a35b0d22de83a269a6682c/pyasn1_modules-0.4.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a9/94/1e235a3708856d26baba74aea7e7b0e54f6cf9073ce699d962118992cd9c/pylance-0.26.0-cp39-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/30/23/2f0a3efc4d6a32f3b63cdff36cd398d9701d26cda58e3ab97ac79fb5e60d/pyperclip-1.9.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/c7/2c/94ed7b91db81d61d7096ac8f2d325ec562fc75e35f3baea8749c85b28784/PyPika-0.48.9.tar.gz
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
@@ -9143,7 +9147,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.11.2
-  sha256: 7e00694979f538b55ca297f7ccb88871a8874edacecd24dc5fee9e99608bd33e
+  sha256: 9dff680c7c9e274f569c703d6d8bb310d5e5b55f4df384c80eeb42870c049af3
   requires_dist:
   - openai
   - loguru
@@ -9174,6 +9178,7 @@ packages:
   - chromadb ; extra == 'rag'
   - tantivy ; extra == 'rag'
   - rank-bm25 ; extra == 'rag'
+  - pylance ; extra == 'rag'
   - docker ; extra == 'agent'
   - duckduckgo-search ; extra == 'agent'
   - markdownify ; extra == 'agent'
@@ -11614,6 +11619,98 @@ packages:
   - pkg:pypi/pygments?source=hash-mapping
   size: 888600
   timestamp: 1736243563082
+- pypi: https://files.pythonhosted.org/packages/7a/89/980c1f85b1e9943c06408dca7b16575de69962a075f8bdb70e39c22d0319/pylance-0.26.0-cp39-abi3-manylinux_2_28_x86_64.whl
+  name: pylance
+  version: 0.26.0
+  sha256: 615dfd284c2769e10f92e7f497ab3851e7613e872dd654d0826f8510550766f3
+  requires_dist:
+  - pyarrow>=14
+  - numpy>=1.22
+  - boto3 ; extra == 'tests'
+  - datasets ; extra == 'tests'
+  - duckdb ; extra == 'tests'
+  - ml-dtypes ; extra == 'tests'
+  - pillow ; extra == 'tests'
+  - pandas ; extra == 'tests'
+  - polars[pyarrow,pandas] ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - tensorflow ; extra == 'tests'
+  - tqdm ; extra == 'tests'
+  - ruff==0.4.1 ; extra == 'dev'
+  - pyright ; extra == 'dev'
+  - pytest-benchmark ; extra == 'benchmarks'
+  - torch ; extra == 'torch'
+  - ray[data]<2.38 ; python_full_version < '3.12' and extra == 'ray'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/87/b9/358629991696c8db019aaab0984fc2ed15e346f7892288b54f90c95c60f8/pylance-0.26.0-cp39-abi3-macosx_10_15_x86_64.whl
+  name: pylance
+  version: 0.26.0
+  sha256: c9b3af2897b7356a54b4812490d4145579c1cfc65744f6e27b48aea588034bb1
+  requires_dist:
+  - pyarrow>=14
+  - numpy>=1.22
+  - boto3 ; extra == 'tests'
+  - datasets ; extra == 'tests'
+  - duckdb ; extra == 'tests'
+  - ml-dtypes ; extra == 'tests'
+  - pillow ; extra == 'tests'
+  - pandas ; extra == 'tests'
+  - polars[pyarrow,pandas] ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - tensorflow ; extra == 'tests'
+  - tqdm ; extra == 'tests'
+  - ruff==0.4.1 ; extra == 'dev'
+  - pyright ; extra == 'dev'
+  - pytest-benchmark ; extra == 'benchmarks'
+  - torch ; extra == 'torch'
+  - ray[data]<2.38 ; python_full_version < '3.12' and extra == 'ray'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/a8/67/1f1e2fc26e3b55dc555d0a7b4c43f8a2e288328f44b9b559637f0cab58f4/pylance-0.26.0-cp39-abi3-manylinux_2_28_aarch64.whl
+  name: pylance
+  version: 0.26.0
+  sha256: 4ae10789240aba553da0bc01cc7b8b3d87eeb148d8ce09c88de782281172126d
+  requires_dist:
+  - pyarrow>=14
+  - numpy>=1.22
+  - boto3 ; extra == 'tests'
+  - datasets ; extra == 'tests'
+  - duckdb ; extra == 'tests'
+  - ml-dtypes ; extra == 'tests'
+  - pillow ; extra == 'tests'
+  - pandas ; extra == 'tests'
+  - polars[pyarrow,pandas] ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - tensorflow ; extra == 'tests'
+  - tqdm ; extra == 'tests'
+  - ruff==0.4.1 ; extra == 'dev'
+  - pyright ; extra == 'dev'
+  - pytest-benchmark ; extra == 'benchmarks'
+  - torch ; extra == 'torch'
+  - ray[data]<2.38 ; python_full_version < '3.12' and extra == 'ray'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/a9/94/1e235a3708856d26baba74aea7e7b0e54f6cf9073ce699d962118992cd9c/pylance-0.26.0-cp39-abi3-macosx_11_0_arm64.whl
+  name: pylance
+  version: 0.26.0
+  sha256: ef5cbacd718da68ba1fde37646f6f6fab81caeae122fce2479f122b4896a5bac
+  requires_dist:
+  - pyarrow>=14
+  - numpy>=1.22
+  - boto3 ; extra == 'tests'
+  - datasets ; extra == 'tests'
+  - duckdb ; extra == 'tests'
+  - ml-dtypes ; extra == 'tests'
+  - pillow ; extra == 'tests'
+  - pandas ; extra == 'tests'
+  - polars[pyarrow,pandas] ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - tensorflow ; extra == 'tests'
+  - tqdm ; extra == 'tests'
+  - ruff==0.4.1 ; extra == 'dev'
+  - pyright ; extra == 'dev'
+  - pytest-benchmark ; extra == 'benchmarks'
+  - torch ; extra == 'torch'
+  - ray[data]<2.38 ; python_full_version < '3.12' and extra == 'ray'
+  requires_python: '>=3.9'
 - conda: https://conda.anaconda.org/conda-forge/noarch/pymdown-extensions-10.14.3-pyhd8ed1ab_0.conda
   sha256: 83b638059eda5208e2e4acfeecf2ff53b5dcb1adc7d85fc92edf0e7a48b943eb
   md5: 08bf3657d03e1ee964c66288f5b3d797

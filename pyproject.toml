@@ -113,6 +113,7 @@ rag = [
     "chromadb",
     "tantivy",
     "rank-bm25",
+    "pylance",
 ]
 agent = [
     "docker",
