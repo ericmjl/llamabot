@@ -9147,7 +9147,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.11.3
-  sha256: cba1afa1fe6fd951b9cc071acdc5456ee653b71b66d8f1fd51615910e6b1161d
+  sha256: d9428680d0eb9ff379dd8099152abf2865ab9de7438af7ef46a03c4d61515c4c
   requires_dist:
   - openai
   - loguru
@@ -9179,6 +9179,7 @@ packages:
   - tantivy ; extra == 'rag'
   - rank-bm25 ; extra == 'rag'
   - pylance ; extra == 'rag'
+  - llamabot[ui] ; extra == 'rag'
   - docker ; extra == 'agent'
   - duckduckgo-search ; extra == 'agent'
   - markdownify ; extra == 'agent'
