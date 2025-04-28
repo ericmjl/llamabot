@@ -114,6 +114,7 @@ rag = [
     "tantivy",
     "rank-bm25",
     "pylance",
+    "sentence-transformers",
     "llamabot[ui]",
 ]
 agent = [
