@@ -160,9 +160,13 @@ class ChromaDBDocStore(AbstractDocumentStore):
         ids = [sha256(doc.encode()).hexdigest() for doc in documents]
 
         # Check that the lengths of the lists are the same
-        if len(documents) != len(metadatas) or len(documents) != len(embeddings):
+        if metadatas is not None and len(documents) != len(metadatas):
             raise ValueError(
-                "The lengths of the documents, metadatas, and embeddings must be the same."
+                "The lengths of the documents and metadatas must be the same."
+            )
+        if embeddings is not None and len(documents) != len(embeddings):
+            raise ValueError(
+                "The lengths of the documents and embeddings must be the same."
             )
 
         self.collection.add(
