@@ -12,9 +12,10 @@ Hence we use it by default.
 
 from hashlib import sha256
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 from tqdm.auto import tqdm
+from pydantic import validate_call
 
 from llamabot.doc_processor import magic_load_doc, split_document
 
@@ -114,10 +115,25 @@ class ChromaDBDocStore(AbstractDocumentStore):
         """Execute code after adding documents to the store."""
         pass
 
-    def append(self, document: str, metadata: dict = {}):
+    @validate_call
+    def append(
+        self,
+        document: str,
+        metadata: dict = {},
+        embedding: Optional[list[float]] = None,
+    ):
         """Append a document to the store.
 
+        By default, the documents will be automatically embedded
+        using the default embedder that is set in the ChromaDB client.
+        However, there may be cases where we want to pre-compute the embeddings
+        and pass them into the store, e.g. when adding documents in parallel.
+        In this case, we can pass the pre-computed embeddings into the store.
+        Use `append` to do single adds, and `extend` to do bulk adds.
+
         :param document: The document to append.
+        :param metadata: The metadata to append.
+        :param embedding: The embedding to append, optional
         """
         doc_id = sha256(document.encode()).hexdigest()
 
@@ -125,18 +141,37 @@ class ChromaDBDocStore(AbstractDocumentStore):
             documents=document,
             ids=doc_id,
         )
+        if embedding:
+            add_kwargs["embeddings"] = embedding
         if metadata:
             add_kwargs["metadatas"] = metadata
 
         self.collection.add(**add_kwargs)
 
-    def extend(self, documents: list[str]):
+    @validate_call
+    def extend(
+        self,
+        documents: list[str],
+        metadatas: Optional[list[dict]] = None,
+        embeddings: Optional[list[list[float]]] = None,
+    ):
         """Extend the document store.
 
+        This is effectively a bulk add of documents.
+        See the docstring for `append` for more details.
+
         :param documents: Iterable of documents.
+        :param metadatas: Iterable of metadatas.
+        :param embeddings: Iterable of pre-computed embeddings.
         """
-        for document in documents:
-            self.append(document)
+        # Compute doc_id
+        ids = [sha256(doc.encode()).hexdigest() for doc in documents]
+        self.collection.add(
+            ids=ids,
+            documents=documents,
+            metadatas=metadatas,
+            embeddings=embeddings,
+        )
 
     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
         """Retrieve documents from the store.
@@ -177,6 +212,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         self,
         table_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "lancedb",
+        auto_create_fts_index: bool = True,
     ):
         try:
             import lancedb
@@ -214,7 +250,9 @@ class LanceDBDocStore(AbstractDocumentStore):
             ]
         except ValueError:
             self.existing_records = []
-        self.table.create_fts_index(field_names=["document"], replace=True)
+
+        if auto_create_fts_index:
+            self.table.create_fts_index(field_names=["document"], replace=True)
 
     def __contains__(self, other: str) -> bool:
         """Returns boolean whether the 'other' document is in the store.

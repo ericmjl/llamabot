@@ -1,3 +1,4 @@
+qwen3
 granite3.3
 deepcoder
 mistral-small3.1
