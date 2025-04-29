@@ -14,6 +14,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Callable, Optional
 
+import slugify
 from tqdm.auto import tqdm
 
 from llamabot.doc_processor import magic_load_doc, split_document
@@ -100,6 +101,8 @@ class ChromaDBDocStore(AbstractDocumentStore):
                 "ChromaDB is required for ChromaDBDocStore. "
                 "Please `pip install llamabot[rag]` to use the ChromaDB document store."
             )
+
+        collection_name = slugify.slugify(collection_name, separator="-")
 
         client = chromadb.PersistentClient(path=str(storage_path))
         collection = client.create_collection(collection_name, get_or_create=True)
@@ -235,6 +238,8 @@ class LanceDBDocStore(AbstractDocumentStore):
 
             document: str = func.SourceField()
             vector: Vector(func.ndims()) = func.VectorField()
+
+        table_name = slugify.slugify(table_name, separator="-")
 
         self.schema = DocstoreEntry
         self.table_name = table_name

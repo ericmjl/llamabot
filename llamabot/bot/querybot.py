@@ -14,7 +14,6 @@ from llamabot.components.chatui import ChatUIMixin
 from llamabot.components.messages import (
     RetrievedMessage,
 )
-from slugify import slugify
 
 load_dotenv()
 
@@ -79,8 +78,6 @@ class QueryBot(SimpleBot, ChatUIMixin):
             stream_target=stream_target,
             **kwargs,
         )
-
-        collection_name = slugify(collection_name, separator="_")
 
         if docstore_path:
             docstore_kwargs["storage_path"] = docstore_path
