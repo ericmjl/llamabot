@@ -136,17 +136,12 @@ class ChromaDBDocStore(AbstractDocumentStore):
         :param embedding: The embedding to append, optional
         """
         doc_id = sha256(document.encode()).hexdigest()
-
-        add_kwargs = dict(
+        self.collection.add(
             documents=document,
             ids=doc_id,
+            metadatas=metadata,
+            embeddings=embedding,
         )
-        if embedding:
-            add_kwargs["embeddings"] = embedding
-        if metadata:
-            add_kwargs["metadatas"] = metadata
-
-        self.collection.add(**add_kwargs)
 
     @validate_call
     def extend(
