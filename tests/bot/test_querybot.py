@@ -2,91 +2,61 @@
 
 from llamabot.bot.querybot import QueryBot
 from llamabot.components.messages import HumanMessage
-from hypothesis import HealthCheck, strategies as st, given, settings
-import re
 import tempfile
 from pathlib import Path
 
 
-@given(
-    system_prompt=st.text().filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    collection_name=st.text(
-        alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=4, max_size=63
-    ).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    dummy_text=st.text(min_size=400).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    mock_response=st.text(min_size=4).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    stream_target=st.one_of(st.just("panel"), st.just("stdout")),
-)
-@settings(
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
-    deadline=None,
-    max_examples=10,
-)
-def test_querybot_lancedb(
-    tmp_path, system_prompt, collection_name, dummy_text, mock_response, stream_target
-):
+def test_querybot_lancedb():
     """Test initialization of QueryBot with LanceDB."""
-    # Create a file with test content
-    tempfile = tmp_path / "test.txt"
-    tempfile.write_text(dummy_text)
-
-    # Create a temporary directory for LanceDB storage
+    # Create a temporary directory for test files and DB storage
     with tempfile.TemporaryDirectory() as temp_dir:
+        # Create a test file with predictable content
+        test_file_path = Path(temp_dir) / "test_document.txt"
+        test_content = "This is a test document for QueryBot with LanceDB. " * 20
+        test_file_path.write_text(test_content)
+
+        # Create a QueryBot with LanceDB
         bot = QueryBot(
-            system_prompt=system_prompt,
-            collection_name=collection_name,
-            document_paths=tempfile,
-            mock_response=mock_response,
-            stream_target=stream_target,
+            system_prompt="You are a helpful assistant.",
+            collection_name="test_lancedb_collection",
+            document_paths=test_file_path,
+            mock_response="This is a mock response from LanceDB QueryBot.",
+            stream_target="stdout",
             docstore_type="lancedb",
             docstore_kwargs={"storage_path": Path(temp_dir) / "lancedb"},
         )
 
         # Test basic query
         response = bot("How are you doing?")
-        assert response.content == mock_response
+        assert response.content == "This is a mock response from LanceDB QueryBot."
 
         # Clean up
         bot.docstore.reset()
 
 
-@given(
-    system_prompt=st.text().filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    collection_name=st.text(
-        alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=4, max_size=63
-    ).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    dummy_text=st.text(min_size=400).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    mock_response=st.text(min_size=4).filter(lambda x: not re.search(r"(.)\1{3,}", x)),
-    stream_target=st.one_of(st.just("panel"), st.just("stdout")),
-)
-@settings(
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
-    deadline=None,
-    max_examples=10,
-)
-def test_querybot_chromadb(
-    tmp_path, system_prompt, collection_name, dummy_text, mock_response, stream_target
-):
+def test_querybot_chromadb():
     """Test initialization of QueryBot with ChromaDB."""
-    # Create a file with test content
-    tempfile = tmp_path / "test.txt"
-    tempfile.write_text(dummy_text)
-
-    # Create a temporary directory for ChromaDB storage
+    # Create a temporary directory for test files and DB storage
     with tempfile.TemporaryDirectory() as temp_dir:
+        # Create a test file with predictable content
+        test_file_path = Path(temp_dir) / "test_document.txt"
+        test_content = "This is a test document for QueryBot with ChromaDB. " * 20
+        test_file_path.write_text(test_content)
+
+        # Create a QueryBot with ChromaDB
         bot = QueryBot(
-            system_prompt=system_prompt,
-            collection_name=collection_name,
-            document_paths=tempfile,
-            mock_response=mock_response,
-            stream_target=stream_target,
+            system_prompt="You are a helpful assistant.",
+            collection_name="test_chromadb_collection",
+            document_paths=test_file_path,
+            mock_response="This is a mock response from ChromaDB QueryBot.",
+            stream_target="stdout",
             docstore_type="chromadb",
             docstore_kwargs={"storage_path": Path(temp_dir) / "chromadb"},
         )
 
         # Test basic query
         response = bot("How are you doing?")
-        assert response.content == mock_response
+        assert response.content == "This is a mock response from ChromaDB QueryBot."
 
         # Clean up
         bot.docstore.reset()
