@@ -8,7 +8,6 @@ from llamabot.components.docstore import (
 )
 from hypothesis import HealthCheck, given, settings, strategies as st
 import tempfile
-from unittest.mock import patch
 
 
 def lancedb():
@@ -116,17 +115,16 @@ def test_chromadb_append_with_embedding():
     )
     store.reset()
 
-    # Test document and mock embedding
+    # Test document and embedding
     document = "This is a test document with pre-computed embedding"
-    mock_embedding = [0.1, 0.2, 0.3, 0.4, 0.5]
+    embedding = [0.1, 0.2, 0.3, 0.4, 0.5]
 
-    # Mock the embedding function to verify our embedding is used
-    with patch.object(store.collection, "add") as mock_add:
-        store.append(document, embedding=mock_embedding)
-        # Verify the pre-computed embedding was passed to the add method
-        _, kwargs = mock_add.call_args
-        assert "embeddings" in kwargs
-        assert kwargs["embeddings"] == mock_embedding
+    # Add document with pre-computed embedding
+    store.append(document, embedding=embedding)
+
+    # Retrieve document to verify it was stored
+    retrieved_docs = store.retrieve("test document", n_results=1)
+    assert retrieved_docs == [document]
 
     # Clean up
     store.reset()
@@ -149,18 +147,27 @@ def test_chromadb_extend_with_metadata_and_embeddings():
     ]
     embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]]
 
-    # Test with mocking to verify parameters
-    with patch.object(store.collection, "add") as mock_add:
-        store.extend(documents, metadatas=metadatas, embeddings=embeddings)
+    # Add documents with metadata and embeddings
+    store.extend(documents, metadatas=metadatas, embeddings=embeddings)
 
-        # Verify the documents, metadatas and embeddings were passed correctly
-        _, kwargs = mock_add.call_args
-        assert "documents" in kwargs
-        assert kwargs["documents"] == documents
-        assert "metadatas" in kwargs
-        assert kwargs["metadatas"] == metadatas
-        assert "embeddings" in kwargs
-        assert kwargs["embeddings"] == embeddings
+    # Get all documents to check they were added correctly
+    all_results = store.collection.get()
+
+    # Verify documents were stored
+    assert len(all_results["documents"]) == 3
+    assert set(all_results["documents"]) == set(documents)
+
+    # Verify metadata was stored correctly
+    assert all_results["metadatas"] is not None
+
+    # Each document should have its corresponding metadata
+    for i, doc in enumerate(all_results["documents"]):
+        doc_index = documents.index(doc)
+        metadata = all_results["metadatas"][i]
+        expected_metadata = metadatas[doc_index]
+
+        assert metadata["source"] == expected_metadata["source"]
+        assert metadata["priority"] == expected_metadata["priority"]
 
     # Clean up
     store.reset()
