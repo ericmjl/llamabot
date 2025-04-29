@@ -117,7 +117,7 @@ class ChromaDBDocStore(AbstractDocumentStore):
     def append(
         self,
         document: str,
-        metadata: dict = {},
+        metadata: Optional[dict] = None,
         embedding: Optional[list[float]] = None,
     ):
         """Append a document to the store.
