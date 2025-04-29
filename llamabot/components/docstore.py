@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from tqdm.auto import tqdm
-from pydantic import validate_call
 
 from llamabot.doc_processor import magic_load_doc, split_document
 
@@ -115,7 +114,6 @@ class ChromaDBDocStore(AbstractDocumentStore):
         """Execute code after adding documents to the store."""
         pass
 
-    @validate_call
     def append(
         self,
         document: str,
@@ -143,7 +141,6 @@ class ChromaDBDocStore(AbstractDocumentStore):
             embeddings=embedding,
         )
 
-    @validate_call
     def extend(
         self,
         documents: list[str],
