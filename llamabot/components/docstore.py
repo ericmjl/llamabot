@@ -199,10 +199,6 @@ class ChromaDBDocStore(AbstractDocumentStore):
         vectordb_documents: list[str] = results["documents"][0]
         return vectordb_documents
 
-        # Return the union of the retrieved documents
-        # union = set(vectordb_documents).union(bm25_documents)
-        # return list(union)
-
     def reset(self):
         """Reset the document store."""
         self.client.delete_collection(self.collection_name)
@@ -230,14 +226,18 @@ class LanceDBDocStore(AbstractDocumentStore):
                 "Please `pip install llamabot[rag]` to use the LanceDB document store."
             )
 
-        registry: EmbeddingFunctionRegistry = get_registry()
-        func: Callable = registry.get(name="sentence-transformers").create()
+        self.registry: EmbeddingFunctionRegistry = get_registry()
+        self.embedding_func: Callable = self.registry.get(
+            name="sentence-transformers"
+        ).create()
 
         class DocstoreEntry(LanceModel):
             """LanceDB DocumentStore Entry."""
 
-            document: str = func.SourceField()
-            vector: Vector(func.ndims()) = func.VectorField()
+            document: str = self.embedding_func.SourceField()
+            vector: Vector(self.embedding_func.ndims()) = (
+                self.embedding_func.VectorField()
+            )
 
         table_name = slugify.slugify(table_name, separator="-")
 
@@ -272,24 +272,65 @@ class LanceDBDocStore(AbstractDocumentStore):
         texts = set([item.document for item in all_items])
         return other in texts
 
-    def append(self, document: str):
+    def append(
+        self,
+        document: str,
+        metadata: Optional[dict] = None,
+        embedding: Optional[list[float]] = None,
+    ):
         """Append a document to the store.
 
         :param document: The document to append.
         """
         # Avoid duplication of documents in LanceDB.
+
+        # Create document entry, only include document and vector fields
+        # Completely ignore metadata
+        document_to_add = {"document": document}
+
+        # Only add vector if embedding is provided
+        if embedding is not None:
+            document_to_add["vector"] = embedding
+
         if document not in self.existing_records:
-            self.table.add([{"document": document}])
+            self.table.add([document_to_add])
             self.existing_records.append(document)
 
-    def extend(self, documents: list[str]):
+        # Ensure FTS index exists
+        self.table.create_fts_index(field_names=["document"], replace=True)
+
+    def extend(
+        self,
+        documents: list[str],
+        metadata: Optional[list[dict]] = None,
+        embeddings: Optional[list[list[float]]] = None,
+    ):
         """Extend a list of documents to the store.
 
         :param documents: The documents to append.
         """
-        # self.table.add(documents)
-        for doc in tqdm(documents):
-            self.append(doc)
+        # Completely ignore metadata parameter
+
+        stuff_to_add = []
+        for i, doc in enumerate(documents):
+            # Create document entry with document text only
+            entry = {"document": doc}
+
+            # Only add vector if embeddings are provided and valid for this document
+            if (
+                embeddings is not None
+                and i < len(embeddings)
+                and embeddings[i] is not None
+            ):
+                entry["vector"] = embeddings[i]
+
+            stuff_to_add.append(entry)
+
+        self.table.add(stuff_to_add)
+        self.existing_records.extend(documents)
+
+        # Ensure FTS index exists
+        self.table.create_fts_index(field_names=["document"], replace=True)
 
     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
         """Retrieve a list of documents from the store.
