@@ -101,16 +101,19 @@ llamabot = "llamabot.cli:app"
 notebooks = [
   "ics",
   "tzlocal",
-  "chonkie[all]>=0.2.2,<0.3"
+  "chonkie[all]>=0.2.2,<0.3",
+  "modal"
 ]
 ui = [
     "panel",
+    "bokeh-fastapi",
     "jupyter_bokeh",
-    "bokeh"
+    "bokeh",
+    "fastapi[standard]",
 ]
 rag = [
     "lancedb",
-    "chromadb",
+    "chromadb>=1.0.7",
     "tantivy",
     "rank-bm25",
     "pylance",
