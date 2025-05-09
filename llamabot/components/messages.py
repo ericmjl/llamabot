@@ -15,6 +15,7 @@ class BaseMessage(BaseModel):
     role: str
     content: str
     prompt_hash: str | None = Field(default=None)
+    tool_calls: list = Field(default=list())
 
     # Implement slicing for message contents so that I can get content[:-i].
     def __getitem__(self, index):
@@ -169,7 +170,7 @@ def retrieve_messages_up_to_budget(
     return retrieved_messages
 
 
-def process_messages(
+def to_basemessage(
     messages: tuple[Union[str, BaseMessage, list[Union[str, BaseMessage]]], ...],
 ) -> list[BaseMessage]:
     """Process a tuple of messages into a list of BaseMessage objects.

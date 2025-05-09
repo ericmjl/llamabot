@@ -5,7 +5,7 @@ from llamabot.components.messages import (
     HumanMessage,
     AIMessage,
     ToolMessage,
-    process_messages,
+    to_basemessage,
     dev,
     DeveloperMessage,
 )
@@ -62,7 +62,7 @@ def test_process_messages_with_nested_types():
         ["nested message 1", "nested message 2"],
     )
 
-    result = process_messages(messages)
+    result = to_basemessage(messages)
 
     assert len(result) == 4
     assert isinstance(result[0], HumanMessage)

@@ -17,7 +17,7 @@ from llamabot.components.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
-    process_messages,
+    to_basemessage,
 )
 from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
@@ -108,7 +108,7 @@ class StructuredBot(SimpleBot):
         # Compose the full message list
         full_messages = [
             self.system_prompt,
-            *process_messages(messages),
+            *to_basemessage(messages),
         ]
 
         last_response = None
