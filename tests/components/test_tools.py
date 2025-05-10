@@ -123,6 +123,7 @@ def test_write_and_execute_script_schema():
     assert params["timeout"]["default"] == 30
 
 
+@pytest.mark.xfail(reason="Sometimes the Docker engine may not be running.")
 def test_write_and_execute_script_basic():
     """Test basic functionality of write_and_execute_script tool."""
     code = """
