@@ -90,6 +90,7 @@ class SimpleBot:
         """
         processed_messages = to_basemessage(human_messages)
 
+        memory_messages = []
         if self.chat_memory:
             memory_messages = self.chat_memory.retrieve(
                 query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
