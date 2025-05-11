@@ -8,6 +8,7 @@ Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 import json
 from typing import Union
 
+from llamabot.recorder import sqlite_log
 from loguru import logger
 from pydantic import BaseModel, ValidationError
 from litellm import supports_response_schema, get_supported_openai_params
@@ -137,6 +138,8 @@ class StructuredBot(SimpleBot):
 
                 # parse the response, and validate it against the pydantic model
                 last_response = AIMessage(content=content)
+                sqlite_log(self, messages, last_response)
+
                 last_codeblock = json.loads(last_response.content)
                 obj = self.pydantic_model.model_validate(last_codeblock)
                 return obj
