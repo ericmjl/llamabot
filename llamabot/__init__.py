@@ -30,7 +30,7 @@ from .prompt_manager import prompt
 from .recorder import PromptRecorder
 from .components.messages import user, system, dev
 from .components.tools import tool
-from .components.docstore import BM25DocStore, LanceDBDocStore, ChromaDBDocStore
+from .components.docstore import BM25DocStore, LanceDBDocStore
 
 
 # Configure logger
@@ -49,7 +49,6 @@ logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNI
 
 __all__ = [
     "AgentBot",
-    "ChatBot",
     "ImageBot",
     "SimpleBot",
     "QueryBot",
@@ -64,7 +63,6 @@ __all__ = [
     "dev",
     "BM25DocStore",
     "LanceDBDocStore",
-    "ChromaDBDocStore",
 ]
 
 # Ensure ~/.llamabot directory exists
