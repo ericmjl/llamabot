@@ -103,7 +103,6 @@ llamabot = "llamabot.cli:app"
 notebooks = [
   "ics",
   "tzlocal",
-  "chonkie[all]>=0.2.2,<0.3",
   "modal"
 ]
 ui = [
@@ -120,6 +119,7 @@ rag = [
     "pylance",
     "sentence-transformers",
     "llamabot[ui]",
+    "chonkie[all]>=0.2.2,<0.3",
 ]
 agent = [
     "docker",
