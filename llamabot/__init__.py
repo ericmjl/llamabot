@@ -27,7 +27,6 @@ from .bot.simplebot import SimpleBot
 from .bot.structuredbot import StructuredBot
 from .experiments import Experiment, metric
 from .prompt_manager import prompt
-from .recorder import PromptRecorder
 from .components.messages import user, system, dev
 from .components.tools import tool
 from .components.docstore import BM25DocStore, LanceDBDocStore
@@ -52,7 +51,6 @@ __all__ = [
     "ImageBot",
     "SimpleBot",
     "QueryBot",
-    "PromptRecorder",
     "StructuredBot",
     "prompt",
     "Experiment",

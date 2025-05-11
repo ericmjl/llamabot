@@ -19,3 +19,9 @@ Stack:
 - In this repo, we use Typer to build command line apps.
 - pytest is used for testing.
 - Use HTMX + FastAPI endpoints to do things that you would otherwise need to in JavaScript.
+
+Editing:
+
+- As much as possible, only edit the file that I ask you to edit.
+- Don't worry about linting errors. I have automatic linting tools.
+- If I ask you to diagnose a problem, do not jump into editing. Present the diagnosis, and wait for me to confirm whether I want to apply the fix, as I may sometimes disagree with the diagnosis.
