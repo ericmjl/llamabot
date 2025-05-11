@@ -77,7 +77,7 @@ dependencies = [
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "jinja2",
-    "fastapi>=0.104.0",  # This version requires Python >=3.8
+    "fastapi",  # This version requires Python >=3.8
     "uvicorn",
     "tenacity",
     "python-multipart",
@@ -113,7 +113,6 @@ ui = [
 ]
 rag = [
     "lancedb>=0.22",
-    "chromadb>=1.0.7",
     "tantivy",
     "rank-bm25",
     "pylance",
@@ -184,6 +183,7 @@ hvplot = ">=0.11.1,<0.12"
 pip = ">=24.3.1,<25"
 selenium = ">=4.11.2,<5"
 python-chromedriver-binary = ">=133.0.6882.0.0,<134"
+marimo = "*"
 
 [tool.pixi.feature.notebooks.pypi-dependencies]
 pdf2image = "*"
@@ -194,6 +194,7 @@ llamabot-cli = "llamabot --help"
 
 [tool.pixi.feature.notebooks.tasks]
 jlab = "jupyter lab"
+
 
 [tool.pixi.feature.tests.tasks]
 test = "pytest"
