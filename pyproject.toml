@@ -77,7 +77,8 @@ dependencies = [
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "jinja2",
-    "fastapi",  # This version requires Python >=3.8
+    "fastapi>=0.115.12",  # This version requires Python >=3.8
+    "starlette", # Needed for FastAPI
     "uvicorn",
     "tenacity",
     "python-multipart",
