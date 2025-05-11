@@ -424,7 +424,9 @@ def test_stream_chunks_with_model_response():
 
 
 @patch("builtins.print")
-def test_stream_chunks_stdout(mock_print):
+# Patch stream_chunk_builder to prevent sorting errors with mock objects
+@patch("llamabot.bot.simplebot.stream_chunk_builder")
+def test_stream_chunks_stdout(mock_stream_chunk_builder, mock_print):
     """Test the stream_chunks function with stdout target."""
     # Create mock generator
     mock_chunk1 = MagicMock()
