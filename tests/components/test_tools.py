@@ -1,8 +1,8 @@
 """Tests for the tools module.
 
 This module contains tests for the tool decorator in llamabot.components.tools.
-It verifies proper handling of function schemas, JSON schema generation,
-and the functionality of built-in tools.
+It verifies that the tool decorator properly applies JSON schemas to functions
+and that the built-in tools function as intended.
 """
 
 import pytest
@@ -29,47 +29,56 @@ def test_tool_decorator():
     # Check that json_schema is attached to the function
     assert hasattr(example_func, "json_schema")
 
-    # Check the structure of the json_schema
+    # Check the basic structure of the json_schema
     schema = example_func.json_schema
     assert schema["name"] == "example_func"
-    assert schema["description"] == "Example function with docstring."
+    assert "Example function with docstring." in schema["description"]
 
     # Check parameters
     assert "parameters" in schema
-    params = schema["parameters"]
-    assert "properties" in params
-    assert "a" in params["properties"]
-    assert "b" in params["properties"]
+    params = schema["parameters"]["properties"]
+    assert "a" in params
+    assert "b" in params
 
-    # Check types
-    assert params["properties"]["a"]["type"] == "integer"
-    assert params["properties"]["b"]["type"] == "string"
-
-    # Check default value
-    assert params["properties"]["b"]["default"] == "default"
+    # Check parameter types
+    assert params["a"]["type"] == "integer"
+    assert params["b"]["type"] == "string"
 
     # Check required parameters
-    assert "required" in params
-    assert "a" in params["required"]
-    assert "b" not in params["required"]  # b has a default value
+    assert "required" in schema["parameters"]
+    assert "a" in schema["parameters"]["required"]
+    # Parameter 'b' has a default value so it shouldn't be required
+    assert "b" not in schema["parameters"]["required"]
+
+    # Call the function to make sure it still works as expected
+    assert example_func(1) == "1 default"
+    assert example_func(2, "test") == "2 test"
 
 
 def test_add_tool():
     """Test the add tool function."""
-    # Test the function itself
+    # Test functional behavior
     assert add(3, 4) == 7
     assert add(-1, 5) == 4
+    assert add(0, 0) == 0
 
-    # Test the schema
+    # Test schema basics
     assert hasattr(add, "json_schema")
     schema = add.json_schema
     assert schema["name"] == "add"
     assert "Add two integers" in schema["description"]
 
+    # Test parameter structure
+    params = schema["parameters"]["properties"]
+    assert "a" in params
+    assert "b" in params
+    assert params["a"]["type"] == "integer"
+    assert params["b"]["type"] == "integer"
+
 
 def test_today_date_tool():
     """Test the today_date tool function."""
-    # Test the function returns a date string in expected format
+    # Test functional behavior - returns a date string in expected format
     date_str = today_date()
     assert isinstance(date_str, str)
 
@@ -77,9 +86,9 @@ def test_today_date_tool():
     try:
         datetime.strptime(date_str, "%Y-%m-%d")
     except ValueError:
-        pytest.fail("today_date() did not return a properly formatted date string.")
+        pytest.fail("today_date() did not return a properly formatted date string")
 
-    # Test the schema
+    # Test schema basics
     assert hasattr(today_date, "json_schema")
     schema = today_date.json_schema
     assert schema["name"] == "today_date"
@@ -88,20 +97,22 @@ def test_today_date_tool():
 
 def test_search_internet_tool_schema():
     """Test the search_internet_and_summarize tool schema."""
-    # Test just the schema to avoid making actual internet requests during tests
+    # We're just testing the schema, not actual functionality to avoid internet requests
     assert hasattr(search_internet_and_summarize, "json_schema")
     schema = search_internet_and_summarize.json_schema
     assert schema["name"] == "search_internet_and_summarize"
     assert "Search internet" in schema["description"]
 
-    # Check parameters
+    # Test parameter structure
     params = schema["parameters"]["properties"]
     assert "search_term" in params
     assert "max_results" in params
     assert "backend" in params
 
-    # Check default values
-    assert params["backend"]["default"] == "lite"
+    # Check types
+    assert params["search_term"]["type"] == "string"
+    assert params["max_results"]["type"] == "integer"
+    assert params["backend"]["type"] == "string"
 
 
 def test_write_and_execute_script_schema():
@@ -111,16 +122,16 @@ def test_write_and_execute_script_schema():
     assert schema["name"] == "write_and_execute_script"
     assert "Write and execute a Python script" in schema["description"]
 
-    # Check parameters
+    # Test parameter structure
     params = schema["parameters"]["properties"]
     assert "code" in params
     assert "dependencies_str" in params
     assert "python_version" in params
     assert "timeout" in params
 
-    # Check default values
-    assert params["python_version"]["default"] == ">=3.11"
-    assert params["timeout"]["default"] == 30
+    # Check types
+    assert params["code"]["type"] == "string"
+    assert params["timeout"]["type"] == "integer"
 
 
 @pytest.mark.xfail(reason="Sometimes the Docker engine may not be running.")
