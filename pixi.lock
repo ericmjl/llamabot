@@ -8852,7 +8852,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.11.9
-  sha256: e9edd98abd477189384ce9bd68590cc277c52a16631b52b901383da84f23fadb
+  sha256: 7c495bc9c8ccb5d62314e6fe0df12c6cc63a75b50159bb7e8d3e4e1bc476eae0
   requires_dist:
   - openai
   - loguru
@@ -8877,7 +8877,6 @@ packages:
   - numpydoc
   - ics ; extra == 'notebooks'
   - tzlocal ; extra == 'notebooks'
-  - chonkie[all]>=0.2.2,<0.3 ; extra == 'notebooks'
   - modal ; extra == 'notebooks'
   - panel ; extra == 'ui'
   - bokeh-fastapi ; extra == 'ui'
@@ -8890,6 +8889,7 @@ packages:
   - pylance ; extra == 'rag'
   - sentence-transformers ; extra == 'rag'
   - llamabot[ui] ; extra == 'rag'
+  - chonkie[all]>=0.2.2,<0.3 ; extra == 'rag'
   - docker ; extra == 'agent'
   - duckduckgo-search ; extra == 'agent'
   - markdownify ; extra == 'agent'
