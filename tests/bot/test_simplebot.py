@@ -276,7 +276,7 @@ def test_simple_bot_call_with_chat_memory(
 
 
 # Tests for make_response function
-@patch("llamabot.bot.simplebot.completion")
+@patch("litellm.completion")
 def test_make_response_basic(mock_completion):
     """Test the make_response function with basic parameters."""
     # Set up mock
@@ -304,7 +304,7 @@ def test_make_response_basic(mock_completion):
     assert len(kwargs["messages"]) == 2
 
 
-@patch("llamabot.bot.simplebot.completion")
+@patch("litellm.completion")
 def test_make_response_with_mock_response(mock_completion):
     """Test the make_response function with a mock response."""
     # Set up mock
@@ -325,7 +325,7 @@ def test_make_response_with_mock_response(mock_completion):
     assert kwargs["mock_response"] == "Test mock response"
 
 
-@patch("llamabot.bot.simplebot.completion")
+@patch("litellm.completion")
 def test_make_response_with_json_mode(mock_completion):
     """Test the make_response function with JSON mode enabled."""
     # Set up mock
@@ -354,7 +354,7 @@ def test_make_response_with_json_mode(mock_completion):
     assert kwargs["response_format"] == TestModel
 
 
-@patch("llamabot.bot.simplebot.completion")
+@patch("litellm.completion")
 def test_make_response_json_mode_without_pydantic_model(mock_completion):
     """Test that make_response raises ValueError when json_mode is True but no pydantic_model is set."""
     # Create test data
@@ -369,7 +369,7 @@ def test_make_response_json_mode_without_pydantic_model(mock_completion):
         make_response(bot, messages)
 
 
-@patch("llamabot.bot.simplebot.completion")
+@patch("litellm.completion")
 def test_make_response_json_mode_with_invalid_pydantic_model(mock_completion):
     """Test that make_response raises ValueError when json_mode is True but pydantic_model is invalid."""
     # Create test data
@@ -387,7 +387,7 @@ def test_make_response_json_mode_with_invalid_pydantic_model(mock_completion):
         make_response(bot, messages)
 
 
-@patch("llamabot.bot.simplebot.completion")
+@patch("litellm.completion")
 def test_make_response_with_tools(mock_completion):
     """Test the make_response function with tools."""
     # Set up mock
