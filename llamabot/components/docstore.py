@@ -6,11 +6,10 @@ The interface that we need is implemented here:
 - extend,
 - retrieve
 
-ChromaDB is a great default choice because of its simplicity and FOSS nature.
+LanceDB is a great default choice because of its simplicity and FOSS nature.
 Hence we use it by default.
 """
 
-from hashlib import sha256
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -80,125 +79,129 @@ class AbstractDocumentStore:
         raise NotImplementedError()
 
 
-class ChromaDBDocStore(AbstractDocumentStore):
-    """A document store for LlamaBot that wraps around ChromaDB."""
+# NOTE: 11 May 2025 -- ChromaDB's dependency chain
+# is introducing difficulties for me here.
+# I have opted to remove support for it temporarily until later notice.
+#
+# class ChromaDBDocStore(AbstractDocumentStore):
+#     """A document store for LlamaBot that wraps around ChromaDB."""
 
-    def __init__(
-        self,
-        collection_name: str,
-        storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
-    ):
-        try:
-            import chromadb
-        except ImportError:
-            raise ImportError(
-                "ChromaDB is required for ChromaDBDocStore. "
-                "Please `pip install llamabot[rag]` to use the ChromaDB document store."
-            )
+#     def __init__(
+#         self,
+#         collection_name: str,
+#         storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
+#     ):
+#         try:
+#             import chromadb
+#         except ImportError:
+#             raise ImportError(
+#                 "ChromaDB is required for ChromaDBDocStore. "
+#                 "Please `pip install llamabot[rag]` to use the ChromaDB document store."
+#             )
 
-        collection_name = slugify.slugify(collection_name, separator="-")
+#         collection_name = slugify.slugify(collection_name, separator="-")
 
-        client = chromadb.PersistentClient(path=str(storage_path))
-        collection = client.create_collection(collection_name, get_or_create=True)
+#         client = chromadb.PersistentClient(path=str(storage_path))
+#         collection = client.create_collection(collection_name, get_or_create=True)
 
-        self.storage_path = storage_path
-        self.client = client
-        self.collection = collection
-        self.collection_name = collection_name
-        self.existing_records = collection.get()
+#         self.storage_path = storage_path
+#         self.client = client
+#         self.collection = collection
+#         self.collection_name = collection_name
+#         self.existing_records = collection.get()
 
-    def __post_add_documents__(self):
-        """Execute code after adding documents to the store."""
-        pass
+#     def __post_add_documents__(self):
+#         """Execute code after adding documents to the store."""
+#         pass
 
-    def append(
-        self,
-        document: str,
-        metadata: Optional[dict] = None,
-        embedding: Optional[list[float]] = None,
-    ):
-        """Append a document to the store.
+#     def append(
+#         self,
+#         document: str,
+#         metadata: Optional[dict] = None,
+#         embedding: Optional[list[float]] = None,
+#     ):
+#         """Append a document to the store.
 
-        By default, the documents will be automatically embedded
-        using the default embedder that is set in the ChromaDB client.
-        However, there may be cases where we want to pre-compute the embeddings
-        and pass them into the store, e.g. when adding documents in parallel.
-        In this case, we can pass the pre-computed embeddings into the store.
-        Use `append` to do single adds, and `extend` to do bulk adds.
+#         By default, the documents will be automatically embedded
+#         using the default embedder that is set in the ChromaDB client.
+#         However, there may be cases where we want to pre-compute the embeddings
+#         and pass them into the store, e.g. when adding documents in parallel.
+#         In this case, we can pass the pre-computed embeddings into the store.
+#         Use `append` to do single adds, and `extend` to do bulk adds.
 
-        :param document: The document to append.
-        :param metadata: The metadata to append.
-        :param embedding: The embedding to append, optional
-        """
-        doc_id = sha256(document.encode()).hexdigest()
-        self.collection.add(
-            documents=document,
-            ids=doc_id,
-            metadatas=metadata,
-            embeddings=embedding,
-        )
+#         :param document: The document to append.
+#         :param metadata: The metadata to append.
+#         :param embedding: The embedding to append, optional
+#         """
+#         doc_id = sha256(document.encode()).hexdigest()
+#         self.collection.add(
+#             documents=document,
+#             ids=doc_id,
+#             metadatas=metadata,
+#             embeddings=embedding,
+#         )
 
-    def extend(
-        self,
-        documents: list[str],
-        metadatas: Optional[list[dict]] = None,
-        embeddings: Optional[list[list[float]]] = None,
-    ):
-        """Extend the document store.
+#     def extend(
+#         self,
+#         documents: list[str],
+#         metadatas: Optional[list[dict]] = None,
+#         embeddings: Optional[list[list[float]]] = None,
+#     ):
+#         """Extend the document store.
 
-        This is effectively a bulk add of documents.
-        See the docstring for `append` for more details.
+#         This is effectively a bulk add of documents.
+#         See the docstring for `append` for more details.
 
-        :param documents: Iterable of documents.
-        :param metadatas: Iterable of metadatas.
-        :param embeddings: Iterable of pre-computed embeddings.
-        """
-        # Compute doc_id
-        ids = [sha256(doc.encode()).hexdigest() for doc in documents]
+#         :param documents: Iterable of documents.
+#         :param metadatas: Iterable of metadatas.
+#         :param embeddings: Iterable of pre-computed embeddings.
+#         """
+#         # Compute doc_id
+#         ids = [sha256(doc.encode()).hexdigest() for doc in documents]
 
-        # Check that the lengths of the lists are the same
-        if metadatas is not None and len(documents) != len(metadatas):
-            raise ValueError(
-                "The lengths of the documents and metadatas must be the same."
-            )
-        if embeddings is not None and len(documents) != len(embeddings):
-            raise ValueError(
-                "The lengths of the documents and embeddings must be the same."
-            )
+#         # Check that the lengths of the lists are the same
+#         if metadatas is not None and len(documents) != len(metadatas):
+#             raise ValueError(
+#                 "The lengths of the documents and metadatas must be the same."
+#             )
+#         if embeddings is not None and len(documents) != len(embeddings):
+#             raise ValueError(
+#                 "The lengths of the documents and embeddings must be the same."
+#             )
 
-        self.collection.add(
-            ids=ids,
-            documents=documents,
-            metadatas=metadatas,
-            embeddings=embeddings,
-        )
+#         self.collection.add(
+#             ids=ids,
+#             documents=documents,
+#             metadatas=metadatas,
+#             embeddings=embeddings,
+#         )
 
-    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
-        """Retrieve documents from the store.
+#     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+#         """Retrieve documents from the store.
 
-        :param query: The query to use to retrieve documents.
-        """
-        try:
-            import chromadb
-        except ImportError:
-            raise ImportError(
-                "ChromaDB is required for ChromaDBDocStore. "
-                "Please `pip install llamabot[rag]` to use the ChromaDB document store."
-            )
+#         :param query: The query to use to retrieve documents.
+#         """
+#         try:
+#             import chromadb
+#         except ImportError:
+#             raise ImportError(
+#                 "ChromaDB is required for ChromaDBDocStore. "
+#                 "Please `pip install llamabot[rag]` to use the ChromaDB document store."
+#             )
 
-        # Use Vectordb to get documents.
-        results: chromadb.QueryResult = self.collection.query(
-            query_texts=query, n_results=n_results
-        )
-        vectordb_documents: list[str] = results["documents"][0]
-        return vectordb_documents
+#         # Use Vectordb to get documents.
+#         results: chromadb.QueryResult = self.collection.query(
+#             query_texts=query, n_results=n_results
+#         )
+#         vectordb_documents: list[str] = results["documents"][0]
+#         return vectordb_documents
 
-    def reset(self):
-        """Reset the document store."""
-        self.client.delete_collection(self.collection_name)
-        self.collection = self.client.create_collection(
-            self.collection_name, get_or_create=True
-        )
+#     def reset(self):
+#         """Reset the document store."""
+#         self.client.delete_collection(self.collection_name)
+#         self.collection = self.client.create_collection(
+#             self.collection_name, get_or_create=True
+#         )
 
 
 class LanceDBDocStore(AbstractDocumentStore):
