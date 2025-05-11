@@ -21,7 +21,6 @@ from pathlib import Path
 from loguru import logger
 
 from .bot.agentbot import AgentBot
-from .bot.chatbot import ChatBot
 from .bot.imagebot import ImageBot
 from .bot.querybot import QueryBot
 from .bot.simplebot import SimpleBot

@@ -3,7 +3,7 @@
 import base64
 import mimetypes
 from pathlib import Path
-from typing import Union
+from typing import Iterable, Union
 
 import httpx
 from pydantic import BaseModel, Field
@@ -171,7 +171,7 @@ def retrieve_messages_up_to_budget(
 
 
 def to_basemessage(
-    messages: tuple[Union[str, BaseMessage, list[Union[str, BaseMessage]]], ...],
+    messages: Iterable[Union[str, BaseMessage, list[Union[str, BaseMessage]]]],
 ) -> list[BaseMessage]:
     """Process a tuple of messages into a list of BaseMessage objects.
 

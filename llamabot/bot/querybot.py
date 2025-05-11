@@ -2,15 +2,25 @@
 
 import contextvars
 from pathlib import Path
-from typing import Optional, Union
+from typing import List, Optional, Union
 from dotenv import load_dotenv
 
 from llamabot.config import default_language_model
 
-from llamabot.bot.simplebot import SimpleBot
-from llamabot.components.messages import AIMessage, BaseMessage, HumanMessage
-from llamabot.components.docstore import LanceDBDocStore, ChromaDBDocStore
-from llamabot.components.chatui import ChatUIMixin
+from llamabot.bot.simplebot import (
+    SimpleBot,
+    extract_content,
+    extract_tool_calls,
+    make_response,
+    stream_chunks,
+)
+from llamabot.components.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    to_basemessage,
+)
+from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.messages import (
     RetrievedMessage,
 )
@@ -22,7 +32,7 @@ CACHE_DIR = Path.home() / ".llamabot" / "cache"
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
 
-class QueryBot(SimpleBot, ChatUIMixin):
+class QueryBot(SimpleBot):
     """Initialize QueryBot.
 
     QueryBot is a bot that can answer questions based on a set of documents.
@@ -57,12 +67,8 @@ class QueryBot(SimpleBot, ChatUIMixin):
     def __init__(
         self,
         system_prompt: str,
-        collection_name: str,
-        initial_message: Optional[str] = None,
-        document_paths: Optional[Path | list[Path]] = None,
-        docstore_type: str = "lancedb",
-        docstore_path: Optional[Path] = None,
-        docstore_kwargs: dict = {},
+        docstore: AbstractDocumentStore,
+        memory: Optional[AbstractDocumentStore] = None,
         mock_response: str | None = None,
         temperature: float = 0.0,
         model_name: str = default_language_model(),
@@ -79,30 +85,8 @@ class QueryBot(SimpleBot, ChatUIMixin):
             **kwargs,
         )
 
-        if docstore_path:
-            docstore_kwargs["storage_path"] = docstore_path
-
-        # Initialize the appropriate document store
-        if docstore_type == "lancedb":
-            self.docstore = LanceDBDocStore(
-                table_name=collection_name,
-                **docstore_kwargs,
-            )
-        elif docstore_type == "chromadb":
-            self.docstore = ChromaDBDocStore(
-                collection_name=collection_name,
-                **docstore_kwargs,
-            )
-        else:
-            raise ValueError(f"Unknown docstore type: {docstore_type}")
-
-        # Add documents to the store
-        if document_paths:
-            self.docstore.add_documents(document_paths=document_paths)
-
-        self.response_budget = 2_000
-
-        ChatUIMixin.__init__(self, initial_message)
+        self.docstore = docstore
+        self.memory = memory
 
     def __call__(
         self, query: Union[str, HumanMessage, BaseMessage], n_results: int = 20
@@ -117,17 +101,30 @@ class QueryBot(SimpleBot, ChatUIMixin):
 
         retreived_messages = set()
 
-        q = query
         if isinstance(query, (BaseMessage, HumanMessage)):
-            q = query.content
+            query = query.content
         retrieved_messages = retreived_messages.union(
-            self.docstore.retrieve(q, n_results)
+            self.docstore.retrieve(query, n_results)
         )
-        retrieved = [RetrievedMessage(content=chunk) for chunk in retrieved_messages]
+        retrieved: List = [
+            RetrievedMessage(content=chunk) for chunk in retrieved_messages
+        ]
         messages.extend(retrieved)
-        messages.append(HumanMessage(content=q))
-        if self.stream_target == "stdout":
-            response: AIMessage = self.stream_stdout(messages)
-            return response
-        elif self.stream_target == "panel":
-            return self.stream_panel(messages)
+        if self.memory:
+            memory_messages = self.memory.retrieve(query, n_results)
+            memories: List = [
+                RetrievedMessage(content=chunk) for chunk in memory_messages
+            ]
+            messages.extend(memories)
+        messages.append(HumanMessage(content=query))
+
+        processed_messages = to_basemessage(messages)
+        response = make_response(self, processed_messages, self.stream_target != "none")
+        response = stream_chunks(response, target=self.stream_target)
+        tool_calls = extract_tool_calls(response)
+        content = extract_content(response)
+        message = AIMessage(content=content, tool_calls=tool_calls)
+
+        if self.memory:
+            self.memory.append(message.content)
+        return message
