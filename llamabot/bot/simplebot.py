@@ -18,7 +18,12 @@ from llamabot.components.messages import (
 )
 from llamabot.config import default_language_model
 from pydantic import BaseModel
-from litellm import ChatCompletionMessageToolCall, ModelResponse, stream_chunk_builder
+from litellm import (
+    ChatCompletionMessageToolCall,
+    CustomStreamWrapper,
+    ModelResponse,
+    stream_chunk_builder,
+)
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -112,7 +117,9 @@ class SimpleBot:
         return response_message
 
 
-def make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = True):
+def make_response(
+    bot: SimpleBot, messages: list[BaseMessage], stream: bool = True
+) -> ModelResponse | CustomStreamWrapper:
     """Make a response from the given messages.
 
     :param bot: A SimpleBot
@@ -154,7 +161,9 @@ def make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = Tr
     return completion(**completion_kwargs)
 
 
-def stream_chunks(response, target="stdout") -> ModelResponse:
+def stream_chunks(
+    response: ModelResponse | CustomStreamWrapper, target="stdout"
+) -> ModelResponse | Generator:
     """Stream the response from a `completion` call.
 
     This will work whether or not the response is actually streamed or not.
