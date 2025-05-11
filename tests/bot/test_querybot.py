@@ -1,232 +1,103 @@
-"""Tests for QueryBot."""
+"""Fast unit tests for QueryBot."""
+
+from unittest.mock import MagicMock
 
 from llamabot.bot.querybot import QueryBot
-from llamabot.components.messages import HumanMessage
-import tempfile
-from pathlib import Path
+from llamabot.components.messages import AIMessage, HumanMessage
+from llamabot.components.docstore import AbstractDocumentStore
 
 
-def test_querybot_lancedb():
-    """Test initialization of QueryBot with LanceDB."""
-    # Create a temporary directory for test files and DB storage
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a test file with predictable content
-        test_file_path = Path(temp_dir) / "test_document.txt"
-        test_content = "This is a test document for QueryBot with LanceDB. " * 20
-        test_file_path.write_text(test_content)
+def test_querybot_basic_functionality():
+    """Test basic functionality of QueryBot with mocked docstore."""
+    # Create a mock docstore
+    mock_docstore = MagicMock(spec=AbstractDocumentStore)
+    mock_docstore.retrieve.return_value = [
+        "Mocked document chunk 1",
+        "Mocked document chunk 2",
+    ]
 
-        # Create a QueryBot with LanceDB
-        bot = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name="test_lancedb_collection",
-            document_paths=test_file_path,
-            mock_response="This is a mock response from LanceDB QueryBot.",
-            stream_target="stdout",
-            docstore_type="lancedb",
-            docstore_kwargs={"storage_path": Path(temp_dir) / "lancedb"},
-        )
+    # Create QueryBot with mock docstore
+    bot = QueryBot(
+        system_prompt="You are a helpful assistant.",
+        docstore=mock_docstore,
+        mock_response="This is a mock response.",
+    )
 
-        # Test basic query
-        response = bot("How are you doing?")
-        assert response.content == "This is a mock response from LanceDB QueryBot."
+    # Test with string query
+    response = bot("How are you doing?")
+    assert isinstance(response, AIMessage)
+    assert response.content == "This is a mock response."
 
-        # Clean up
-        bot.docstore.reset()
+    # Verify docstore.retrieve was called with the query
+    mock_docstore.retrieve.assert_called_once_with("How are you doing?", 20)
 
 
-def test_querybot_chromadb():
-    """Test initialization of QueryBot with ChromaDB."""
-    # Create a temporary directory for test files and DB storage
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a test file with predictable content
-        test_file_path = Path(temp_dir) / "test_document.txt"
-        test_content = "This is a test document for QueryBot with ChromaDB. " * 20
-        test_file_path.write_text(test_content)
+def test_querybot_with_memory():
+    """Test QueryBot with memory functionality."""
+    # Create mock docstore and memory
+    mock_docstore = MagicMock(spec=AbstractDocumentStore)
+    mock_memory = MagicMock(spec=AbstractDocumentStore)
 
-        # Create a QueryBot with ChromaDB
-        bot = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name="test_chromadb_collection",
-            document_paths=test_file_path,
-            mock_response="This is a mock response from ChromaDB QueryBot.",
-            stream_target="stdout",
-            docstore_type="chromadb",
-            docstore_kwargs={"storage_path": Path(temp_dir) / "chromadb"},
-        )
+    mock_docstore.retrieve.return_value = ["Document chunk 1", "Document chunk 2"]
+    mock_memory.retrieve.return_value = ["Memory chunk 1", "Memory chunk 2"]
 
-        # Test basic query
-        response = bot("How are you doing?")
-        assert response.content == "This is a mock response from ChromaDB QueryBot."
+    # Create QueryBot with mock docstore and memory
+    bot = QueryBot(
+        system_prompt="You are a helpful assistant.",
+        docstore=mock_docstore,
+        memory=mock_memory,
+        mock_response="Response with memory.",
+    )
 
-        # Clean up
-        bot.docstore.reset()
+    # Test query
+    _ = bot("Tell me what you know")
 
+    # Verify both docstore and memory were used
+    mock_docstore.retrieve.assert_called_once()
+    mock_memory.retrieve.assert_called_once()
 
-def test_querybot_input_types():
-    """Test QueryBot supports different input types for the query parameter."""
-    # Create a temporary directory for test files and DB storage
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a test file
-        test_file = Path(temp_dir) / "test.txt"
-        test_file.write_text(
-            "This is a test document for testing different input types."
-        )
-
-        # Initialize QueryBot with mock response
-        bot = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name="test_input_types",
-            document_paths=test_file,
-            mock_response="This is a mock response.",
-            docstore_type="lancedb",
-            docstore_kwargs={"storage_path": Path(temp_dir) / "lancedb"},
-        )
-
-        # Test with string input
-        response_str = bot("How are you doing?")
-        assert response_str.content == "This is a mock response."
-
-        # Test with HumanMessage input
-        human_msg = HumanMessage(content="How are you doing?")
-        response_human = bot(human_msg)
-        assert response_human.content == "This is a mock response."
-
-        # Clean up
-        bot.docstore.reset()
+    # Verify memory.append was called with the response content
+    mock_memory.append.assert_called_once_with("Response with memory.")
 
 
-def test_collection_name_slugification():
-    """Test collection names are properly slugified in QueryBot."""
-    # Create a temporary directory for test files and DB storage
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a test file
-        test_file = Path(temp_dir) / "test.txt"
-        test_file.write_text("Test document for collection name slugification.")
+def test_querybot_with_message_input():
+    """Test QueryBot accepts HumanMessage as input."""
+    # Create mock docstore
+    mock_docstore = MagicMock(spec=AbstractDocumentStore)
+    mock_docstore.retrieve.return_value = ["Document content"]
 
-        # Test with a collection name that needs slugification
-        collection_name = "Test Collection Name With Spaces!"
+    # Create QueryBot
+    bot = QueryBot(
+        system_prompt="You are a helpful assistant.",
+        docstore=mock_docstore,
+        mock_response="Response to message input.",
+    )
 
-        # Create QueryBot with LanceDB
-        bot_lancedb = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name=collection_name,  # This will be slugified internally
-            document_paths=test_file,
-            mock_response="This is a mock response.",
-            docstore_type="lancedb",
-            docstore_kwargs={"storage_path": Path(temp_dir) / "lancedb"},
-        )
+    # Test with HumanMessage
+    human_msg = HumanMessage(content="How are you doing?")
+    response = bot(human_msg)
 
-        # Functional test that QueryBot works with slugified name
-        response = bot_lancedb("How are you doing?")
-        assert response.content == "This is a mock response."
-
-        # Clean up
-        bot_lancedb.docstore.reset()
-
-        # Create QueryBot with ChromaDB
-        bot_chromadb = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name=collection_name,  # This will be slugified internally
-            document_paths=test_file,
-            mock_response="This is a mock response.",
-            docstore_type="chromadb",
-            docstore_kwargs={"storage_path": Path(temp_dir) / "chromadb"},
-        )
-
-        # Functional test that QueryBot works with slugified name
-        response = bot_chromadb("How are you doing?")
-        assert response.content == "This is a mock response."
-
-        # Clean up
-        bot_chromadb.docstore.reset()
+    # Verify docstore.retrieve was called with the message content
+    mock_docstore.retrieve.assert_called_once_with("How are you doing?", 20)
+    assert response.content == "Response to message input."
 
 
-def test_custom_docstore_path_lancedb():
-    """Test QueryBot with custom docstore path for LanceDB."""
-    # Create a temporary directory for test files and DB storage
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a test file
-        test_file = Path(temp_dir) / "test.txt"
-        test_file.write_text(
-            "This is a test document for testing custom docstore path."
-        )
+def test_querybot_custom_n_results():
+    """Test QueryBot with custom number of results."""
+    # Create mock docstore
+    mock_docstore = MagicMock(spec=AbstractDocumentStore)
+    mock_docstore.retrieve.return_value = ["Document content"]
 
-        # Custom path for LanceDB docstore
-        lancedb_path = Path(temp_dir) / "custom_lancedb"
+    # Create QueryBot
+    bot = QueryBot(
+        system_prompt="You are a helpful assistant.",
+        docstore=mock_docstore,
+        mock_response="Custom n_results response.",
+    )
 
-        # Initialize QueryBot with custom docstore path for LanceDB
-        bot = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name="test_custom_path",
-            document_paths=test_file,
-            mock_response="This is a mock response.",
-            docstore_type="lancedb",
-            docstore_kwargs={"storage_path": lancedb_path},
-        )
+    # Test with custom n_results
+    response = bot("How are you doing?", n_results=5)
 
-        # Test query functionality
-        response = bot("How are you doing?")
-        assert response.content == "This is a mock response."
-
-        # Clean up
-        bot.docstore.reset()
-
-
-def test_custom_docstore_path_chromadb():
-    """Test QueryBot with custom docstore path for ChromaDB."""
-    # Create a temporary directory for test files and DB storage
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a test file
-        test_file = Path(temp_dir) / "test.txt"
-        test_file.write_text(
-            "This is a test document for testing custom docstore path."
-        )
-
-        # Custom path for ChromaDB docstore
-        chromadb_path = Path(temp_dir) / "custom_chromadb"
-
-        # Initialize QueryBot with custom docstore path for ChromaDB
-        bot = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name="test_custom_path_chroma",
-            document_paths=test_file,
-            mock_response="This is a mock response.",
-            docstore_type="chromadb",
-            docstore_kwargs={"storage_path": chromadb_path},
-        )
-
-        # Test query functionality
-        response = bot("How are you doing?")
-        assert response.content == "This is a mock response."
-
-        # Clean up
-        bot.docstore.reset()
-
-
-def test_docstore_kwargs():
-    """Test QueryBot with additional docstore_kwargs."""
-    # Create a temporary directory for test files and DB storage
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a test file
-        test_file = Path(temp_dir) / "test.txt"
-        test_file.write_text("This is a test document for testing docstore kwargs.")
-
-        # Initialize QueryBot with docstore_kwargs
-        bot = QueryBot(
-            system_prompt="You are a helpful assistant.",
-            collection_name="test_docstore_kwargs",
-            document_paths=test_file,
-            mock_response="This is a mock response.",
-            docstore_type="lancedb",
-            docstore_kwargs={
-                "storage_path": Path(temp_dir) / "lancedb",
-                "auto_create_fts_index": True,
-            },
-        )
-
-        # Test query functionality
-        response = bot("How are you doing?")
-        assert response.content == "This is a mock response."
-
-        # Clean up
-        bot.docstore.reset()
+    # Verify docstore.retrieve was called with the custom n_results
+    mock_docstore.retrieve.assert_called_once_with("How are you doing?", 5)
+    assert response.content == "Custom n_results response."
