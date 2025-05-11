@@ -205,7 +205,7 @@ build-docs = "mkdocs build"
 [tool.pixi.environments]
 default = ["tests", "devtools", "docs", "notebooks", "ui", "rag", "agent", "cli"]
 docs = ["docs"]
-notebooks = ["notebooks"] # for those who just want to run notebooks
+notebooks = ["notebooks", "rag", "agent"] # for those who just want to run notebooks
 bare = ["devtools"]
 
 [tool.pixi.dependencies]
