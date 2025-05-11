@@ -166,9 +166,27 @@ def add_column(connection: Connection, table_name: str, column: Column):
 def ensure_db_in_gitignore(db_path: Path) -> None:
     """Ensure the database file is listed in .gitignore.
 
+    If the database is in a .llamabot directory, this function checks if the
+    .llamabot/.gitignore file exists and is properly configured.
+    Otherwise, it attempts to add the database file to the project's .gitignore.
+
     :param db_path: Path to the database file
     """
     try:
+        # Check if the db_path is inside a .llamabot directory
+        if ".llamabot" in db_path.parts:
+            llamabot_dir = db_path.parent
+            gitignore_path = llamabot_dir / ".gitignore"
+
+            # Ensure the .llamabot/.gitignore exists with proper content
+            if not gitignore_path.exists():
+                with open(gitignore_path, "w") as f:
+                    f.write(
+                        "# Ignore all files in this directory\n*\n# Except this file\n!.gitignore\n"
+                    )
+            return
+
+        # For databases not in .llamabot directory, use the original approach
         repo_root = here()
         gitignore_path = repo_root / ".gitignore"
         db_filename = db_path.name
