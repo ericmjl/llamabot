@@ -77,8 +77,8 @@ dependencies = [
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "jinja2",
-    "fastapi>=0.115.12",  # This version requires Python >=3.8
-    "starlette", # Needed for FastAPI
+    "fastapi>=0.115.9",  # This version requires Python >=3.8
+    "starlette>=0.46.2",
     "uvicorn",
     "tenacity",
     "python-multipart",
@@ -111,10 +111,8 @@ ui = [
     "bokeh-fastapi",
     "jupyter_bokeh",
     "bokeh",
-    "fastapi[standard]",
 ]
 rag = [
-    "chromadb",
     "lancedb>=0.22",
     "tantivy",
     "rank-bm25",
