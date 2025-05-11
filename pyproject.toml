@@ -114,6 +114,7 @@ ui = [
     "fastapi[standard]",
 ]
 rag = [
+    "chromadb",
     "lancedb>=0.22",
     "tantivy",
     "rank-bm25",
