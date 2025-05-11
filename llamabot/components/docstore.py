@@ -14,9 +14,6 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import slugify
-from tqdm.auto import tqdm
-
-from llamabot.doc_processor import magic_load_doc, split_document
 
 
 class AbstractDocumentStore:
@@ -55,27 +52,6 @@ class AbstractDocumentStore:
 
         :raises NotImplementedError: If the document store is not implemented.
         """
-        raise NotImplementedError()
-
-    def add_documents(
-        self,
-        document_paths: Path | list[Path],
-    ):
-        """Add documents to the QueryBot DocumentStore.
-
-        :param document_paths: The document paths to add to the store.
-        """
-        if isinstance(document_paths, Path):
-            document_paths = [document_paths]
-
-        for document_path in tqdm(document_paths):
-            document = magic_load_doc(document_path)
-            splitted_document = split_document(document)
-            self.extend(splitted_document)
-        self.__post_add_documents__()
-
-    def __post_add_documents__(self):
-        """Execute code after adding documents to the store."""
         raise NotImplementedError()
 
 
@@ -311,6 +287,10 @@ class LanceDBDocStore(AbstractDocumentStore):
 
         stuff_to_add = []
         for i, doc in enumerate(documents):
+            # Skip if document already exists
+            if doc in self.existing_records:
+                continue
+
             # Create document entry with document text only
             entry = {"document": doc}
 
@@ -346,10 +326,6 @@ class LanceDBDocStore(AbstractDocumentStore):
         self.db.drop_table(self.table_name)
         self.table = self.db.create_table(self.table_name, schema=self.schema)
         self.existing_records = []
-
-    def __post_add_documents__(self):
-        """Execute code after adding documents to the store."""
-        self.table.create_fts_index("document", replace=True)
 
 
 class BM25DocStore(AbstractDocumentStore):
