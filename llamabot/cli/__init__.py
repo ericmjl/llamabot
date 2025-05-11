@@ -6,7 +6,7 @@ from pathlib import Path
 
 import typer
 
-from llamabot import ChatBot, PromptRecorder
+from llamabot import PromptRecorder, SimpleBot, LanceDBDocStore
 
 from . import (
     blog,
@@ -18,7 +18,6 @@ from . import (
     notebook,
     python,
     repo,
-    serve,
     tutorial,
     zotero,
 )
@@ -53,9 +52,6 @@ app.add_typer(
 app.add_typer(configure.app, name="configure", help="Configure LlamaBot.")
 app.add_typer(repo.app, name="repo", help="Chat with a code repository.")
 app.add_typer(
-    serve.cli, name="serve", help="Serve up a LlamaBot as a FastAPI endpoint."
-)
-app.add_typer(
     docs.app, name="docs", help="Create Markdown documentation from source files."
 )
 app.add_typer(notebook.app, name="notebook", help="Explain your notebooks.")
@@ -73,17 +69,26 @@ def version():
 
 
 @app.command()
-def chat(save: bool = typer.Option(True, help="Whether to save the chat to a file.")):
+def chat(
+    model_name: str = typer.Option(..., help="The name of the model to use."),
+    save: bool = typer.Option(True, help="Whether to save the chat to a file."),
+):
     """Chat with LlamaBot's ChatBot.
 
     :param save: Whether to save the chat to a file.
     """
     pr = PromptRecorder()
 
-    bot = ChatBot(
-        "You are a chatbot. Respond to the user. "
+    memory = LanceDBDocStore(
+        table_name=f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat",
+        storage_path=Path.home() / ".llamabot" / "lancedb",
+    )
+
+    bot = SimpleBot(
+        system_prompt="You are a chatbot. Respond to the user. "
         "Ensure your responses are Markdown compatible.",
-        session_name=f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat",
+        model_name=model_name,
+        chat_memory=memory,
     )
 
     # Save chat to file

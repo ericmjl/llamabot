@@ -7,6 +7,7 @@ from typing import Generator, List, Optional, Union
 from loguru import logger
 
 
+from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.messages import (
     AIMessage,
     HumanMessage,
@@ -44,6 +45,7 @@ class SimpleBot:
         self,
         system_prompt: str,
         temperature=0.0,
+        chat_memory: Optional[AbstractDocumentStore] = None,
         model_name=default_language_model(),
         stream_target: str = "stdout",
         json_mode: bool = False,
@@ -64,6 +66,7 @@ class SimpleBot:
         self.model_name = model_name
         self.stream_target = stream_target
         self.temperature = temperature
+        self.chat_memory = chat_memory
         self.json_mode = json_mode
         self.api_key = api_key
         self.mock_response = mock_response
@@ -86,12 +89,24 @@ class SimpleBot:
         :return: The response to the human messages, primed by the system prompt.
         """
         processed_messages = to_basemessage(human_messages)
-        messages = [self.system_prompt] + processed_messages
+
+        if self.chat_memory:
+            memory_messages = self.chat_memory.retrieve(
+                query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
+            )
+            memory_messages = [HumanMessage(content=m) for m in memory_messages]
+
+        messages = [self.system_prompt] + memory_messages + processed_messages
         response = make_response(self, messages, self.stream_target != "none")
         response = stream_chunks(response, target=self.stream_target)
         tool_calls = extract_tool_calls(response)
         content = extract_content(response)
         response_message = AIMessage(content=content, tool_calls=tool_calls)
+
+        if self.chat_memory:
+            self.chat_memory.append(
+                f"Human: {processed_messages}\n\nAssistant: {response_message.content}"
+            )
         return response_message
 
 
