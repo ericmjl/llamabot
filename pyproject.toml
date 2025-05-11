@@ -77,8 +77,7 @@ dependencies = [
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "jinja2",
-    "fastapi>=0.115.9",  # This version requires Python >=3.8
-    "starlette>=0.46.2",
+    "fastapi>=0.115.9",
     "uvicorn",
     "tenacity",
     "python-multipart",
@@ -88,6 +87,7 @@ dependencies = [
     "pdfminer.six",
     "numpydoc", # Temporarily added on 2025-05-10 to fix LiteLLM's omission of this dependency.
     "chonkie[all]>=0.2.2,<0.3",
+    "starlette",
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
@@ -106,19 +106,12 @@ notebooks = [
   "tzlocal",
   "modal"
 ]
-ui = [
-    "panel",
-    "bokeh-fastapi",
-    "jupyter_bokeh",
-    "bokeh",
-]
 rag = [
     "lancedb>=0.22",
     "tantivy",
     "rank-bm25",
     "pylance",
     "sentence-transformers",
-    "llamabot[ui]",
 ]
 agent = [
     "docker",
@@ -155,39 +148,22 @@ platforms = ["osx-arm64", "linux-64", "osx-64", "linux-aarch64"]
 [tool.pixi.pypi-dependencies]
 llamabot = { path = ".", editable = true }
 
-[tool.pixi.feature.tests.dependencies]
+[tool.pixi.feature.tests.pypi-dependencies]
 pytest = "*"
 hypothesis = "*"
 pytest-cov = "*"
 pytest-mock = "*"
 tuna = "*"
 
-[tool.pixi.feature.devtools.dependencies]
+[tool.pixi.feature.devtools.pypi-dependencies]
 pre-commit = "*"
 ipython = "*"
 bump2version = "*"
 
-[tool.pixi.feature.docs.dependencies]
+[tool.pixi.feature.docs.pypi-dependencies]
 mkdocs = "*"
 mkdocs-material = "*"
 mknotebooks = "*"
-
-# Stuff that is referenced _only_ in notebooks go here.
-[tool.pixi.feature.notebooks.dependencies]
-jupyter = "*"
-ipykernel = "*"
-jupyterlab = "*"
-pixi-kernel = "*"
-biopython = "*"
-lxml = ">=5.3.0,<6"
-hvplot = ">=0.11.1,<0.12"
-pip = ">=24.3.1,<25"
-selenium = ">=4.11.2,<5"
-python-chromedriver-binary = ">=133.0.6882.0.0,<134"
-marimo = "*"
-
-[tool.pixi.feature.notebooks.pypi-dependencies]
-pdf2image = "*"
 
 # TASKS BELOW!
 [tool.pixi.tasks]
@@ -195,7 +171,6 @@ llamabot-cli = "llamabot --help"
 
 [tool.pixi.feature.notebooks.tasks]
 jlab = "jupyter lab"
-
 
 [tool.pixi.feature.tests.tasks]
 test = "pytest"
