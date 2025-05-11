@@ -85,6 +85,7 @@ dependencies = [
     "tqdm",
     "sqlalchemy",
     "pdfminer.six",
+    "numpydoc", # Temporarily added on 2025-05-10 to fix LiteLLM's omission of this dependency.
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."

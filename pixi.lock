@@ -8795,7 +8795,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.11.9
-  sha256: 498e71a992d6cc97a358101ee9e2ac690bc0d0ec2882f54281b77b779be6c5bd
+  sha256: 62bf4900e2f36449418ac52b4eb1c840a8ad4e236455cc266e1816ae0eb72b73
   requires_dist:
   - openai
   - loguru
@@ -8816,6 +8816,7 @@ packages:
   - tqdm
   - sqlalchemy
   - pdfminer-six
+  - numpydoc
   - ics ; extra == 'notebooks'
   - tzlocal ; extra == 'notebooks'
   - chonkie[all]>=0.2.2,<0.3 ; extra == 'notebooks'
