@@ -23,6 +23,9 @@ jobs:
           # Unit tests only run with pixi
           - test-type: unit-tests
             environment-type: uv
+          # Smoke tests only run with uv
+          - test-type: smoke-tests
+            environment-type: pixi
 
     defaults:
       run:
