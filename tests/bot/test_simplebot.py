@@ -30,6 +30,7 @@ from llamabot.components.messages import (
     HumanMessage,
     SystemMessage,
 )
+from litellm import ModelResponse
 
 
 # Helper strategies for hypothesis testing
@@ -148,7 +149,7 @@ def test_simple_bot_init_invalid_stream_target():
 @given(
     system_prompt=st.text(min_size=1),
     completion_kwargs=st.dictionaries(
-        keys=st.text(min_size=1),
+        keys=st.text(min_size=1).filter(lambda k: k != "mock_response"),
         values=st.one_of(
             st.text(),
             st.integers(),
@@ -413,14 +414,29 @@ def test_make_response_with_tools(mock_completion):
 # Tests for stream_chunks function
 def test_stream_chunks_with_model_response():
     """Test that stream_chunks returns the input unchanged if it's already a ModelResponse."""
-    # Create mock ModelResponse
-    mock_response = MagicMock()
+    # Create a minimal real ModelResponse instance
+    model_response = ModelResponse(
+        id="test-id",
+        choices=[
+            {
+                "message": {
+                    "content": "Test content",
+                    "role": "assistant",
+                },
+                "index": 0,
+                "finish_reason": "stop",
+            }
+        ],
+        model="test-model",
+        object="chat.completion",
+        created=1234567890,
+    )
 
     # Call function
-    result = stream_chunks(mock_response)
+    result = stream_chunks(model_response)
 
     # Check that the result is the same as the input
-    assert result == mock_response
+    assert result == model_response
 
 
 @patch("builtins.print")
