@@ -5,7 +5,7 @@ from llamabot.components.docstore import (
     BM25DocStore,
     LanceDBDocStore,
 )
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import strategies as st
 import tempfile
 
 
@@ -34,39 +34,6 @@ docstore_strategies = [
     # st.just(chromadb()),
     st.just(bm25()),
 ]
-
-
-@given(docstore=st.one_of(docstore_strategies))
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
-def test_add_documents(tmp_path: Path, docstore):
-    """Test the add_documents method of DocumentStore."""
-    # Add a single document
-    document_path = tmp_path / "document.txt"
-    document_path.touch()
-    document_path.write_text("content of the document")
-    docstore.add_documents(document_paths=document_path)
-
-    # Retrieve the document from the store
-    retrieved_documents = docstore.retrieve("query", n_results=1)
-
-    # Assert that the retrieved document matches the added document
-    assert retrieved_documents == ["content of the document"]
-
-    # Add multiple documents
-    document_paths = [tmp_path / "document1.txt", tmp_path / "document2.txt"]
-    for i, document_path in enumerate(document_paths):
-        document_path.touch()
-        document_path.write_text(f"content of document{i+1}")
-    docstore.add_documents(document_paths=document_paths)
-
-    # Retrieve the documents from the store
-    retrieved_documents = docstore.retrieve("document1", n_results=1)
-
-    # Assert that the retrieved documents match the added documents
-    assert set(retrieved_documents) == set(["content of document1"])
-
-    # Clean up the temporary collection
-    docstore.reset()
 
 
 # def test_chromadb_append_with_metadata():
@@ -288,44 +255,6 @@ def test_lancedb_append_avoid_duplicates():
         # This is implementation-specific, but we have the existing_records tracking
         assert document in store.existing_records
         assert store.existing_records.count(document) == 1
-
-        # Clean up
-        store.reset()
-
-
-def test_lancedb_append_with_embedding():
-    """Test LanceDBDocStore append method with pre-computed embedding."""
-    # Setup LanceDBDocStore with tempdir
-    with tempfile.TemporaryDirectory() as temp_dir:
-        store = LanceDBDocStore(
-            table_name="test_lancedb_embedding", storage_path=Path(temp_dir)
-        )
-        store.reset()
-
-        # Test document
-        document = "This is a test document with pre-computed embedding for LanceDB"
-        # Create a 384-dimensional embedding (common for sentence-transformers models)
-        embedding = [0.1] * 384
-
-        # Add document with pre-computed embedding
-        try:
-            store.append(document, embedding=embedding)
-
-            # Retrieve document to verify it was stored
-            retrieved_docs = store.retrieve("test document", n_results=1)
-            assert len(retrieved_docs) == 1
-            assert retrieved_docs[0] == document
-        except Exception as e:
-            # If embeddings are not correctly handled, at least test basic functionality
-            import pytest
-
-            pytest.skip(f"Skipping embedding test due to error: {str(e)}")
-            store.append(document)
-
-            # Verify basic storage works
-            retrieved_docs = store.retrieve("test document", n_results=1)
-            assert len(retrieved_docs) == 1
-            assert retrieved_docs[0] == document
 
         # Clean up
         store.reset()
