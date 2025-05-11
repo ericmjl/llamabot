@@ -24,6 +24,7 @@ from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.messages import (
     RetrievedMessage,
 )
+from llamabot.recorder import sqlite_log
 
 load_dotenv()
 
@@ -123,8 +124,9 @@ class QueryBot(SimpleBot):
         response = stream_chunks(response, target=self.stream_target)
         tool_calls = extract_tool_calls(response)
         content = extract_content(response)
-        message = AIMessage(content=content, tool_calls=tool_calls)
+        response_message = AIMessage(content=content, tool_calls=tool_calls)
+        sqlite_log(self, messages, response_message)
 
         if self.memory:
-            self.memory.append(message.content)
-        return message
+            self.memory.append(response_message.content)
+        return response_message
