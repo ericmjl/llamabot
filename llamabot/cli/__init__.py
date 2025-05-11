@@ -6,7 +6,7 @@ from pathlib import Path
 
 import typer
 
-from llamabot import PromptRecorder, SimpleBot, LanceDBDocStore
+from llamabot import SimpleBot, LanceDBDocStore
 
 from . import (
     blog,
@@ -71,13 +71,11 @@ def version():
 @app.command()
 def chat(
     model_name: str = typer.Option(..., help="The name of the model to use."),
-    save: bool = typer.Option(True, help="Whether to save the chat to a file."),
 ):
     """Chat with LlamaBot's ChatBot.
 
     :param save: Whether to save the chat to a file.
     """
-    pr = PromptRecorder()
 
     memory = LanceDBDocStore(
         table_name=f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat",
@@ -91,18 +89,11 @@ def chat(
         chat_memory=memory,
     )
 
-    # Save chat to file
-    save_filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-chat.md"
-
     while True:
-        with pr:
-            input = uniform_prompt()
-            exit_if_asked(input)
-            bot(input)
-            typer.echo("\n\n")
-
-            if save:
-                pr.save(Path(save_filename))
+        input = uniform_prompt()
+        exit_if_asked(input)
+        bot(input)
+        typer.echo("\n\n")
 
 
 @app.command()

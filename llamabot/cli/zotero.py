@@ -1,6 +1,5 @@
 """Llamabot Zotero CLI."""
 
-from datetime import date
 from pathlib import Path
 
 import typer
@@ -8,7 +7,6 @@ from dotenv import load_dotenv
 from slugify import slugify
 
 from llamabot import QueryBot
-from llamabot.recorder import PromptRecorder
 from llamabot.zotero.library import ZoteroItem, ZoteroLibrary
 from llamabot.zotero.completer import PaperTitleCompleter
 from llamabot.prompt_library.zotero import paper_summary, docbot_sysprompt
@@ -71,13 +69,6 @@ def chat(
     :param model_name: The name of the model to use.
     """
     try:
-        from caseconverter import snakecase
-    except ImportError:
-        raise ImportError(
-            "caseconverter is not installed. Please install it with `pip install llamabot[cli]`."
-        )
-
-    try:
         from prompt_toolkit import prompt
     except ImportError:
         raise ImportError(
@@ -126,23 +117,13 @@ def chat(
         progress.remove_task(task)
 
     # From this point onwards, we need to record the chat.
-    pr = PromptRecorder()
-    date_str = date.today().strftime("%Y%m%d")
-    snaked_user_choice = f"{snakecase(user_choice)}"
-    save_path = Path(f"{date_str}_{snaked_user_choice}.md")
-    with pr:
-        typer.echo("\n\n")
-        typer.echo("Here is a summary of the paper for you to get going:")
-        docbot(paper_summary())
-        typer.echo("\n\n")
-        pr.save(save_path)
+    typer.echo("\n\n")
+    typer.echo("Here is a summary of the paper for you to get going:")
+    docbot(paper_summary())
+    typer.echo("\n\n")
 
     while True:
-        with pr:
-            query = uniform_prompt()
-            exit_if_asked(query)
-            docbot(query)
-            typer.echo("\n\n")
-
-            # Want to append YYYYMMDD before filename.
-            pr.save(save_path)
+        query = uniform_prompt()
+        exit_if_asked(query)
+        docbot(query)
+        typer.echo("\n\n")
