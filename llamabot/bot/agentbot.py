@@ -13,10 +13,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from llamabot.bot.simplebot import (
     SimpleBot,
-    _extract_content,
-    _extract_tool_calls,
-    _make_response,
-    _stream_chunks,
+    extract_content,
+    extract_tool_calls,
+    make_response,
+    stream_chunks,
 )
 from llamabot.components.messages import (
     AIMessage,
@@ -91,10 +91,10 @@ class AgentBot(SimpleBot):
             iteration += 1
             processed_messages = to_basemessage(messages)
             print(processed_messages)
-            response = _make_response(self, processed_messages)
-            response = _stream_chunks(response, target=self.stream_target)
-            tool_calls = _extract_tool_calls(response)
-            content = _extract_content(response)
+            response = make_response(self, processed_messages)
+            response = stream_chunks(response, target=self.stream_target)
+            tool_calls = extract_tool_calls(response)
+            content = extract_content(response)
             response_message = AIMessage(content=content, tool_calls=tool_calls)
 
             if tool_calls:

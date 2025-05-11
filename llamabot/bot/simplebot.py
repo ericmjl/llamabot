@@ -87,15 +87,15 @@ class SimpleBot:
         """
         processed_messages = to_basemessage(human_messages)
         messages = [self.system_prompt] + processed_messages
-        response = _make_response(self, messages, self.stream_target != "none")
-        response = _stream_chunks(response, target=self.stream_target)
-        tool_calls = _extract_tool_calls(response)
-        content = _extract_content(response)
+        response = make_response(self, messages, self.stream_target != "none")
+        response = stream_chunks(response, target=self.stream_target)
+        tool_calls = extract_tool_calls(response)
+        content = extract_content(response)
         response_message = AIMessage(content=content, tool_calls=tool_calls)
         return response_message
 
 
-def _make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = True):
+def make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = True):
     """Make a response from the given messages.
 
     :param bot: A SimpleBot
@@ -137,7 +137,7 @@ def _make_response(bot: SimpleBot, messages: list[BaseMessage], stream: bool = T
     return completion(**completion_kwargs)
 
 
-def _stream_chunks(response, target="stdout"):
+def stream_chunks(response, target="stdout") -> ModelResponse:
     """Stream the response from a `completion` call.
 
     This will work whether or not the response is actually streamed or not.
@@ -188,7 +188,7 @@ def _stream_chunks(response, target="stdout"):
     return stream_chunk_builder(chunks)
 
 
-def _extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToolCall]:
+def extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToolCall]:
     """Extract the tool calls from the response.
 
     :param response: The response from a `completion` call.
@@ -202,7 +202,7 @@ def _extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageTo
     return tool_calls
 
 
-def _extract_content(response: ModelResponse) -> str:
+def extract_content(response: ModelResponse) -> str:
     """Extract the content from the response.
 
     :param response: The response from a `completion` call.

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 
 from pdfminer.high_level import extract_text
+from chonkie import SDPMChunker
 
 
 def pdf_loader(path: Path) -> str:
@@ -49,8 +50,6 @@ def magic_load_doc(file_path: Path) -> str:
 
 def split_document(
     doc: str,
-    chunk_size: int = 2000,
-    chunk_overlap: int = 0,
 ) -> List[str]:
     """Split a document into sub-documents using token text splitter.
 
@@ -65,14 +64,11 @@ def split_document(
     :raises ValueError: If `chunk_overlap` is negative.
     :return: A list of sub-documents.
     """
-    if chunk_overlap < 0:
-        raise ValueError("chunk_overlap must be non-negative.")
-    if chunk_size < 0:
-        raise ValueError("chunk_size must be non-negative.")
-
-    # Split the document into sub-documents with chunk size of `chunk_size` characters
-    # and overlap of `chunk_overlap` characters.
-    sub_texts = []
-    for i in range(0, len(doc), chunk_size - chunk_overlap):
-        sub_texts.append(doc[i : i + chunk_size])
-    return sub_texts
+    chunker = SDPMChunker(
+        threshold=0.5,  # Similarity threshold (0-1)
+        chunk_size=2048,  # Maximum tokens per chunk
+        min_sentences=1,  # Initial sentences per chunk
+        skip_window=1,  # Number of chunks to skip when looking for similarities
+    )
+    chunks = chunker.chunk(doc)
+    return [chunk.text for chunk in chunks]

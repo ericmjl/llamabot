@@ -61,23 +61,17 @@ class AbstractDocumentStore:
     def add_documents(
         self,
         document_paths: Path | list[Path],
-        chunk_size: int = 2_000,
-        chunk_overlap: int = 500,
     ):
         """Add documents to the QueryBot DocumentStore.
 
         :param document_paths: The document paths to add to the store.
-        :param chunk_size: The size of each chunk.
-        :param chunk_overlap: The amount of overlap between chunks.
         """
         if isinstance(document_paths, Path):
             document_paths = [document_paths]
 
         for document_path in tqdm(document_paths):
             document = magic_load_doc(document_path)
-            splitted_document = split_document(
-                document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-            )
+            splitted_document = split_document(document)
             self.extend(splitted_document)
         self.__post_add_documents__()
 
@@ -219,6 +213,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         try:
             import lancedb
             from lancedb.embeddings import EmbeddingFunctionRegistry, get_registry
+            from lancedb.rerankers import RRFReranker
             from lancedb.pydantic import LanceModel, Vector
         except ImportError:
             raise ImportError(
@@ -226,8 +221,8 @@ class LanceDBDocStore(AbstractDocumentStore):
                 "Please `pip install llamabot[rag]` to use the LanceDB document store."
             )
 
-        self.registry: EmbeddingFunctionRegistry = get_registry()
-        self.embedding_func: Callable = self.registry.get(
+        registry: EmbeddingFunctionRegistry = get_registry()
+        self.embedding_func: Callable = registry.get(
             name="sentence-transformers"
         ).create()
 
@@ -262,6 +257,8 @@ class LanceDBDocStore(AbstractDocumentStore):
         if auto_create_fts_index:
             self.table.create_fts_index(field_names=["document"], replace=True)
 
+        self.reranker = RRFReranker()
+
     def __contains__(self, other: str) -> bool:
         """Returns boolean whether the 'other' document is in the store.
 
@@ -275,7 +272,6 @@ class LanceDBDocStore(AbstractDocumentStore):
     def append(
         self,
         document: str,
-        metadata: Optional[dict] = None,
         embedding: Optional[list[float]] = None,
     ):
         """Append a document to the store.
@@ -302,7 +298,6 @@ class LanceDBDocStore(AbstractDocumentStore):
     def extend(
         self,
         documents: list[str],
-        metadata: Optional[list[dict]] = None,
         embeddings: Optional[list[list[float]]] = None,
     ):
         """Extend a list of documents to the store.
@@ -326,7 +321,8 @@ class LanceDBDocStore(AbstractDocumentStore):
 
             stuff_to_add.append(entry)
 
-        self.table.add(stuff_to_add)
+        # Use add instead of merge_insert to avoid schema conflicts
+        self.table.add(stuff_to_add, mode="overwrite")
         self.existing_records.extend(documents)
 
         # Ensure FTS index exists
@@ -339,17 +335,14 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
-        results: list = (
-            self.table.search(query, query_type="hybrid")
-            .limit(n_results)
-            .to_pydantic(self.schema)
-        )
+        results = self.table.search(query).limit(n_results).to_pydantic(self.schema)
         return [r.document for r in results]
 
     def reset(self):
         """Reset the document store."""
         self.db.drop_table(self.table_name)
         self.table = self.db.create_table(self.table_name, schema=self.schema)
+        self.existing_records = []
 
     def __post_add_documents__(self):
         """Execute code after adding documents to the store."""
