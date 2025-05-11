@@ -87,6 +87,7 @@ dependencies = [
     "sqlalchemy",
     "pdfminer.six",
     "numpydoc", # Temporarily added on 2025-05-10 to fix LiteLLM's omission of this dependency.
+    "chonkie[all]>=0.2.2,<0.3",
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
@@ -119,7 +120,6 @@ rag = [
     "pylance",
     "sentence-transformers",
     "llamabot[ui]",
-    "chonkie[all]>=0.2.2,<0.3",
 ]
 agent = [
     "docker",
