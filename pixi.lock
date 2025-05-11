@@ -9680,7 +9680,7 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.11.9
-  sha256: af4697863e117a4c9bd3d04441176ef09646bb63ae9abea12a12420bda409085
+  sha256: afb5308ee6fb078f917f952bd752c1cb3fa9c60ecc4df520a0cb61b07e240ecc
   requires_dist:
   - openai
   - loguru
@@ -9710,7 +9710,7 @@ packages:
   - jupyter-bokeh ; extra == 'ui'
   - bokeh ; extra == 'ui'
   - fastapi[standard] ; extra == 'ui'
-  - lancedb ; extra == 'rag'
+  - lancedb>=0.22 ; extra == 'rag'
   - chromadb>=1.0.7 ; extra == 'rag'
   - tantivy ; extra == 'rag'
   - rank-bm25 ; extra == 'rag'
