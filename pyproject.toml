@@ -69,7 +69,7 @@ dependencies = [
     "openai",
     "loguru",
     "python-dotenv",
-    "typer",
+    "typer>=0.15.3",
     "pyprojroot",
     "beautifulsoup4",
     "litellm>=1.59.1,<=1.67.2", # this is necessary to guarantee that ollama_chat models are supported for structured outputs

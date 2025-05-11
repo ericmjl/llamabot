@@ -8946,12 +8946,12 @@ packages:
 - pypi: .
   name: llamabot
   version: 0.11.9
-  sha256: dee95664bcfafc6d147f151e0acc6fd89ae7477d23a7efbf6814abb6a2a12a5f
+  sha256: 39c526ecb308342c6f2c89dcaa767ac7c7c1e6b1a62f0545416c680b10499205
   requires_dist:
   - openai
   - loguru
   - python-dotenv
-  - typer
+  - typer>=0.15.3
   - pyprojroot
   - beautifulsoup4
   - litellm>=1.59.1,<=1.67.2
