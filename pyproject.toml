@@ -104,7 +104,8 @@ llamabot = "llamabot.cli:app"
 notebooks = [
   "ics",
   "tzlocal",
-  "modal"
+  "modal",
+  "ipykernel",
 ]
 rag = [
     "lancedb>=0.22",
