@@ -125,7 +125,7 @@ class QueryBot(SimpleBot):
         tool_calls = extract_tool_calls(response)
         content = extract_content(response)
         response_message = AIMessage(content=content, tool_calls=tool_calls)
-        sqlite_log(self, messages, response_message)
+        sqlite_log(self, messages + [response_message])
 
         if self.memory:
             self.memory.append(response_message.content)

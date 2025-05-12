@@ -138,7 +138,7 @@ class StructuredBot(SimpleBot):
 
                 # parse the response, and validate it against the pydantic model
                 last_response = AIMessage(content=content)
-                sqlite_log(self, messages, last_response)
+                sqlite_log(self, messages + [last_response])
 
                 last_codeblock = json.loads(last_response.content)
                 obj = self.pydantic_model.model_validate(last_codeblock)
