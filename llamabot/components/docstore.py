@@ -11,7 +11,7 @@ Hence we use it by default.
 """
 
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 import slugify
 
@@ -251,7 +251,6 @@ class LanceDBDocStore(AbstractDocumentStore):
     def append(
         self,
         document: str,
-        embedding: Optional[list[float]] = None,
     ):
         """Append a document to the store.
 
@@ -263,10 +262,6 @@ class LanceDBDocStore(AbstractDocumentStore):
         # Completely ignore metadata
         document_to_add = {"document": document}
 
-        # Only add vector if embedding is provided
-        if embedding is not None:
-            document_to_add["vector"] = embedding
-
         if document not in self.existing_records:
             self.table.add([document_to_add])
             self.existing_records.append(document)
@@ -277,7 +272,6 @@ class LanceDBDocStore(AbstractDocumentStore):
     def extend(
         self,
         documents: list[str],
-        embeddings: Optional[list[list[float]]] = None,
     ):
         """Extend a list of documents to the store.
 
@@ -293,23 +287,14 @@ class LanceDBDocStore(AbstractDocumentStore):
 
             # Create document entry with document text only
             entry = {"document": doc}
-
-            # Only add vector if embeddings are provided and valid for this document
-            if (
-                embeddings is not None
-                and i < len(embeddings)
-                and embeddings[i] is not None
-            ):
-                entry["vector"] = embeddings[i]
-
             stuff_to_add.append(entry)
 
         # Use add instead of merge_insert to avoid schema conflicts
-        self.table.add(stuff_to_add, mode="overwrite")
-        self.existing_records.extend(documents)
-
-        # Ensure FTS index exists
-        self.table.create_fts_index(field_names=["document"], replace=True)
+        if stuff_to_add:
+            self.table.add(stuff_to_add)
+            self.existing_records.extend(documents)
+            # Ensure FTS index exists
+            self.table.create_fts_index(field_names=["document"], replace=True)
 
     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
         """Retrieve a list of documents from the store.
@@ -318,7 +303,11 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
-        results = self.table.search(query).limit(n_results).to_pydantic(self.schema)
+        results = (
+            self.table.search(query, query_type="auto")
+            .limit(n_results)
+            .to_pydantic(self.schema)
+        )
         return [r.document for r in results]
 
     def reset(self):

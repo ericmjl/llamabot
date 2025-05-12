@@ -11,39 +11,39 @@
 
 import marimo
 
-__generated_with = "0.10.19"
-app = marimo.App(width="medium", auto_download=["ipynb"])
+__generated_with = "0.13.6"
+app = marimo.App(width="medium")
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-        # What exactly makes an agent?
+    # What exactly makes an agent?
 
-        Eric J. Ma
+    Eric J. Ma
 
-        PyData Boston/Cambridge, 29 Jan 2025
-        """
+    PyData Boston/Cambridge, 29 Jan 2025
+    """
     )
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-        This talk is going to leave us with more questions than answers about "what makes an agent".
+    This talk is going to leave us with more questions than answers about "what makes an agent".
 
-        But I hope it also leaves us with more focused questions and frameworks for thinking about "what makes an agent".
+    But I hope it also leaves us with more focused questions and frameworks for thinking about "what makes an agent".
 
-        It is based loosely on [my blog post](https://ericmjl.github.io/blog/2025/1/4/what-makes-an-agent/). After this talk, I will turn this into a new blog post.
-        """
+    It is based loosely on [my blog post](https://ericmjl.github.io/blog/2025/1/4/what-makes-an-agent/). After this talk, I will turn this into a new blog post.
+    """
     )
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     import marimo as mo
     import llamabot as lmb
@@ -52,70 +52,70 @@ def _():
     return lmb, mo
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-        ## Let's start with LLM bots
+    ## Let's start with LLM bots
 
-        This is a helpful framing to anchor our discussion of agents.
+    This is a helpful framing to anchor our discussion of agents.
 
-        [LlamaBot](http://github.com/ericmjl/llamabot) implements a variety of LLM bots.
+    [LlamaBot](http://github.com/ericmjl/llamabot) implements a variety of LLM bots.
 
-        LlamaBot is a Python package that I made to pedagogically explore the landscape of LLMs as the field evolves. Intentionally designed to lag 1-2 steps behind innovations and incorporate only what turns out to be robust.
-        """
+    LlamaBot is a Python package that I made to pedagogically explore the landscape of LLMs as the field evolves. Intentionally designed to lag 1-2 steps behind innovations and incorporate only what turns out to be robust.
+    """
     )
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-        The basic anatomy of an LLM API call:
+    The basic anatomy of an LLM API call:
 
-        **1️⃣ A system prompt:** maintained over all calls.
+    **1️⃣ A system prompt:** maintained over all calls.
 
-        **2️⃣ A model name:** specifying which model to chat with.
+    **2️⃣ A model name:** specifying which model to chat with.
 
-        **3️⃣ A user's prompt:** your input into the LLM's internals.
+    **3️⃣ A user's prompt:** your input into the LLM's internals.
 
-        **4️⃣ The response:** returned by autoregressive next-token prediction.
+    **4️⃣ The response:** returned by autoregressive next-token prediction.
 
-        These are incorporated in `SimpleBot`:
-        """
+    These are incorporated in `SimpleBot`:
+    """
     )
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(lmb, mo):
     flight_bot = lmb.SimpleBot(
         system_prompt="""You are a helpful travel assistant.
         You provide information about flights between cities.""",
-        model_name="ollama_chat/llama3.2:3b",
+        model_name="ollama_chat/gemma2:2b",
     )
 
     # Simple interaction
-    response = flight_bot("Find me the prices for flights from San Francisco to Tokyo.")
+    _ = flight_bot("Find me the prices for flights from San Francisco to Tokyo.")
     mo.show_code()
-    return flight_bot, response
+    return
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-        Let's evaluate that response together. Is this an agent?
+    Let's evaluate that response together. Is this an agent?
 
-        **Audience commentary:**
+    **Audience commentary:**
 
-        - Not an agent: didn't take action apart from introspection of weights.
-        - Not an agent: no external APIs called.
-        - Yes: agent doesn't mean it has to have a tool, anything that gives usable information is an agent.
-        - Yes (to an extent): Follows up with a question/prompt back to the human.
-        - No: agent should make decisions. This LLM call did not make any decisions. Decision-making outsourced to user.
-        """
+    - Not an agent: didn't take action apart from introspection of weights.
+    - Not an agent: no external APIs called.
+    - Yes: agent doesn't mean it has to have a tool, anything that gives usable information is an agent.
+    - Yes (to an extent): Follows up with a question/prompt back to the human.
+    - No: agent should make decisions. This LLM call did not make any decisions. Decision-making outsourced to user.
+    """
     )
     return
 
@@ -132,10 +132,10 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ## Agents that give us structure?
+    ## Agents that give us structure?
 
-        Let's try a different view of agents. What if we said, "Agents give you information structured the way you wanted it?" Let's start with that as a working definition.
-        """
+    Let's try a different view of agents. What if we said, "Agents give you information structured the way you wanted it?" Let's start with that as a working definition.
+    """
     )
     return
 
@@ -179,23 +179,23 @@ def _(lmb, mo):
         f"The price of the flight is ${result.price}. We recommend that you arrive at the airport {result.recommended_arrival} hours before the flight."
     )
     mo.show_code()
-    return BaseModel, Field, FlightInfo, flight_bot_structured, result
+    return
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-        ### Audience discussion: Is this an agent?
+    ### Audience discussion: Is this an agent?
 
-        Where does this fall short of an agent's definition?
+    Where does this fall short of an agent's definition?
 
-        - No: still like RAG. Doesn't read the situation, is this a good time to buy? Still a simple answer.
-        - No: it would independent, independently decide what to look at, where to look.
-        - Yes: Based on the working definition, yes, and the nature of decision-making means the LLM is doing rapid-fire retrieval from memorized data. Recommended arrival time **is** an added recommendation that was not part of the original query intent.
-        - No: Is the definition even correct? Why isn't a SQL query an agent, under that definition?
-        - No: within this context, the **latent** query intent might be to buy tix, but this bot doesn't help me do it.
-        """
+    - No: still like RAG. Doesn't read the situation, is this a good time to buy? Still a simple answer.
+    - No: it would independent, independently decide what to look at, where to look.
+    - Yes: Based on the working definition, yes, and the nature of decision-making means the LLM is doing rapid-fire retrieval from memorized data. Recommended arrival time **is** an added recommendation that was not part of the original query intent.
+    - No: Is the definition even correct? Why isn't a SQL query an agent, under that definition?
+    - No: within this context, the **latent** query intent might be to buy tix, but this bot doesn't help me do it.
+    """
     )
     return
 
@@ -204,12 +204,12 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ### Structured generation gets us midway
+    ### Structured generation gets us midway
 
-        It affords us more **control** over what we are asking an LLM to generate. The response is constrained.
+    It affords us more **control** over what we are asking an LLM to generate. The response is constrained.
 
-        But it seems like it may still lack a crucial element of an "agent". I'm glad the audience shred up this definition! 🤗
-        """
+    But it seems like it may still lack a crucial element of an "agent". I'm glad the audience shred up this definition! 🤗
+    """
     )
     return
 
@@ -218,10 +218,10 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ## What if we said, "An agent needed to interact externally"?
+    ## What if we said, "An agent needed to interact externally"?
 
-        Here is my attempt, within LlamaBot, to try to nail down what an agent actually is. This flight agent-like bot helps me plan out trips, using one tool, the `search_internet` tool.
-        """
+    Here is my attempt, within LlamaBot, to try to nail down what an agent actually is. This flight agent-like bot helps me plan out trips, using one tool, the `search_internet` tool.
+    """
     )
     return
 
@@ -245,17 +245,17 @@ def _(lmb, mo):
     print("\n##########")
     print(travel_response.content)
     mo.show_code()
-    return search_internet, travel_agent, travel_response
+    return
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-        If we got a straight answer, great!
+    If we got a straight answer, great!
 
-        But if we didn't get a straight answer, that hints at some problems with agents, if they aren't designed properly.
-        """
+    But if we didn't get a straight answer, that hints at some problems with agents, if they aren't designed properly.
+    """
     )
     return
 
@@ -264,22 +264,22 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ### Audience discussion: is this really an agent?
+    ### Audience discussion: is this really an agent?
 
-        I asked the audience to disregard the fact that I called this an `AgentBot`. Just because I said so doesn't make it so!
+    I asked the audience to disregard the fact that I called this an `AgentBot`. Just because I said so doesn't make it so!
 
-        Where are the holes in this definition of an agent?
+    Where are the holes in this definition of an agent?
 
-        - Getting closer: agent will do research, in this example, it is the use of a search tool, and processing the text to give a response; the task could have been clearer for end user.
-        - Yes: it has introduced a new error mode. A new way to be wrong, need someone to blame for this.
-        - New component here: this bot has agency, decides "do I call this function or not".
-        - Principal-Agent problem: agent does something that may not be what the Principal wanted it to do.
+    - Getting closer: agent will do research, in this example, it is the use of a search tool, and processing the text to give a response; the task could have been clearer for end user.
+    - Yes: it has introduced a new error mode. A new way to be wrong, need someone to blame for this.
+    - New component here: this bot has agency, decides "do I call this function or not".
+    - Principal-Agent problem: agent does something that may not be what the Principal wanted it to do.
 
-        More questions:
+    More questions:
 
-        - Q: Is part of the definition of an agent the fact that it is going to interact with a human?
-        - Q: In this implementaiton of search, is the LLM always going to do the function call?
-        """
+    - Q: Is part of the definition of an agent the fact that it is going to interact with a human?
+    - Q: In this implementaiton of search, is the LLM always going to do the function call?
+    """
     )
     return
 
@@ -288,16 +288,16 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ## Design patterns: should this be an agent?
+    ## Design patterns: should this be an agent?
 
-        We discussed what an agent is. Now, let's assume that we know what an agent is. (This is an assumption!) If so, how should we design agents, and even then, should it be an agent?
+    We discussed what an agent is. Now, let's assume that we know what an agent is. (This is an assumption!) If so, how should we design agents, and even then, should it be an agent?
 
-        Our minimally complex example is a restaurant bill calculator. It's got a few key characteristics:
+    Our minimally complex example is a restaurant bill calculator. It's got a few key characteristics:
 
-        1. Bill calculation is computable (and hence easily verifiable).
-        2. There is sufficient variation in the kinds of questions we can ask.
-        3. We can easily implement multiple designs.
-        """
+    1. Bill calculation is computable (and hence easily verifiable).
+    2. There is sufficient variation in the kinds of questions we can ask.
+    3. We can easily implement multiple designs.
+    """
     )
     return
 
@@ -306,12 +306,12 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ### AgentBot implementation
+    ### AgentBot implementation
 
-        Let's start with an implementation based on AgentBot.
+    Let's start with an implementation based on AgentBot.
 
-        We have two tools, which are nothing more than Python functions that are decorated with a `@tool` decorator. They are, namely, `calculate_total_with_tip` and `split_bill`.
-        """
+    We have two tools, which are nothing more than Python functions that are decorated with a `@tool` decorator. They are, namely, `calculate_total_with_tip` and `split_bill`.
+    """
     )
     return
 
@@ -368,7 +368,7 @@ def _(bot, mo):
     resp = bot(calculate_total_only_prompt)
     print(resp.content)
     mo.show_code()
-    return calculate_total_only_prompt, resp
+    return
 
 
 @app.cell
@@ -378,19 +378,19 @@ def _(bot, mo):
     resp2 = bot(split_bill_only_prompt)
     print(resp2.content)
     mo.show_code()
-    return resp2, split_bill_only_prompt
+    return (split_bill_only_prompt,)
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-        ### Couldn't it have been a Python function?
+    ### Couldn't it have been a Python function?
 
-        Should this have been an agent?
+    Should this have been an agent?
 
-        We very well could have done this instead:
-        """
+    We very well could have done this instead:
+    """
     )
     return
 
@@ -405,17 +405,17 @@ def _(mo):
     calculate_bill(2300, 18, 20)
 
     mo.show_code()
-    return (calculate_bill,)
+    return
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-        ### Is there a way to make that Python function more flexible?
+    ### Is there a way to make that Python function more flexible?
 
-        But this is a very restrictive implementation. What if we didn't have any division to do?
-        """
+    But this is a very restrictive implementation. What if we didn't have any division to do?
+    """
     )
     return
 
@@ -434,7 +434,7 @@ def _(mo):
     calculate_bill_v2(2714, 0, 20)
 
     mo.show_code()
-    return (calculate_bill_v2,)
+    return
 
 
 @app.cell
@@ -449,10 +449,10 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ### But couldn't reasoning models do this?
+    ### But couldn't reasoning models do this?
 
-        What if we did this instead?
-        """
+    What if we did this instead?
+    """
     )
     return
 
@@ -467,17 +467,17 @@ def _(lmb, mo):
     )
 
     mo.show_code()
-    return (r1_bot,)
+    return
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-        ### What if we didn't have to provide any tools instead?
+    ### What if we didn't have to provide any tools instead?
 
-        Or what if, we asked the agent to write and execute its own code? (This follows HuggingFace's definition of an agent.)
-        """
+    Or what if, we asked the agent to write and execute its own code? (This follows HuggingFace's definition of an agent.)
+    """
     )
     return
 
@@ -498,35 +498,35 @@ def _(lmb, mo, split_bill_only_prompt):
     # Split the bill
     autonomous_code_bot(split_bill_only_prompt)
     mo.show_code()
-    return autonomous_code_bot, write_and_execute_script
+    return
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-        ### Dissection
+    ### Dissection
 
-        If we think carefully about the distinction between a Python function, its stochastic variant, and an LLM agent, we might make the following observations:
+    If we think carefully about the distinction between a Python function, its stochastic variant, and an LLM agent, we might make the following observations:
 
-        #### Functions
+    #### Functions
 
-        1. Functions are written to accomplish a goal.
-        1. Functions have an input signature, a body, and a return.
-        2. Function inputs are constrained to the types that are accepted; they cannot be natural language.
-        3. Function program flow is deterministic.
+    1. Functions are written to accomplish a goal.
+    1. Functions have an input signature, a body, and a return.
+    2. Function inputs are constrained to the types that are accepted; they cannot be natural language.
+    3. Function program flow is deterministic.
 
-        #### Stochastic Functions
+    #### Stochastic Functions
 
-        1. Stochastic functions have non-deterministic flow control, resulting in a distribution of possible outputs.
+    1. Stochastic functions have non-deterministic flow control, resulting in a distribution of possible outputs.
 
-        #### LLM Agents
+    #### LLM Agents
 
-        1. Are non-deterministic in flow control.
-        2. Rely on structured outputs internally.
-        3. Allow for natural language inputs.
-        4. Nonetheless accomplish a goal.
-        """
+    1. Are non-deterministic in flow control.
+    2. Rely on structured outputs internally.
+    3. Allow for natural language inputs.
+    4. Nonetheless accomplish a goal.
+    """
     )
     return
 
@@ -535,16 +535,16 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ### What should be an agent?
+    ### What should be an agent?
 
-        Anthropic has [guidance](https://www.anthropic.com/research/building-effective-agents).
+    Anthropic has [guidance](https://www.anthropic.com/research/building-effective-agents).
 
-        > When building applications with LLMs, we recommend finding the simplest solution possible, and only increasing complexity when needed. **This might mean not building agentic systems at all.** Agentic systems often trade latency and cost for better task performance, and you should consider when this tradeoff makes sense.
-        >
-        > When more complexity is warranted, workflows offer predictability and consistency for well-defined tasks, whereas agents are the better option when flexibility and model-driven decision-making are needed at scale. For many applications, however, optimizing single LLM calls with retrieval and in-context examples is usually enough.
+    > When building applications with LLMs, we recommend finding the simplest solution possible, and only increasing complexity when needed. **This might mean not building agentic systems at all.** Agentic systems often trade latency and cost for better task performance, and you should consider when this tradeoff makes sense.
+    >
+    > When more complexity is warranted, workflows offer predictability and consistency for well-defined tasks, whereas agents are the better option when flexibility and model-driven decision-making are needed at scale. For many applications, however, optimizing single LLM calls with retrieval and in-context examples is usually enough.
 
-        In other words, can you build it with a regular Python program first? If so, maybe just start there.
-        """
+    In other words, can you build it with a regular Python program first? If so, maybe just start there.
+    """
     )
     return
 
@@ -553,32 +553,32 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        And from my own blog:
+    And from my own blog:
 
-        > ## A roadmap for designing agent applications
-        >
-        > I've found that the most effective way to design agent applications is to progressively relax constraints on inputs and execution order.
-        >
-        > ### Start with a deterministic program
-        >
-        > - Design your application as you would with regular API calls
-        > - Define clear input/output specifications
-        > - Implement core functionality with standard programming patterns
-        >
-        > ### Relax input constraints
-        >
-        > - Accept natural language input and convert it to structured parameters for function calls
-        > - Enable autonomous function calling based on natural language understanding
-        >
-        > ### Relax execution order constraints
-        >
-        > - Only necessary when natural language inputs are varied enough to require different execution paths
-        > - Allow flexible ordering of operations when needed
-        > - Enable dynamic selection of which functions to call
-        > - Maintain boundaries around available actions while allowing flexibility in their use
-        >
-        > This progressive relaxation approach helps us transition from traditional deterministic programming to an agent-driven paradigm where execution order is non-deterministic and inputs are natural language.
-        """
+    > ## A roadmap for designing agent applications
+    >
+    > I've found that the most effective way to design agent applications is to progressively relax constraints on inputs and execution order.
+    >
+    > ### Start with a deterministic program
+    >
+    > - Design your application as you would with regular API calls
+    > - Define clear input/output specifications
+    > - Implement core functionality with standard programming patterns
+    >
+    > ### Relax input constraints
+    >
+    > - Accept natural language input and convert it to structured parameters for function calls
+    > - Enable autonomous function calling based on natural language understanding
+    >
+    > ### Relax execution order constraints
+    >
+    > - Only necessary when natural language inputs are varied enough to require different execution paths
+    > - Allow flexible ordering of operations when needed
+    > - Enable dynamic selection of which functions to call
+    > - Maintain boundaries around available actions while allowing flexibility in their use
+    >
+    > This progressive relaxation approach helps us transition from traditional deterministic programming to an agent-driven paradigm where execution order is non-deterministic and inputs are natural language.
+    """
     )
     return
 
@@ -587,13 +587,13 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        ## More perspectives
+    ## More perspectives
 
-        - [Function calling is not solved](https://www.linkedin.com/posts/philipp-schmid-a6a2bb196_function-calling-is-not-solved-yet-a-new-activity-7288821311613591552-i5dH?utm_source=share&utm_medium=member_desktop)
-        - [Google's definition of agents](https://drive.google.com/file/d/1oEjiRCTbd54aSdB_eEe3UShxLBWK9xkt/view)
-        - [HuggingFace's definition of agents](https://x.com/AymericRoucher/status/1874116324898598934)
-        - [My blog post](https://ericmjl.github.io/blog/2025/1/4/what-makes-an-agent/)
-        """
+    - [Function calling is not solved](https://www.linkedin.com/posts/philipp-schmid-a6a2bb196_function-calling-is-not-solved-yet-a-new-activity-7288821311613591552-i5dH?utm_source=share&utm_medium=member_desktop)
+    - [Google's definition of agents](https://drive.google.com/file/d/1oEjiRCTbd54aSdB_eEe3UShxLBWK9xkt/view)
+    - [HuggingFace's definition of agents](https://x.com/AymericRoucher/status/1874116324898598934)
+    - [My blog post](https://ericmjl.github.io/blog/2025/1/4/what-makes-an-agent/)
+    """
     )
     return
 
