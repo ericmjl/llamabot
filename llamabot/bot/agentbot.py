@@ -90,7 +90,6 @@ class AgentBot(SimpleBot):
         while iteration < max_iterations:
             iteration += 1
             processed_messages = to_basemessage(messages)
-            print(processed_messages)
             response = make_response(self, processed_messages)
             response = stream_chunks(response, target=self.stream_target)
             tool_calls = extract_tool_calls(response)
@@ -99,18 +98,6 @@ class AgentBot(SimpleBot):
 
             if tool_calls:
                 # Create a function to execute a tool call
-                def execute_tool_call(tool_call):
-                    """Execute a tool call.
-
-                    :param tool_call: The tool call to execute
-                    :return: The result of the tool call
-                    """
-                    func_name = tool_call.function.name
-                    func = self.name_to_tool_map.get(func_name)
-                    if not func:
-                        return f"Error: Function {func_name} not found"
-                    func_args = json.loads(tool_call.function.arguments)
-                    return func(**func_args)
 
                 # Print the names of the functions that are to be called
                 print("Calling functions:")
@@ -128,3 +115,25 @@ class AgentBot(SimpleBot):
                 return response_message.content
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
+
+
+def execute_tool_call(tool_call, name_to_tool_map: dict[str, Callable]) -> Any:
+    """Execute a tool call.
+
+    :param tool_call: The tool call to execute
+    :return: The result of the tool call
+    """
+    func_name = tool_call.function.name
+    func = name_to_tool_map.get(func_name)
+    if not func:
+        return f"Error: Function {func_name} not found"
+    func_args = json.loads(tool_call.function.arguments)
+    try:
+        return func(**func_args)
+    except Exception as e:
+        result = (
+            f"Error executing tool call: {e}! "
+            f"Arguments were: {func_args}. "
+            "If you get a timeout error, try bumping up the timeout parameter."
+        )
+        return result

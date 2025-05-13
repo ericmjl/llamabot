@@ -175,10 +175,10 @@ def write_and_execute_script(
     timeout: int = 30,
 ) -> Dict[str, Any]:
     """Write and execute a Python script in a secure sandbox.
-
     Dependencies should be specified as a comma-separated string, e.g. "requests,beautifulsoup4".
-
     Script output will be captured from stdout. Use print() to output results.
+    Include lots of print() statements in your code to see what is happening.
+    Estimate the timeout parameter to avoid errors.
 
     :param code: The Python code to execute
     :param dependencies_str: Comma-separated string of pip dependencies
