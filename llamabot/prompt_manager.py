@@ -12,7 +12,7 @@ import logging
 from functools import wraps
 from pathlib import Path
 from textwrap import dedent
-from typing import Callable, Literal, Optional
+from typing import Callable, Literal, Optional, Union
 
 import jinja2
 from jinja2 import meta
@@ -27,20 +27,36 @@ logger = logging.getLogger(__name__)
 
 
 def version_prompt(
-    template: str, function_name: str, db_path: Optional[Path] = None
+    template: str, function_name: str, db_path: Optional[Union[Path, str]] = None
 ) -> str:
     """Version a prompt template and return its hash.
 
     :param template: The prompt template to version.
     :param function_name: The name of the function being decorated.
-    :param db_path: The path to the database file. Defaults to 'message_log.db' in the project root.
+    :param db_path: The path to the database file. Can be a Path object or a SQLAlchemy URI string.
+                   Defaults to 'message_log.db' in the project root.
     :return: The hash for the prompt template.
     """
     logger.debug(f"Versioning prompt for function: {function_name}")
-    db_path = find_or_set_db_path(db_path)
-    if str(db_path).startswith("sqlite:///"):
-        db_path = Path(str(db_path).replace("sqlite:///", ""))
-    engine = create_engine(f"sqlite:///{db_path}")
+
+    # Handle db_path - convert to SQLAlchemy URI if it's not already
+    db_uri = None
+    if db_path is None:
+        # Use default path
+        db_path = find_or_set_db_path(db_path)
+        db_uri = f"sqlite:///{db_path}"
+    elif isinstance(db_path, str) and db_path.startswith("sqlite:///"):
+        # Already a SQLAlchemy URI
+        db_uri = db_path
+    else:
+        # Convert Path or non-URI string to URI
+        db_path = Path(db_path)
+        db_uri = f"sqlite:///{db_path}"
+
+    logger.debug(f"Using database URI: {db_uri}")
+
+    # Create engine and setup
+    engine = create_engine(db_uri)
     Base.metadata.create_all(engine)
     upgrade_database(engine)
     Session = sessionmaker(bind=engine)
