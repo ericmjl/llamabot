@@ -95,7 +95,7 @@ jobs:
         if: ${{ matrix.test-type == 'bare-package' && matrix.environment-type == 'uv' }}
         run: |
           source llamabot-env/bin/activate
-          uv pip install .
+          uv pip install .[all]
           python scripts/yo.py
 
       # Upload code coverage only for unit tests
