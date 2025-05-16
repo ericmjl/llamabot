@@ -88,6 +88,7 @@ dependencies = [
     "numpydoc", # Temporarily added on 2025-05-10 to fix LiteLLM's omission of this dependency.
     "chonkie[all]>=0.2.2,<0.3",
     "starlette",
+    "duckduckgo-search",
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
@@ -102,10 +103,10 @@ llamabot = "llamabot.cli:app"
 
 [project.optional-dependencies]
 notebooks = [
-  "ics",
-  "tzlocal",
-  "modal",
-  "ipykernel",
+    "ics",
+    "tzlocal",
+    "modal",
+    "ipykernel",
 ]
 rag = [
     "lancedb>=0.22",
@@ -116,7 +117,6 @@ rag = [
 ]
 agent = [
     "docker",
-    "duckduckgo-search",
     "markdownify",
 ]
 cli = [
