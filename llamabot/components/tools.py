@@ -19,6 +19,14 @@ from datetime import datetime
 from uuid import uuid4
 import requests
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
+import random
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
+from duckduckgo_search.exceptions import DuckDuckGoSearchException
 
 
 def tool(func: Callable) -> Callable:
@@ -66,17 +74,67 @@ def search_internet(
             "The Python package `markdownify` cannot be found. Please install it using `pip install llamabot[agent]`."
         )
 
-    ddgs = DDGS()
-    results = ddgs.text(search_term, max_results=max_results, backend=backend)
-    webpage_contents = {}
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(DuckDuckGoSearchException),
+    )
+    def perform_search(ddgs, search_term, max_results, backend):
+        """
+        Perform a search using the DuckDuckGo search engine with retry logic.
+
+        This function attempts to perform a search operation using the provided
+        DuckDuckGoSearch instance (`ddgs`). If the search fails due to a
+        `DuckDuckGoSearchException`, it will retry up to 3 times with an
+        exponential backoff strategy.
+
+        Args:
+            ddgs (DuckDuckGoSearch): An instance of the DuckDuckGo search client.
+            search_term (str): The search query to be executed.
+            max_results (int): The maximum number of search results to retrieve.
+            backend (str): The backend to use for the search operation.
+
+        Returns:
+            str: The search results in text format.
+
+        Raises:
+            DuckDuckGoSearchException: If all retry attempts fail.
+        """
+        return ddgs.text(search_term, max_results=max_results, backend=backend)
+
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Mobile/15E148 Safari/604.1",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
+    ]
+
+    accept_headers = [
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "text/html,application/xhtml+xml,application/xml;q=0.8,image/webp,*/*;q=0.7",
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    ]
+
+    accept_languages = [
+        "en-US,en;q=0.5",
+        "en-GB,en;q=0.7",
+        "en-US,en;q=0.8,fr;q=0.5",
+    ]
+
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
+        "User-Agent": random.choice(user_agents),
+        "Accept": random.choice(accept_headers),
+        "Accept-Language": random.choice(accept_languages),
         "Accept-Encoding": "gzip, deflate, br",
         "DNT": "1",
         "Connection": "keep-alive",
     }
+
+    # Use the retry-enabled function
+    ddgs = DDGS(headers=headers)
+    results = perform_search(ddgs, search_term, max_results, backend)
+    webpage_contents = {}
 
     def fetch_url(url: str, headers: Dict[str, str]) -> Tuple[str, str]:
         """Fetch a URL and return the content.
