@@ -50,10 +50,6 @@ testpaths = [
 ]
 norecursedirs = ["archive/*"]
 
-[tool.isort]
-profile = "black"
-float-to-top = true
-
 [tool.setuptools]
 include-package-data = true
 
