@@ -3,7 +3,7 @@
 import base64
 import mimetypes
 from pathlib import Path
-from typing import Union
+from typing import Iterable, Union
 
 import httpx
 from pydantic import BaseModel, Field
@@ -15,6 +15,7 @@ class BaseMessage(BaseModel):
     role: str
     content: str
     prompt_hash: str | None = Field(default=None)
+    tool_calls: list = Field(default=list())
 
     # Implement slicing for message contents so that I can get content[:-i].
     def __getitem__(self, index):
@@ -169,8 +170,8 @@ def retrieve_messages_up_to_budget(
     return retrieved_messages
 
 
-def process_messages(
-    messages: tuple[Union[str, BaseMessage, list[Union[str, BaseMessage]]], ...],
+def to_basemessage(
+    messages: Iterable[Union[str, BaseMessage, list[Union[str, BaseMessage]]]],
 ) -> list[BaseMessage]:
     """Process a tuple of messages into a list of BaseMessage objects.
 

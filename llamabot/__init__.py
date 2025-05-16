@@ -21,17 +21,15 @@ from pathlib import Path
 from loguru import logger
 
 from .bot.agentbot import AgentBot
-from .bot.chatbot import ChatBot
 from .bot.imagebot import ImageBot
 from .bot.querybot import QueryBot
 from .bot.simplebot import SimpleBot
 from .bot.structuredbot import StructuredBot
 from .experiments import Experiment, metric
 from .prompt_manager import prompt
-from .recorder import PromptRecorder
 from .components.messages import user, system, dev
 from .components.tools import tool
-from .components.docstore import BM25DocStore, LanceDBDocStore, ChromaDBDocStore
+from .components.docstore import BM25DocStore, LanceDBDocStore
 
 
 # Configure logger
@@ -50,11 +48,9 @@ logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNI
 
 __all__ = [
     "AgentBot",
-    "ChatBot",
     "ImageBot",
     "SimpleBot",
     "QueryBot",
-    "PromptRecorder",
     "StructuredBot",
     "prompt",
     "Experiment",
@@ -65,7 +61,6 @@ __all__ = [
     "dev",
     "BM25DocStore",
     "LanceDBDocStore",
-    "ChromaDBDocStore",
 ]
 
 # Ensure ~/.llamabot directory exists

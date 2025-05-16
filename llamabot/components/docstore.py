@@ -6,18 +6,14 @@ The interface that we need is implemented here:
 - extend,
 - retrieve
 
-ChromaDB is a great default choice because of its simplicity and FOSS nature.
+LanceDB is a great default choice because of its simplicity and FOSS nature.
 Hence we use it by default.
 """
 
-from hashlib import sha256
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 import slugify
-from tqdm.auto import tqdm
-
-from llamabot.doc_processor import magic_load_doc, split_document
 
 
 class AbstractDocumentStore:
@@ -58,153 +54,130 @@ class AbstractDocumentStore:
         """
         raise NotImplementedError()
 
-    def add_documents(
-        self,
-        document_paths: Path | list[Path],
-        chunk_size: int = 2_000,
-        chunk_overlap: int = 500,
-    ):
-        """Add documents to the QueryBot DocumentStore.
 
-        :param document_paths: The document paths to add to the store.
-        :param chunk_size: The size of each chunk.
-        :param chunk_overlap: The amount of overlap between chunks.
-        """
-        if isinstance(document_paths, Path):
-            document_paths = [document_paths]
+# NOTE: 11 May 2025 -- ChromaDB's dependency chain
+# is introducing difficulties for me here.
+# I have opted to remove support for it temporarily until later notice.
+#
+# class ChromaDBDocStore(AbstractDocumentStore):
+#     """A document store for LlamaBot that wraps around ChromaDB."""
 
-        for document_path in tqdm(document_paths):
-            document = magic_load_doc(document_path)
-            splitted_document = split_document(
-                document, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-            )
-            self.extend(splitted_document)
-        self.__post_add_documents__()
+#     def __init__(
+#         self,
+#         collection_name: str,
+#         storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
+#     ):
+#         try:
+#             import chromadb
+#         except ImportError:
+#             raise ImportError(
+#                 "ChromaDB is required for ChromaDBDocStore. "
+#                 "Please `pip install llamabot[rag]` to use the ChromaDB document store."
+#             )
 
-    def __post_add_documents__(self):
-        """Execute code after adding documents to the store."""
-        raise NotImplementedError()
+#         collection_name = slugify.slugify(collection_name, separator="-")
 
+#         client = chromadb.PersistentClient(path=str(storage_path))
+#         collection = client.create_collection(collection_name, get_or_create=True)
 
-class ChromaDBDocStore(AbstractDocumentStore):
-    """A document store for LlamaBot that wraps around ChromaDB."""
+#         self.storage_path = storage_path
+#         self.client = client
+#         self.collection = collection
+#         self.collection_name = collection_name
+#         self.existing_records = collection.get()
 
-    def __init__(
-        self,
-        collection_name: str,
-        storage_path: Path = Path.home() / ".llamabot" / "chroma.db",
-    ):
-        try:
-            import chromadb
-        except ImportError:
-            raise ImportError(
-                "ChromaDB is required for ChromaDBDocStore. "
-                "Please `pip install llamabot[rag]` to use the ChromaDB document store."
-            )
+#     def __post_add_documents__(self):
+#         """Execute code after adding documents to the store."""
+#         pass
 
-        collection_name = slugify.slugify(collection_name, separator="-")
+#     def append(
+#         self,
+#         document: str,
+#         metadata: Optional[dict] = None,
+#         embedding: Optional[list[float]] = None,
+#     ):
+#         """Append a document to the store.
 
-        client = chromadb.PersistentClient(path=str(storage_path))
-        collection = client.create_collection(collection_name, get_or_create=True)
+#         By default, the documents will be automatically embedded
+#         using the default embedder that is set in the ChromaDB client.
+#         However, there may be cases where we want to pre-compute the embeddings
+#         and pass them into the store, e.g. when adding documents in parallel.
+#         In this case, we can pass the pre-computed embeddings into the store.
+#         Use `append` to do single adds, and `extend` to do bulk adds.
 
-        self.storage_path = storage_path
-        self.client = client
-        self.collection = collection
-        self.collection_name = collection_name
-        self.existing_records = collection.get()
+#         :param document: The document to append.
+#         :param metadata: The metadata to append.
+#         :param embedding: The embedding to append, optional
+#         """
+#         doc_id = sha256(document.encode()).hexdigest()
+#         self.collection.add(
+#             documents=document,
+#             ids=doc_id,
+#             metadatas=metadata,
+#             embeddings=embedding,
+#         )
 
-    def __post_add_documents__(self):
-        """Execute code after adding documents to the store."""
-        pass
+#     def extend(
+#         self,
+#         documents: list[str],
+#         metadatas: Optional[list[dict]] = None,
+#         embeddings: Optional[list[list[float]]] = None,
+#     ):
+#         """Extend the document store.
 
-    def append(
-        self,
-        document: str,
-        metadata: Optional[dict] = None,
-        embedding: Optional[list[float]] = None,
-    ):
-        """Append a document to the store.
+#         This is effectively a bulk add of documents.
+#         See the docstring for `append` for more details.
 
-        By default, the documents will be automatically embedded
-        using the default embedder that is set in the ChromaDB client.
-        However, there may be cases where we want to pre-compute the embeddings
-        and pass them into the store, e.g. when adding documents in parallel.
-        In this case, we can pass the pre-computed embeddings into the store.
-        Use `append` to do single adds, and `extend` to do bulk adds.
+#         :param documents: Iterable of documents.
+#         :param metadatas: Iterable of metadatas.
+#         :param embeddings: Iterable of pre-computed embeddings.
+#         """
+#         # Compute doc_id
+#         ids = [sha256(doc.encode()).hexdigest() for doc in documents]
 
-        :param document: The document to append.
-        :param metadata: The metadata to append.
-        :param embedding: The embedding to append, optional
-        """
-        doc_id = sha256(document.encode()).hexdigest()
-        self.collection.add(
-            documents=document,
-            ids=doc_id,
-            metadatas=metadata,
-            embeddings=embedding,
-        )
+#         # Check that the lengths of the lists are the same
+#         if metadatas is not None and len(documents) != len(metadatas):
+#             raise ValueError(
+#                 "The lengths of the documents and metadatas must be the same."
+#             )
+#         if embeddings is not None and len(documents) != len(embeddings):
+#             raise ValueError(
+#                 "The lengths of the documents and embeddings must be the same."
+#             )
 
-    def extend(
-        self,
-        documents: list[str],
-        metadatas: Optional[list[dict]] = None,
-        embeddings: Optional[list[list[float]]] = None,
-    ):
-        """Extend the document store.
+#         self.collection.add(
+#             ids=ids,
+#             documents=documents,
+#             metadatas=metadatas,
+#             embeddings=embeddings,
+#         )
 
-        This is effectively a bulk add of documents.
-        See the docstring for `append` for more details.
+#     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+#         """Retrieve documents from the store.
 
-        :param documents: Iterable of documents.
-        :param metadatas: Iterable of metadatas.
-        :param embeddings: Iterable of pre-computed embeddings.
-        """
-        # Compute doc_id
-        ids = [sha256(doc.encode()).hexdigest() for doc in documents]
+#         :param query: The query to use to retrieve documents.
+#         """
+#         try:
+#             import chromadb
+#         except ImportError:
+#             raise ImportError(
+#                 "ChromaDB is required for ChromaDBDocStore. "
+#                 "Please `pip install llamabot[rag]` to use the ChromaDB document store."
+#             )
 
-        # Check that the lengths of the lists are the same
-        if metadatas is not None and len(documents) != len(metadatas):
-            raise ValueError(
-                "The lengths of the documents and metadatas must be the same."
-            )
-        if embeddings is not None and len(documents) != len(embeddings):
-            raise ValueError(
-                "The lengths of the documents and embeddings must be the same."
-            )
+#         # Use Vectordb to get documents.
+#         results: chromadb.QueryResult = self.collection.query(
+#             query_texts=query, n_results=n_results
+#         )
+#         vectordb_documents: list[str] = results["documents"][0]
+#         return vectordb_documents
 
-        self.collection.add(
-            ids=ids,
-            documents=documents,
-            metadatas=metadatas,
-            embeddings=embeddings,
-        )
-
-    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
-        """Retrieve documents from the store.
-
-        :param query: The query to use to retrieve documents.
-        """
-        try:
-            import chromadb
-        except ImportError:
-            raise ImportError(
-                "ChromaDB is required for ChromaDBDocStore. "
-                "Please `pip install llamabot[rag]` to use the ChromaDB document store."
-            )
-
-        # Use Vectordb to get documents.
-        results: chromadb.QueryResult = self.collection.query(
-            query_texts=query, n_results=n_results
-        )
-        vectordb_documents: list[str] = results["documents"][0]
-        return vectordb_documents
-
-    def reset(self):
-        """Reset the document store."""
-        self.client.delete_collection(self.collection_name)
-        self.collection = self.client.create_collection(
-            self.collection_name, get_or_create=True
-        )
+#     def reset(self):
+#         """Reset the document store."""
+#         self.client.delete_collection(self.collection_name)
+#         self.collection = self.client.create_collection(
+#             self.collection_name, get_or_create=True
+#         )
 
 
 class LanceDBDocStore(AbstractDocumentStore):
@@ -219,6 +192,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         try:
             import lancedb
             from lancedb.embeddings import EmbeddingFunctionRegistry, get_registry
+            from lancedb.rerankers import RRFReranker
             from lancedb.pydantic import LanceModel, Vector
         except ImportError:
             raise ImportError(
@@ -226,8 +200,8 @@ class LanceDBDocStore(AbstractDocumentStore):
                 "Please `pip install llamabot[rag]` to use the LanceDB document store."
             )
 
-        self.registry: EmbeddingFunctionRegistry = get_registry()
-        self.embedding_func: Callable = self.registry.get(
+        registry: EmbeddingFunctionRegistry = get_registry()
+        self.embedding_func: Callable = registry.get(
             name="sentence-transformers"
         ).create()
 
@@ -262,6 +236,8 @@ class LanceDBDocStore(AbstractDocumentStore):
         if auto_create_fts_index:
             self.table.create_fts_index(field_names=["document"], replace=True)
 
+        self.reranker = RRFReranker()
+
     def __contains__(self, other: str) -> bool:
         """Returns boolean whether the 'other' document is in the store.
 
@@ -275,8 +251,6 @@ class LanceDBDocStore(AbstractDocumentStore):
     def append(
         self,
         document: str,
-        metadata: Optional[dict] = None,
-        embedding: Optional[list[float]] = None,
     ):
         """Append a document to the store.
 
@@ -288,10 +262,6 @@ class LanceDBDocStore(AbstractDocumentStore):
         # Completely ignore metadata
         document_to_add = {"document": document}
 
-        # Only add vector if embedding is provided
-        if embedding is not None:
-            document_to_add["vector"] = embedding
-
         if document not in self.existing_records:
             self.table.add([document_to_add])
             self.existing_records.append(document)
@@ -302,8 +272,6 @@ class LanceDBDocStore(AbstractDocumentStore):
     def extend(
         self,
         documents: list[str],
-        metadata: Optional[list[dict]] = None,
-        embeddings: Optional[list[list[float]]] = None,
     ):
         """Extend a list of documents to the store.
 
@@ -313,24 +281,20 @@ class LanceDBDocStore(AbstractDocumentStore):
 
         stuff_to_add = []
         for i, doc in enumerate(documents):
+            # Skip if document already exists
+            if doc in self.existing_records:
+                continue
+
             # Create document entry with document text only
             entry = {"document": doc}
-
-            # Only add vector if embeddings are provided and valid for this document
-            if (
-                embeddings is not None
-                and i < len(embeddings)
-                and embeddings[i] is not None
-            ):
-                entry["vector"] = embeddings[i]
-
             stuff_to_add.append(entry)
 
-        self.table.add(stuff_to_add)
-        self.existing_records.extend(documents)
-
-        # Ensure FTS index exists
-        self.table.create_fts_index(field_names=["document"], replace=True)
+        # Use add instead of merge_insert to avoid schema conflicts
+        if stuff_to_add:
+            self.table.add(stuff_to_add)
+            self.existing_records.extend(documents)
+            # Ensure FTS index exists
+            self.table.create_fts_index(field_names=["document"], replace=True)
 
     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
         """Retrieve a list of documents from the store.
@@ -339,8 +303,8 @@ class LanceDBDocStore(AbstractDocumentStore):
         :param n_results: The number of results to retrieve.
         :return: A list of documents.
         """
-        results: list = (
-            self.table.search(query, query_type="hybrid")
+        results = (
+            self.table.search(query, query_type="auto")
             .limit(n_results)
             .to_pydantic(self.schema)
         )
@@ -350,10 +314,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         """Reset the document store."""
         self.db.drop_table(self.table_name)
         self.table = self.db.create_table(self.table_name, schema=self.schema)
-
-    def __post_add_documents__(self):
-        """Execute code after adding documents to the store."""
-        self.table.create_fts_index("document", replace=True)
+        self.existing_records = []
 
 
 class BM25DocStore(AbstractDocumentStore):

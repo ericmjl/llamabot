@@ -3,13 +3,10 @@ This module provides a set of tests for the PromptRecorder
 and autorecord functions in the llamabot.recorder module.
 """
 
-import pandas as pd
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from llamabot.recorder import (
-    PromptRecorder,
-    autorecord,
     MessageLog,
     Base,
     upgrade_database,
@@ -32,66 +29,6 @@ def session(engine):
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     return Session()
-
-
-def test_init():
-    """Test that the PromptRecorder is initialized correctly."""
-    recorder = PromptRecorder()
-    assert recorder.prompts == []
-
-
-def test_log():
-    """Test that the PromptRecorder logs prompts and responses correctly."""
-    recorder = PromptRecorder()
-    recorder.log("prompt1", "response1")
-    assert recorder.prompts == [{"prompt": "prompt1", "response": "response1"}]
-
-
-def test_repr():
-    """Test that the PromptRecorder is represented correctly."""
-    recorder = PromptRecorder()
-    recorder.log("prompt1", "response1")
-    assert isinstance(recorder.__repr__(), str)
-
-
-def test_dataframe():
-    """Test that the PromptRecorder is represented correctly as a dataframe."""
-    recorder = PromptRecorder()
-    recorder.log("prompt1", "response1")
-    assert isinstance(recorder.dataframe(), pd.DataFrame)
-
-
-def test_autorecord_no_context():
-    """Test that autorecord works without a context."""
-    prompt = "Hello"
-    response = "Hi"
-    autorecord(prompt, response)
-
-
-def test_autorecord_with_context():
-    """Test that autorecord works with a context."""
-    prompt = "Hello"
-    response = "Hi"
-    recorder = PromptRecorder()
-    with recorder:
-        autorecord(prompt, response)
-    assert len(recorder.prompts) == 1
-    assert recorder.prompts[0]["prompt"] == prompt
-    assert recorder.prompts[0]["response"] == response
-
-
-def test_autorecord_multiple_with_context():
-    """Test that autorecord works with a context multiple times."""
-    prompts = ["Hello", "How are you?"]
-    responses = ["Hi", "I'm good, thanks!"]
-    recorder = PromptRecorder()
-    with recorder:
-        for p, r in zip(prompts, responses):
-            autorecord(p, r)
-    assert len(recorder.prompts) == 2
-    for i, (p, r) in enumerate(zip(prompts, responses)):
-        assert recorder.prompts[i]["prompt"] == p
-        assert recorder.prompts[i]["response"] == r
 
 
 def test_message_log_creation(session):

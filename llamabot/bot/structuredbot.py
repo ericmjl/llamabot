@@ -8,16 +8,23 @@ Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 import json
 from typing import Union
 
+from llamabot.recorder import sqlite_log
 from loguru import logger
 from pydantic import BaseModel, ValidationError
 from litellm import supports_response_schema, get_supported_openai_params
 
-from llamabot.bot.simplebot import SimpleBot
+from llamabot.bot.simplebot import (
+    SimpleBot,
+    extract_content,
+    make_response,
+    stream_chunks,
+)
 from llamabot.components.messages import (
+    AIMessage,
     BaseMessage,
     HumanMessage,
     SystemMessage,
-    process_messages,
+    to_basemessage,
 )
 from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
@@ -106,27 +113,35 @@ class StructuredBot(SimpleBot):
         :return: An instance of the specified Pydantic model.
         """
         # Compose the full message list
-        full_messages = [
-            self.system_prompt,
-            *process_messages(messages),
-        ]
+        messages = to_basemessage(messages)
+
+        full_messages = [self.system_prompt] + messages
 
         last_response = None
         last_codeblock = None
-
         # we'll attempt to get the response from the model and validate it
         for attempt in range(num_attempts):
             try:
-                match self.stream_target:
-                    case "stdout":
-                        response = self.stream_stdout(full_messages)
-                    case "none":
-                        response = self.stream_none(full_messages)
+                # Create full messages list for this attempt
+                for message in full_messages:
+                    if isinstance(message, str):
+                        print(message)
+
+                # Get response using the same pattern as SimpleBot
+                response = make_response(
+                    self, full_messages, self.stream_target != "none"
+                )
+                response = stream_chunks(response, target=self.stream_target)
+
+                # Extract content from the response
+                content = extract_content(response)
 
                 # parse the response, and validate it against the pydantic model
-                last_response = response
+                last_response = AIMessage(content=content)
+                sqlite_log(self, messages + [last_response])
+
                 last_codeblock = json.loads(last_response.content)
-                obj = self.pydantic_model(**last_codeblock)
+                obj = self.pydantic_model.model_validate(last_codeblock)
                 return obj
 
             except ValidationError as e:
@@ -141,5 +156,8 @@ class StructuredBot(SimpleBot):
                 if verbose:
                     logger.info(e)
                 full_messages.extend(
-                    [last_response, self.get_validation_error_message(e)]
+                    [
+                        AIMessage(content=last_response.content),
+                        self.get_validation_error_message(e),
+                    ]
                 )

@@ -160,3 +160,9 @@ scratch_notebooks/*.html
 # SQLite database
 message_log.db
 example_docs.db
+
+# SQLite database
+test.db
+
+# SQLite database
+test_message_log.db

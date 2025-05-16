@@ -23,6 +23,9 @@ jobs:
           # Unit tests only run with pixi
           - test-type: unit-tests
             environment-type: uv
+          # Smoke tests only run with uv
+          - test-type: smoke-tests
+            environment-type: pixi
 
     defaults:
       run:
@@ -92,7 +95,7 @@ jobs:
         if: ${{ matrix.test-type == 'bare-package' && matrix.environment-type == 'uv' }}
         run: |
           source llamabot-env/bin/activate
-          uv pip install .
+          uv pip install .[all]
           python scripts/yo.py
 
       # Upload code coverage only for unit tests

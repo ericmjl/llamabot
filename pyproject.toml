@@ -65,15 +65,15 @@ dependencies = [
     "openai",
     "loguru",
     "python-dotenv",
-    "typer",
+    "typer>=0.15.3",
     "pyprojroot",
     "beautifulsoup4",
-    "litellm>=1.59.1,<=1.67.2", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
+    "litellm>=1.69.1", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
     "python-slugify",
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
     "jinja2",
-    "fastapi>=0.104.0",  # This version requires Python >=3.8
+    "fastapi>=0.115.9",
     "uvicorn",
     "tenacity",
     "python-multipart",
@@ -81,6 +81,10 @@ dependencies = [
     "tqdm",
     "sqlalchemy",
     "pdfminer.six",
+    "numpydoc", # Temporarily added on 2025-05-10 to fix LiteLLM's omission of this dependency.
+    "chonkie[all]>=0.2.2,<0.3",
+    "starlette",
+    "duckduckgo-search",
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
@@ -95,30 +99,20 @@ llamabot = "llamabot.cli:app"
 
 [project.optional-dependencies]
 notebooks = [
-  "ics",
-  "tzlocal",
-  "chonkie[all]>=0.2.2,<0.3",
-  "modal"
-]
-ui = [
-    "panel",
-    "bokeh-fastapi",
-    "jupyter_bokeh",
-    "bokeh",
-    "fastapi[standard]",
+    "ics",
+    "tzlocal",
+    "modal",
+    "ipykernel",
 ]
 rag = [
-    "lancedb",
-    "chromadb>=1.0.7",
+    "lancedb>=0.22",
     "tantivy",
     "rank-bm25",
     "pylance",
     "sentence-transformers",
-    "llamabot[ui]",
 ]
 agent = [
     "docker",
-    "duckduckgo-search",
     "markdownify",
 ]
 cli = [
@@ -151,38 +145,22 @@ platforms = ["osx-arm64", "linux-64", "osx-64", "linux-aarch64"]
 [tool.pixi.pypi-dependencies]
 llamabot = { path = ".", editable = true }
 
-[tool.pixi.feature.tests.dependencies]
+[tool.pixi.feature.tests.pypi-dependencies]
 pytest = "*"
 hypothesis = "*"
 pytest-cov = "*"
 pytest-mock = "*"
 tuna = "*"
 
-[tool.pixi.feature.devtools.dependencies]
+[tool.pixi.feature.devtools.pypi-dependencies]
 pre-commit = "*"
 ipython = "*"
 bump2version = "*"
 
-[tool.pixi.feature.docs.dependencies]
+[tool.pixi.feature.docs.pypi-dependencies]
 mkdocs = "*"
 mkdocs-material = "*"
 mknotebooks = "*"
-
-# Stuff that is referenced _only_ in notebooks go here.
-[tool.pixi.feature.notebooks.dependencies]
-jupyter = "*"
-ipykernel = "*"
-jupyterlab = "*"
-pixi-kernel = "*"
-biopython = "*"
-lxml = ">=5.3.0,<6"
-hvplot = ">=0.11.1,<0.12"
-pip = ">=24.3.1,<25"
-selenium = ">=4.11.2,<5"
-python-chromedriver-binary = ">=133.0.6882.0.0,<134"
-
-[tool.pixi.feature.notebooks.pypi-dependencies]
-pdf2image = "*"
 
 # TASKS BELOW!
 [tool.pixi.tasks]
@@ -201,7 +179,7 @@ build-docs = "mkdocs build"
 [tool.pixi.environments]
 default = ["tests", "devtools", "docs", "notebooks", "ui", "rag", "agent", "cli"]
 docs = ["docs"]
-notebooks = ["notebooks"] # for those who just want to run notebooks
+notebooks = ["notebooks", "rag", "agent"] # for those who just want to run notebooks
 bare = ["devtools"]
 
 [tool.pixi.dependencies]
