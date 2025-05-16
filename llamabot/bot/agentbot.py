@@ -11,6 +11,7 @@ import json
 from typing import Any, Callable, List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 from llamabot.bot.simplebot import (
     SimpleBot,
     extract_content,
@@ -82,7 +83,6 @@ class AgentBot(SimpleBot):
         :return: The final response as an AIMessage
         :raises RuntimeError: If max iterations is reached
         """
-        results = []
         iteration = 0
 
         messages = [self.system_prompt] + list([user(m) for m in messages])
@@ -97,19 +97,27 @@ class AgentBot(SimpleBot):
             response_message = AIMessage(content=content, tool_calls=tool_calls)
 
             if tool_calls:
-                # Create a function to execute a tool call
-
+                results = []
                 # Print the names of the functions that are to be called
                 print("Calling functions:")
-                for call in tool_calls:
-                    print(f"Calling: {call.function.name}(**{call.function.arguments})")
-
-                # Execute all tool calls in parallel using threads
                 with ThreadPoolExecutor() as executor:
-                    futures = [
-                        executor.submit(execute_tool_call, call) for call in tool_calls
-                    ]
-                    results = [future.result() for future in as_completed(futures)]
+                    futures = {
+                        executor.submit(
+                            execute_tool_call, call, self.name_to_tool_map
+                        ): call
+                        for call in tool_calls
+                    }
+                    for future in as_completed(futures):
+                        call = futures[future]
+                        try:
+                            result = future.result()
+                            print(
+                                f"Completed: {call.function.name}(**{call.function.arguments})"
+                            )
+                            results.append(result)
+                        except Exception as e:
+                            print(f"Error calling {call.function.name}: {e}")
+
                 messages.append((str(results)))
             else:
                 return response_message.content

@@ -18,4 +18,4 @@ def default_language_model():
 
     load_dotenv(llamabotrc_path)
 
-    return os.getenv("DEFAULT_LANGUAGE_MODEL", "mistral/mistral-medium")
+    return os.getenv("DEFAULT_LANGUAGE_MODEL", "gpt-4.1")
