@@ -1,8 +1,12 @@
+qwen2.5vl
+phi4-reasoning
+phi4-mini-reasoning
 qwen3
 granite3.3
 deepcoder
 mistral-small3.1
 cogito
+llama4
 exaone-deep
 command-a
 gemma3
