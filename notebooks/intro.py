@@ -1,7 +1,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "llamabot[all]==0.11.9",
+#     "litellm==1.70.0",
+#     "llamabot[all]==0.12.0",
 #     "marimo",
 #     "nbclient==0.10.2",
 #     "numpydoc==1.8.0",
@@ -12,12 +13,12 @@
 # ]
 #
 # [tool.uv.sources]
-# llamabot = { path = "./", editable = true }
+# llamabot = { path = "../", editable = true }
 # ///
 
 import marimo
 
-__generated_with = "0.13.6"
+__generated_with = "0.13.10"
 app = marimo.App(width="medium")
 
 
@@ -59,7 +60,7 @@ def _():
 
     simple_bot = lmb.SimpleBot(
         system_prompt=comedian_sysprompt,
-        model_name="ollama_chat/gemma2:2b",
+        model_name="ollama_chat/mistral-small3.1",
     )
 
     sb_response = simple_bot("Tell me a joke about programming.")
@@ -98,7 +99,7 @@ def _(comedian_sysprompt, lmb):
     chat_bot = lmb.SimpleBot(
         system_prompt=comedian_sysprompt,
         chat_memory=comedian_memory,
-        model_name="ollama_chat/gemma2:2b",
+        model_name="ollama_chat/mistral-small3.1",
     )
 
     chat_bot("Tell me a joke about programming.")
@@ -157,7 +158,7 @@ def _(llamabot_docs, lmb):
     llamabot_docbot = lmb.QueryBot(
         system_prompt="You are an expert Python programmer.",
         docstore=llamabot_docs,
-        model_name="ollama_chat/gemma2:2b",
+        model_name="ollama_chat/mistral-small3.1",
     )
 
     llamabot_docbot("How do I use StructuredBot?")
@@ -193,9 +194,7 @@ def _(comedian_memory):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""Now, `simple_bot` and `chat_bot` are effectively neuralinked together via `comedian_memory`. We can make `simple_bot` amnesic again simply by setting `simple_bot.chat_memory = None`."""
-    )
+    mo.md(r"""Now, `simple_bot` and `chat_bot` are effectively neuralinked together via `comedian_memory`. We can make `simple_bot` amnesic again simply by setting `simple_bot.chat_memory = None`.""")
     return
 
 
@@ -230,7 +229,7 @@ def _(lmb):
     amnesic_structured_bot = lmb.StructuredBot(
         system_prompt="You are a comedic name generator.",
         pydantic_model=ComedicName,
-        model_name="ollama_chat/gemma2:2b",
+        model_name="ollama_chat/mistral-small3.1",
         temperature=0.8,
     )
 
@@ -240,9 +239,7 @@ def _(lmb):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""Like other bots, we can add memory! However, because the `__call__` method doesn't explicitly handle `chat_memory`, it will get ignored."""
-    )
+    mo.md(r"""Like other bots, we can add memory! However, because the `__call__` method doesn't explicitly handle `chat_memory`, it will get ignored.""")
     return
 
 
@@ -253,7 +250,7 @@ def _(ComedicName, lmb):
     structured_bot = lmb.StructuredBot(
         system_prompt="You are a comedic name generator.",
         pydantic_model=ComedicName,
-        model_name="ollama_chat/gemma2:2b",
+        model_name="ollama_chat/mistral-small3.1",
         temperature=0.8,
         chat_memory=sb_memory,
     )
@@ -270,9 +267,7 @@ def _(structured_bot):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""To prove the point, there are no items that are present in `sb_memory`."""
-    )
+    mo.md(r"""To prove the point, there are no items that are present in `sb_memory`.""")
     return
 
 
@@ -284,9 +279,7 @@ def _(sb_memory):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""As such, any similarities between the two calls is purely coincidental."""
-    )
+    mo.md(r"""As such, any similarities between the two calls is purely coincidental.""")
     return
 
 
@@ -329,22 +322,50 @@ def _(lmb):
     bot = lmb.AgentBot(
         system_prompt="You are a helpful assistant.",
         tools=[search_internet_and_summarize, write_and_execute_script],
+        model_name="ollama_chat/mistral-small3.1",
+        stream_target="none",
     )
 
-    return (bot,)
+    return bot, search_internet_and_summarize, write_and_execute_script
+
+
+@app.cell
+def _(search_internet_and_summarize):
+    search_internet_and_summarize.json_schema
+    return
+
+
+@app.cell
+def _(search_internet_and_summarize, write_and_execute_script):
+    from litellm import completion
+
+
+    completion(
+        messages=[
+            {
+                "role": "system", 
+                "content": "You are a helpful assistant"
+            },
+            {
+                "role": "user", 
+                "content": "What are the latest ratings on Taylor Swift's latest album?"
+            }
+        ],
+        tools=[search_internet_and_summarize.json_schema, write_and_execute_script.json_schema],
+        model="ollama_chat/mistral-small3.1",
+    )
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""This first one _should_ use the `search_internet_and_summarize` tool to search the internet. I have intentionally included a few spelling errors to make the task a bit harder for the LLM."""
-    )
+    mo.md(r"""This first one _should_ use the `search_internet_and_summarize` tool to search the internet. I have intentionally included a few spelling errors to make the task a bit harder for the LLM.""")
     return
 
 
 @app.cell
 def _(bot):
-    response = bot("What are the latest ragitngs on Taylor Swfit's latset album?")
+    response = bot("What are the latest ratings on Taylor Swfit's latset album?")
     print(response)
 
     return
@@ -393,8 +414,8 @@ def _(mo):
 @app.cell
 def _(BaseModel, Field, lmb):
     class CriteriaEvaluation(BaseModel):
-        score: int = Field(
-            description="A score out of 100 on the poem's ability to pass the evaluation criteria. Intended to be finer-grained."
+        passes: bool = Field(
+            description="Whether or not the poem passes the evaluation or not."
         )
         reason: str = Field(
             description="Why the evaluation pass and score was given as such, and how to improve the score."
@@ -406,14 +427,13 @@ def _(BaseModel, Field, lmb):
             "You will evaluate a given poem for its ability to induce a high emotional reaction in a person. Return True if it will and False if it won't."
         ),
         pydantic_model=CriteriaEvaluation,
-        model_name="gpt-4.1",
-    )
+        model_name="ollama_chat/mistral-small3.1",)
 
     writer_bot = lmb.SimpleBot(
         system_prompt=lmb.system(
             "You will be given a keyword theme and optionally feedback on how to improve your previous iterations of the poem. Use it to generate an upgraded version of the poem."
         ),
-        model_name="gpt-4.1",
+        model_name="ollama_chat/mistral-small3.1",
     )
 
     @lmb.prompt("user")
@@ -447,7 +467,7 @@ def _(mo):
 
 @app.cell
 def _(writer_bot):
-    test_poem = writer_bot("DNA Biotechnology")
+    test_poem = writer_bot("losing a loved one")
     test_poem
     return (test_poem,)
 
@@ -456,16 +476,14 @@ def _(writer_bot):
 def _(evaluation_bot, test_poem):
     test_evaluation = evaluation_bot(test_poem.content)
 
-    print(test_evaluation.score)
+    print(test_evaluation.passes)
     print(test_evaluation.reason)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""Now, let's put this into an autonomous poem generation loop. Here, we will have a writer bot write a poem, and then have an evaluation bot score the poem based on the "emotional reaction" criteria."""
-    )
+    mo.md(r"""Now, let's put this into an autonomous poem generation loop. Here, we will have a writer bot write a poem, and then have an evaluation bot score the poem based on the "emotional reaction" criteria.""")
     return
 
 
@@ -483,7 +501,7 @@ def _(evaluation_bot, write_poem_prompt, writer_bot):
             )
         )
         eval = evaluation_bot(poem)
-        if eval.score > 60:
+        if eval.passes:
             passes_criteria = True
         previous_evaluation = eval
         previous_poem = poem
@@ -493,9 +511,7 @@ def _(evaluation_bot, write_poem_prompt, writer_bot):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""I won't go into this in too much detail, but this is an example of an "LLM-as-a-judge" in action."""
-    )
+    mo.md(r"""I won't go into this in too much detail, but this is an example of an "LLM-as-a-judge" in action.""")
     return
 
 
