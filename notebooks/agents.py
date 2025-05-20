@@ -43,7 +43,7 @@ def _():
     @lmb.prompt("system")
     def mistral_tool_calling_system_prompt():
         """You are an expert LLM prompt writer.
-        
+
         You will be given a prompt, rewrite it to be optimal for you.
         Return for me only the prompt without the preamble or postamble.
         """
@@ -52,7 +52,9 @@ def _():
         model_name="ollama_chat/mistral-small3.1",
         system_prompt=mistral_tool_calling_system_prompt(),
     )
-    response = bot("Download the red wine quality dataset from https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv. Use the provided column headers. Train a random forest classifier with 100 trees and a maximum depth of 5 to predict the 'quality' column using the other features. Perform 5-fold cross-validation and return the mean and standard deviation of the accuracy.")
+    response = bot(
+        "Download the red wine quality dataset from https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv. Use the provided column headers. Train a random forest classifier with 100 trees and a maximum depth of 5 to predict the 'quality' column using the other features. Perform 5-fold cross-validation and return the mean and standard deviation of the accuracy."
+    )
     return BaseModel, Field, bot, lmb, response
 
 
@@ -110,4 +112,4 @@ def _():
 
 
 if __name__ == "__main__":
-    app.run() 
+    app.run()
