@@ -160,6 +160,7 @@ tuna = "*"
 pre-commit = "*"
 ipython = "*"
 bump2version = "*"
+ty = "*"
 
 [tool.pixi.feature.docs.pypi-dependencies]
 mkdocs = "*"
@@ -189,3 +190,6 @@ bare = ["devtools"]
 [tool.pixi.dependencies]
 python-multipart = "*"
 numpydoc = ">=1.8.0,<2"
+
+[tool.ty.environment]
+python = "./.pixi/envs/default"
