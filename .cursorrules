@@ -25,3 +25,7 @@ Editing:
 - As much as possible, only edit the file that I ask you to edit.
 - Don't worry about linting errors. I have automatic linting tools.
 - If I ask you to diagnose a problem, do not jump into editing. Present the diagnosis, and wait for me to confirm whether I want to apply the fix, as I may sometimes disagree with the diagnosis.
+
+Notebooks:
+
+- If I ask you to generate a Marimo notebook, it generally looks like this:

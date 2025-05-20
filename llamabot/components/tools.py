@@ -230,7 +230,6 @@ def write_and_execute_script(
     code: str,
     dependencies_str: Optional[str] = None,
     python_version: str = ">=3.11",
-    timeout: int = 30,
 ) -> Dict[str, Any]:
     """Write and execute a Python script in a secure sandbox.
     Dependencies should be specified as a comma-separated string, e.g. "requests,beautifulsoup4".
@@ -267,7 +266,7 @@ def write_and_execute_script(
 
     # Write and run script
     script_path = executor.write_script(code, metadata)
-    result = executor.run_script(script_path, timeout)
+    result = executor.run_script(script_path, 600)
 
     # Return structured output
     return {

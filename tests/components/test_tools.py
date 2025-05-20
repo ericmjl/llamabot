@@ -127,11 +127,9 @@ def test_write_and_execute_script_schema():
     assert "code" in params
     assert "dependencies_str" in params
     assert "python_version" in params
-    assert "timeout" in params
 
     # Check types
     assert params["code"]["type"] == "string"
-    assert params["timeout"]["type"] == "integer"
 
 
 @pytest.mark.xfail(reason="Sometimes the Docker engine may not be running.")

@@ -161,7 +161,7 @@ def _(llamabot_docs, lmb):
         model_name="ollama_chat/mistral-small3.1",
     )
 
-    llamabot_docbot("How do I use StructuredBot?")
+    llamabot_docbot("How do I use StructuredBot to extract information from papers?")
     return
 
 
@@ -194,7 +194,9 @@ def _(comedian_memory):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Now, `simple_bot` and `chat_bot` are effectively neuralinked together via `comedian_memory`. We can make `simple_bot` amnesic again simply by setting `simple_bot.chat_memory = None`.""")
+    mo.md(
+        r"""Now, `simple_bot` and `chat_bot` are effectively neuralinked together via `comedian_memory`. We can make `simple_bot` amnesic again simply by setting `simple_bot.chat_memory = None`."""
+    )
     return
 
 
@@ -239,7 +241,9 @@ def _(lmb):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Like other bots, we can add memory! However, because the `__call__` method doesn't explicitly handle `chat_memory`, it will get ignored.""")
+    mo.md(
+        r"""Like other bots, we can add memory! However, because the `__call__` method doesn't explicitly handle `chat_memory`, it will get ignored."""
+    )
     return
 
 
@@ -267,7 +271,9 @@ def _(structured_bot):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""To prove the point, there are no items that are present in `sb_memory`.""")
+    mo.md(
+        r"""To prove the point, there are no items that are present in `sb_memory`."""
+    )
     return
 
 
@@ -279,7 +285,9 @@ def _(sb_memory):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""As such, any similarities between the two calls is purely coincidental.""")
+    mo.md(
+        r"""As such, any similarities between the two calls is purely coincidental."""
+    )
     return
 
 
@@ -322,11 +330,18 @@ def _(lmb):
     bot = lmb.AgentBot(
         system_prompt="You are a helpful assistant.",
         tools=[search_internet_and_summarize, write_and_execute_script],
-        model_name="ollama_chat/mistral-small3.1",
-        stream_target="none",
+        model_name="gpt-4.1",  # In vibe testing, this is the model that works best.
     )
 
-    return bot, search_internet_and_summarize, write_and_execute_script
+    return bot, search_internet_and_summarize
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""Every function that is passed in is decorated with the `lmb.tool` decorator that attaches a `.json_schema` to each function. Here is one example, for the `search_internet_and_summarize` function:"""
+    )
+    return
 
 
 @app.cell
@@ -335,31 +350,11 @@ def _(search_internet_and_summarize):
     return
 
 
-@app.cell
-def _(search_internet_and_summarize, write_and_execute_script):
-    from litellm import completion
-
-
-    completion(
-        messages=[
-            {
-                "role": "system", 
-                "content": "You are a helpful assistant"
-            },
-            {
-                "role": "user", 
-                "content": "What are the latest ratings on Taylor Swift's latest album?"
-            }
-        ],
-        tools=[search_internet_and_summarize.json_schema, write_and_execute_script.json_schema],
-        model="ollama_chat/mistral-small3.1",
-    )
-    return
-
-
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""This first one _should_ use the `search_internet_and_summarize` tool to search the internet. I have intentionally included a few spelling errors to make the task a bit harder for the LLM.""")
+    mo.md(
+        r"""Here's a task that we should be able to get an LLM to execute on. This first task _should_ use the `search_internet_and_summarize` tool to search the internet. I have intentionally included a few spelling errors to make the task a bit harder for the LLM."""
+    )
     return
 
 
@@ -374,7 +369,7 @@ def _(bot):
 @app.cell
 def _(bot):
     response2 = bot(
-        "Download the red wine quality dataset from https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv. Use the provided column headers. Train a random forest classifier with 100 trees and a maximum depth of 5 to predict the ‘quality’ column using the other features. Perform 5-fold cross-validation and return the mean and standard deviation of the accuracy."
+        "Download the red wine quality dataset from https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv. Use the provided column headers. Train a random forest classifier with 100 trees and a maximum depth of 5 to predict the ‘quality’ column using the other features. Perform 5-fold cross-validation and return the mean and standard deviatlitellmion of the accuracy."
     )
     return
 
@@ -427,7 +422,8 @@ def _(BaseModel, Field, lmb):
             "You will evaluate a given poem for its ability to induce a high emotional reaction in a person. Return True if it will and False if it won't."
         ),
         pydantic_model=CriteriaEvaluation,
-        model_name="ollama_chat/mistral-small3.1",)
+        model_name="ollama_chat/mistral-small3.1",
+    )
 
     writer_bot = lmb.SimpleBot(
         system_prompt=lmb.system(
@@ -483,7 +479,9 @@ def _(evaluation_bot, test_poem):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Now, let's put this into an autonomous poem generation loop. Here, we will have a writer bot write a poem, and then have an evaluation bot score the poem based on the "emotional reaction" criteria.""")
+    mo.md(
+        r"""Now, let's put this into an autonomous poem generation loop. Here, we will have a writer bot write a poem, and then have an evaluation bot score the poem based on the "emotional reaction" criteria."""
+    )
     return
 
 
@@ -511,7 +509,9 @@ def _(evaluation_bot, write_poem_prompt, writer_bot):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""I won't go into this in too much detail, but this is an example of an "LLM-as-a-judge" in action.""")
+    mo.md(
+        r"""I won't go into this in too much detail, but this is an example of an "LLM-as-a-judge" in action."""
+    )
     return
 
 

@@ -232,6 +232,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/19/09/39d29d9a22cee0b3c3e4f3fdbd23e4534b9c2a84b5f962f369eafcfbf88c/tree_sitter_yaml-0.7.0-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/11/53/ce18470914ab6cfbec9384ee565d23c4d1c55f0548160b1c7b33000b11fd/triton-3.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/31/09/f8152ed81b62232e1806001860fec71d55ae7f7e455e662959cf15eb06c1/ty-0.0.1a6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/0f/68a997c73a129287785f418c1ebb6004f81e46b53b3caba88c0e03fcd04a/types_requests-2.32.0.20250515-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
@@ -457,6 +458,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/1f/88/8761fecb761eb7b7acd6b9dc8e987813f9b58195895c437c3a7a416813da/tree_sitter_language_pack-0.7.3-cp39-abi3-manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/f5/ba/9cff9a3fddb1b6b38bc71ce1dfdb8892ab15a4042c104f4582e30318b412/tree_sitter_yaml-0.7.0-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/bd/26/1fb0664521b35b5b4b16c9ca56363c514994f5fda8200aef28380b08814c/ty-0.0.1a6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/0f/68a997c73a129287785f418c1ebb6004f81e46b53b3caba88c0e03fcd04a/types_requests-2.32.0.20250515-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
@@ -674,6 +676,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/2d/2c/07e297ddf680e8220f4c12d220762176a5837ba8d7835712051f8344e7a5/tree_sitter_language_pack-0.7.3-cp39-abi3-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/69/1d/243dbdf59fae8a4109e19f0994e2627ddedb2e16b7cf99bd42be64367742/tree_sitter_yaml-0.7.0-cp39-abi3-macosx_10_9_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/df/16/8754d24634ddfea333d1818c981b20c929f93a7ea26235622c371068f3bf/ty-0.0.1a6-py3-none-macosx_10_12_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/0f/68a997c73a129287785f418c1ebb6004f81e46b53b3caba88c0e03fcd04a/types_requests-2.32.0.20250515-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
@@ -890,6 +893,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/2d/2c/07e297ddf680e8220f4c12d220762176a5837ba8d7835712051f8344e7a5/tree_sitter_language_pack-0.7.3-cp39-abi3-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/e2/63/e5d5868a1498e20fd07e7db62933766fd64950279862e3e7f150b88ec69d/tree_sitter_yaml-0.7.0-cp39-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5a/9d/3b935a7f18f088f113cc94c72caefd34616dde87d0b08a5dfa2f696b3758/ty-0.0.1a6-py3-none-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/0f/68a997c73a129287785f418c1ebb6004f81e46b53b3caba88c0e03fcd04a/types_requests-2.32.0.20250515-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
@@ -1205,6 +1209,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/11/53/ce18470914ab6cfbec9384ee565d23c4d1c55f0548160b1c7b33000b11fd/triton-3.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d6/07/c115a27adb5228bdf78d0c2366637c5b1630427f879c674f7bab4e6eb637/tuna-0.5.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/31/09/f8152ed81b62232e1806001860fec71d55ae7f7e455e662959cf15eb06c1/ty-0.0.1a6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b5/63/2463d89481e811f007b0e1cd0a91e52e141b47f9de724d20db7b861dcfec/types_certifi-2021.10.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/3f/b0e8db149896005adc938a1e7f371d6d7e9eca4053a29b108978ed15e0c2/types_python_dateutil-2.9.0.20250516-py3-none-any.whl
@@ -1504,6 +1509,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f5/ba/9cff9a3fddb1b6b38bc71ce1dfdb8892ab15a4042c104f4582e30318b412/tree_sitter_yaml-0.7.0-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/d6/07/c115a27adb5228bdf78d0c2366637c5b1630427f879c674f7bab4e6eb637/tuna-0.5.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/bd/26/1fb0664521b35b5b4b16c9ca56363c514994f5fda8200aef28380b08814c/ty-0.0.1a6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b5/63/2463d89481e811f007b0e1cd0a91e52e141b47f9de724d20db7b861dcfec/types_certifi-2021.10.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/3f/b0e8db149896005adc938a1e7f371d6d7e9eca4053a29b108978ed15e0c2/types_python_dateutil-2.9.0.20250516-py3-none-any.whl
@@ -1796,6 +1802,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/69/1d/243dbdf59fae8a4109e19f0994e2627ddedb2e16b7cf99bd42be64367742/tree_sitter_yaml-0.7.0-cp39-abi3-macosx_10_9_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d6/07/c115a27adb5228bdf78d0c2366637c5b1630427f879c674f7bab4e6eb637/tuna-0.5.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/df/16/8754d24634ddfea333d1818c981b20c929f93a7ea26235622c371068f3bf/ty-0.0.1a6-py3-none-macosx_10_12_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b5/63/2463d89481e811f007b0e1cd0a91e52e141b47f9de724d20db7b861dcfec/types_certifi-2021.10.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/3f/b0e8db149896005adc938a1e7f371d6d7e9eca4053a29b108978ed15e0c2/types_python_dateutil-2.9.0.20250516-py3-none-any.whl
@@ -2087,6 +2094,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e2/63/e5d5868a1498e20fd07e7db62933766fd64950279862e3e7f150b88ec69d/tree_sitter_yaml-0.7.0-cp39-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/d6/07/c115a27adb5228bdf78d0c2366637c5b1630427f879c674f7bab4e6eb637/tuna-0.5.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/cb/8a0d9e1ff633e4b01b41b113ea2819d94fec04b6cee86bec63c180e5e85e/turbopuffer-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5a/9d/3b935a7f18f088f113cc94c72caefd34616dde87d0b08a5dfa2f696b3758/ty-0.0.1a6-py3-none-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b5/63/2463d89481e811f007b0e1cd0a91e52e141b47f9de724d20db7b861dcfec/types_certifi-2021.10.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/3f/b0e8db149896005adc938a1e7f371d6d7e9eca4053a29b108978ed15e0c2/types_python_dateutil-2.9.0.20250516-py3-none-any.whl
@@ -6916,7 +6924,7 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.12.0
-  sha256: fc63b9a1f413d7e53dd3dc24bc1a6ed095ca5196100faef2f79d93b495d9ff60
+  sha256: c1098c2c48467cafdcb240ceb2a8c148e018ce4118b83fbb7a907e9b2278e6a0
   requires_dist:
   - openai
   - loguru
@@ -11279,6 +11287,26 @@ packages:
   - requests>=2.31,<3.0
   - typing-extensions>=4.12.2,<5.0.0
   requires_python: '>=3.9,<4.0'
+- pypi: https://files.pythonhosted.org/packages/31/09/f8152ed81b62232e1806001860fec71d55ae7f7e455e662959cf15eb06c1/ty-0.0.1a6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  name: ty
+  version: 0.0.1a6
+  sha256: f2dac891e1b066a645c85abe68885a0ea9eb52685ea6251fdc369b2cfdab10c6
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/5a/9d/3b935a7f18f088f113cc94c72caefd34616dde87d0b08a5dfa2f696b3758/ty-0.0.1a6-py3-none-macosx_11_0_arm64.whl
+  name: ty
+  version: 0.0.1a6
+  sha256: 568b76a20b3cf4834085bd37005d6d13b4460d3fcd001313cc1993224e965029
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/bd/26/1fb0664521b35b5b4b16c9ca56363c514994f5fda8200aef28380b08814c/ty-0.0.1a6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+  name: ty
+  version: 0.0.1a6
+  sha256: 9502e4e55530643225c94d62f52cb7ab7370dca57f4ab10c36aae410642a966a
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/df/16/8754d24634ddfea333d1818c981b20c929f93a7ea26235622c371068f3bf/ty-0.0.1a6-py3-none-macosx_10_12_x86_64.whl
+  name: ty
+  version: 0.0.1a6
+  sha256: 96e14bf1dae72042a6207ea94d8f34d5175cb604d196df28012444108e6b0988
+  requires_python: '>=3.8'
 - pypi: https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl
   name: typer
   version: 0.15.4
