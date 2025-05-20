@@ -11,12 +11,6 @@
 # ///
 
 import marimo
-import llamabot as lmb
-from pydantic import BaseModel, Field
-from llamabot.components.tools import (
-    search_internet_and_summarize,
-    write_and_execute_script,
-)
 
 __generated_with = "0.13.10"
 app = marimo.App(width="medium")
@@ -40,6 +34,13 @@ def _(mo):
 
 @app.cell
 def _():
+    import llamabot as lmb
+    from pydantic import BaseModel, Field
+    from llamabot.components.tools import (
+        search_internet_and_summarize,
+        write_and_execute_script,
+    )
+
     @lmb.prompt("system")
     def mistral_tool_calling_system_prompt():
         """You are an expert LLM prompt writer.
@@ -108,6 +109,8 @@ def _(mo):
 
 @app.cell
 def _():
+    import marimo as mo
+
     return (mo,)
 
 
