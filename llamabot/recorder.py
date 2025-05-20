@@ -181,9 +181,7 @@ def ensure_db_in_gitignore(db_path: Path) -> None:
             # Ensure the .llamabot/.gitignore exists with proper content
             if not gitignore_path.exists():
                 with open(gitignore_path, "w") as f:
-                    f.write(
-                        "# Ignore all files in this directory\n*\n# Except this file\n!.gitignore\n"
-                    )
+                    f.write("# Ignore all files in this directory\n*")
             return
 
         # For databases not in .llamabot directory, use the original approach
