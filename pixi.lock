@@ -6916,7 +6916,7 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.12.0
-  sha256: dc5977966f69ad256c4f903f1570f398e6866adbddbb9cc134ed0cf09b98465f
+  sha256: fc63b9a1f413d7e53dd3dc24bc1a6ed095ca5196100faef2f79d93b495d9ff60
   requires_dist:
   - openai
   - loguru
