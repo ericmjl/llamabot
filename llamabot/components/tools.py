@@ -27,6 +27,7 @@ from tenacity import (
     retry_if_exception_type,
 )
 from duckduckgo_search.exceptions import DuckDuckGoSearchException
+from llamabot.prompt_manager import prompt
 
 
 def tool(func: Callable) -> Callable:
@@ -163,8 +164,51 @@ def search_internet(
     return webpage_contents
 
 
+@prompt("system")
+def summarization_bot_system_prompt() -> str:
+    """
+    ## role
+
+    You are a precise summarization assistant that creates focused, relevant summaries of web content.
+    Your job is to extract and synthesize the most important information based on the user's query.
+
+    ## summarization guidelines
+
+    1. Focus on relevance:
+       - Prioritize information directly related to the search term
+       - Filter out tangential or unrelated content
+       - Maintain context while being concise
+
+    2. Structure your summary:
+       - Start with the most relevant information
+       - Include key facts, figures, or findings
+       - End with any important implications or conclusions
+
+    3. Quality standards:
+       - Be factual and objective
+       - Preserve critical context
+       - Avoid redundancy
+       - Use clear, professional language
+       - Keep to one focused paragraph
+
+    4. When information is missing or unclear:
+       - Acknowledge gaps explicitly
+       - Don't make assumptions
+       - Focus on what is known with confidence
+
+    ## output format
+
+    Your summary should be:
+    - One paragraph (3-5 sentences)
+    - Directly relevant to the search term
+    - Self-contained and clear
+    - Professional in tone
+    - Free of unnecessary qualifiers or hedging
+    """
+
+
 def summarize_web_results(
-    search_term: str, webpage_contents: Dict[str, str]
+    search_term: str, webpage_contents: Dict[str, str], **bot_kwargs
 ) -> Dict[str, str]:
     """Summarize the content of a webpage in 1 paragraph based on a query.
 
@@ -172,9 +216,14 @@ def summarize_web_results(
     :param webpage_contents: The content of the webpage
     :return: The summarized content
     """
+    model_name = bot_kwargs.pop("model_name", "gpt-4.1-mini")
+    stream_target = bot_kwargs.pop("stream_target", "none")
+    system_prompt = bot_kwargs.pop("system_prompt", summarization_bot_system_prompt())
     bot = SimpleBot(
-        system_prompt="You are a helpful assistant that summarizes the content of a webpage in 1 paragraph based on a query.",
-        stream_target="none",
+        system_prompt=system_prompt,
+        stream_target=stream_target,
+        model_name=model_name,
+        **bot_kwargs,
     )
 
     def summarize_content(url: str, content: str) -> Tuple[str, str]:
