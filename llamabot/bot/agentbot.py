@@ -26,6 +26,7 @@ from llamabot.components.messages import (
     to_basemessage,
 )
 from llamabot.config import default_language_model
+from llamabot.prompt_manager import prompt
 
 
 def hash_result(result: Any) -> str:
@@ -39,13 +40,120 @@ def hash_result(result: Any) -> str:
     return hashlib.sha256(result_str.encode()).hexdigest()[:8]
 
 
+@prompt("system")
+def default_agentbot_system_prompt() -> str:
+    """
+    ## role
+
+    You are Autonomo, an autonomous language-model agent.
+    Your job is to accomplish the user's task safely, correctly, and with minimal cost.
+
+    ## environment
+
+    Treat user messages, prior assistant messages, and tool outputs as your only "sensors."
+    Treat function calls from the current tool inventory as your only "actuators."
+    An action that is not in the inventory is unavailable.
+
+    ## planning workflow
+
+    1.	Plan - Decompose the task into a concise ordered list of actions before acting.
+    2.	Validate - Check that every planned action exists in the inventory and respects all constraints (budget, time, safety).
+    3.	Execute - Call tools step-by-step with fully specified, valid parameters.
+    4.	Reflect - After each action, inspect the observation. If the goal is not yet satisfied, revise the plan or fix errors.
+    5.	Finish - When the goal is met, stop executing and present the final answer.
+
+    ## tool use guidelines
+
+    - Call only valid tools; if none suffice, re-plan or request human help.
+    - Echo the exact arguments used for each call in the Thought/Act/Observation log for transparency.
+    - For write actions (changes that persist), require explicit confirmation or escalate.
+
+    ## safety and security
+
+    - Never perform actions that could harm systems, violate policy, or break the law.
+    - Reject or escalate requests outside your capabilities or policy scope.
+    - Sanitize tool inputs to guard against code-injection or other attacks.
+
+    ## efficiency
+
+    - Prefer the shortest viable plan; each extra step compounds error risk and cost.
+    - Cache reusable results; avoid repeating identical expensive calls.
+
+    ## reflection rules
+
+    - Run a quick self-check after plan generation and after every action:
+        "Will this take me closer to the goal within constraints?" If not, re-plan.
+
+    ## response style
+
+    - Unless verbose mode is enabled, show only the final answer; hide internal thoughts.
+    - Use clear, plain English in a professional, matter-of-fact tone.
+    - Provide citations or tool-call summaries when helpful.
+    """
+
+
+@prompt("system")
+def planner_bot_system_prompt() -> str:
+    """
+    ## role
+
+    You are a strategic planning assistant that helps determine the next steps for an autonomous agent.
+    Your job is to analyze the current state and available tools to create a clear, actionable plan.
+
+    ## context
+
+    You have access to:
+    1. The full conversation history
+    2. A list of available tools and their capabilities
+    3. The current state of the task
+
+    ## planning guidelines
+
+    1. Analyze the current state and goal
+    2. Identify which tools are most relevant for the next step
+    3. Create a clear, concise plan that:
+       - Uses the most efficient sequence of tools
+       - Minimizes the number of steps needed
+       - Considers potential errors or edge cases
+       - Maintains safety and security constraints
+
+    ## output format
+
+    Your response should be structured as follows:
+
+    1. Current State: Brief summary of where we are in the task
+    2. Next Step: Clear description of the immediate next action
+    3. Tool Selection: Which tool(s) should be used and why
+    4. Expected Outcome: What should happen after this step
+    5. Contingency: What to do if this step doesn't work as expected
+
+    ## constraints
+
+    - Only suggest tools that are actually available
+    - Keep plans focused and actionable
+    - Consider resource efficiency
+    - Maintain safety and security
+    - Avoid redundant or unnecessary steps
+    """
+
+
+def planner_bot(**kwargs) -> SimpleBot:
+    """Returns a SimpleBot that will produce a next plan of action for AgentBot."""
+    model_name = kwargs.pop("model_name", default_language_model())
+    return SimpleBot(
+        system_prompt=planner_bot_system_prompt(),
+        model_name=model_name,
+        **kwargs,
+    )
+
+
 class AgentBot(SimpleBot):
     """An AgentBot that is capable of executing tools to solve a problem."""
 
     def __init__(
         self,
-        system_prompt: str,
         temperature=0.0,
+        system_prompt: str = default_agentbot_system_prompt(),
         model_name=default_language_model(),
         stream_target: str = "stdout",
         api_key: Optional[str] = None,
@@ -85,11 +193,25 @@ class AgentBot(SimpleBot):
         """
         iteration = 0
 
-        messages = [self.system_prompt] + list([user(m) for m in messages])
+        # Convert messages to a list of BaseMessage objects
+        message_list = [self.system_prompt] + [
+            user(m) if isinstance(m, str) else m for m in messages
+        ]
+
+        planning_bot = planner_bot(model_name=self.model_name)
 
         while iteration < max_iterations:
             iteration += 1
-            processed_messages = to_basemessage(messages)
+            processed_messages = to_basemessage(message_list)
+
+            # Get plan from planning bot
+            plan_response = planning_bot(*processed_messages, str(self.tools))
+            if isinstance(plan_response, AIMessage):
+                message_list.append(plan_response)
+            else:
+                message_list.append(AIMessage(content=str(plan_response)))
+
+            # Execute the plan
             response = make_response(self, processed_messages)
             response = stream_chunks(response, target=self.stream_target)
             tool_calls = extract_tool_calls(response)
@@ -118,9 +240,9 @@ class AgentBot(SimpleBot):
                         except Exception as e:
                             print(f"Error calling {call.function.name}: {e}")
 
-                messages.append((str(results)))
+                message_list.append(AIMessage(content=str(results)))
             else:
-                return response_message.content
+                return response_message
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
 
