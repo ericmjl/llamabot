@@ -1,3 +1,4 @@
+devstral
 qwen2.5vl
 phi4-reasoning
 phi4-mini-reasoning
