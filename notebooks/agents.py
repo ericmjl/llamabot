@@ -1,9 +1,11 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "llamabot[all]==0.12.0",
+#     "llamabot[all]==0.12.3",
 #     "marimo",
 #     "pydantic==2.11.4",
+#     "ipython",
+#     "litellm==1.70.4",
 # ]
 #
 # [tool.uv.sources]
@@ -12,106 +14,100 @@
 
 import marimo
 
-__generated_with = "0.13.10"
+__generated_with = "0.13.11"
 app = marimo.App(width="medium")
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""# LlamaBot Agents""")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    This notebook demonstrates how to use LlamaBot's agent capabilities to perform autonomous tasks.
-    """
-    )
-    return
 
 
 @app.cell
 def _():
     import llamabot as lmb
-    from pydantic import BaseModel, Field
+
+    return (lmb,)
+
+
+@app.cell
+def _(lmb):
     from llamabot.components.tools import (
         search_internet_and_summarize,
         write_and_execute_script,
     )
 
-    @lmb.prompt("system")
-    def mistral_tool_calling_system_prompt():
-        """You are an expert LLM prompt writer.
-
-        You will be given a prompt, rewrite it to be optimal for you.
-        Return for me only the prompt without the preamble or postamble.
-        """
-
-    bot = lmb.SimpleBot(
-        model_name="ollama_chat/mistral-small3.1",
-        system_prompt=mistral_tool_calling_system_prompt(),
+    agent_only_scripting = lmb.AgentBot(
+        tools=[write_and_execute_script],
+        model_name="gpt-4.1",
     )
-    response = bot(
+    return (
+        agent_only_scripting,
+        search_internet_and_summarize,
+        write_and_execute_script,
+    )
+
+
+@app.cell
+def _(agent_only_scripting):
+    response_agent_only_scripting = agent_only_scripting(
+        "Summarize for me the latest ratings of Taylor Swift's latest album."
+    )
+    return
+
+
+@app.cell
+def _(lmb, search_internet_and_summarize, write_and_execute_script):
+    agent = lmb.AgentBot(
+        tools=[write_and_execute_script, search_internet_and_summarize],
+        model_name="gpt-4.1",
+    )
+    return (agent,)
+
+
+@app.cell
+def _(agent):
+    response_taylor_swift = agent(
+        "Summarize for me the latest ratings of Taylor Swift's latest album."
+    )
+    return
+
+
+@app.cell
+def _(agent):
+    response_wine = agent(
         "Download the red wine quality dataset from https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv. Use the provided column headers. Train a random forest classifier with 100 trees and a maximum depth of 5 to predict the 'quality' column using the other features. Perform 5-fold cross-validation and return the mean and standard deviation of the accuracy."
     )
-    return BaseModel, Field, bot, lmb, response
+    return (response_wine,)
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    ## Using AgentBot with Tools
-
-    LlamaBot provides an `AgentBot` class that can use tools to perform autonomous tasks.
-    Let's set up an agent with some built-in tools.
-    """
-    )
+@app.cell
+def _(response_wine):
+    print(response_wine.content)
     return
 
 
 @app.cell
-def _():
-    agent = lmb.AgentBot(
-        system_prompt="You are a helpful bot that writes scripts to accomplish tasks.",
-        tools=[write_and_execute_script, search_internet_and_summarize],
-        model_name="openai/mistral-small3.1",
-        api_base="http://localhost:11434/v1",
+def _(agent):
+    response_mufc = agent(
+        "What are the predictions for Man Utd's europa league final game?"
     )
-    return agent, search_internet_and_summarize, write_and_execute_script
+    return (response_mufc,)
 
 
 @app.cell
-def _(agent, response):
-    result = agent(response.content)
-    return result
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    The agent successfully:
-    1. Downloaded the red wine quality dataset
-    2. Trained a Random Forest Classifier with the specified parameters
-    3. Performed 5-fold cross-validation
-    4. Returned the mean and standard deviation of the accuracy scores
-
-    The results show:
-    - Mean accuracy score: ~0.584
-    - Standard deviation: ~0.029
-    """
-    )
+def _(response_mufc):
+    print(response_mufc.content)
     return
 
 
 @app.cell
-def _():
-    import marimo as mo
+def _(agent):
+    response_mufc1999 = agent(
+        "What were the predictions for Man Utd's 1999 Champions League final?"
+    )
+    return (response_mufc1999,)
 
-    return (mo,)
+
+@app.cell
+def _(response_mufc1999):
+    print(response_mufc1999)
+    return
 
 
 if __name__ == "__main__":
