@@ -38,9 +38,10 @@ def tool(func: Callable) -> Callable:
     :returns: The decorated function with an attached Function schema.
     """
     # Create and attach the schema
+    function_dict = function_to_dict(func)
     func.json_schema = {
         "type": "function",
-        "function": function_to_dict(func),
+        "function": function_dict,  # Nest function dict under "function" key
     }
     return func
 
