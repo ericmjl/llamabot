@@ -68,7 +68,7 @@ dependencies = [
     "typer>=0.15.3",
     "pyprojroot",
     "beautifulsoup4",
-    "litellm>=1.69.1", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
+    "litellm>=1.71.0", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
     "python-slugify",
     "pydantic>=2.0",
     "numpy", # https://github.com/ericmjl/llamabot/issues/56
