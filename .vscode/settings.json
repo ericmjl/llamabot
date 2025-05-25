@@ -2,7 +2,7 @@
     "peacock.color": "#1857a4",
     "notebook.formatOnSave.enabled": true,
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
+        "editor.defaultFormatter": "charliermarsh.ruff"
     },
     "python.formatting.provider": "none",
     "python.analysis.autoImportCompletions": true,
