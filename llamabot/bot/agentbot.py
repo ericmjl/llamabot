@@ -10,6 +10,7 @@ import hashlib
 import json
 from typing import Any, Callable, List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from loguru import logger
 
 
 from llamabot.bot.simplebot import (
@@ -23,10 +24,11 @@ from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
     user,
-    to_basemessage,
 )
 from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
+from llamabot.components.tools import today_date
+from llamabot.recorder import sqlite_log
 
 
 def hash_result(result: Any) -> str:
@@ -155,10 +157,9 @@ class AgentBot(SimpleBot):
         temperature=0.0,
         system_prompt: str = default_agentbot_system_prompt(),
         model_name=default_language_model(),
-        stream_target: str = "stdout",
-        api_key: Optional[str] = None,
-        mock_response: Optional[str] = None,
+        stream_target: str = "none",
         tools: Optional[list[Callable]] = None,
+        planner_bot: Optional[SimpleBot] = None,
         **completion_kwargs,
     ):
         super().__init__(
@@ -166,18 +167,16 @@ class AgentBot(SimpleBot):
             temperature=temperature,
             model_name=model_name,
             stream_target=stream_target,
-            api_key=api_key,
-            mock_response=mock_response,
             **completion_kwargs,
         )
         if tools is None:
-            self.tools = []
-            self.name_to_tool_map = {}
+            self.tools = [today_date.json_schema]
+            self.name_to_tool_map = {f.__name__: f for f in self.tools}
         else:
-            self.tools = [
-                {"type": "function", "function": f.json_schema} for f in tools
-            ]
+            self.tools = [f.json_schema for f in tools] + [today_date.json_schema]
             self.name_to_tool_map = {f.__name__: f for f in tools}
+
+        self.planner_bot = planner_bot
 
     def __call__(
         self,
@@ -193,35 +192,41 @@ class AgentBot(SimpleBot):
         """
         iteration = 0
 
-        # Convert messages to a list of BaseMessage objects
-        message_list = [self.system_prompt] + [
-            user(m) if isinstance(m, str) else m for m in messages
-        ]
-
-        planning_bot = planner_bot(model_name=self.model_name)
+        # Convert messages to a list of UserMessage objects
+        message_list = (
+            [self.system_prompt]
+            + [user("Here is the user's request:")]
+            + [user(m) if isinstance(m, str) else m for m in messages]
+        )
 
         while iteration < max_iterations:
             iteration += 1
-            processed_messages = to_basemessage(message_list)
 
             # Get plan from planning bot
-            plan_response = planning_bot(*processed_messages, str(self.tools))
-            if isinstance(plan_response, AIMessage):
+            if self.planner_bot is not None:
+                plan_response = self.planner_bot(*message_list, str(self.tools))
+                message_list.append(user("Here is the plan:"))
                 message_list.append(plan_response)
-            else:
-                message_list.append(AIMessage(content=str(plan_response)))
 
             # Execute the plan
-            response = make_response(self, processed_messages)
+            stream = self.stream_target != "none"
+            logger.debug("Message list: {}", message_list)
+            response = make_response(self, message_list, stream=stream)
             response = stream_chunks(response, target=self.stream_target)
+            logger.debug("Response: {}", response)
             tool_calls = extract_tool_calls(response)
+            logger.debug("Tool calls: {}", tool_calls)
             content = extract_content(response)
+            logger.debug("Content: {}", content)
+
             response_message = AIMessage(content=content, tool_calls=tool_calls)
+            sqlite_log(self, message_list + [response_message])
 
             if tool_calls:
                 results = []
-                # Print the names of the functions that are to be called
-                print("Calling functions:")
+                logger.debug(
+                    "Calling functions: {}", [call.function.name for call in tool_calls]
+                )
                 with ThreadPoolExecutor() as executor:
                     futures = {
                         executor.submit(
@@ -233,16 +238,19 @@ class AgentBot(SimpleBot):
                         call = futures[future]
                         try:
                             result = future.result()
-                            print(
-                                f"Completed: {call.function.name}(**{call.function.arguments})"
+                            logger.debug(
+                                "Completed: {}(**{})",
+                                call.function.name,
+                                call.function.arguments,
                             )
                             results.append(result)
                         except Exception as e:
-                            print(f"Error calling {call.function.name}: {e}")
-
+                            logger.debug("Error calling {}: {}", call.function.name, e)
+                logger.debug("Results: {}", results)
+                message_list.append(user("Here is the result of the tool calls:"))
                 message_list.append(AIMessage(content=str(results)))
             else:
-                return response_message
+                return AIMessage(content=content, tool_calls=[])
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
 

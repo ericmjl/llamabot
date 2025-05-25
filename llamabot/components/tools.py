@@ -28,6 +28,7 @@ from tenacity import (
 )
 from duckduckgo_search.exceptions import DuckDuckGoSearchException
 from llamabot.prompt_manager import prompt
+from loguru import logger
 
 
 def tool(func: Callable) -> Callable:
@@ -37,7 +38,10 @@ def tool(func: Callable) -> Callable:
     :returns: The decorated function with an attached Function schema.
     """
     # Create and attach the schema
-    func.json_schema = function_to_dict(func)
+    func.json_schema = {
+        "type": "function",
+        "function": function_to_dict(func),
+    }
     return func
 
 
@@ -52,14 +56,11 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
-def search_internet(
-    search_term: str, max_results: int = 10, backend: str = "lite"
-) -> Dict[str, str]:
+def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
     """Search the internet for a given term and get webpage contents.
 
     :param search_term: The search term to look up
     :param max_results: Maximum number of search results to return
-    :param backend: The DuckDuckGo backend to use. Default is "lite".
     """
     try:
         from duckduckgo_search import DDGS
@@ -80,7 +81,7 @@ def search_internet(
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(DuckDuckGoSearchException),
     )
-    def perform_search(ddgs, search_term, max_results, backend):
+    def perform_search(ddgs, search_term, max_results):
         """
         Perform a search using the DuckDuckGo search engine with retry logic.
 
@@ -93,7 +94,6 @@ def search_internet(
             ddgs (DuckDuckGoSearch): An instance of the DuckDuckGo search client.
             search_term (str): The search query to be executed.
             max_results (int): The maximum number of search results to retrieve.
-            backend (str): The backend to use for the search operation.
 
         Returns:
             str: The search results in text format.
@@ -101,7 +101,7 @@ def search_internet(
         Raises:
             DuckDuckGoSearchException: If all retry attempts fail.
         """
-        return ddgs.text(search_term, max_results=max_results, backend=backend)
+        return ddgs.text(search_term, max_results=max_results, backend="lite")
 
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -134,7 +134,7 @@ def search_internet(
 
     # Use the retry-enabled function
     ddgs = DDGS(headers=headers)
-    results = perform_search(ddgs, search_term, max_results, backend)
+    results = perform_search(ddgs, search_term, max_results)
     webpage_contents = {}
 
     def fetch_url(url: str, headers: Dict[str, str]) -> Tuple[str, str]:
@@ -149,7 +149,7 @@ def search_internet(
             soup = BeautifulSoup(response.text, "html.parser")
             return url, md(soup.get_text())
         except Exception as e:
-            print(f"Error fetching {url}: {e}")
+            logger.debug("Error fetching {}: {}", url, e)
             return url, None
 
     with ThreadPoolExecutor() as executor:
@@ -233,8 +233,8 @@ def summarize_web_results(
         :param content: The content of the webpage
         :return: The summarized content
         """
-        print(f"Summarizing {url}:")
-        return url, bot(user(f"Query: {search_term}"), user(content))
+        logger.debug("Summarizing {}:", url)
+        return url, bot(user(f"Query: {search_term}"), user(content)).content
 
     summaries = {}
     with ThreadPoolExecutor() as executor:
@@ -250,9 +250,7 @@ def summarize_web_results(
 
 
 @tool
-def search_internet_and_summarize(
-    search_term: str, max_results: int, backend: str = "lite"
-) -> Dict[str, str]:
+def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[str, str]:
     """Search internet for a given term and summarize the results.
     To get a good summary, try increasing the number of results.
     When using search_internet, if you don't get an answer with 1 result,
@@ -260,10 +258,9 @@ def search_internet_and_summarize(
 
     :param search_term: The search term to look up
     :param max_results: Maximum number of search results to return
-    :param backend: The DuckDuckGo backend to use. Default is "lite".
     :return: Dictionary mapping URLs to markdown-formatted webpage contents
     """
-    webpage_contents = search_internet(search_term, max_results, backend)
+    webpage_contents = search_internet(search_term, max_results)
     summaries = summarize_web_results(search_term, webpage_contents)
     return summaries
 

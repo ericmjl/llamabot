@@ -104,7 +104,8 @@ class SimpleBot:
             memory_messages = [HumanMessage(content=m) for m in memory_messages]
 
         messages = [self.system_prompt] + memory_messages + processed_messages
-        response = make_response(self, messages, self.stream_target != "none")
+        stream = self.stream_target != "none"
+        response = make_response(self, messages, stream)
         response = stream_chunks(response, target=self.stream_target)
         tool_calls = extract_tool_calls(response)
         content = extract_content(response)
@@ -155,9 +156,11 @@ def make_response(
     if bot.api_key:
         completion_kwargs["api_key"] = bot.api_key
     if hasattr(bot, "tools"):
-        logger.info(f"Passing in tools: {bot.tools}")
+        logger.debug(f"Passing in tools: {bot.tools}")
         completion_kwargs["tools"] = bot.tools
         completion_kwargs["tool_choice"] = "auto"
+
+    logger.debug("Completion kwargs: {}", completion_kwargs)
     return completion(**completion_kwargs)
 
 

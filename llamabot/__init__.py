@@ -32,6 +32,19 @@ from .components.tools import tool
 from .components.docstore import BM25DocStore, LanceDBDocStore
 
 
+def set_debug_mode(enabled: bool = True) -> None:
+    """Set debug mode for llamabot.
+
+    When enabled, this will show debug-level logging messages from llamabot.
+    This is useful for debugging model interactions and tool calls.
+
+    :param enabled: Whether to enable debug mode
+    """
+    level = "DEBUG" if enabled else "WARNING"
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=level)
+
+
 # Configure logger
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
 level_map = {
@@ -61,6 +74,7 @@ __all__ = [
     "dev",
     "BM25DocStore",
     "LanceDBDocStore",
+    "set_debug_mode",
 ]
 
 # Ensure ~/.llamabot directory exists
