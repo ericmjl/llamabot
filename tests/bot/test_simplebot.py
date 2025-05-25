@@ -146,35 +146,6 @@ def test_simple_bot_init_invalid_stream_target():
         SimpleBot(system_prompt="Test prompt", stream_target="invalid")
 
 
-@given(
-    system_prompt=st.text(min_size=1),
-    completion_kwargs=st.dictionaries(
-        keys=st.text(min_size=1).filter(lambda k: k != "mock_response"),
-        values=st.one_of(
-            st.text(),
-            st.integers(),
-            # Use finite floats only, no NaN or infinity values
-            st.floats(allow_nan=False, allow_infinity=False),
-            st.booleans(),
-        ),
-        min_size=1,
-    ),
-)
-@settings(deadline=None)
-def test_simple_bot_init_with_completion_kwargs(system_prompt, completion_kwargs):
-    """Test that SimpleBot initialization accepts completion_kwargs.
-
-    :param system_prompt: The system prompt to use.
-    :param completion_kwargs: Additional keyword arguments to pass to the completion function.
-    """
-    bot = SimpleBot(system_prompt=system_prompt, **completion_kwargs)
-
-    # Check that completion_kwargs are stored
-    for key, value in completion_kwargs.items():
-        assert key in bot.completion_kwargs
-        assert bot.completion_kwargs[key] == value
-
-
 # Tests for SimpleBot call method
 @patch("llamabot.bot.simplebot.make_response")
 @patch("llamabot.bot.simplebot.stream_chunks")

@@ -31,24 +31,20 @@ def test_tool_decorator():
 
     # Check the basic structure of the json_schema
     schema = example_func.json_schema
-    assert schema["name"] == "example_func"
-    assert "Example function with docstring." in schema["description"]
-
-    # Check parameters
-    assert "parameters" in schema
-    params = schema["parameters"]["properties"]
-    assert "a" in params
-    assert "b" in params
-
-    # Check parameter types
-    assert params["a"]["type"] == "integer"
-    assert params["b"]["type"] == "string"
-
-    # Check required parameters
-    assert "required" in schema["parameters"]
-    assert "a" in schema["parameters"]["required"]
-    # Parameter 'b' has a default value so it shouldn't be required
-    assert "b" not in schema["parameters"]["required"]
+    assert schema["type"] == "function"
+    assert "function" in schema
+    assert schema["function"]["name"] == "example_func"
+    assert schema["function"]["description"] == "Example function with docstring."
+    assert "parameters" in schema["function"]
+    assert schema["function"]["parameters"]["type"] == "object"
+    assert "properties" in schema["function"]["parameters"]
+    assert "a" in schema["function"]["parameters"]["properties"]
+    assert schema["function"]["parameters"]["properties"]["a"]["type"] == "integer"
+    assert "b" in schema["function"]["parameters"]["properties"]
+    assert schema["function"]["parameters"]["properties"]["b"]["type"] == "string"
+    assert "required" in schema["function"]["parameters"]
+    assert "a" in schema["function"]["parameters"]["required"]
+    assert "b" not in schema["function"]["parameters"]["required"]
 
     # Call the function to make sure it still works as expected
     assert example_func(1) == "1 default"
@@ -65,15 +61,23 @@ def test_add_tool():
     # Test schema basics
     assert hasattr(add, "json_schema")
     schema = add.json_schema
-    assert schema["name"] == "add"
-    assert "Add two integers" in schema["description"]
-
-    # Test parameter structure
-    params = schema["parameters"]["properties"]
-    assert "a" in params
-    assert "b" in params
-    assert params["a"]["type"] == "integer"
-    assert params["b"]["type"] == "integer"
+    assert schema["type"] == "function"
+    assert "function" in schema
+    assert schema["function"]["name"] == "add"
+    assert (
+        schema["function"]["description"]
+        == "Add two integers, a and b, and return the result."
+    )
+    assert "parameters" in schema["function"]
+    assert schema["function"]["parameters"]["type"] == "object"
+    assert "properties" in schema["function"]["parameters"]
+    assert "a" in schema["function"]["parameters"]["properties"]
+    assert schema["function"]["parameters"]["properties"]["a"]["type"] == "integer"
+    assert "b" in schema["function"]["parameters"]["properties"]
+    assert schema["function"]["parameters"]["properties"]["b"]["type"] == "integer"
+    assert "required" in schema["function"]["parameters"]
+    assert "a" in schema["function"]["parameters"]["required"]
+    assert "b" in schema["function"]["parameters"]["required"]
 
 
 def test_today_date_tool():
@@ -91,8 +95,17 @@ def test_today_date_tool():
     # Test schema basics
     assert hasattr(today_date, "json_schema")
     schema = today_date.json_schema
-    assert schema["name"] == "today_date"
-    assert "Get the current date" in schema["description"]
+    assert schema["type"] == "function"
+    assert "function" in schema
+    assert schema["function"]["name"] == "today_date"
+    assert schema["function"]["description"] == "Get the current date."
+    assert "parameters" in schema["function"]
+    assert schema["function"]["parameters"]["type"] == "object"
+    assert "properties" in schema["function"]["parameters"]
+    assert len(schema["function"]["parameters"]["properties"]) == 0
+    # Allow for 'required' to be missing if there are no required parameters
+    if "required" in schema["function"]["parameters"]:
+        assert len(schema["function"]["parameters"]["required"]) == 0
 
 
 def test_search_internet_tool_schema():
@@ -100,36 +113,53 @@ def test_search_internet_tool_schema():
     # We're just testing the schema, not actual functionality to avoid internet requests
     assert hasattr(search_internet_and_summarize, "json_schema")
     schema = search_internet_and_summarize.json_schema
-    assert schema["name"] == "search_internet_and_summarize"
-    assert "Search internet" in schema["description"]
-
-    # Test parameter structure
-    params = schema["parameters"]["properties"]
-    assert "search_term" in params
-    assert "max_results" in params
-    assert "backend" in params
-
-    # Check types
-    assert params["search_term"]["type"] == "string"
-    assert params["max_results"]["type"] == "integer"
-    assert params["backend"]["type"] == "string"
+    assert schema["type"] == "function"
+    assert "function" in schema
+    assert schema["function"]["name"] == "search_internet_and_summarize"
+    assert "parameters" in schema["function"]
+    assert schema["function"]["parameters"]["type"] == "object"
+    assert "properties" in schema["function"]["parameters"]
+    assert "search_term" in schema["function"]["parameters"]["properties"]
+    assert (
+        schema["function"]["parameters"]["properties"]["search_term"]["type"]
+        == "string"
+    )
+    assert "max_results" in schema["function"]["parameters"]["properties"]
+    assert (
+        schema["function"]["parameters"]["properties"]["max_results"]["type"]
+        == "integer"
+    )
+    assert "required" in schema["function"]["parameters"]
+    assert "search_term" in schema["function"]["parameters"]["required"]
+    assert "max_results" in schema["function"]["parameters"]["required"]
 
 
 def test_write_and_execute_script_schema():
     """Test the write_and_execute_script tool schema."""
     assert hasattr(write_and_execute_script, "json_schema")
     schema = write_and_execute_script.json_schema
-    assert schema["name"] == "write_and_execute_script"
-    assert "Write and execute a Python script" in schema["description"]
-
-    # Test parameter structure
-    params = schema["parameters"]["properties"]
-    assert "code" in params
-    assert "dependencies_str" in params
-    assert "python_version" in params
-
-    # Check types
-    assert params["code"]["type"] == "string"
+    assert schema["type"] == "function"
+    assert "function" in schema
+    assert schema["function"]["name"] == "write_and_execute_script"
+    assert "parameters" in schema["function"]
+    assert schema["function"]["parameters"]["type"] == "object"
+    assert "properties" in schema["function"]["parameters"]
+    assert "code" in schema["function"]["parameters"]["properties"]
+    assert schema["function"]["parameters"]["properties"]["code"]["type"] == "string"
+    assert "dependencies_str" in schema["function"]["parameters"]["properties"]
+    assert (
+        schema["function"]["parameters"]["properties"]["dependencies_str"]["type"]
+        == "string"
+    )
+    assert "python_version" in schema["function"]["parameters"]["properties"]
+    assert (
+        schema["function"]["parameters"]["properties"]["python_version"]["type"]
+        == "string"
+    )
+    assert "required" in schema["function"]["parameters"]
+    assert "code" in schema["function"]["parameters"]["required"]
+    assert "dependencies_str" not in schema["function"]["parameters"]["required"]
+    assert "python_version" not in schema["function"]["parameters"]["required"]
 
 
 @pytest.mark.xfail(reason="Sometimes the Docker engine may not be running.")
