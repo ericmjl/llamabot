@@ -23,11 +23,12 @@ from llamabot.bot.simplebot import (
 from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
+    HumanMessage,
     user,
 )
 from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
-from llamabot.components.tools import today_date
+from llamabot.components.tools import today_date, respond_to_user
 from llamabot.recorder import sqlite_log
 
 
@@ -69,6 +70,8 @@ def default_agentbot_system_prompt() -> str:
     - Call only valid tools; if none suffice, re-plan or request human help.
     - Echo the exact arguments used for each call in the Thought/Act/Observation log for transparency.
     - For write actions (changes that persist), require explicit confirmation or escalate.
+    - When you have gathered enough information to provide a complete and accurate response to the user, use the respond_to_user tool to deliver your final answer.
+    - Do not use respond_to_user until you are confident you have all necessary information to fully address the user's request.
 
     ## safety and security
 
@@ -170,10 +173,13 @@ class AgentBot(SimpleBot):
             **completion_kwargs,
         )
         if tools is None:
-            self.tools = [today_date.json_schema]
+            self.tools = [today_date.json_schema, respond_to_user.json_schema]
             self.name_to_tool_map = {f.__name__: f for f in self.tools}
         else:
-            self.tools = [f.json_schema for f in tools] + [today_date.json_schema]
+            self.tools = [f.json_schema for f in tools] + [
+                today_date.json_schema,
+                respond_to_user.json_schema,
+            ]
             self.name_to_tool_map = {f.__name__: f for f in tools}
 
         self.planner_bot = planner_bot
@@ -227,6 +233,7 @@ class AgentBot(SimpleBot):
                 logger.debug(
                     "Calling functions: {}", [call.function.name for call in tool_calls]
                 )
+                futures = {}
                 with ThreadPoolExecutor() as executor:
                     futures = {
                         executor.submit(
@@ -234,21 +241,24 @@ class AgentBot(SimpleBot):
                         ): call
                         for call in tool_calls
                     }
-                    for future in as_completed(futures):
-                        call = futures[future]
-                        try:
-                            result = future.result()
-                            logger.debug(
-                                "Completed: {}(**{})",
-                                call.function.name,
-                                call.function.arguments,
-                            )
-                            results.append(result)
-                        except Exception as e:
-                            logger.debug("Error calling {}: {}", call.function.name, e)
+
+                for future in as_completed(futures):
+                    call = futures[future]
+                    result = future.result()
+                    logger.debug(
+                        "Completed: {}(**{})",
+                        call.function.name,
+                        call.function.arguments,
+                    )
+                    results.append(result)
                 logger.debug("Results: {}", results)
                 message_list.append(user("Here is the result of the tool calls:"))
-                message_list.append(AIMessage(content=str(results)))
+                message_list.append(HumanMessage(content=str(results)))
+                message_list.append(
+                    user(
+                        "Now, decide what the next step is, either to call a tool or return a response to the user."
+                    )
+                )
             else:
                 return AIMessage(content=content, tool_calls=[])
 
