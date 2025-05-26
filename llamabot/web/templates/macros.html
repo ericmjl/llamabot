@@ -1,0 +1,41 @@
+{% macro message_expansion(message, loop_index, expanded=false) %}
+<div class="message {% if message.role == 'assistant' %}assistant{% elif message.role == 'system' %}system{% else %}user{% endif %}">
+    <div class="message-header">
+        <div class="role"
+             role="button"
+             data-bs-toggle="collapse"
+             data-bs-target="#message-{{ loop_index }}"
+             aria-expanded="{{ 'true' if expanded else 'false' }}">
+            <i class="collapse-icon">▼</i> {{ message.role }}
+        </div>
+        {% if message.prompt_name %}
+            <div class="prompt-info">
+                <span class="prompt-name">{{ message.prompt_name }}</span>
+                <a href="#" class="prompt-hash"
+                   hx-get="/prompts/{{ message.prompt_hash }}"
+                   hx-target="#modal-content"
+                   hx-trigger="click"
+                   hx-swap="innerHTML">
+                    {{ message.prompt_hash[:8] }}...
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    <div class="collapse {{ 'show' if expanded else '' }}" id="message-{{ loop_index }}">
+        <div class="content">{{ message.content }}</div>
+        {% if message.tool_calls %}
+            <div class="tool-calls mt-2">
+                <h6>Tool Calls:</h6>
+                <div class="tool-calls-list">
+                    {% for tool_call in message.tool_calls %}
+                        <div class="tool-call">
+                            <strong>Function:</strong> {{ tool_call.function.name }}<br>
+                            <strong>Arguments:</strong> {{ tool_call.function.arguments }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
