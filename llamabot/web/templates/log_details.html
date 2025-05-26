@@ -53,6 +53,19 @@
                     </div>
                     <div class="collapse {{ 'show' if expanded else '' }}" id="message-{{ loop.index }}">
                         <div class="content">{{ message.content }}</div>
+                        {% if message.tool_calls %}
+                            <div class="tool-calls mt-2">
+                                <h6>Tool Calls:</h6>
+                                <div class="tool-calls-list">
+                                    {% for tool_call in message.tool_calls %}
+                                        <div class="tool-call">
+                                            <strong>Function:</strong> {{ tool_call.function.name }}<br>
+                                            <strong>Arguments:</strong> {{ tool_call.function.arguments }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}

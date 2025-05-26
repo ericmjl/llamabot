@@ -24,7 +24,6 @@ from sqlalchemy import (
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llamabot.components.messages import BaseMessage
 from llamabot.utils import find_or_set_db_path, get_object_name
@@ -201,7 +200,7 @@ def ensure_db_in_gitignore(db_path: Path) -> None:
         logger.debug(f"Could not update .gitignore: {e}")
 
 
-@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
+# @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
 def sqlite_log(
     obj: Any, messages: list[BaseMessage], db_path: Optional[Path] = None
 ) -> int:
@@ -234,18 +233,49 @@ def sqlite_log(
         timestamp = datetime.now().isoformat()
 
         # Convert messages to a JSON string, including prompt_hash
-        message_log = json.dumps(
-            [
-                {
-                    "role": message.role,
-                    "content": message.content,
-                    "prompt_hash": (
-                        message.prompt_hash if hasattr(message, "prompt_hash") else None
-                    ),
-                }
-                for message in messages
-            ]
-        )
+        message_logs = []
+        for message in messages:
+            logger.debug(f"Processing message with role: {message.role}")
+
+            # Extract basic message info
+            message_dict = {
+                "role": message.role,
+                "content": message.content,
+            }
+
+            # Add prompt hash if it exists
+            if hasattr(message, "prompt_hash"):
+                message_dict["prompt_hash"] = message.prompt_hash
+                logger.debug(f"Message has prompt hash: {message.prompt_hash}")
+            else:
+                message_dict["prompt_hash"] = None
+                logger.debug("Message has no prompt hash")
+
+            # Process tool calls if they exist
+            if hasattr(message, "tool_calls") and message.tool_calls:
+                logger.debug(f"Processing {len(message.tool_calls)} tool calls")
+                tool_calls = []
+                for tool_call in message.tool_calls:
+                    tool_call_dict = {
+                        "function": {
+                            "name": tool_call.function.name,
+                            "arguments": tool_call.function.arguments,
+                        }
+                    }
+                    logger.debug(
+                        f"Tool call: {tool_call.function.name} with args: {tool_call.function.arguments}"
+                    )
+                    tool_calls.append(tool_call_dict)
+                message_dict["tool_calls"] = tool_calls
+            else:
+                message_dict["tool_calls"] = []
+                logger.debug("Message has no tool calls")
+
+            message_logs.append(message_dict)
+
+        # Convert to JSON string
+        message_log = json.dumps(message_logs)
+        logger.debug(f"Final message log JSON: {message_log}")
 
         # Create a new MessageLog instance
         new_log = MessageLog(

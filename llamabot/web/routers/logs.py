@@ -213,6 +213,18 @@ async def get_log(
                 message["prompt_name"] = prompt.function_name
                 message["prompt_template"] = prompt.template
 
+        # Ensure tool_calls is properly formatted
+        if "tool_calls" in message:
+            # If tool_calls is a string, try to parse it as JSON
+            if isinstance(message["tool_calls"], str):
+                try:
+                    message["tool_calls"] = json.loads(message["tool_calls"])
+                except json.JSONDecodeError:
+                    message["tool_calls"] = []
+            # If tool_calls is None, set it to an empty list
+            elif message["tool_calls"] is None:
+                message["tool_calls"] = []
+
     return templates.TemplateResponse(
         "log_details.html",
         {
@@ -388,6 +400,7 @@ async def export_logs(
                 for msg in json.loads(message_log_str):
                     role = msg.get("role", "")
                     content = msg.get("content", "")
+                    tool_calls = msg.get("tool_calls", [])
 
                     # Create message objects based on role
                     message = None
@@ -401,7 +414,9 @@ async def export_logs(
                         message = ToolMessage(content=content)
 
                     if message:
-                        messages.append(message.dict(exclude={"prompt_hash"}))
+                        message_dict = message.dict(exclude={"prompt_hash"})
+                        message_dict["tool_calls"] = tool_calls
+                        messages.append(message_dict)
 
                 if messages:
                     if format == ExportFormat.OPENAI:
