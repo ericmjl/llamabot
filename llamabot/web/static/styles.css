@@ -459,3 +459,31 @@ pre code {
     font-family: monospace;
     white-space: pre-wrap;
 }
+
+.tool-calls {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.tool-calls h6 {
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.tool-call {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 8px;
+}
+
+.tool-call:last-child {
+    margin-bottom: 0;
+}
+
+.tool-call strong {
+    color: #495057;
+}

@@ -172,15 +172,12 @@ class AgentBot(SimpleBot):
             stream_target=stream_target,
             **completion_kwargs,
         )
-        if tools is None:
-            self.tools = [today_date.json_schema, respond_to_user.json_schema]
-            self.name_to_tool_map = {f.__name__: f for f in self.tools}
-        else:
-            self.tools = [f.json_schema for f in tools] + [
-                today_date.json_schema,
-                respond_to_user.json_schema,
-            ]
-            self.name_to_tool_map = {f.__name__: f for f in tools}
+
+        all_tools = [today_date, respond_to_user]
+        if tools is not None:
+            all_tools.extend([f for f in tools])
+        self.tools = [f.json_schema for f in all_tools]
+        self.name_to_tool_map = {f.__name__: f for f in all_tools}
 
         self.planner_bot = planner_bot
 
@@ -196,8 +193,6 @@ class AgentBot(SimpleBot):
         :return: The final response as an AIMessage
         :raises RuntimeError: If max iterations is reached
         """
-        iteration = 0
-
         # Convert messages to a list of UserMessage objects
         message_list = (
             [self.system_prompt]
@@ -205,8 +200,8 @@ class AgentBot(SimpleBot):
             + [user(m) if isinstance(m, str) else m for m in messages]
         )
 
-        while iteration < max_iterations:
-            iteration += 1
+        for iteration in range(max_iterations):
+            logger.debug(f"Starting iteration {iteration + 1} of {max_iterations}")
 
             # Get plan from planning bot
             if self.planner_bot is not None:
@@ -226,9 +221,20 @@ class AgentBot(SimpleBot):
             logger.debug("Content: {}", content)
 
             response_message = AIMessage(content=content, tool_calls=tool_calls)
-            sqlite_log(self, message_list + [response_message])
+            message_list.append(response_message)
 
             if tool_calls:
+                # Special case for single tool call that is `return_to_user`
+                if (
+                    len(tool_calls) == 1
+                    and tool_calls[0].function.name == "respond_to_user"
+                ):
+                    content = execute_tool_call(tool_calls[0], self.name_to_tool_map)
+                    response_message = AIMessage(content=content)
+                    message_list.append(response_message)
+                    sqlite_log(self, message_list)
+                    return response_message
+
                 results = []
                 logger.debug(
                     "Calling functions: {}", [call.function.name for call in tool_calls]
@@ -242,6 +248,9 @@ class AgentBot(SimpleBot):
                         for call in tool_calls
                     }
 
+                message_list.append(
+                    user(f"Here is the result of the tool calls: {tool_calls}")
+                )
                 for future in as_completed(futures):
                     call = futures[future]
                     result = future.result()
@@ -250,17 +259,14 @@ class AgentBot(SimpleBot):
                         call.function.name,
                         call.function.arguments,
                     )
+                    message_list.append(HumanMessage(content=str(result)))
                     results.append(result)
                 logger.debug("Results: {}", results)
-                message_list.append(user("Here is the result of the tool calls:"))
-                message_list.append(HumanMessage(content=str(results)))
-                message_list.append(
-                    user(
-                        "Now, decide what the next step is, either to call a tool or return a response to the user."
-                    )
-                )
             else:
-                return AIMessage(content=content, tool_calls=[])
+                final_response = AIMessage(content=content, tool_calls=[])
+                message_list.append(final_response)
+                sqlite_log(self, message_list)
+                return final_response
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
 

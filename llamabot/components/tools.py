@@ -20,15 +20,10 @@ from uuid import uuid4
 import requests
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 import random
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
 from duckduckgo_search.exceptions import DuckDuckGoSearchException
 from llamabot.prompt_manager import prompt
 from loguru import logger
+from functools import wraps
 
 
 def tool(func: Callable) -> Callable:
@@ -37,13 +32,28 @@ def tool(func: Callable) -> Callable:
     :param func: The function to decorate.
     :returns: The decorated function with an attached Function schema.
     """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        """Wrapper function for tool decorators.
+
+        This wrapper preserves the original function's metadata and signature
+        while allowing it to be used as a tool in the agent system.
+        It passes through all arguments and return values unchanged.
+
+        :param *args: Positional arguments to be passed to the wrapped function
+        :param **kwargs: Keyword arguments to be passed to the wrapped function
+        :return: The result of calling the wrapped function with the provided arguments
+        """
+        return func(*args, **kwargs)
+
     # Create and attach the schema
     function_dict = function_to_dict(func)
-    func.json_schema = {
+    wrapper.json_schema = {
         "type": "function",
         "function": function_dict,  # Nest function dict under "function" key
     }
-    return func
+    return wrapper
 
 
 @tool
@@ -55,6 +65,12 @@ def add(a: int, b: int) -> int:
     :return: The sum of the two integers
     """
     return a + b
+
+
+@tool
+def respond_to_user(response: str) -> str:
+    """Respond to the user with a message. Use this tool to respond to the user when you have a final answer."""
+    return response
 
 
 def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
@@ -77,11 +93,6 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
             "The Python package `markdownify` cannot be found. Please install it using `pip install llamabot[agent]`."
         )
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type(DuckDuckGoSearchException),
-    )
     def perform_search(ddgs, search_term, max_results):
         """
         Perform a search using the DuckDuckGo search engine with retry logic.
@@ -102,7 +113,20 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
         Raises:
             DuckDuckGoSearchException: If all retry attempts fail.
         """
-        return ddgs.text(search_term, max_results=max_results, backend="lite")
+        logger.debug("Attempting DuckDuckGo search with term: {}", search_term)
+        try:
+            results = ddgs.text(
+                search_term, max_results=int(max_results), backend="lite"
+            )
+            logger.debug("DuckDuckGo search successful, got {} results", len(results))
+            return results
+        except DuckDuckGoSearchException as e:
+            logger.error("DuckDuckGo search failed: {}", str(e))
+            logger.error("Error type: {}", type(e).__name__)
+            import traceback
+
+            logger.error("Traceback: {}", traceback.format_exc())
+            raise
 
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -157,10 +181,10 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
         futures = [
             executor.submit(fetch_url, result["href"], headers) for result in results
         ]
-        for future in as_completed(futures):
-            url, summarized_content = future.result()
-            if summarized_content is not None:
-                webpage_contents[url] = summarized_content
+    for future in as_completed(futures):
+        url, summarized_content = future.result()
+        if summarized_content is not None:
+            webpage_contents[url] = summarized_content
 
     return webpage_contents
 
@@ -217,7 +241,7 @@ def summarize_web_results(
     :param webpage_contents: The content of the webpage
     :return: The summarized content
     """
-    model_name = bot_kwargs.pop("model_name", "gpt-4.1-mini")
+    model_name = bot_kwargs.pop("model_name", "ollama_chat/phi4:latest")
     stream_target = bot_kwargs.pop("stream_target", "none")
     system_prompt = bot_kwargs.pop("system_prompt", summarization_bot_system_prompt())
     bot = SimpleBot(
@@ -261,9 +285,29 @@ def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[st
     :param max_results: Maximum number of search results to return
     :return: Dictionary mapping URLs to markdown-formatted webpage contents
     """
-    webpage_contents = search_internet(search_term, max_results)
-    summaries = summarize_web_results(search_term, webpage_contents)
-    return summaries
+    logger.debug("Starting search for term: {}", search_term)
+    try:
+        # Ensure max_results is an integer
+        max_results = int(max_results)
+        logger.debug("Using max_results: {}", max_results)
+
+        webpage_contents = search_internet(search_term, max_results)
+        logger.debug("Search completed. Found {} webpages", len(webpage_contents))
+        if not webpage_contents:
+            logger.warning("No webpage contents found for search term: {}", search_term)
+            return {}
+
+        logger.debug("Starting summarization of {} webpages", len(webpage_contents))
+        summaries = summarize_web_results(search_term, webpage_contents)
+        logger.debug("Summarization completed. Generated {} summaries", len(summaries))
+        return summaries
+    except Exception as e:
+        logger.error("Error in search_internet_and_summarize: {}", str(e))
+        logger.error("Error type: {}", type(e).__name__)
+        import traceback
+
+        logger.error("Traceback: {}", traceback.format_exc())
+        raise
 
 
 @tool
