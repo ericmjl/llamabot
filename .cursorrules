@@ -28,10 +28,16 @@ Editing:
 
 Templates and UI:
 
-- When implementing UI components that appear in multiple places, use template includes or macros to ensure consistency.
-- If a UI component (like message expansion) appears in multiple templates, extract it into a shared partial template.
-- Always verify that UI behavior is consistent across all instances of the same component.
-- When adding new features to UI components, ensure they are added to all relevant templates.
+- Use Jinja2 macros (defined in macros.html) for any UI component that appears in multiple templates.
+- When creating a new UI component that might be reused:
+  1. Create a macro in macros.html with clear parameter documentation
+  2. Use the macro in all templates that need the component
+  3. Ensure the macro preserves HTMX attributes and functionality
+- Never duplicate UI component code across templates - always use macros for shared components.
+- When adding features to a UI component:
+  1. Update the macro in macros.html
+  2. All templates using the macro will automatically get the new feature
+- Keep macros focused and single-purpose - if a macro grows too complex, consider breaking it into smaller macros.
 
 Notebooks:
 
