@@ -26,6 +26,13 @@ Editing:
 - Don't worry about linting errors. I have automatic linting tools.
 - If I ask you to diagnose a problem, do not jump into editing. Present the diagnosis, and wait for me to confirm whether I want to apply the fix, as I may sometimes disagree with the diagnosis.
 
+Templates and UI:
+
+- When implementing UI components that appear in multiple places, use template includes or macros to ensure consistency.
+- If a UI component (like message expansion) appears in multiple templates, extract it into a shared partial template.
+- Always verify that UI behavior is consistent across all instances of the same component.
+- When adding new features to UI components, ensure they are added to all relevant templates.
+
 Notebooks:
 
 - If I ask you to generate a Marimo notebook, it generally looks like this:
