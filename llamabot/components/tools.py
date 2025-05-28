@@ -241,7 +241,7 @@ def summarize_web_results(
     :param webpage_contents: The content of the webpage
     :return: The summarized content
     """
-    model_name = bot_kwargs.pop("model_name", "ollama_chat/phi4:latest")
+    model_name = bot_kwargs.pop("model_name", "gpt-4.1-mini")
     stream_target = bot_kwargs.pop("stream_target", "none")
     system_prompt = bot_kwargs.pop("system_prompt", summarization_bot_system_prompt())
     bot = SimpleBot(
@@ -283,6 +283,7 @@ def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[st
 
     :param search_term: The search term to look up
     :param max_results: Maximum number of search results to return
+    :param bot_kwargs: Keyword arguments to pass to the bot.
     :return: Dictionary mapping URLs to markdown-formatted webpage contents
     """
     logger.debug("Starting search for term: {}", search_term)
