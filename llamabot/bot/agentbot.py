@@ -224,12 +224,19 @@ class AgentBot(SimpleBot):
             message_list.append(response_message)
 
             if tool_calls:
-                # Special case for single tool call that is `return_to_user`
-                if (
-                    len(tool_calls) == 1
-                    and tool_calls[0].function.name == "respond_to_user"
-                ):
-                    content = execute_tool_call(tool_calls[0], self.name_to_tool_map)
+                # Special case for respond_to_user appearing in any tool call
+                respond_to_user_calls = [
+                    call
+                    for call in tool_calls
+                    if call.function.name == "respond_to_user"
+                ]
+                if respond_to_user_calls:
+                    logger.debug(
+                        "Found respond_to_user in tool calls, executing only that"
+                    )
+                    content = execute_tool_call(
+                        respond_to_user_calls[0], self.name_to_tool_map
+                    )
                     response_message = AIMessage(content=content)
                     message_list.append(response_message)
                     sqlite_log(self, message_list)
@@ -262,11 +269,6 @@ class AgentBot(SimpleBot):
                     message_list.append(HumanMessage(content=str(result)))
                     results.append(result)
                 logger.debug("Results: {}", results)
-            else:
-                final_response = AIMessage(content=content, tool_calls=[])
-                message_list.append(final_response)
-                sqlite_log(self, message_list)
-                return final_response
 
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
 
@@ -283,6 +285,7 @@ def execute_tool_call(tool_call, name_to_tool_map: dict[str, Callable]) -> Any:
         return f"Error: Function {func_name} not found"
     func_args = json.loads(tool_call.function.arguments)
     try:
+        logger.debug(f"Executing tool call: {func_name} with arguments: {func_args}")
         return func(**func_args)
     except Exception as e:
         result = (
