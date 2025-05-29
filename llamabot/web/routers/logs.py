@@ -61,7 +61,7 @@ async def get_logs(
         else:
             logger.warning(f"No prompts found for function name: {function_name}")
             return templates.TemplateResponse(
-                "log_table.html",
+                "logs/index.html",
                 {"request": request, "logs": []},
             )
 
@@ -107,7 +107,7 @@ async def get_logs(
         )
 
     return templates.TemplateResponse(
-        "log_table.html",
+        "logs/index.html",
         {"request": request, "logs": log_data},
     )
 
@@ -183,7 +183,7 @@ async def get_filtered_logs(
         )
 
     return templates.TemplateResponse(
-        "log_tbody.html",
+        "logs/log_tbody.html",
         {"request": request, "logs": log_data},
     )
 
@@ -226,7 +226,7 @@ async def get_log(
                 message["tool_calls"] = []
 
     return templates.TemplateResponse(
-        "log_details.html",
+        "logs/log_details.html",
         {
             "request": request,
             "log": {
@@ -265,7 +265,7 @@ async def expand_log(log_id: int, request: Request, db: DbSession):
                 message["prompt_template"] = prompt.template
 
     return templates.TemplateResponse(
-        "message_log.html",
+        "logs/message_log.html",
         {
             "request": request,
             "log": {
@@ -297,7 +297,7 @@ async def collapse_log(log_id: int, request: Request, db: DbSession):
                 message["prompt_template"] = prompt.template
 
     return templates.TemplateResponse(
-        "message_log.html",
+        "logs/message_log.html",
         {
             "request": request,
             "log": {
@@ -331,7 +331,7 @@ async def rate_log(
 
     # Return just the updated rating buttons
     return templates.TemplateResponse(
-        "rating_buttons.html",
+        "logs/rating_buttons.html",
         {
             "request": request,
             "log_id": log_id,

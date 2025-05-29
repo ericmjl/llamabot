@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Experiments - LlamaBot{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h2 class="card-title mb-4">Experiments</h2>
+
+        <!-- Experiment Selection -->
+        <div class="mb-4">
+            <select id="experiment-name-select"
+                    class="form-select"
+                    name="experiment_name"
+                    hx-get="/experiments/details"
+                    hx-trigger="change"
+                    hx-target="#experiment-details-container">
+                <option value="">Select an experiment</option>
+                {% for experiment in experiments %}
+                    <option value="{{ experiment.name }}">
+                        {{ experiment.name }} ({{ experiment.count }} runs)
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Experiment Details Container -->
+        <div id="experiment-details-container">
+            <p class="text-muted">Select an experiment to view details</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for run details -->
+<div class="modal fade" id="run-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Run Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="run-modal-content"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

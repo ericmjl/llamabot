@@ -94,26 +94,27 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
 ### Templates Structure
 - **Base Template** (`base.html`)
   - Common layout structure
-  - Navigation bar
+  - Navigation bar with links to each page
   - Footer
   - Common CSS/JS includes
   - HTMX setup
 
-- **Log Viewer Templates**
-  - `index.html`: Main container with tab navigation
+- **Log Viewer Page** (`logs/index.html`)
+  - Main log viewer container
+  - Split panel layout
   - `log_table.html`: Left panel log list
   - `log_details.html`: Right panel log details
   - `log_tbody.html`: Dynamic log table body for HTMX updates
   - `message_log.html`: Message list component
   - `rating_buttons.html`: Helpful/not helpful rating controls
 
-- **Prompt Comparison Templates**
-  - `prompt_compare.html`: Main comparison view
+- **Prompt Comparison Page** (`prompts/index.html`)
+  - Main comparison view
   - `prompt_selector.html`: Version selection interface
   - `prompt_diff.html`: Side-by-side diff view
 
-- **Experiment Templates**
-  - `experiment_list.html`: List of experiments
+- **Experiment Page** (`experiments/index.html`)
+  - List of experiments
   - `experiment_details.html`: Run details and metrics
   - `experiment_metrics.html`: Metrics visualization
 
@@ -126,7 +127,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
 
 ### Router Structure
 - **Log Router** (`/logs`)
-  - `GET /`: Main log viewer page
+  - `GET /`: Main log viewer page with split panel layout
   - `GET /filtered_logs`: HTMX endpoint for filtered log list
   - `GET /{log_id}`: Individual log details
   - `GET /{log_id}/expand`: Expand all messages
@@ -135,13 +136,14 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - `GET /export/{format}`: Export logs in specified format
 
 - **Prompt Router** (`/prompts`)
+  - `GET /`: Main prompt comparison page
   - `GET /history`: View prompt version history
   - `GET /functions`: Get list of prompt functions
   - `GET /{prompt_hash}`: View specific prompt version
   - `GET /compare`: Compare two prompt versions
 
 - **Experiment Router** (`/experiments`)
-  - `GET /list`: List all experiments
+  - `GET /`: Main experiment page
   - `GET /details`: View experiment details
   - `GET /runs`: List runs for an experiment
   - `GET /metrics`: Get experiment metrics
