@@ -4,6 +4,7 @@ import contextvars
 from pathlib import Path
 from typing import List, Optional, Union
 from dotenv import load_dotenv
+from datetime import datetime
 
 from llamabot.config import default_language_model
 
@@ -98,8 +99,20 @@ class QueryBot(SimpleBot):
 
         :param query: The query to make of the documents.
         """
-        messages = [self.system_prompt]
+        # Initialize run metadata
+        self.run_meta = {
+            "start_time": datetime.now(),
+            "query": query if isinstance(query, str) else query.content,
+            "n_results": n_results,
+            "retrieval_metrics": {
+                "docstore_retrieval_time": 0,
+                "memory_retrieval_time": 0,
+                "docstore_results": 0,
+                "memory_results": 0,
+            },
+        }
 
+        messages = [self.system_prompt]
         retreived_messages = set()
 
         if isinstance(query, (BaseMessage, HumanMessage)):
@@ -111,12 +124,22 @@ class QueryBot(SimpleBot):
             RetrievedMessage(content=chunk) for chunk in retrieved_messages
         ]
         messages.extend(retrieved)
+
+        # Record docstore metrics
+        self.run_meta["retrieval_metrics"]["docstore_results"] = len(retrieved_messages)
+
         if self.memory:
+            memory_start = datetime.now()
             memory_messages = self.memory.retrieve(query, n_results)
+            self.run_meta["retrieval_metrics"]["memory_retrieval_time"] = (
+                datetime.now() - memory_start
+            ).total_seconds()
             memories: List = [
                 RetrievedMessage(content=chunk) for chunk in memory_messages
             ]
             messages.extend(memories)
+            self.run_meta["retrieval_metrics"]["memory_results"] = len(memory_messages)
+
         messages.append(HumanMessage(content=query))
 
         processed_messages = to_basemessage(messages)
@@ -129,4 +152,11 @@ class QueryBot(SimpleBot):
 
         if self.memory:
             self.memory.append(response_message.content)
+
+        # Record end time and duration
+        self.run_meta["end_time"] = datetime.now()
+        self.run_meta["duration"] = (
+            self.run_meta["end_time"] - self.run_meta["start_time"]
+        ).total_seconds()
+
         return response_message
