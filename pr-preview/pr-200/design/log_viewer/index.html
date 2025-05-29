@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://ericmjl.github.io/llamabot/tutorials/chatbot/">
+        <link rel="canonical" href="https://ericmjl.github.io/llamabot/design/log_viewer/">
       
       
-        <link rel="prev" href="../agentbot/">
+        <link rel="prev" href="../agents-build-own-tools/">
       
       
-        <link rel="next" href="../ollama/">
+        <link rel="next" href="../observability/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Using the llamabot ChatBot Class in a Jupyter Notebook - llamabot</title>
+        <title>LlamaBot Log Viewer Design Document - llamabot</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#using-the-llamabot-chatbot-class-in-a-jupyter-notebook" class="md-skip">
+        <a href="#llamabot-log-viewer-design-document" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using the llamabot ChatBot Class in a Jupyter Notebook
+              LlamaBot Log Viewer Design Document
             
           </span>
         </div>
@@ -543,18 +543,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -570,7 +572,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Design
@@ -584,7 +586,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../design/agents-build-own-tools/" class="md-nav__link">
+      <a href="../agents-build-own-tools/" class="md-nav__link">
         
   
   
@@ -604,10 +606,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../design/log_viewer/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    LlamaBot Log Viewer Design Document
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -618,6 +642,293 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Features
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-log-inspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Log Inspection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-filtering-and-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Filtering and Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-export-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Export Functionality
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-prompt-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Prompt Comparison
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-experiment-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Experiment View
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Technical Implementation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Technical Implementation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Structures
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ui-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI Components
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#templates-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Templates Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#router-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Router Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#static-files-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Static Files Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-experience" class="md-nav__link">
+    <span class="md-ellipsis">
+      User Experience
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="User Experience">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#navigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Navigation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responsiveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      Responsiveness
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visual Feedback
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Accessibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Plan
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-core-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 1: Core Infrastructure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-log-viewing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 2: Log Viewing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-advanced-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 3: Advanced Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-prompt-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 4: Prompt Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-polish-and-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 5: Polish and Optimization
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-testing-and-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 6: Testing and Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -630,7 +941,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../design/observability/" class="md-nav__link">
+      <a href="../observability/" class="md-nav__link">
         
   
   
@@ -5322,20 +5633,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
           <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -5351,7 +5660,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             Tutorials
@@ -5365,7 +5674,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../agentbot/" class="md-nav__link">
+      <a href="../../tutorials/agentbot/" class="md-nav__link">
         
   
   
@@ -5385,19 +5694,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../tutorials/chatbot/" class="md-nav__link">
         
   
   
@@ -5408,7 +5708,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -5421,7 +5720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ollama/" class="md-nav__link">
+      <a href="../../tutorials/ollama/" class="md-nav__link">
         
   
   
@@ -5444,7 +5743,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../querybot/" class="md-nav__link">
+      <a href="../../tutorials/querybot/" class="md-nav__link">
         
   
   
@@ -5467,7 +5766,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../recording_prompts/" class="md-nav__link">
+      <a href="../../tutorials/recording_prompts/" class="md-nav__link">
         
   
   
@@ -5490,7 +5789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../simplebot/" class="md-nav__link">
+      <a href="../../tutorials/simplebot/" class="md-nav__link">
         
   
   
@@ -5551,7 +5850,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chat-ui/querybot/" class="md-nav__link">
+      <a href="../../tutorials/chat-ui/querybot/" class="md-nav__link">
         
   
   
@@ -5574,7 +5873,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chat-ui/simplebot-and-chatbot/" class="md-nav__link">
+      <a href="../../tutorials/chat-ui/simplebot-and-chatbot/" class="md-nav__link">
         
   
   
@@ -5625,6 +5924,281 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Features
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-log-inspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Log Inspection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-filtering-and-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Filtering and Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-export-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Export Functionality
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-prompt-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Prompt Comparison
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-experiment-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Experiment View
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Technical Implementation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Technical Implementation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Structures
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ui-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI Components
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#templates-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Templates Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#router-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Router Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#static-files-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Static Files Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-experience" class="md-nav__link">
+    <span class="md-ellipsis">
+      User Experience
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="User Experience">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#navigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Navigation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responsiveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      Responsiveness
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visual Feedback
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Accessibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Plan
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-core-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 1: Core Infrastructure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-log-viewing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 2: Log Viewing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-advanced-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 3: Advanced Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-prompt-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 4: Prompt Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-polish-and-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 5: Polish and Optimization
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-testing-and-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 6: Testing and Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -5642,46 +6216,420 @@
   
 
 
-<h1 id="using-the-llamabot-chatbot-class-in-a-jupyter-notebook">Using the llamabot ChatBot Class in a Jupyter Notebook</h1>
-<p>To use the <code>ChatBot</code> class from llamabot in a Jupyter notebook, you can follow these steps:</p>
+<h1 id="llamabot-log-viewer-design-document">LlamaBot Log Viewer Design Document</h1>
+<h2 id="overview">Overview</h2>
+<p>The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing LlamaBot call logs. It provides a comprehensive view of all interactions with the bot, including prompts, responses, and tool usage.</p>
+<h2 id="core-features">Core Features</h2>
+<h3 id="1-log-inspection">1. Log Inspection</h3>
+<ul>
+<li><strong>Split Panel Layout</strong></li>
+<li>Left panel: List of log entries</li>
+<li>Right panel: Detailed view of selected log</li>
+<li>Both panels scroll independently</li>
+<li>
+<p>Fixed headers for easy navigation</p>
+</li>
+<li>
+<p><strong>Log Entry List (Left Panel)</strong></p>
+</li>
+<li>Sortable columns:<ul>
+<li>ID</li>
+<li>Object Name</li>
+<li>Timestamp</li>
+<li>Model Name</li>
+<li>Temperature</li>
+<li>Prompts Used</li>
+</ul>
+</li>
+<li>Clickable rows to view details</li>
+<li>Visual indicators for helpful/not helpful ratings</li>
+<li>
+<p>Compact view with essential information</p>
+</li>
+<li>
+<p><strong>Log Details (Right Panel)</strong></p>
+</li>
+<li>Full conversation history</li>
+<li>Expandable/collapsible messages</li>
+<li>Syntax highlighting for code blocks</li>
+<li>Tool call visualization</li>
+<li>Prompt template display</li>
+<li>Rating controls (helpful/not helpful)</li>
+</ul>
+<h3 id="2-filtering-and-search">2. Filtering and Search</h3>
+<ul>
+<li><strong>Text Search</strong></li>
+<li>Real-time filtering as you type</li>
+<li>Search across all fields</li>
+<li>
+<p>Highlight matching text</p>
+</li>
+<li>
+<p><strong>Function Name Filter</strong></p>
+</li>
+<li>Dropdown of available prompt functions</li>
+<li>Shows version count for each function</li>
+<li>Multi-select capability</li>
+</ul>
+<h3 id="3-export-functionality">3. Export Functionality</h3>
+<ul>
+<li><strong>Export Formats</strong></li>
+<li>OpenAI format (JSONL)</li>
+<li>
+<p>Support for additional formats in future</p>
+</li>
+<li>
+<p><strong>Export Options</strong></p>
+</li>
+<li>Filter by text search</li>
+<li>Filter by function name</li>
+<li>Export only helpful responses</li>
+<li>Include/exclude specific fields</li>
+</ul>
+<h3 id="4-prompt-comparison">4. Prompt Comparison</h3>
+<ul>
+<li><strong>Version Comparison</strong></li>
+<li>Side-by-side diff view</li>
+<li>Syntax highlighting</li>
+<li>Line-by-line comparison</li>
+<li>
+<p>Highlight changes</p>
+</li>
+<li>
+<p><strong>Selection Interface</strong></p>
+</li>
+<li>Dropdown to select prompt versions</li>
+<li>Preview of selected prompts</li>
+<li>Easy switching between versions</li>
+</ul>
+<h3 id="5-experiment-view">5. Experiment View</h3>
+<ul>
+<li><strong>Experiment List</strong></li>
+<li>Name and run count</li>
+<li>Timestamp of last run</li>
+<li>
+<p>Success/failure indicators</p>
+</li>
+<li>
+<p><strong>Run Details</strong></p>
+</li>
+<li>Metrics visualization</li>
+<li>Message log links</li>
+<li>Prompt versions used</li>
+<li>Performance statistics</li>
+</ul>
+<h2 id="technical-implementation">Technical Implementation</h2>
+<h3 id="data-structures">Data Structures</h3>
+<ul>
+<li>Maintain existing database schema</li>
+<li>No changes to current data models</li>
+<li>Leverage existing relationships between tables</li>
+</ul>
+<h3 id="ui-components">UI Components</h3>
+<ul>
+<li>Use HTMX for dynamic updates</li>
+<li>Bootstrap for responsive layout</li>
+<li>Custom CSS for specialized components</li>
+<li>Jinja2 templates for server-side rendering</li>
+</ul>
+<h3 id="templates-structure">Templates Structure</h3>
+<ul>
+<li><strong>Base Template</strong> (<code>base.html</code>)</li>
+<li>Common layout structure</li>
+<li>Navigation bar with links to each page</li>
+<li>Footer</li>
+<li>Common CSS/JS includes</li>
+<li>
+<p>HTMX setup</p>
+</li>
+<li>
+<p><strong>Log Viewer Page</strong> (<code>logs/index.html</code>)</p>
+</li>
+<li>Main log viewer container</li>
+<li>Split panel layout</li>
+<li><code>log_table.html</code>: Left panel log list</li>
+<li><code>log_details.html</code>: Right panel log details</li>
+<li><code>log_tbody.html</code>: Dynamic log table body for HTMX updates</li>
+<li><code>message_log.html</code>: Message list component</li>
+<li>
+<p><code>rating_buttons.html</code>: Helpful/not helpful rating controls</p>
+</li>
+<li>
+<p><strong>Prompt Comparison Page</strong> (<code>prompts/index.html</code>)</p>
+</li>
+<li>Main comparison view</li>
+<li><code>prompt_selector.html</code>: Version selection interface</li>
+<li>
+<p><code>prompt_diff.html</code>: Side-by-side diff view</p>
+</li>
+<li>
+<p><strong>Experiment Page</strong> (<code>experiments/index.html</code>)</p>
+</li>
+<li>List of experiments</li>
+<li><code>experiment_details.html</code>: Run details and metrics</li>
+<li>
+<p><code>experiment_metrics.html</code>: Metrics visualization</p>
+</li>
+<li>
+<p><strong>Macros</strong> (<code>macros.html</code>)</p>
+</li>
+<li><code>message_expansion</code>: Message display with expand/collapse</li>
+<li><code>prompt_display</code>: Prompt template rendering</li>
+<li><code>tool_call</code>: Tool call visualization</li>
+<li><code>metric_card</code>: Metric display component</li>
+<li><code>diff_view</code>: Diff visualization</li>
+</ul>
+<h3 id="router-structure">Router Structure</h3>
+<ul>
+<li><strong>Log Router</strong> (<code>/logs</code>)</li>
+<li><code>GET /</code>: Main log viewer page with split panel layout</li>
+<li><code>GET /filtered_logs</code>: HTMX endpoint for filtered log list</li>
+<li><code>GET /{log_id}</code>: Individual log details</li>
+<li><code>GET /{log_id}/expand</code>: Expand all messages</li>
+<li><code>GET /{log_id}/collapse</code>: Collapse all messages</li>
+<li><code>POST /{log_id}/rate</code>: Rate log as helpful/not helpful</li>
+<li>
+<p><code>GET /export/{format}</code>: Export logs in specified format</p>
+</li>
+<li>
+<p><strong>Prompt Router</strong> (<code>/prompts</code>)</p>
+</li>
+<li><code>GET /</code>: Main prompt comparison page</li>
+<li><code>GET /history</code>: View prompt version history</li>
+<li><code>GET /functions</code>: Get list of prompt functions</li>
+<li><code>GET /{prompt_hash}</code>: View specific prompt version</li>
+<li>
+<p><code>GET /compare</code>: Compare two prompt versions</p>
+</li>
+<li>
+<p><strong>Experiment Router</strong> (<code>/experiments</code>)</p>
+</li>
+<li><code>GET /</code>: Main experiment page</li>
+<li><code>GET /details</code>: View experiment details</li>
+<li><code>GET /runs</code>: List runs for an experiment</li>
+<li>
+<p><code>GET /metrics</code>: Get experiment metrics</p>
+</li>
+<li>
+<p><strong>Common Patterns</strong></p>
+</li>
+<li>All endpoints use FastAPI dependency injection for DB sessions</li>
+<li>Consistent error handling with HTTPException</li>
+<li>HTMX integration for dynamic updates</li>
+<li>Proper type hints and docstrings</li>
+<li>Logging for debugging and monitoring</li>
+</ul>
+<h3 id="static-files-structure">Static Files Structure</h3>
+<ul>
+<li><strong>CSS</strong> (<code>static/styles.css</code>)</li>
+<li>Base styles for layout and components</li>
+<li>Responsive design utilities</li>
+<li>Custom component styles</li>
+<li>Dark/light theme support</li>
+<li>
+<p>Print styles for exports</p>
+</li>
+<li>
+<p><strong>JavaScript</strong> (<code>static/script.js</code>)</p>
+</li>
+<li>HTMX event handlers</li>
+<li>Modal management</li>
+<li>Export functionality</li>
+<li>Keyboard shortcuts</li>
+<li>
+<p>Dynamic UI updates</p>
+</li>
+<li>
+<p><strong>Third-party Dependencies</strong></p>
+</li>
+<li>
+<p>Core Dependencies (loaded from CDN with SRI)</p>
+<ul>
+<li>Bootstrap 5.3.6 (CSS only)</li>
+<li>HTMX 2.0.0</li>
+<li>Highlight.js 11.11.1</li>
+</ul>
+</li>
+<li>
+<p>Loading Strategy</p>
+<ul>
+<li>Defer non-critical CSS/JS</li>
+<li>Use async loading for highlight.js</li>
+<li>Implement resource hints (preconnect)</li>
+<li>Bundle and minify custom CSS/JS</li>
+<li>Use SRI hashes for security</li>
+</ul>
+</li>
+<li>
+<p>Version Management</p>
+<ul>
+<li>Lock dependency versions</li>
+<li>Regular security audits</li>
+<li>Automated dependency updates</li>
+<li>Fallback CDN sources</li>
+</ul>
+</li>
+<li>
+<p><strong>Asset Organization</strong></p>
+</li>
+<li>Modular CSS with component-specific styles</li>
+<li>Vanilla JS for minimal dependencies</li>
+<li>No build step required</li>
+<li>Easy to maintain and extend</li>
+</ul>
+<h3 id="performance-considerations">Performance Considerations</h3>
+<ul>
+<li>Pagination for large log sets</li>
+<li>Lazy loading of log details</li>
+<li>Efficient database queries</li>
+<li>Caching of frequently accessed data</li>
+</ul>
+<h2 id="user-experience">User Experience</h2>
+<h3 id="navigation">Navigation</h3>
+<ul>
+<li>Clear visual hierarchy</li>
+<li>Consistent layout across views</li>
+<li>Intuitive filtering controls</li>
+<li>Quick access to common actions</li>
+</ul>
+<h3 id="responsiveness">Responsiveness</h3>
+<ul>
+<li>Mobile-friendly design</li>
+<li>Adaptive layout for different screen sizes</li>
+<li>Touch-friendly controls</li>
+<li>Keyboard shortcuts for power users</li>
+</ul>
+<h3 id="visual-feedback">Visual Feedback</h3>
+<ul>
+<li>Loading indicators</li>
+<li>Success/error messages</li>
+<li>Clear status indicators</li>
+<li>Helpful tooltips</li>
+</ul>
+<h2 id="security">Security</h2>
+<ul>
+<li>Input sanitization</li>
+<li>SQL injection prevention</li>
+<li>XSS protection</li>
+<li>Rate limiting</li>
+</ul>
+<h2 id="accessibility">Accessibility</h2>
+<ul>
+<li>ARIA labels</li>
+<li>Keyboard navigation</li>
+<li>Screen reader support</li>
+<li>High contrast mode</li>
+</ul>
+<h2 id="implementation-plan">Implementation Plan</h2>
+<h3 id="phase-1-core-infrastructure">Phase 1: Core Infrastructure</h3>
 <ol>
-<li>Import the <code>ChatBot</code> class from the <code>llamabot.bot.chatbot</code> module:</li>
+<li><strong>Base Setup</strong></li>
+<li>Set up FastAPI application structure</li>
+<li>Configure database connections</li>
+<li>Implement basic routing</li>
+<li>
+<p>Set up static file serving</p>
+</li>
+<li>
+<p><strong>Basic Templates</strong></p>
+</li>
+<li>Create base template with layout</li>
+<li>Implement navigation structure</li>
+<li>Set up HTMX integration</li>
+<li>Add Bootstrap base styles</li>
 </ol>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">llamabot.bot.chatbot</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatBot</span>
-</code></pre></div>
+<h3 id="phase-2-log-viewing">Phase 2: Log Viewing</h3>
 <ol>
-<li>Create an instance of the <code>ChatBot</code> class by providing the required parameters such as the system prompt, session name, and any additional configuration options:</li>
+<li><strong>Log List View</strong></li>
+<li>Implement log table component</li>
+<li>Add basic filtering</li>
+<li>Set up pagination</li>
+<li>
+<p>Add sorting functionality</p>
+</li>
+<li>
+<p><strong>Log Details</strong></p>
+</li>
+<li>Create log detail view</li>
+<li>Implement message expansion</li>
+<li>Add syntax highlighting</li>
+<li>Set up rating system</li>
 </ol>
-<div class="highlight"><pre><span></span><code><span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;Your system prompt here&quot;</span>
-<span class="n">session_name</span> <span class="o">=</span> <span class="s2">&quot;Your session name here&quot;</span>
-<span class="n">chatbot</span> <span class="o">=</span> <span class="n">ChatBot</span><span class="p">(</span><span class="n">system_prompt</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
-</code></pre></div>
+<h3 id="phase-3-advanced-features">Phase 3: Advanced Features</h3>
 <ol>
-<li>Interact with the <code>ChatBot</code> instance by calling it with a human message:</li>
+<li><strong>Search and Filter</strong></li>
+<li>Implement text search</li>
+<li>Add function name filtering</li>
+<li>Create advanced filter UI</li>
+<li>
+<p>Add filter persistence</p>
+</li>
+<li>
+<p><strong>Export Functionality</strong></p>
+</li>
+<li>Implement OpenAI format export</li>
+<li>Add helpful-only export</li>
+<li>Create export UI</li>
+<li>Add progress indicators</li>
 </ol>
-<div class="highlight"><pre><span></span><code><span class="n">human_message</span> <span class="o">=</span> <span class="s2">&quot;Hello, how are you?&quot;</span>
-<span class="n">response</span> <span class="o">=</span> <span class="n">chatbot</span><span class="p">(</span><span class="n">human_message</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-</code></pre></div>
-<h1 id="serving-a-panel-app-based-on-the-chatbot-class">Serving a Panel App Based on the ChatBot Class</h1>
-<p>To serve a Panel app based on the <code>ChatBot</code> class, you can use the <code>stream_panel</code> method of the <code>ChatBot</code> class. Here's an example of how to do this:</p>
-<div class="highlight"><pre><span></span><code><span class="n">panel_app</span> <span class="o">=</span> <span class="n">chatbot</span><span class="o">.</span><span class="n">stream_panel</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
-<span class="n">panel_app</span><span class="o">.</span><span class="n">servable</span><span class="p">()</span>
-</code></pre></div>
-<h1 id="chatbot-retrieval-and-api-composition">ChatBot Retrieval and API Composition</h1>
-<p>When composing an API call using the <code>ChatBot</code> class, the retrieval of messages from history is handled internally. The <code>retrieve</code> method of the <code>ChatBot</code> class is used to retrieve messages from the chat history based on the provided human message and response budget. The retrieved messages include the system prompt, historical messages, and the human message itself.</p>
-<p>For example, when making an API call to the <code>ChatBot</code> instance, the retrieval process ensures that the historical context is considered when generating the response.</p>
-<p>This covers the specific details on how the <code>ChatBot</code> retrieval works when composing an API call.</p>
-<p>Please let me know if you need further details or examples.</p>
+<h3 id="phase-4-prompt-management">Phase 4: Prompt Management</h3>
+<ol>
+<li><strong>Prompt Comparison</strong></li>
+<li>Create prompt version list</li>
+<li>Implement diff view</li>
+<li>Add version selection</li>
+<li>
+<p>Set up comparison UI</p>
+</li>
+<li>
+<p><strong>Experiment View</strong></p>
+</li>
+<li>Create experiment list</li>
+<li>Implement run details</li>
+<li>Add metrics visualization</li>
+<li>Set up experiment navigation</li>
+</ol>
+<h3 id="phase-5-polish-and-optimization">Phase 5: Polish and Optimization</h3>
+<ol>
+<li><strong>Performance</strong></li>
+<li>Implement caching</li>
+<li>Optimize database queries</li>
+<li>Add lazy loading</li>
+<li>
+<p>Improve response times</p>
+</li>
+<li>
+<p><strong>UI/UX Refinement</strong></p>
+</li>
+<li>Add loading states</li>
+<li>Implement error handling</li>
+<li>Add keyboard shortcuts</li>
+<li>Improve accessibility</li>
+</ol>
+<h3 id="phase-6-testing-and-documentation">Phase 6: Testing and Documentation</h3>
+<ol>
+<li><strong>Testing</strong></li>
+<li>Write unit tests</li>
+<li>Add integration tests</li>
+<li>Implement E2E tests</li>
+<li>
+<p>Set up CI/CD</p>
+</li>
+<li>
+<p><strong>Documentation</strong></p>
+</li>
+<li>Write API documentation</li>
+<li>Create user guide</li>
+<li>Add code comments</li>
+<li>Update README</li>
+</ol>
+<p>Each phase builds upon the previous one, ensuring we have a working system at each step. We can adjust the order based on priorities or dependencies.</p>
 
 
 
 
 
 
-
-  
-  
 
 
 
