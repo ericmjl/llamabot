@@ -4,7 +4,7 @@ from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Request, Form, Query
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import text, or_
+from sqlalchemy import text, or_, func
 from pathlib import Path
 import json
 from enum import Enum
@@ -53,7 +53,7 @@ async def get_logs(
         )
         prompt_hashes = [hash[0] for hash in prompt_hashes]
 
-        if prompt_hashes:
+        if len(prompt_hashes) > 0:
             conditions = [
                 MessageLog.message_log.like(f"%{hash}%") for hash in prompt_hashes
             ]
@@ -106,9 +106,17 @@ async def get_logs(
             }
         )
 
+    # Query all prompt functions and their version counts
+    prompt_functions = (
+        db.query(Prompt.function_name, func.count(Prompt.hash).label("count"))
+        .group_by(Prompt.function_name)
+        .all()
+    )
+    prompts = [{"function_name": fn, "count": count} for fn, count in prompt_functions]
+
     return templates.TemplateResponse(
         "logs/index.html",
-        {"request": request, "logs": log_data},
+        {"request": request, "logs": log_data, "prompts": prompts},
     )
 
 
@@ -128,7 +136,7 @@ async def get_filtered_logs(
             db.query(Prompt.hash).filter(Prompt.function_name == function_name).all()
         )
         prompt_hashes = [hash[0] for hash in prompt_hashes]
-        if prompt_hashes:
+        if len(prompt_hashes) > 0:
             conditions = [
                 MessageLog.message_log.like(f"%{hash}%") for hash in prompt_hashes
             ]
@@ -365,7 +373,7 @@ async def export_logs(
             db.query(Prompt.hash).filter(Prompt.function_name == function_name).all()
         )
         prompt_hashes = [hash[0] for hash in prompt_hashes]
-        if prompt_hashes:
+        if len(prompt_hashes) > 0:
             conditions = [
                 MessageLog.message_log.like(f"%{hash}%") for hash in prompt_hashes
             ]
