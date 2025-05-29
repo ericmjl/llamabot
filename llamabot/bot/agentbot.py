@@ -8,11 +8,11 @@ and in what order, making it suitable for complex, multi-step tasks.
 
 import hashlib
 import json
-from typing import Any, Callable, List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from loguru import logger
 from datetime import datetime
+from typing import Any, Callable, List, Optional, Union
 
+from loguru import logger
 
 from llamabot.bot.simplebot import (
     SimpleBot,
@@ -27,9 +27,10 @@ from llamabot.components.messages import (
     HumanMessage,
     user,
 )
+from llamabot.components.tools import respond_to_user, today_date
 from llamabot.config import default_language_model
+from llamabot.experiments import metric
 from llamabot.prompt_manager import prompt
-from llamabot.components.tools import today_date, respond_to_user
 from llamabot.recorder import sqlite_log
 
 
@@ -392,3 +393,13 @@ def execute_tool_call(tool_call, name_to_tool_map: dict[str, Callable]) -> Any:
             "If you get a timeout error, try bumping up the timeout parameter."
         )
         return result
+
+
+@metric
+def tool_usage_count(agent: AgentBot) -> int:
+    """Return the total number of tool calls made by the agent.
+
+    :param agent: The AgentBot instance
+    :return: Total number of tool calls
+    """
+    return sum(usage["calls"] for usage in agent.run_meta["tool_usage"].values())
