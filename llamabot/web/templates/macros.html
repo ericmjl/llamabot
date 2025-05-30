@@ -36,11 +36,9 @@
                 <h6 class="mb-2">Tool Calls:</h6>
                 <div class="tool-calls-list">
                     {% for tool_call in message.tool_calls %}
-                        <div class="tool-call card mb-2">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-2 text-muted">Function: {{ tool_call.function.name }}</h6>
-                                <pre class="mb-0"><code class="language-json">{{ tool_call.function.arguments }}</code></pre>
-                            </div>
+                        <div class="tool-call mb-2">
+                            <h6 class="mb-2 text-muted">Function: {{ tool_call.function.name }}</h6>
+                            <pre class="mb-0"><code class="language-json">{{ tool_call.function.arguments }}</code></pre>
                         </div>
                     {% endfor %}
                 </div>

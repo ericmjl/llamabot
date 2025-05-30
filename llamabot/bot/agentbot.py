@@ -228,9 +228,11 @@ class AgentBot(SimpleBot):
             logger.debug(f"Starting iteration {iteration + 1} of {max_iterations}")
 
             # Get plan from planning bot
-            if self.planner_bot is not None:
+            if self.planner_bot:
+                logger.debug("Generating plan with planner bot...")
                 plan_start = datetime.now()
                 plan_response = self.planner_bot(*message_list, str(self.tools))
+                logger.debug("Plan response: {}", plan_response)
                 self.run_meta["planning_metrics"]["plan_generated"] = True
                 self.run_meta["planning_metrics"]["plan_time"] = (
                     datetime.now() - plan_start
