@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - LlamaBot{% endblock %}
+
+{% block content %}
+<!-- Filter Controls -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <input type="text"
+               class="form-control"
+               name="text_filter"
+               placeholder="Filter logs..."
+               hx-get="/logs/filtered_logs"
+               hx-trigger="keyup changed delay:500ms"
+               hx-target="#logs-tbody"
+               hx-include="[name='function_name']">
+    </div>
+    <div class="col-md-6">
+        <select class="form-select"
+                name="function_name"
+                hx-get="/logs/filtered_logs"
+                hx-trigger="change"
+                hx-target="#logs-tbody"
+                hx-include="[name='text_filter']">
+            <option value="">Select a prompt function</option>
+            {% for prompt in prompts %}
+                <option value="{{ prompt.function_name }}">
+                    {{ prompt.function_name }} ({{ prompt.count }} versions)
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Export Controls -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex align-items-center gap-3">
+            <label class="mb-0">Export Format:</label>
+            <select id="export-format" class="form-select form-select-sm" style="width: auto;">
+                <option value="openai">OpenAI Format</option>
+            </select>
+            <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" id="positive-only">
+                <label class="form-check-label" for="positive-only">
+                    Export only helpful responses
+                </label>
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="exportLogs()">
+                Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Logs Table and Details -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="id">ID</th>
+                                <th class="sortable" data-sort="object_name">Object Name</th>
+                                <th class="sortable" data-sort="timestamp">Timestamp</th>
+                                <th class="sortable" data-sort="model_name">Model Name</th>
+                                <th class="sortable" data-sort="temperature">Temperature</th>
+                                <th>Prompts Used</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-tbody"
+                               hx-get="/logs/filtered_logs"
+                               hx-trigger="load">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div id="log-details">
+            <p class="text-muted">Select a log to view details</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

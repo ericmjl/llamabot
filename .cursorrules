@@ -42,3 +42,23 @@ Templates and UI:
 Notebooks:
 
 - If I ask you to generate a Marimo notebook, it generally looks like this:
+
+---
+
+Client-side JS initialization for dynamic HTML (HTMX, Turbo, AJAX):
+
+- When using HTMX, Turbo, or any tool that swaps in HTML fragments dynamically, client-side JS initialization (event listeners, widgets, etc.) must be re-applied after new content is loaded.
+- Inline <script> tags in swapped-in HTML are NOT executed by browsers for security reasons.
+- To ensure all interactive elements (even those loaded dynamically) get their JS behaviors:
+  1. Encapsulate your JS initialization logic in a function (e.g., `function initMyWidget() { ... }`).
+  2. Call this function on page load (`DOMContentLoaded`).
+  3. Call this function after HTMX swaps (`htmx:afterSwap`), Turbo frame loads, or AJAX completions as appropriate.
+- Never rely on inline <script> in HTML fragments. Always use external JS files and initialization functions.
+- Make your init functions idempotent (safe to call multiple times).
+
+Summary Table:
+| When?                | What to do?                |
+|----------------------|---------------------------|
+| On page load         | Call your init function   |
+| After HTMX swap      | Call your init function   |
+| After AJAX/Turbo/etc | Call your init function   |

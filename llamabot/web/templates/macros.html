@@ -1,12 +1,15 @@
 {% macro message_expansion(message, loop_index, expanded=false) %}
 <div class="message {% if message.role == 'assistant' %}assistant{% elif message.role == 'system' %}system{% else %}user{% endif %}">
-    <div class="message-header">
-        <div class="role"
-             role="button"
-             data-bs-toggle="collapse"
-             data-bs-target="#message-{{ loop_index }}"
-             aria-expanded="{{ 'true' if expanded else 'false' }}">
-            <i class="collapse-icon">▼</i> {{ message.role }}
+    <div class="message-header d-flex justify-content-between align-items-center"
+         role="button"
+         data-bs-toggle="collapse"
+         data-bs-target="#message-{{ loop_index }}"
+         aria-expanded="{{ 'true' if expanded else 'false' }}">
+        <div class="d-flex align-items-center">
+            <i class="collapse-icon bi bi-chevron-down me-2"></i>
+            <span class="role badge {% if message.role == 'assistant' %}bg-primary{% elif message.role == 'system' %}bg-success{% else %}bg-secondary{% endif %}">
+                {{ message.role }}
+            </span>
         </div>
         {% if message.prompt_name %}
             <div class="prompt-info">
@@ -15,27 +18,62 @@
                    hx-get="/prompts/{{ message.prompt_hash }}"
                    hx-target="#modal-content"
                    hx-trigger="click"
-                   hx-swap="innerHTML">
+                   data-bs-toggle="modal"
+                   data-bs-target="#prompt-modal">
                     {{ message.prompt_hash[:8] }}...
                 </a>
             </div>
         {% endif %}
     </div>
     <div class="collapse {{ 'show' if expanded else '' }}" id="message-{{ loop_index }}">
-        <div class="content">{{ message.content }}</div>
+        <div class="content">
+            {% if message.content %}
+                <pre class="mb-0"><code class="language-markdown">{{ message.content }}</code></pre>
+            {% endif %}
+        </div>
         {% if message.tool_calls %}
             <div class="tool-calls mt-2">
-                <h6>Tool Calls:</h6>
+                <h6 class="mb-2">Tool Calls:</h6>
                 <div class="tool-calls-list">
                     {% for tool_call in message.tool_calls %}
-                        <div class="tool-call">
-                            <strong>Function:</strong> {{ tool_call.function.name }}<br>
-                            <strong>Arguments:</strong> {{ tool_call.function.arguments }}
+                        <div class="tool-call mb-2">
+                            <h6 class="mb-2 text-muted">Function: {{ tool_call.function.name }}</h6>
+                            <pre class="mb-0"><code class="language-json">{{ tool_call.function.arguments }}</code></pre>
                         </div>
                     {% endfor %}
                 </div>
             </div>
         {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro column_visibility(columns) %}
+<div class="column-visibility-controls mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small">Columns:</span>
+        <div class="btn-group btn-group-sm" role="group">
+            {% for column in columns %}
+            <input type="checkbox"
+                   class="btn-check"
+                   id="col-{{ column.id }}"
+                   name="visible-columns"
+                   value="{{ column.id }}"
+                   {% if column.visible %}checked{% endif %}
+                   hx-post="/logs/toggle-column"
+                   hx-trigger="change"
+                   hx-target="#logs-tbody"
+                   hx-include="[name='visible-columns']">
+            <label class="btn btn-outline-secondary" for="col-{{ column.id }}">
+                {{ column.name }}
+            </label>
+            {% endfor %}
+        </div>
+        <button class="btn btn-sm btn-outline-secondary"
+                hx-post="/logs/toggle-all-columns"
+                hx-target="#logs-tbody">
+            Toggle All
+        </button>
     </div>
 </div>
 {% endmacro %}

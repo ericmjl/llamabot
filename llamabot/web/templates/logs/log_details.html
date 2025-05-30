@@ -1,0 +1,66 @@
+{% from "macros.html" import message_expansion %}
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">Log Details</h5>
+            <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-outline-secondary"
+                        hx-get="/logs/{{ log.id }}/expand"
+                        hx-target="#message-log-{{ log.id }}">
+                    <i class="bi bi-arrows-expand"></i> Expand All
+                </button>
+                <button class="btn btn-sm btn-outline-secondary"
+                        hx-get="/logs/{{ log.id }}/collapse"
+                        hx-target="#message-log-{{ log.id }}">
+                    <i class="bi bi-arrows-collapse"></i> Collapse All
+                </button>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card bg-light p-2" style="height: auto;">
+                    <h6 class="card-subtitle mb-2 text-muted small">Metadata</h6>
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-4">Object Name</dt>
+                        <dd class="col-sm-8">{{ log.object_name or "—" }}</dd>
+
+                        <dt class="col-sm-4">Timestamp</dt>
+                        <dd class="col-sm-8">{{ log.timestamp or "—" }}</dd>
+
+                        <dt class="col-sm-4">Model</dt>
+                        <dd class="col-sm-8">{{ log.model_name or "—" }}</dd>
+
+                        <dt class="col-sm-4">Temperature</dt>
+                        <dd class="col-sm-8">{{ log.temperature or "—" }}</dd>
+                    </dl>
+                    <hr class="my-2">
+                    <h6 class="card-subtitle mb-2 text-muted small">Rating</h6>
+                    <div class="small">
+                        {% include "logs/rating_buttons.html" with context %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="message-log" id="message-log-{{ log.id }}">
+            {% for message in log.message_log %}
+                {{ message_expansion(message, loop.index, expanded) }}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal for prompt details -->
+<div class="modal fade" id="prompt-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Prompt Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modal-content"></div>
+        </div>
+    </div>
+</div>

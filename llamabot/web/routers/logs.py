@@ -4,7 +4,7 @@ from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Request, Form, Query
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import text, or_
+from sqlalchemy import text, or_, func
 from pathlib import Path
 import json
 from enum import Enum
@@ -53,7 +53,7 @@ async def get_logs(
         )
         prompt_hashes = [hash[0] for hash in prompt_hashes]
 
-        if prompt_hashes:
+        if len(prompt_hashes) > 0:
             conditions = [
                 MessageLog.message_log.like(f"%{hash}%") for hash in prompt_hashes
             ]
@@ -61,7 +61,7 @@ async def get_logs(
         else:
             logger.warning(f"No prompts found for function name: {function_name}")
             return templates.TemplateResponse(
-                "log_table.html",
+                "logs/index.html",
                 {"request": request, "logs": []},
             )
 
@@ -106,9 +106,17 @@ async def get_logs(
             }
         )
 
+    # Query all prompt functions and their version counts
+    prompt_functions = (
+        db.query(Prompt.function_name, func.count(Prompt.hash).label("count"))
+        .group_by(Prompt.function_name)
+        .all()
+    )
+    prompts = [{"function_name": fn, "count": count} for fn, count in prompt_functions]
+
     return templates.TemplateResponse(
-        "log_table.html",
-        {"request": request, "logs": log_data},
+        "logs/index.html",
+        {"request": request, "logs": log_data, "prompts": prompts},
     )
 
 
@@ -128,7 +136,7 @@ async def get_filtered_logs(
             db.query(Prompt.hash).filter(Prompt.function_name == function_name).all()
         )
         prompt_hashes = [hash[0] for hash in prompt_hashes]
-        if prompt_hashes:
+        if len(prompt_hashes) > 0:
             conditions = [
                 MessageLog.message_log.like(f"%{hash}%") for hash in prompt_hashes
             ]
@@ -183,7 +191,7 @@ async def get_filtered_logs(
         )
 
     return templates.TemplateResponse(
-        "log_tbody.html",
+        "logs/log_tbody.html",
         {"request": request, "logs": log_data},
     )
 
@@ -226,7 +234,7 @@ async def get_log(
                 message["tool_calls"] = []
 
     return templates.TemplateResponse(
-        "log_details.html",
+        "logs/log_details.html",
         {
             "request": request,
             "log": {
@@ -265,7 +273,7 @@ async def expand_log(log_id: int, request: Request, db: DbSession):
                 message["prompt_template"] = prompt.template
 
     return templates.TemplateResponse(
-        "message_log.html",
+        "logs/message_log.html",
         {
             "request": request,
             "log": {
@@ -297,7 +305,7 @@ async def collapse_log(log_id: int, request: Request, db: DbSession):
                 message["prompt_template"] = prompt.template
 
     return templates.TemplateResponse(
-        "message_log.html",
+        "logs/message_log.html",
         {
             "request": request,
             "log": {
@@ -331,7 +339,7 @@ async def rate_log(
 
     # Return just the updated rating buttons
     return templates.TemplateResponse(
-        "rating_buttons.html",
+        "logs/rating_buttons.html",
         {
             "request": request,
             "log_id": log_id,
@@ -365,7 +373,7 @@ async def export_logs(
             db.query(Prompt.hash).filter(Prompt.function_name == function_name).all()
         )
         prompt_hashes = [hash[0] for hash in prompt_hashes]
-        if prompt_hashes:
+        if len(prompt_hashes) > 0:
             conditions = [
                 MessageLog.message_log.like(f"%{hash}%") for hash in prompt_hashes
             ]

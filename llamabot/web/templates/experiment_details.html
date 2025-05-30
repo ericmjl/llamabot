@@ -2,6 +2,28 @@
     <div class="card-body">
         <h5 class="card-title">Experiment: {{ experiment_name }}</h5>
 
+        <!-- Column Visibility Controls -->
+        <div class="mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">Metrics Columns:</span>
+                <div class="btn-group btn-group-sm" role="group" id="column-toggles">
+                    {% for metric in metrics_columns %}
+                    <input type="checkbox"
+                           class="btn-check column-toggle"
+                           id="col-{{ metric }}"
+                           data-column="{{ metric }}"
+                           checked>
+                    <label class="btn btn-outline-secondary" for="col-{{ metric }}">
+                        {{ metric }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" id="toggle-all-columns">
+                    Toggle All
+                </button>
+            </div>
+        </div>
+
         <!-- Metrics Table -->
         <div class="table-responsive mb-4">
             <table class="table">
@@ -9,7 +31,7 @@
                     <tr>
                         <th>Run ID</th>
                         {% for metric in metrics_columns %}
-                            <th>{{ metric }}</th>
+                            <th class="metric-column metric-col-{{ metric }}" data-metric="{{ metric }}">{{ metric }}</th>
                         {% endfor %}
                         <th>Message Logs</th>
                         <th>Prompts</th>
@@ -21,7 +43,7 @@
                     <tr>
                         <td>{{ run.id }}</td>
                         {% for metric in metrics_columns %}
-                            <td>{{ run.metrics[metric].value if metric in run.metrics else '-' }}</td>
+                            <td class="metric-column metric-col-{{ metric }}" data-metric="{{ metric }}">{{ run.metrics[metric].value if metric in run.metrics else '-' }}</td>
                         {% endfor %}
                         <td>
                             {% for log_id in run.message_log_ids %}

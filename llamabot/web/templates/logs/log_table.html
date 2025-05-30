@@ -1,0 +1,34 @@
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th class="sortable" data-sort="id">ID</th>
+            <th class="sortable" data-sort="object_name">Object Name</th>
+            <th class="sortable" data-sort="timestamp">Timestamp</th>
+            <th class="sortable" data-sort="model_name">Model Name</th>
+            <th class="sortable" data-sort="temperature">Temperature</th>
+            <th>Prompts Used</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if logs %}
+            {% for log in logs %}
+            <tr class="log-row {% if log.rating == 1 %}table-success{% elif log.rating == -1 %}table-danger{% endif %}"
+                data-prompt-hashes="{{ log.prompt_hashes }}"
+                hx-get="/logs/{{ log.id }}?expanded=false"
+                hx-target="#log-details"
+                hx-trigger="click">
+                <td>{{ log.id }}</td>
+                <td>{{ log.object_name }}</td>
+                <td>{{ log.timestamp }}</td>
+                <td>{{ log.model_name }}</td>
+                <td>{{ log.temperature }}</td>
+                <td><pre class="mb-0" style="white-space: pre-wrap;">{{ log.prompt_names | safe }}</pre></td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted">No logs found</td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>

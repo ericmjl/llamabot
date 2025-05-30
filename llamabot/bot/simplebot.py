@@ -3,6 +3,7 @@
 import contextvars
 from types import NoneType
 from typing import Generator, List, Optional, Union
+from datetime import datetime
 
 from llamabot.recorder import sqlite_log
 from loguru import logger
@@ -86,6 +87,9 @@ class SimpleBot:
             self.temperature = 1.0
             self.stream_target = "none"
 
+        # Single dictionary for all run metadata and metrics
+        self.run_meta = {}
+
     def __call__(
         self, *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]]
     ) -> Union[AIMessage, Generator]:
@@ -94,6 +98,13 @@ class SimpleBot:
         :param human_messages: One or more human messages to use, or lists of messages.
         :return: The response to the human messages, primed by the system prompt.
         """
+        # Reset run metadata for new call
+        self.run_meta = {
+            "start_time": datetime.now(),
+            "message_counts": {"user": 0, "assistant": 0, "tool": 0},
+            "tool_usage": {},
+        }
+
         processed_messages = to_basemessage(human_messages)
 
         memory_messages = []
@@ -104,17 +115,48 @@ class SimpleBot:
             memory_messages = [HumanMessage(content=m) for m in memory_messages]
 
         messages = [self.system_prompt] + memory_messages + processed_messages
+
+        # Count initial messages
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                self.run_meta["message_counts"]["user"] += 1
+            elif isinstance(msg, AIMessage):
+                self.run_meta["message_counts"]["assistant"] += 1
+
         stream = self.stream_target != "none"
         response = make_response(self, messages, stream)
         response = stream_chunks(response, target=self.stream_target)
         tool_calls = extract_tool_calls(response)
         content = extract_content(response)
         response_message = AIMessage(content=content, tool_calls=tool_calls)
+
+        # Update message counts
+        self.run_meta["message_counts"]["assistant"] += 1
+
+        # Record tool usage if any
+        if tool_calls:
+            for call in tool_calls:
+                tool_name = call.function.name
+                if tool_name not in self.run_meta["tool_usage"]:
+                    self.run_meta["tool_usage"][tool_name] = {
+                        "calls": 0,
+                        "success": 0,
+                        "failures": 0,
+                    }
+                self.run_meta["tool_usage"][tool_name]["calls"] += 1
+
         sqlite_log(self, messages + [response_message])
         if self.chat_memory:
             self.chat_memory.append(
                 f"Human: {processed_messages}\n\nAssistant: {response_message.content}"
             )
+
+        # Record end time
+        self.run_meta["end_time"] = datetime.now()
+        self.run_meta["duration"] = (
+            self.run_meta["end_time"] - self.run_meta["start_time"]
+        ).total_seconds()
+
         return response_message
 
 

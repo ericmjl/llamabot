@@ -7,6 +7,7 @@ Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 
 import json
 from typing import Union
+from datetime import datetime
 
 from llamabot.recorder import sqlite_log
 from loguru import logger
@@ -112,9 +113,26 @@ class StructuredBot(SimpleBot):
         :param verbose: Whether to show verbose output.
         :return: An instance of the specified Pydantic model.
         """
+        # Initialize run metadata
+        self.run_meta = {
+            "start_time": datetime.now(),
+            "validation_attempts": 0,
+            "validation_success": False,
+            "schema_complexity": {
+                "fields": len(self.pydantic_model.model_fields),
+                "nested_models": len(
+                    [
+                        f
+                        for f in self.pydantic_model.model_fields.values()
+                        if hasattr(f.annotation, "__origin__")
+                        and f.annotation.__origin__ is BaseModel
+                    ]
+                ),
+            },
+        }
+
         # Compose the full message list
         messages = to_basemessage(messages)
-
         full_messages = [self.system_prompt] + messages
 
         last_response = None
@@ -122,6 +140,9 @@ class StructuredBot(SimpleBot):
         # we'll attempt to get the response from the model and validate it
         for attempt in range(num_attempts):
             try:
+                self.run_meta["validation_attempts"] += 1
+                validation_start = datetime.now()
+
                 # Create full messages list for this attempt
                 for message in full_messages:
                     if isinstance(message, str):
@@ -142,13 +163,31 @@ class StructuredBot(SimpleBot):
 
                 last_codeblock = json.loads(last_response.content)
                 obj = self.pydantic_model.model_validate(last_codeblock)
+
+                # Record successful validation
+                self.run_meta["validation_success"] = True
+                self.run_meta["validation_time"] = (
+                    datetime.now() - validation_start
+                ).total_seconds()
+                self.run_meta["end_time"] = datetime.now()
+                self.run_meta["duration"] = (
+                    self.run_meta["end_time"] - self.run_meta["start_time"]
+                ).total_seconds()
+
                 return obj
 
             except ValidationError as e:
+                # Record validation error
+                self.run_meta["last_validation_error"] = str(e)
+
                 # we're on our last try
                 if attempt == num_attempts - 1:
                     if self.allow_failed_validation and last_codeblock is not None:
                         # If we allow failed validation, return the last attempt
+                        self.run_meta["end_time"] = datetime.now()
+                        self.run_meta["duration"] = (
+                            self.run_meta["end_time"] - self.run_meta["start_time"]
+                        ).total_seconds()
                         return self.pydantic_model.model_construct(**last_codeblock)
                     raise e
 

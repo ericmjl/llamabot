@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Prompts - LlamaBot{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h2 class="card-title mb-4">Compare Prompts</h2>
+
+        <!-- Function Selection -->
+        <div class="mb-4">
+            <select id="function-name-select"
+                    class="form-select"
+                    name="function_name"
+                    hx-get="/prompts/history"
+                    hx-trigger="change"
+                    hx-target="#prompt-history-container">
+                <option value="">Select a function name</option>
+                {% for prompt in prompts %}
+                    <option value="{{ prompt.function_name }}">
+                        {{ prompt.function_name }} ({{ prompt.count }} versions)
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Prompt History Container -->
+        <div id="prompt-history-container" class="prompt-timeline">
+            <p class="text-muted">Select a function to view prompt history</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for prompt details -->
+<div class="modal fade" id="prompt-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Prompt Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modal-content"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

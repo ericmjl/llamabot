@@ -8,10 +8,11 @@ and in what order, making it suitable for complex, multi-step tasks.
 
 import hashlib
 import json
-from typing import Any, Callable, List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from loguru import logger
+from datetime import datetime
+from typing import Any, Callable, List, Optional, Union
 
+from loguru import logger
 
 from llamabot.bot.simplebot import (
     SimpleBot,
@@ -26,9 +27,10 @@ from llamabot.components.messages import (
     HumanMessage,
     user,
 )
+from llamabot.components.tools import respond_to_user, today_date
 from llamabot.config import default_language_model
+from llamabot.experiments import metric
 from llamabot.prompt_manager import prompt
-from llamabot.components.tools import today_date, respond_to_user
 from llamabot.recorder import sqlite_log
 
 
@@ -193,6 +195,20 @@ class AgentBot(SimpleBot):
         :return: The final response as an AIMessage
         :raises RuntimeError: If max iterations is reached
         """
+        # Initialize run metadata
+        self.run_meta = {
+            "start_time": datetime.now(),
+            "max_iterations": max_iterations,
+            "current_iteration": 0,
+            "tool_usage": {},
+            "planning_metrics": (
+                {"plan_generated": False, "plan_revisions": 0}
+                if self.planner_bot
+                else None
+            ),
+            "message_counts": {"user": 0, "assistant": 0, "tool": 0},
+        }
+
         # Convert messages to a list of UserMessage objects
         message_list = (
             [self.system_prompt]
@@ -200,14 +216,31 @@ class AgentBot(SimpleBot):
             + [user(m) if isinstance(m, str) else m for m in messages]
         )
 
+        # Count initial messages
+        for msg in message_list:
+            if isinstance(msg, HumanMessage):
+                self.run_meta["message_counts"]["user"] += 1
+            elif isinstance(msg, AIMessage):
+                self.run_meta["message_counts"]["assistant"] += 1
+
         for iteration in range(max_iterations):
+            self.run_meta["current_iteration"] = iteration + 1
             logger.debug(f"Starting iteration {iteration + 1} of {max_iterations}")
 
             # Get plan from planning bot
-            if self.planner_bot is not None:
+            if self.planner_bot:
+                logger.debug("Generating plan with planner bot...")
+                plan_start = datetime.now()
                 plan_response = self.planner_bot(*message_list, str(self.tools))
+                logger.debug("Plan response: {}", plan_response)
+                self.run_meta["planning_metrics"]["plan_generated"] = True
+                self.run_meta["planning_metrics"]["plan_time"] = (
+                    datetime.now() - plan_start
+                ).total_seconds()
                 message_list.append(user("Here is the plan:"))
                 message_list.append(plan_response)
+                self.run_meta["message_counts"]["user"] += 1
+                self.run_meta["message_counts"]["assistant"] += 1
 
             # Execute the plan
             stream = self.stream_target != "none"
@@ -222,6 +255,7 @@ class AgentBot(SimpleBot):
 
             response_message = AIMessage(content=content, tool_calls=tool_calls)
             message_list.append(response_message)
+            self.run_meta["message_counts"]["assistant"] += 1
 
             if tool_calls:
                 # Special case for respond_to_user appearing in any tool call
@@ -234,11 +268,32 @@ class AgentBot(SimpleBot):
                     logger.debug(
                         "Found respond_to_user in tool calls, executing only that"
                     )
+                    start_time = datetime.now()
                     content = execute_tool_call(
                         respond_to_user_calls[0], self.name_to_tool_map
                     )
+                    duration = (datetime.now() - start_time).total_seconds()
+
+                    # Record tool usage
+                    tool_name = respond_to_user_calls[0].function.name
+                    if tool_name not in self.run_meta["tool_usage"]:
+                        self.run_meta["tool_usage"][tool_name] = {
+                            "calls": 0,
+                            "success": 0,
+                            "failures": 0,
+                            "total_duration": 0.0,
+                        }
+                    self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                    self.run_meta["tool_usage"][tool_name]["success"] += 1
+                    self.run_meta["tool_usage"][tool_name]["total_duration"] += duration
+
                     response_message = AIMessage(content=content)
                     message_list.append(response_message)
+                    self.run_meta["message_counts"]["tool"] += 1
+                    self.run_meta["end_time"] = datetime.now()
+                    self.run_meta["duration"] = (
+                        self.run_meta["end_time"] - self.run_meta["start_time"]
+                    ).total_seconds()
                     sqlite_log(self, message_list)
                     return response_message
 
@@ -258,18 +313,64 @@ class AgentBot(SimpleBot):
                 message_list.append(
                     user(f"Here is the result of the tool calls: {tool_calls}")
                 )
+                self.run_meta["message_counts"]["user"] += 1
+
                 for future in as_completed(futures):
                     call = futures[future]
-                    result = future.result()
+                    start_time = datetime.now()
+                    try:
+                        result = future.result()
+                        duration = (datetime.now() - start_time).total_seconds()
+
+                        # Record successful tool usage
+                        tool_name = call.function.name
+                        if tool_name not in self.run_meta["tool_usage"]:
+                            self.run_meta["tool_usage"][tool_name] = {
+                                "calls": 0,
+                                "success": 0,
+                                "failures": 0,
+                                "total_duration": 0.0,
+                            }
+                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                        self.run_meta["tool_usage"][tool_name]["success"] += 1
+                        self.run_meta["tool_usage"][tool_name][
+                            "total_duration"
+                        ] += duration
+
+                    except Exception as e:
+                        duration = (datetime.now() - start_time).total_seconds()
+
+                        # Record failed tool usage
+                        tool_name = call.function.name
+                        if tool_name not in self.run_meta["tool_usage"]:
+                            self.run_meta["tool_usage"][tool_name] = {
+                                "calls": 0,
+                                "success": 0,
+                                "failures": 0,
+                                "total_duration": 0.0,
+                            }
+                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                        self.run_meta["tool_usage"][tool_name]["failures"] += 1
+                        self.run_meta["tool_usage"][tool_name][
+                            "total_duration"
+                        ] += duration
+
+                        result = f"Error: {str(e)}"
+
                     logger.debug(
                         "Completed: {}(**{})",
                         call.function.name,
                         call.function.arguments,
                     )
                     message_list.append(HumanMessage(content=str(result)))
+                    self.run_meta["message_counts"]["tool"] += 1
                     results.append(result)
                 logger.debug("Results: {}", results)
 
+        self.run_meta["end_time"] = datetime.now()
+        self.run_meta["duration"] = (
+            self.run_meta["end_time"] - self.run_meta["start_time"]
+        ).total_seconds()
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
 
 
@@ -294,3 +395,13 @@ def execute_tool_call(tool_call, name_to_tool_map: dict[str, Callable]) -> Any:
             "If you get a timeout error, try bumping up the timeout parameter."
         )
         return result
+
+
+@metric
+def tool_usage_count(agent: AgentBot) -> int:
+    """Return the total number of tool calls made by the agent.
+
+    :param agent: The AgentBot instance
+    :return: Total number of tool calls
+    """
+    return sum(usage["calls"] for usage in agent.run_meta["tool_usage"].values())
