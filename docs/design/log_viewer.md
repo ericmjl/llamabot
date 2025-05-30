@@ -66,7 +66,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Preview of selected prompts
   - Easy switching between versions
 
-### 5. Experiment View
+### 5. Experiment View ✅
 - **Experiment List**
   - Name and run count
   - Timestamp of last run
