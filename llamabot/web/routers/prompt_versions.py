@@ -76,7 +76,7 @@ async def get_prompt_history(
                 unified_diff(
                     prompts[i + 1].template.splitlines(),
                     prompt.template.splitlines(),
-                    fromfile=f"Version {prompts[i+1].hash[:8]}",
+                    fromfile=f"Version {prompts[i + 1].hash[:8]}",
                     tofile=f"Version {prompt.hash[:8]}",
                     lineterm="",
                 )
@@ -128,6 +128,22 @@ async def get_prompt(prompt_hash: str, request: Request, db: DbSession):
             "request": request,
             "prompt": prompt,
         },
+    )
+
+
+@router.get("/", response_class=HTMLResponse)
+async def prompts_index(request: Request, db: DbSession):
+    """
+    Render the main prompt comparison page.
+
+    :param request: The FastAPI request object.
+    :param db: Database session dependency.
+    :return: TemplateResponse containing the rendered prompt comparison page.
+    """
+    prompts = await list_prompts(db)
+    return templates.TemplateResponse(
+        "prompts/index.html",
+        {"request": request, "prompts": prompts},
     )
 
 

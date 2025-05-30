@@ -54,7 +54,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Export only helpful responses
   - Include/exclude specific fields
 
-### 4. Prompt Comparison
+### 4. Prompt Comparison ✅
 - **Version Comparison**
   - Side-by-side diff view
   - Syntax highlighting
