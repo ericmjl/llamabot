@@ -71,6 +71,11 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Name and run count
   - Timestamp of last run
   - Success/failure indicators
+  - Column visibility controls:
+    - Toggle buttons for each column
+    - Persistent column visibility preferences
+    - Quick show/hide all columns
+    - Responsive layout adjustments
 
 - **Run Details**
   - Metrics visualization
@@ -124,6 +129,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - `tool_call`: Tool call visualization
   - `metric_card`: Metric display component
   - `diff_view`: Diff visualization
+  - `column_visibility`: Column visibility controls component
 
 ### Router Structure
 - **Log Router** (`/logs`)

@@ -94,6 +94,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    initExperimentColumnToggles();
 });
 
 // Export functionality
@@ -113,4 +115,62 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
     evt.detail.target.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block);
     });
+
+    initExperimentColumnToggles();
 });
+
+function initExperimentColumnToggles() {
+    const toggles = document.querySelectorAll('.column-toggle');
+    if (!toggles.length) return;
+    console.log('Experiment column toggle JS loaded');
+    // Initialize column visibility state from localStorage
+    const savedState = JSON.parse(localStorage.getItem('experimentColumnVisibility') || '{}');
+
+    toggles.forEach(toggle => {
+        const metric = toggle.dataset.column;
+        if (savedState[metric] !== undefined) {
+            toggle.checked = savedState[metric];
+            updateColumnVisibility(metric, savedState[metric]);
+        }
+    });
+
+    // Handle individual column toggles
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const metric = this.dataset.column;
+            const isVisible = this.checked;
+            updateColumnVisibility(metric, isVisible);
+            saveColumnState();
+        });
+    });
+
+    // Handle toggle all button
+    const toggleAllBtn = document.getElementById('toggle-all-columns');
+    if (toggleAllBtn) {
+        toggleAllBtn.addEventListener('click', function() {
+            const allChecked = Array.from(toggles).every(t => t.checked);
+            toggles.forEach(toggle => {
+                toggle.checked = !allChecked;
+                const metric = toggle.dataset.column;
+                updateColumnVisibility(metric, !allChecked);
+            });
+            saveColumnState();
+        });
+    }
+
+    function updateColumnVisibility(metric, isVisible) {
+        // Hide/show both th and td for this metric
+        const columns = document.querySelectorAll(`.metric-col-${metric}`);
+        columns.forEach(col => {
+            col.style.display = isVisible ? '' : 'none';
+        });
+    }
+
+    function saveColumnState() {
+        const state = {};
+        toggles.forEach(toggle => {
+            state[toggle.dataset.column] = toggle.checked;
+        });
+        localStorage.setItem('experimentColumnVisibility', JSON.stringify(state));
+    }
+}
