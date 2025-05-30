@@ -49,3 +49,33 @@
     </div>
 </div>
 {% endmacro %}
+
+{% macro column_visibility(columns) %}
+<div class="column-visibility-controls mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small">Columns:</span>
+        <div class="btn-group btn-group-sm" role="group">
+            {% for column in columns %}
+            <input type="checkbox"
+                   class="btn-check"
+                   id="col-{{ column.id }}"
+                   name="visible-columns"
+                   value="{{ column.id }}"
+                   {% if column.visible %}checked{% endif %}
+                   hx-post="/logs/toggle-column"
+                   hx-trigger="change"
+                   hx-target="#logs-tbody"
+                   hx-include="[name='visible-columns']">
+            <label class="btn btn-outline-secondary" for="col-{{ column.id }}">
+                {{ column.name }}
+            </label>
+            {% endfor %}
+        </div>
+        <button class="btn btn-sm btn-outline-secondary"
+                hx-post="/logs/toggle-all-columns"
+                hx-target="#logs-tbody">
+            Toggle All
+        </button>
+    </div>
+</div>
+{% endmacro %}
