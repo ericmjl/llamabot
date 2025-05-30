@@ -7,7 +7,7 @@ It includes functionality for:
 - Comparing runs within experiments
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -91,3 +91,28 @@ async def list_experiments(db: Session = Depends(get_db)):
     )
 
     return [{"name": exp.name, "count": exp.count} for exp in experiments]
+
+
+@router.get("/", response_class=HTMLResponse)
+async def experiments_index(request: Request, db: Session = Depends(get_db)):
+    """
+    Render the main experiment view page with a list of experiments.
+
+    :param request: The FastAPI request object.
+    :param db: Database session dependency.
+    :return: TemplateResponse containing the rendered experiment view page.
+    """
+    experiments = (
+        db.query(
+            Runs.experiment_name.label("name"),
+            func.count("*").label("count"),
+        )
+        .filter(Runs.experiment_name.isnot(None))
+        .group_by(Runs.experiment_name)
+        .all()
+    )
+    experiments_list = [{"name": exp.name, "count": exp.count} for exp in experiments]
+    return templates.TemplateResponse(
+        "experiments/index.html",
+        {"request": request, "experiments": experiments_list},
+    )
