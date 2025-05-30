@@ -19,30 +19,25 @@
         </div>
 
         <div class="row mb-3">
-            <div class="col-md-6">
-                <div class="card bg-light">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Metadata</h6>
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4">Object Name</dt>
-                            <dd class="col-sm-8">{{ log.object_name }}</dd>
+            <div class="col-12">
+                <div class="card bg-light p-2" style="height: auto;">
+                    <h6 class="card-subtitle mb-2 text-muted small">Metadata</h6>
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-4">Object Name</dt>
+                        <dd class="col-sm-8">{{ log.object_name or "—" }}</dd>
 
-                            <dt class="col-sm-4">Timestamp</dt>
-                            <dd class="col-sm-8">{{ log.timestamp }}</dd>
+                        <dt class="col-sm-4">Timestamp</dt>
+                        <dd class="col-sm-8">{{ log.timestamp or "—" }}</dd>
 
-                            <dt class="col-sm-4">Model</dt>
-                            <dd class="col-sm-8">{{ log.model_name }}</dd>
+                        <dt class="col-sm-4">Model</dt>
+                        <dd class="col-sm-8">{{ log.model_name or "—" }}</dd>
 
-                            <dt class="col-sm-4">Temperature</dt>
-                            <dd class="col-sm-8">{{ log.temperature }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card bg-light">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Rating</h6>
+                        <dt class="col-sm-4">Temperature</dt>
+                        <dd class="col-sm-8">{{ log.temperature or "—" }}</dd>
+                    </dl>
+                    <hr class="my-2">
+                    <h6 class="card-subtitle mb-2 text-muted small">Rating</h6>
+                    <div class="small">
                         {% include "logs/rating_buttons.html" with context %}
                     </div>
                 </div>
