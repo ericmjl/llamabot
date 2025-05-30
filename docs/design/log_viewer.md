@@ -5,7 +5,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
 
 ## Core Features
 
-### 1. Log Inspection
+### 1. Log Inspection ✅
 - **Split Panel Layout**
   - Left panel: List of log entries
   - Right panel: Detailed view of selected log
@@ -32,7 +32,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Prompt template display
   - Rating controls (helpful/not helpful)
 
-### 2. Filtering and Search
+### 2. Filtering and Search ✅
 - **Text Search**
   - Real-time filtering as you type
   - Search across all fields
@@ -43,7 +43,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Shows version count for each function
   - Multi-select capability
 
-### 3. Export Functionality
+### 3. Export Functionality ✅
 - **Export Formats**
   - OpenAI format (JSONL)
   - Support for additional formats in future
