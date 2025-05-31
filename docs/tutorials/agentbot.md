@@ -56,7 +56,7 @@ def split_bill(total_amount: float, num_people: int) -> float:
 bot = lmb.AgentBot(
     system_prompt=lmb.system("You are my assistant with respect to restaurant bills."),
     functions=[calculate_total_with_tip, split_bill],
-    model_name="gpt-4o",
+    model_name="gpt-4.1",
 )
 ```
 
@@ -139,7 +139,7 @@ from llamabot.bot.agentbot import AgentBot
 stats_bot = AgentBot(
     system_prompt=lmb.system("You are a stock market analysis assistant."),
     functions=[scrape_stock_prices, calculate_moving_average, calculate_slope],
-    model_name="gpt-4o",
+    model_name="gpt-4.1",
 )
 ```
 
@@ -159,6 +159,64 @@ response = stats_bot(
 print(response.content)
 ```
 
+## Part 3: Using the Planner Bot
+
+The AgentBot includes a powerful planning feature that helps break down complex tasks into manageable steps. The planner bot analyzes the current state, available tools, and task requirements to create an efficient execution plan.
+
+### Step 1: Creating a Bot with a Planner
+
+To use the planner bot, you can create an AgentBot with a planner:
+
+```python
+from llamabot.bot.agentbot import AgentBot, planner_bot
+
+# Create a planner bot
+planner = planner_bot(model_name="gpt-4.1")
+
+# Create the main bot with the planner
+bot_with_planner = AgentBot(
+    system_prompt=lmb.system("You are a task automation assistant."),
+    functions=[calculate_total_with_tip, split_bill],
+    planner_bot=planner,
+    model_name="gpt-4.1",
+)
+```
+
+### Step 2: Using the Planner for Complex Tasks
+
+The planner bot is particularly useful for complex tasks that require multiple steps or careful sequencing:
+
+```python
+complex_prompt = """
+I need to:
+1. Calculate the total bill for a $150 dinner with 20% tip
+2. Split it between 3 people
+3. Calculate how much each person should pay if one person is paying for drinks ($30)
+"""
+
+response = bot_with_planner(complex_prompt)
+print(response.content)
+```
+
+The planner bot will:
+1. Analyze the task requirements
+2. Break down the steps into a logical sequence
+3. Consider potential edge cases
+4. Create an efficient plan using the available tools
+5. Execute the plan step by step
+
+### Step 3: Monitoring Planning Metrics
+
+The AgentBot tracks planning metrics that you can use to analyze the bot's performance:
+
+```python
+# Access planning metrics
+planning_metrics = bot_with_planner.run_meta["planning_metrics"]
+print(f"Plan generated: {planning_metrics['plan_generated']}")
+print(f"Plan revisions: {planning_metrics['plan_revisions']}")
+print(f"Planning time: {planning_metrics['plan_time']} seconds")
+```
+
 ## Conclusion
 
-Congratulations! You have successfully built and used an AgentBot to automate tasks related to restaurant bills and stock price analysis. You can now explore further by adding more tools and customizing the bot to suit your needs. Happy coding!
+Congratulations! You have successfully built and used an AgentBot to automate tasks related to restaurant bills and stock price analysis. You've also learned how to use the planner bot to handle complex, multi-step tasks efficiently. You can now explore further by adding more tools and customizing the bot to suit your needs. Happy coding!
