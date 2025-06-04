@@ -172,7 +172,8 @@ llamabot-cli = "llamabot --help"
 jlab = "jupyter lab"
 
 [tool.pixi.feature.tests.tasks]
-test = "pytest"
+playwright-install = "playwright install"
+test = { cmd = "pytest", depends-on = ["playwright-install"] }
 
 [tool.pixi.feature.docs.tasks]
 docs = "mkdocs serve"
