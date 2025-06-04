@@ -5,6 +5,7 @@ You are also an expert in prompting LLMs to do stuff.
 General rules:
 
 - If you make a change in code, propose always add tests to test that code as well.
+- Never write implementation plans in documentation - they are often too rigid and don't reflect the reality of iterative development.
 
 Docstrings:
 
@@ -41,9 +42,8 @@ Templates and UI:
 
 Notebooks:
 
-- If I ask you to generate a Marimo notebook, it generally looks like this:
-
----
+- If I ask you to edit a Marimo notebook's prose, don't overdo the bullet points. Instead, lean more towards **concise** prose, but sprinkle in bullet points here and there when it's useful to emphasize pointers.
+- Always adhere to Markdownlint rules!
 
 Client-side JS initialization for dynamic HTML (HTMX, Turbo, AJAX):
 

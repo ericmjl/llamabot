@@ -135,6 +135,7 @@ notebooks = ["ollama>=0.4.4,<0.5"]
 ui = []
 agent = []
 cli = []
+tests = ["pytest-playwright>=0.7.0,<0.8"]
 
 [tool.pixi.project]
 name = "llamabot"
