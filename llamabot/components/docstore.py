@@ -186,6 +186,8 @@ class LanceDBDocStore(AbstractDocumentStore):
         self,
         table_name: str,
         storage_path: Path = Path.home() / ".llamabot" / "lancedb",
+        embedding_registry: str = "sentence-transformers",
+        embedding_model: str = "minishlab/potion-base-8M",
         auto_create_fts_index: bool = True,
     ):
         try:
@@ -200,8 +202,8 @@ class LanceDBDocStore(AbstractDocumentStore):
             )
 
         registry: EmbeddingFunctionRegistry = get_registry()
-        self.embedding_func = registry.get("sentence-transformers").create(
-            name="minishlab/potion-base-8M"
+        self.embedding_func = registry.get(embedding_registry).create(
+            name=embedding_model
         )
 
         class DocstoreEntry(LanceModel):
