@@ -10,7 +10,7 @@ All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are suppor
 To install LlamaBot:
 
 ```python
-pip install llamabot==0.12.6
+pip install llamabot==0.12.7
 ```
 
 This will give you the minimum set of dependencies for running LlamaBot.
