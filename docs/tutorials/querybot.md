@@ -12,7 +12,12 @@ from llamabot import QueryBot
 from pyprojroot import here
 
 # Create a document store for your knowledge base
-docstore = LanceDBDocStore(table_name="my-documents")
+docstore = LanceDBDocStore(
+    table_name="my-documents",
+    # Optional: Configure embedding model settings
+    embedding_registry="sentence-transformers",  # Default registry
+    embedding_model="minishlab/potion-base-8M",  # Default model
+)
 
 docstore.reset()  # Optionally clear all documents
 
@@ -47,6 +52,9 @@ while True:
 **Tips:**
 
 - You can use `.reset()` on either store to clear its contents.
-- The default embedding model for LanceDBDocStore is `minishlab/potion-base-8M` (see above). Advanced users can customize this by modifying the `LanceDBDocStore` initialization in code.
+- The `LanceDBDocStore` uses the following default settings:
+  - `embedding_registry`: "sentence-transformers"
+  - `embedding_model`: "minishlab/potion-base-8M"
+  You can customize these settings when initializing the store to use different embedding models.
 - For more details, see the source code in [`llamabot/bot/querybot.py`](../../llamabot/bot/querybot.py) and [`llamabot/components/docstore.py`](../../llamabot/components/docstore.py).
 - This pattern is ideal for interactive apps, notebooks, or production bots where you want persistent memory and document storage.
