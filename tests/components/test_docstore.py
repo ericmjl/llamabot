@@ -5,7 +5,6 @@ from llamabot.components.docstore import (
     BM25DocStore,
     LanceDBDocStore,
 )
-from hypothesis import strategies as st
 import tempfile
 
 
@@ -29,11 +28,11 @@ def bm25():
     return BM25DocStore()
 
 
-docstore_strategies = [
-    st.just(lancedb()),
-    # st.just(chromadb()),
-    st.just(bm25()),
-]
+# docstore_strategies = [
+#     st.just(lancedb()),
+#     # st.just(chromadb()),
+#     st.just(bm25()),
+# ]
 
 
 # def test_chromadb_append_with_metadata():
