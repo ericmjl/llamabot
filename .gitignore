@@ -166,3 +166,6 @@ test.db
 
 # SQLite database
 test_message_log.db
+
+# Marimo's cache
+__marimo__
