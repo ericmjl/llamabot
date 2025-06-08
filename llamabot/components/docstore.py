@@ -11,7 +11,6 @@ Hence we use it by default.
 """
 
 from pathlib import Path
-from typing import Callable
 
 import slugify
 
@@ -201,17 +200,15 @@ class LanceDBDocStore(AbstractDocumentStore):
             )
 
         registry: EmbeddingFunctionRegistry = get_registry()
-        self.embedding_func: Callable = registry.get(
+        self.embedding_func = registry.get("sentence-transformers").create(
             name="minishlab/potion-base-8M"
-        ).create()
+        )
 
         class DocstoreEntry(LanceModel):
             """LanceDB DocumentStore Entry."""
 
             document: str = self.embedding_func.SourceField()
-            vector: Vector(self.embedding_func.ndims()) = (
-                self.embedding_func.VectorField()
-            )
+            vector: Vector = self.embedding_func.VectorField()
 
         table_name = slugify.slugify(table_name, separator="-")
 
