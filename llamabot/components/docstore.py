@@ -202,7 +202,7 @@ class LanceDBDocStore(AbstractDocumentStore):
 
         registry: EmbeddingFunctionRegistry = get_registry()
         self.embedding_func: Callable = registry.get(
-            name="sentence-transformers"
+            name="minishlab/potion-base-8M"
         ).create()
 
         class DocstoreEntry(LanceModel):
