@@ -3,60 +3,53 @@
 !!! note
     This tutorial was written by GPT4 and edited by a human.
 
-In this tutorial, we will learn how to use the `QueryBot` class to create a chatbot that can query documents using GPT-4. The `QueryBot` class allows us to index documents and use GPT-4 to generate responses based on the indexed documents.
+In this tutorial, we will learn how to use the `QueryBot` class to create a chatbot that can query documents using an LLM. The `QueryBot` class allows us to index documents and use an LLM to generate responses based on the indexed documents.
 
-## Initializing QueryBot
+## Using QueryBot with a Document Store and Chat Memory
 
-To create a new instance of `QueryBot`, we need to provide a system message, a list of document paths, or a saved index path. The system message is used to instruct the chatbot on how to behave. The document paths are used to index the documents, and the saved index path is used to load a pre-built index.
-
-Here's an example of how to initialize a `QueryBot`:
+The recommended way to use QueryBot is to explicitly create and manage your own document store and chat memory using `LanceDBDocStore`. This gives you full control over storage, persistence, and memory management. Below is the standard usage pattern (inspired by `notebooks/llamabot_docs.py`).
 
 ```python
-from pathlib import Path
+from llamabot.components.docstore import LanceDBDocStore
 from llamabot import QueryBot
+from pyprojroot import here
 
-system_message = "You are a helpful assistant that can answer questions based on the provided documents."
-doc_paths = [Path("document1.txt"), Path("document2.txt")]
+# Create a document store for your knowledge base
+docstore = LanceDBDocStore(table_name="my-documents")
 
-query_bot = QueryBot(system_message=system_message, doc_paths=doc_paths)
+docstore.reset()  # Optionally clear all documents
+
+# Add documents (e.g., all Markdown files in the docs folder)
+docs_paths = (here() / "docs").rglob("*.md")
+docs_texts = [p.read_text() for p in docs_paths]
+docstore.extend(docs_texts)
+
+# Create a separate store for chat memory
+chat_memory = LanceDBDocStore(table_name="my-chat-history")
+chat_memory.reset()  # Optionally clear previous chat history
+
+# Define a system prompt (optionally using the @prompt decorator)
+system_prompt = "You are a helpful assistant for my project."
+
+# Initialize QueryBot with both docstore and chat memory
+bot = QueryBot(
+    system_prompt=system_prompt,
+    docstore=docstore,
+    memory=chat_memory,
+)
+
+# Use the bot in a conversational loop
+while True:
+    user_input = input("Ask a question: ")
+    if user_input.lower() in {"exit", "quit"}:
+        break
+    response = bot(user_input)
+    print(response.content)
 ```
 
-## Querying the Index
+**Tips:**
 
-To query the index, we can call the `QueryBot` instance with a query string. The `QueryBot` will return the top `similarity_top_k` documents from the index and use them to generate a response using GPT-4.
-
-Here's an example of how to query the index:
-
-```python
-query = "What is the main idea of document1?"
-response = query_bot(query)
-print(response.content)
-```
-
-## Saving and Loading the Index
-
-We can save the index to disk using the `save` method and load it later using the `__init__` method with the `saved_index_path` parameter.
-
-Here's an example of how to save and load the index:
-
-```python
-# Save the index
-query_bot.save("index.json")
-
-# Load the index
-loaded_query_bot = QueryBot(system_message=system_message, saved_index_path="index.json")
-```
-
-## Inserting Documents into the Index
-
-We can insert new documents into the index using the `insert` method. This method takes a file path as an argument and inserts the document into the index.
-
-Here's an example of how to insert a document into the index:
-
-```python
-query_bot.insert(Path("new_document.txt"))
-```
-
-## Conclusion
-
-In this tutorial, we learned how to use the `QueryBot` class to create a chatbot that can query documents using GPT-4. We covered how to initialize a `QueryBot`, query the index, save and load the index, and insert new documents into the index. With this knowledge, you can now create your own chatbot that can answer questions based on a set of documents.
+- You can use `.reset()` on either store to clear its contents.
+- The default embedding model for LanceDBDocStore is `minishlab/potion-base-8M` (see above). Advanced users can customize this by modifying the `LanceDBDocStore` initialization in code.
+- For more details, see the source code in [`llamabot/bot/querybot.py`](../../llamabot/bot/querybot.py) and [`llamabot/components/docstore.py`](../../llamabot/components/docstore.py).
+- This pattern is ideal for interactive apps, notebooks, or production bots where you want persistent memory and document storage.
