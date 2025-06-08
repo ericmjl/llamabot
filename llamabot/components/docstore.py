@@ -208,7 +208,9 @@ class LanceDBDocStore(AbstractDocumentStore):
             """LanceDB DocumentStore Entry."""
 
             document: str = self.embedding_func.SourceField()
-            vector: Vector = self.embedding_func.VectorField()
+            vector: Vector(self.embedding_func.ndims()) = (
+                self.embedding_func.VectorField()
+            )
 
         table_name = slugify.slugify(table_name, separator="-")
 
