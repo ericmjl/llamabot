@@ -1,8 +1,5 @@
 # QueryBot Tutorial
 
-!!! note
-    This tutorial was written by GPT4 and edited by a human.
-
 In this tutorial, we will learn how to use the `QueryBot` class to create a chatbot that can query documents using an LLM. The `QueryBot` class allows us to index documents and use an LLM to generate responses based on the indexed documents.
 
 ## Using QueryBot with a Document Store and Chat Memory
