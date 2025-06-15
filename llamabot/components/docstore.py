@@ -268,7 +268,7 @@ class LanceDBDocStore(AbstractDocumentStore):
             self.existing_records.append(document)
 
         # Ensure FTS index exists
-        self.table.create_fts_index(field_names=["document"], replace=True)
+        self.table.optimize()
 
     def extend(
         self,
@@ -295,7 +295,7 @@ class LanceDBDocStore(AbstractDocumentStore):
             self.table.add(stuff_to_add)
             self.existing_records.extend(documents)
             # Ensure FTS index exists
-            self.table.create_fts_index(field_names=["document"], replace=True)
+            self.table.optimize()
 
     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
         """Retrieve a list of documents from the store.
@@ -306,6 +306,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         """
         results = (
             self.table.search(query, query_type="auto")
+            .rerank(self.reranker)
             .limit(n_results)
             .to_pydantic(self.schema)
         )

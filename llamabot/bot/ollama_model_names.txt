@@ -1,3 +1,4 @@
+magistral
 devstral
 qwen2.5vl
 phi4-reasoning
