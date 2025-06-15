@@ -110,6 +110,7 @@ rag = [
     "rank-bm25",
     "pylance",
     "sentence-transformers",
+    "rerankers",
 ]
 agent = [
     "docker",
