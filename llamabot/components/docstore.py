@@ -193,7 +193,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         try:
             import lancedb
             from lancedb.embeddings import EmbeddingFunctionRegistry, get_registry
-            from lancedb.rerankers import RRFReranker
+            from lancedb.rerankers.colbert import ColbertReranker
             from lancedb.pydantic import LanceModel, Vector
         except ImportError:
             raise ImportError(
@@ -237,7 +237,7 @@ class LanceDBDocStore(AbstractDocumentStore):
         if auto_create_fts_index:
             self.table.create_fts_index(field_names=["document"], replace=True)
 
-        self.reranker = RRFReranker()
+        self.reranker = ColbertReranker(column="document")
 
     def __contains__(self, other: str) -> bool:
         """Returns boolean whether the 'other' document is in the store.
