@@ -9,21 +9,24 @@ The design of a tool is as follows:
    that is attached as an attribute.
 """
 
-from typing import Any, Callable, Dict, Optional, Tuple
-from litellm.utils import function_to_dict
-from llamabot.bot.simplebot import SimpleBot
-from llamabot.components.messages import user
-from bs4 import BeautifulSoup
+import os
+import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from uuid import uuid4
-import requests
-from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
-import random
-from duckduckgo_search.exceptions import DuckDuckGoSearchException
-from llamabot.prompt_manager import prompt
-from loguru import logger
 from functools import wraps
+from typing import Any, Callable, Dict, Optional, Tuple
+from uuid import uuid4
+
+import requests
+from bs4 import BeautifulSoup
+from duckduckgo_search.exceptions import DuckDuckGoSearchException
+from litellm.utils import function_to_dict
+from loguru import logger
+
+from llamabot.bot.simplebot import SimpleBot
+from llamabot.components.messages import user
+from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
+from llamabot.prompt_manager import prompt
 
 
 def tool(func: Callable) -> Callable:
@@ -241,7 +244,10 @@ def summarize_web_results(
     :param webpage_contents: The content of the webpage
     :return: The summarized content
     """
-    model_name = bot_kwargs.pop("model_name", "gpt-4.1-mini")
+    default_model_name = os.getenv(
+        "LMB_INTERNET_SUMMARIZER_MODEL_NAME", "ollama_chat/llama3.1:latest"
+    )
+    model_name = bot_kwargs.pop("model_name", default_model_name)
     stream_target = bot_kwargs.pop("stream_target", "none")
     system_prompt = bot_kwargs.pop("system_prompt", summarization_bot_system_prompt())
     bot = SimpleBot(
