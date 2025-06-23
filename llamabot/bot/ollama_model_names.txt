@@ -1,3 +1,4 @@
+mistral-small3.2
 magistral
 devstral
 qwen2.5vl
