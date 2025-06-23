@@ -240,7 +240,7 @@ class LanceDBDocStore(AbstractDocumentStore):
             #
             #   ValueError: field_names must be a string when use_tantivy=False
             self.table.create_fts_index(
-                field_names=["document"], replace=True, use_tantivy=False
+                field_names="document", replace=True, use_tantivy=False
             )
 
         self.reranker = ColbertReranker(column="document")
