@@ -1,0 +1,61 @@
+name: Update Ollama Models
+
+on:
+  schedule:
+    # Run daily at 3 PM UTC
+    - cron: '0 15 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-ollama-models:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Update Ollama models
+        run: |
+          uv run scripts/autoupdate_ollama_models.py
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update Ollama models list"
+          title: "chore: update Ollama models list"
+          body: |
+            This PR was automatically created by the daily Ollama models update workflow.
+
+            Changes:
+            - Updated `llamabot/bot/ollama_model_names.txt` with the latest models from https://ollama.ai/library
+
+            This PR will be automatically merged if all checks pass.
+          branch: update-ollama-models
+          delete-branch: true
+
+      - name: Enable auto-merge
+        if: steps.check_changes.outputs.changes == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the PR number from the create-pull-request step
+          PR_URL=$(gh pr list --head update-ollama-models --json url --jq '.[0].url')
+          if [ -n "$PR_URL" ]; then
+            gh pr merge "$PR_URL" --auto --squash
+          fi
