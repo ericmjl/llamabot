@@ -160,108 +160,90 @@ Simply specify the `model_name` keyword argument following the `<provider>/<mode
 
 All you need to do is make sure Ollama is running locally;
 see the [Ollama documentation](https://ollama.ai/) for more details.
-(The same can be done for the `ChatBot` and `QueryBot` classes below!)
+(The same can be done for the `QueryBot` class below!)
 
 The `model_name` argument is optional. If you don't provide it, Llamabot will try to use the default model. You can configure that in the `DEFAULT_LANGUAGE_MODEL` environment variable.
 
-### Chat Bot
+### SimpleBot with memory for chat functionality
 
-To experiment with a Chat Bot in the Jupyter Notebook,
-we also provide the ChatBot interface.
-This interface automagically keeps track of chat history
-for as long as your Jupyter session is alive.
-Doing so allows you to use your own local Jupyter Notebook as a chat interface.
-
-For example:
+If you want chat functionality with memory (similar to what ChatBot provided), you can use SimpleBot with a LanceDBDocStore as memory. This allows the bot to remember previous conversations:
 
 ```python
-from llamabot import ChatBot
+from llamabot import SimpleBot, LanceDBDocStore
 
-system_prompt="You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
-feynman = ChatBot(
-  system_prompt,
-  session_name="feynman_chat",
-  # Optional:
-  # model_name="gpt-3.5-turbo"
-  # or
-  # model_name="ollama_chat/mistral"
+# Create a bot with memory
+system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
+chat_memory = LanceDBDocStore(table_name="feynman_chat")
+feynman = SimpleBot(
+    system_prompt,
+    chat_memory=chat_memory,
+    model_name="gpt-3.5-turbo"
 )
+
+# Have a conversation
+response1 = feynman("Can you explain quantum mechanics?")
+print(response1)
+
+# The bot remembers the previous conversation
+response2 = feynman("Can you give me a simpler explanation?")
+print(response2)
 ```
 
-For more explanation about the `model_name`, see [the examples with `SimpleBot`](#using-simplebot-with-a-local-ollama-model).
-
-Now, that you have a `ChatBot` instance, you can start a conversation with it.
-
-```python
-prompt = """
-Enzyme function annotation is a fundamental challenge, and numerous computational tools have been developed.
-However, most of these tools cannot accurately predict functional annotations,
-such as enzyme commission (EC) number,
-for less-studied proteins or those with previously uncharacterized functions or multiple activities.
-We present a machine learning algorithm named CLEAN (contrastive learning–enabled enzyme annotation)
-to assign EC numbers to enzymes with better accuracy, reliability,
-and sensitivity compared with the state-of-the-art tool BLASTp.
-The contrastive learning framework empowers CLEAN to confidently (i) annotate understudied enzymes,
-(ii) correct mislabeled enzymes, and (iii) identify promiscuous enzymes with two or more EC numbers—functions
-that we demonstrate by systematic in silico and in vitro experiments.
-We anticipate that this tool will be widely used for predicting the functions of uncharacterized enzymes,
-thereby advancing many fields, such as genomics, synthetic biology, and biocatalysis.
-"""
-feynman(prompt)
-```
-
-With the chat history available, you can ask a follow-up question:
-
-```python
-feynman("Is there a simpler way to rephrase the text such that a high schooler would understand it?")
-```
-
-And your bot will work with the chat history to respond.
+The LanceDBDocStore will persist your conversation history using vector embeddings, allowing the bot to semantically search through previous exchanges and maintain context across multiple interactions.
 
 ### QueryBot
 
 The final bot provided is a QueryBot.
 This bot lets you query a collection of documents.
-To use it, you have two options:
+QueryBot now works with a docstore that you create first, making it more modular.
 
-1. Pass in a list of paths to text files and make Llamabot create a new collection for them, or
-2. Pass in the `collection_name` of a previously instantiated `QueryBot` model. (This will load the previously-computed text index into memory.)
-
-An illustrative example creating a new collection:
+Here's how to use QueryBot with a docstore:
 
 ```python
 from llamabot import QueryBot
+from llamabot.docstore import LanceDBDocStore
 from pathlib import Path
 
-bot = QueryBot(
-  system_prompt="You are an expert on Eric Ma's blog.",
-  collection_name="eric_ma_blog",
-  document_paths=[
+# First, create a docstore and add your documents
+docstore = LanceDBDocStore(table_name="eric_ma_blog")
+docstore.add_documents([
     Path("/path/to/blog/post1.txt"),
     Path("/path/to/blog/post2.txt"),
-    ...,
-  ],
+    # ... more documents
+])
+
+# Then, create a QueryBot with the docstore
+bot = QueryBot(
+  system_prompt="You are an expert on Eric Ma's blog.",
+  docstore=docstore,
   # Optional:
   # model_name="gpt-3.5-turbo"
   # or
   # model_name="ollama_chat/mistral"
-) # This creates a new embedding for my blog text.
+)
+
 result = bot("Do you have any advice for me on career development?")
 ```
 
-An illustrative example using an already existing collection:
+You can also use an existing docstore:
 
 ```python
 from llamabot import QueryBot
+from llamabot.docstore import LanceDBDocStore
 
+# Load an existing docstore
+docstore = LanceDBDocStore(table_name="eric_ma_blog")
+
+# Create QueryBot with the existing docstore
 bot = QueryBot(
   system_prompt="You are an expert on Eric Ma's blog",
-  collection_name="eric_ma_blog",
+  docstore=docstore,
   # Optional:
   # model_name="gpt-3.5-turbo"
   # or
   # model_name="ollama_chat/mistral"
-)  # This loads my previously-embedded blog text.
+)
+
 result = bot("Do you have any advice for me on career development?")
 ```
 
@@ -345,7 +327,7 @@ LlamaBot uses a caching mechanism to improve performance and reduce unnecessary 
 
 ### Cache Configuration
 
-The cache is automatically configured when you use any of the bot classes (`SimpleBot`, `ChatBot`, or `QueryBot`). You don't need to set up the cache manually.
+The cache is automatically configured when you use any of the bot classes (`SimpleBot` or `QueryBot`). You don't need to set up the cache manually.
 
 ### Cache Location
 
