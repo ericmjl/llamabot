@@ -10,9 +10,35 @@ env:
   OPENAI_API_KEY: dummy_key
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      has-code-changes: ${{ steps.changes.outputs.has-code-changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for code changes
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "has-code-changes=true" >> $GITHUB_OUTPUT
+          else
+            # For pull requests, check if there are non-docs changes
+            if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -v '^docs/' | grep -v '\.md$' | grep -q .; then
+              echo "has-code-changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "has-code-changes=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
   test-matrix:
+    needs: check-changes
     runs-on: ubuntu-latest
     name: ${{ matrix.test-type }} (Python ${{ matrix.python-version }}, ${{ matrix.environment-type }})
+    if: ${{ needs.check-changes.outputs.has-code-changes == 'true' }}
 
     strategy:
       matrix:
