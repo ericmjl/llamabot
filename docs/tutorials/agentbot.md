@@ -1,15 +1,3 @@
----
-diataxis_type: tutorial
-intents:
-- Build a diataxis-style tutorial for the AgentBot.
-- Show how to use it to build a simple bot that calculates tips and splits bills.
-- Then show how to use it to build a bot that uses tools to calculate recent trends
-  in stock prices.
-linked_files:
-- scratch_notebooks/tools.ipynb
-- llamabot/bot/agentbot.py
----
-
 # AgentBot Tutorial
 
 Welcome to the AgentBot tutorial! In this tutorial, we will guide you through the process of building a simple bot that can calculate tips and split bills, and then extend it to analyze stock price trends using various tools. By the end of this tutorial, you will have a solid understanding of how to use the AgentBot to automate tasks using a sequence of tools.

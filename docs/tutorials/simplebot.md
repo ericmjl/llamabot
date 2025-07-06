@@ -1,16 +1,3 @@
----
-intents:
-- Diataxis framework-style tutorial on the usage of SimpleBot.
-- Emphasis on the returned data structures from SimpleBot.__call__(), that these are
-  not strings, but AIMessages.
-- Explanation on what an AIMessage is, showing its class structure.
-- Creating a Panel app to talk with SimpleBot.
-linked_files:
-- llamabot/__init__.py
-- llamabot/bot/simplebot.py
-- llamabot/components/messages.py
----
-
 # SimpleBot Tutorial
 
 !!! note
