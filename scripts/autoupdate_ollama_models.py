@@ -1,5 +1,13 @@
 """Automatically update the list of Ollama models in llamabot/bot/ollama_model_names.txt"""
 
+# /// script
+# dependencies = [
+#     "beautifulsoup4",
+#     "lxml",
+#     "requests"
+# ]
+# ///
+
 from bs4 import BeautifulSoup
 import requests
 
