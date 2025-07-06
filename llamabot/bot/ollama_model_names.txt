@@ -1,4 +1,5 @@
 mistral-small3.2
+gemma3n
 magistral
 devstral
 qwen2.5vl
