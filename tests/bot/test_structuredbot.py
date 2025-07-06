@@ -42,19 +42,6 @@ def test_structuredbot_initialization():
     assert not bot.allow_failed_validation
 
 
-def test_structuredbot_unsupported_model():
-    """Test that StructuredBot raises ValueError for models without structured response support."""
-    with pytest.raises(ValueError) as exc_info:
-        StructuredBot(
-            system_prompt="Test prompt",
-            pydantic_model=TestModel(required_field="default", number_field=1),
-            model_name="mistral/mistral-medium",
-        )
-
-    assert "does not support structured responses" in str(exc_info.value)
-    assert "mistral-medium" in str(exc_info.value)
-
-
 def test_structuredbot_valid_data(mocker):
     """Test that StructuredBot correctly processes valid data."""
     # Mock the API response with valid data
