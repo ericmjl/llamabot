@@ -54,6 +54,34 @@ export MISTRAL_API_KEY="your-api-key-goes-here"
 Other API providers will usually specify an environment variable to set.
 If you have an API key, then set the environment variable accordingly.
 
+### Option 3: Using local models with LMStudio
+
+LlamaBot supports using local models through LMStudio via LiteLLM.
+To use LMStudio with LlamaBot:
+
+1. Install and set up [LMStudio](https://lmstudio.ai/)
+2. Load your desired model in LMStudio
+3. Start the local server in LMStudio (usually runs on `http://localhost:1234`)
+4. Set the environment variable for LMStudio's API base:
+
+```bash
+export LM_STUDIO_API_BASE="http://localhost:1234"
+```
+
+5. Use the model with LlamaBot using the `lm_studio/` prefix:
+
+```python
+from llamabot import SimpleBot
+
+system_prompt = "You are a helpful assistant."
+bot = SimpleBot(
+    system_prompt,
+    model_name="lm_studio/your-model-name"  # Use lm_studio/ prefix
+)
+```
+
+Replace `your-model-name` with the actual name of the model you've loaded in LMStudio. LlamaBot can use any model provider that LiteLLM supports, and LMStudio is one of the many supported providers.
+
 ## How to use
 
 ### SimpleBot
