@@ -82,7 +82,7 @@ dependencies = [
     "sqlalchemy",
     "pdfminer.six",
     "numpydoc", # Temporarily added on 2025-05-10 to fix LiteLLM's omission of this dependency.
-    "chonkie[all]",
+    "chonkie",
     "starlette",
     "duckduckgo-search",
 ]
