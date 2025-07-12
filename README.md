@@ -71,10 +71,10 @@ export LM_STUDIO_API_BASE="http://localhost:1234"
 5. Use the model with LlamaBot using the `lm_studio/` prefix:
 
 ```python
-from llamabot import SimpleBot
+import llamabot as lmb
 
 system_prompt = "You are a helpful assistant."
-bot = SimpleBot(
+bot = lmb.SimpleBot(
     system_prompt,
     model_name="lm_studio/your-model-name"  # Use lm_studio/ prefix
 )
@@ -100,12 +100,12 @@ For example, to create a Bot that explains a given chunk of text
 like Richard Feynman would:
 
 ```python
-from llamabot import SimpleBot
+import llamabot as lmb
 
 system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
-feynman = SimpleBot(
+feynman = lmb.SimpleBot(
   system_prompt,
-  model_name="gpt-3.5-turbo"
+  model_name="gpt-4.1-mini"
 )
 ```
 
@@ -172,10 +172,10 @@ If you want to use an Ollama model hosted locally,
 then you would use the following syntax:
 
 ```python
-from llamabot import SimpleBot
+import llamabot as lmb
 
 system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
-bot = SimpleBot(
+bot = lmb.SimpleBot(
     system_prompt,
     model_name="ollama_chat/llama2:13b"
 )
@@ -197,15 +197,15 @@ The `model_name` argument is optional. If you don't provide it, Llamabot will tr
 If you want chat functionality with memory (similar to what ChatBot provided), you can use SimpleBot with a LanceDBDocStore as memory. This allows the bot to remember previous conversations:
 
 ```python
-from llamabot import SimpleBot, LanceDBDocStore
+import llamabot as lmb
 
 # Create a bot with memory
 system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
-chat_memory = LanceDBDocStore(table_name="feynman_chat")
-feynman = SimpleBot(
+chat_memory = lmb.LanceDBDocStore(table_name="feynman_chat")
+feynman = lmb.SimpleBot(
     system_prompt,
     chat_memory=chat_memory,
-    model_name="gpt-3.5-turbo"
+    model_name="gpt-4.1-mini"
 )
 
 # Have a conversation
@@ -228,12 +228,11 @@ QueryBot now works with a docstore that you create first, making it more modular
 Here's how to use QueryBot with a docstore:
 
 ```python
-from llamabot import QueryBot
-from llamabot.docstore import LanceDBDocStore
+import llamabot as lmb
 from pathlib import Path
 
 # First, create a docstore and add your documents
-docstore = LanceDBDocStore(table_name="eric_ma_blog")
+docstore = lmb.LanceDBDocStore(table_name="eric_ma_blog")
 docstore.add_documents([
     Path("/path/to/blog/post1.txt"),
     Path("/path/to/blog/post2.txt"),
@@ -241,11 +240,11 @@ docstore.add_documents([
 ])
 
 # Then, create a QueryBot with the docstore
-bot = QueryBot(
+bot = lmb.QueryBot(
   system_prompt="You are an expert on Eric Ma's blog.",
   docstore=docstore,
   # Optional:
-  # model_name="gpt-3.5-turbo"
+  # model_name="gpt-4.1-mini"
   # or
   # model_name="ollama_chat/mistral"
 )
@@ -256,18 +255,17 @@ result = bot("Do you have any advice for me on career development?")
 You can also use an existing docstore:
 
 ```python
-from llamabot import QueryBot
-from llamabot.docstore import LanceDBDocStore
+import llamabot as lmb
 
 # Load an existing docstore
-docstore = LanceDBDocStore(table_name="eric_ma_blog")
+docstore = lmb.LanceDBDocStore(table_name="eric_ma_blog")
 
 # Create QueryBot with the existing docstore
-bot = QueryBot(
+bot = lmb.QueryBot(
   system_prompt="You are an expert on Eric Ma's blog",
   docstore=docstore,
   # Optional:
-  # model_name="gpt-3.5-turbo"
+  # model_name="gpt-4.1-mini"
   # or
   # model_name="ollama_chat/mistral"
 )
@@ -284,10 +282,10 @@ as long as you have an OpenAI API key,
 you can generate images with LlamaBot:
 
 ```python
-from llamabot import ImageBot
+import llamabot as lmb
 
-bot = ImageBot()
-# Within a Jupyter notebook:
+bot = lmb.ImageBot()
+# Within a Jupyter/Marimo notebook:
 url = bot("A painting of a dog.")
 
 # Or within a Python script
@@ -296,7 +294,7 @@ filepath = bot("A painting of a dog.")
 # Now, you can do whatever you need with the url or file path.
 ```
 
-If you're in a Jupyter Notebook,
+If you're in a Jupyter/Marimo notebook,
 you'll see the image show up magically as part of the output cell as well.
 
 ### Experimentation
@@ -305,23 +303,23 @@ Automagically record your prompt experimentation locally on your system
 by using llamabot's `Experiment` context manager:
 
 ```python
-from llamabot import Experiment, prompt, metric
+import llamabot as lmb
 
-@prompt
+@lmb.prompt
 def sysprompt():
     """You are a funny llama."""
 
-@prompt
+@lmb.prompt
 def joke_about(topic):
     """Tell me a joke about {{ topic }}."""
 
-@metric
+@lmb.metric
 def response_length(response) -> int:
     return len(response.content)
 
-with Experiment(name="llama_jokes") as exp:
+with lmb.Experiment(name="llama_jokes") as exp:
     # You would have written this outside of the context manager anyways!
-    bot = SimpleBot(sysprompt(), model_name="gpt-4o")
+    bot = lmb.SimpleBot(sysprompt(), model_name="gpt-4o")
     response = bot(joke_about("cars"))
     _ = response_length(response)
 ```
@@ -334,46 +332,16 @@ And now they will be viewable in the locally-stored message logs:
 
 Llamabot comes with CLI demos of what can be built with it and a bit of supporting code.
 
-Here is one where I expose a chatbot directly at the command line using `llamabot chat`:
-
-[![Watch the terminal session on Asciinema](https://asciinema.org/a/594332.png)](https://asciinema.org/a/594332)
-
-And here is another one where `llamabot` is used as part of the backend of a CLI app
+Here is one where `llamabot` is used as part of the backend of a CLI app
 to chat with one's Zotero library using `llamabot zotero chat`:
 
 [![Watch the terminal session on Asciinema](https://asciinema.org/a/594326.png)](https://asciinema.org/a/594326)
 
-
-And finally, here is one where I use `llamabot`'s `SimpleBot` to create a bot
+And here is one where I use `llamabot`'s `SimpleBot` to create a bot
 that automatically writes commit messages for me.
 
 [![Watch the terminal session on Asciinema](https://asciinema.org/a/594334.png)](https://asciinema.org/a/594334)
 
-## Caching
-
-LlamaBot uses a caching mechanism to improve performance and reduce unnecessary API calls. By default, all cache entries expire after 1 day (86400 seconds). This behavior is implemented using the `diskcache` library.
-
-### Cache Configuration
-
-The cache is automatically configured when you use any of the bot classes (`SimpleBot` or `QueryBot`). You don't need to set up the cache manually.
-
-### Cache Location
-
-The default cache directory is located at:
-
-```
-~/.llamabot/cache
-```
-
-### Cache Timeout
-
-The cache timeout can be configured using the `LLAMABOT_CACHE_TIMEOUT` environment variable. By default, the cache timeout is set to 1 day (86400 seconds). To customize the cache timeout, set the `LLAMABOT_CACHE_TIMEOUT` environment variable to the desired value in seconds. For example:
-
-```
-export LLAMABOT_CACHE_TIMEOUT=3600
-```
-
-This will set the cache timeout to 1 hour (3600 seconds).
 
 ## Contributing
 
