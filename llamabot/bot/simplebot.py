@@ -33,19 +33,24 @@ class SimpleBot:
     """Simple Bot that is primed with a system prompt, accepts a human message,
     and sends back a single response.
 
-    This bot does not retain chat history.
+    This bot does not retain chat history by default, but can be configured
+    to do so by passing in a chat memory component.
 
     :param system_prompt: The system prompt to use.
     :param temperature: The model temperature to use.
         See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
         for more information.
+    :param chat_memory: An optional chat memory component to use. If provided,
+        the bot will retain chat history. It should be an instance of
+        `AbstractDocumentStore` (such as `BM25DocStore` or `LanceDBDocStore`).
     :param model_name: The name of the model to use.
     :param stream_target: The target to stream the response to.
         Should be one of ("stdout", "panel", "api").
     :param json_mode: Whether to print debug messages.
     :param api_key: The OpenAI API key to use.
     :param mock_response: A mock response to use, for testing purposes only.
-    :param completion_kwargs: Additional keyword arguments to pass to the completion function.
+    :param completion_kwargs: Additional keyword arguments to pass to the
+        completion function of `litellm`.
     """
 
     def __init__(
