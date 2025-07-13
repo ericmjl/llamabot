@@ -297,6 +297,36 @@ filepath = bot("A painting of a dog.")
 If you're in a Jupyter/Marimo notebook,
 you'll see the image show up magically as part of the output cell as well.
 
+### Working with images and user input
+
+You can easily pass images to your bots using `lmb.user()` with image file paths.
+This is particularly useful for vision models that can analyze, describe, or answer questions about images:
+
+```python
+import llamabot as lmb
+
+# Create a bot that can analyze images
+vision_bot = lmb.SimpleBot(
+    "You are an expert image analyst. Describe what you see in detail.",
+    model_name="gpt-4o"  # Use a vision-capable model
+)
+
+# Pass an image file path using lmb.user()
+response = vision_bot(lmb.user("/path/to/your/image.jpg"))
+print(response)
+
+# You can also combine text and images
+response = vision_bot(lmb.user(
+    "What colors are prominent in this image?",
+    "/path/to/your/image.jpg"
+))
+print(response)
+```
+
+The `lmb.user()` function automatically detects image files (PNG, JPG, JPEG, GIF, WebP)
+and converts them to the appropriate format for the model.
+You can use local file paths or even image URLs.
+
 ### Experimentation
 
 Automagically record your prompt experimentation locally on your system
@@ -305,11 +335,11 @@ by using llamabot's `Experiment` context manager:
 ```python
 import llamabot as lmb
 
-@lmb.prompt
+@lmb.prompt("system")
 def sysprompt():
     """You are a funny llama."""
 
-@lmb.prompt
+@lmb.prompt("user")
 def joke_about(topic):
     """Tell me a joke about {{ topic }}."""
 
