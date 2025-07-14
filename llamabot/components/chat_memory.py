@@ -300,11 +300,19 @@ class GraphChatMemory(AbstractChatMemory):
                             assistant_nodes[-1], user_node.message_summary.title
                         )
 
-    def retrieve(self, query: str, n_results: int = 10) -> List[BaseMessage]:
+    def retrieve(
+        self,
+        query: str,
+        n_results: int = 10,
+        use_graph_context: bool = True,
+        context_depth: int = 5,
+    ) -> List[BaseMessage]:
         """Retrieve relevant messages from the graph.
 
         :param query: The query to search for
         :param n_results: Maximum number of messages to return
+        :param use_graph_context: Whether to use graph structure for context
+        :param context_depth: How many messages to walk up the chain
         :return: List of relevant messages
         """
         from llamabot.components.docstore import BM25DocStore
@@ -312,29 +320,86 @@ class GraphChatMemory(AbstractChatMemory):
         if not self.graph.nodes():
             return []
 
-        # Get all nodes for BM25 search
-        all_nodes = []
+        if not use_graph_context:
+            # Fallback to original flat BM25 search
+            all_nodes = []
+            node_map = {}
+
+            for node_id, node_data in self.graph.nodes(data=True):
+                if "node" in node_data:
+                    node_obj = node_data["node"]
+                    content = f"Role: {node_obj.message.role}\nSummary: {node_obj.message_summary.summary}\nContent: {node_obj.message.content}"
+                    all_nodes.append(content)
+                    node_map[content] = node_obj.message
+
+            bm25_store = BM25DocStore()
+            bm25_store.extend(all_nodes)
+            retrieved_docs = bm25_store.retrieve(query, n_results)
+
+            results = []
+            for doc in retrieved_docs:
+                if doc in node_map:
+                    results.append(node_map[doc])
+            return results
+
+        # Graph-aware retrieval
+        # 1. Find best attachment point using BM25 on assistant nodes only
+        assistant_nodes = [
+            n
+            for n, d in self.graph.nodes(data=True)
+            if d.get("node") and d["node"].message.role == "assistant"
+        ]
+
+        if not assistant_nodes:
+            return []
+
+        # Use BM25 to find most relevant assistant node
+        bm25_store = BM25DocStore()
+        node_docs = []
         node_map = {}
 
-        for node_id, node_data in self.graph.nodes(data=True):
+        for node_id in assistant_nodes:
+            node_data = self.graph.nodes[node_id]
+            node_obj = node_data["node"]
+            doc = f"summary: {node_obj.message_summary.summary}\ncontent: {node_obj.message.content}"
+            node_docs.append(doc)
+            node_map[doc] = node_id
+
+        bm25_store.extend(node_docs)
+        retrieved_docs = bm25_store.retrieve(query, n_results=1)  # Get best match
+
+        if not retrieved_docs or retrieved_docs[0] not in node_map:
+            return []
+
+        # 2. Walk up the conversation chain from the best attachment point
+        start_node = node_map[retrieved_docs[0]]
+
+        # Walk up the conversation chain
+        messages = []
+        current_node = start_node
+        visited = set()
+
+        for _ in range(context_depth):
+            if current_node in visited or current_node not in self.graph.nodes():
+                break
+
+            visited.add(current_node)
+
+            # Add current node's message
+            node_data = self.graph.nodes[current_node]
             if "node" in node_data:
-                node_obj = node_data["node"]
-                content = f"Role: {node_obj.message.role}\nSummary: {node_obj.message_summary.summary}\nContent: {node_obj.message.content}"
-                all_nodes.append(content)
-                node_map[content] = node_obj.message
+                messages.append(node_data["node"].message)
 
-        # Use BM25 for retrieval
-        bm25_store = BM25DocStore()
-        bm25_store.extend(all_nodes)
-        retrieved_docs = bm25_store.retrieve(query, n_results)
+            # Find parent node (predecessor)
+            predecessors = list(self.graph.predecessors(current_node))
+            if predecessors:
+                # Take the first predecessor (could be improved with heuristics)
+                current_node = predecessors[0]
+            else:
+                break
 
-        # Convert back to messages
-        results = []
-        for doc in retrieved_docs:
-            if doc in node_map:
-                results.append(node_map[doc])
-
-        return results
+        # Reverse to get chronological order (oldest first)
+        return messages[::-1]
 
     def reset(self):
         """Reset the graph memory store."""
