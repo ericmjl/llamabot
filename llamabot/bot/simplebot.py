@@ -117,7 +117,6 @@ class SimpleBot:
             memory_messages = self.chat_memory.retrieve(
                 query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
             )
-            memory_messages = [HumanMessage(content=m) for m in memory_messages]
 
         messages = [self.system_prompt] + memory_messages + processed_messages
 
@@ -152,9 +151,7 @@ class SimpleBot:
 
         sqlite_log(self, messages + [response_message])
         if self.chat_memory:
-            self.chat_memory.append(
-                f"Human: {processed_messages}\n\nAssistant: {response_message.content}"
-            )
+            self.chat_memory.append(processed_messages[-1], response_message)
 
         # Record end time
         self.run_meta["end_time"] = datetime.now()

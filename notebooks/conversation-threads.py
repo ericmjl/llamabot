@@ -8,6 +8,9 @@
 #     "networkx==3.5",
 #     "pydantic==2.11.7",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../", editable = true }
 # ///
 
 import marimo
@@ -242,6 +245,7 @@ def to_mermaid(
 ):
     """
     Convert a NetworkX graph to Mermaid diagram text with abbreviated node symbols and labels.
+    Colors nodes based on message role.
 
     Parameters:
         G: networkx.Graph or networkx.DiGraph
@@ -265,11 +269,22 @@ def to_mermaid(
     lines = [f"%% {graph_name}", f"graph {direction}"]
 
     # Node definitions with labels
+    user_nodes = []
+    assistant_nodes = []
+
     for n in G.nodes():
         abbr = node_abbr[n]
         label = node_labels[n]
         # Mermaid node with label: abbr["label"]
         lines.append(f'{indent}{abbr}["{label}"]')
+
+        # Categorize nodes by role for styling
+        if "node" in G.nodes[n]:
+            role = G.nodes[n]["node"].message.role
+            if role == "user":
+                user_nodes.append(abbr)
+            elif role == "assistant":
+                assistant_nodes.append(abbr)
 
     # Edge definitions
     edge_op = "-->" if directed else "---"
@@ -277,6 +292,27 @@ def to_mermaid(
         u_abbr = node_abbr[u]
         v_abbr = node_abbr[v]
         lines.append(f"{indent}{u_abbr} {edge_op} {v_abbr}")
+
+    # Add styling for different roles
+    if user_nodes or assistant_nodes:
+        lines.append("")  # Empty line for readability
+
+        # Define classes for different roles
+        lines.append(
+            f"{indent}classDef userClass fill:#e1f5fe,stroke:#0277bd,stroke-width:2px"
+        )
+        lines.append(
+            f"{indent}classDef assistantClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px"
+        )
+
+        # Apply classes to nodes
+        if user_nodes:
+            user_nodes_str = ",".join(user_nodes)
+            lines.append(f"{indent}class {user_nodes_str} userClass")
+
+        if assistant_nodes:
+            assistant_nodes_str = ",".join(assistant_nodes)
+            lines.append(f"{indent}class {assistant_nodes_str} assistantClass")
 
     return "\n".join(lines)
 
@@ -309,7 +345,9 @@ def _(lmb):
     linear_history = []
 
     @lmb.prompt("user")
-    def node_chooser_user_prompt(candidate_nodes: list[str], user_message: str):
+    def node_chooser_user_prompt(
+        candidate_nodes: list[str], last_message: str, user_message: str
+    ):
         """Here are the candidate nodes to choose from:
 
         {% for node in candidate_nodes %}
@@ -317,7 +355,13 @@ def _(lmb):
         ---
         {% endfor %}
 
-        Here is the user message:
+        This is the last message that was AI-generated:
+
+        {{ last_message }}
+
+        ---
+
+        And finally, here is the user message:
 
         {{ user_message }}
 
@@ -407,94 +451,94 @@ def _(
 
         return response
 
-    return (conversation_turn,)
-
-
-@app.cell
-def _(G, conversation_turn, lmb, mo):
-    G
-    msg1 = lmb.user("I'm looking to generate some code to help me make a coffee.")
-
-    resp1 = conversation_turn(msg1)
-    print(resp1)
-    mo.mermaid(to_mermaid(G))
-    return (msg1,)
-
-
-@app.cell
-def _(G, conversation_turn, lmb, mo):
-    msg2 = lmb.user("I'd like to try doing the checklist please.")
-
-    resp2 = conversation_turn(msg2)
-    print(resp2)
-    mo.mermaid(to_mermaid(G))
-    return (msg2,)
-
-
-@app.cell
-def _(G, conversation_turn, lmb, mo):
-    msg3 = lmb.user("Let's do all three steps.")
-
-    resp3 = conversation_turn(msg3)
-    print(resp3)
-    mo.mermaid(to_mermaid(G))
-    return (msg3,)
-
-
-@app.cell
-def _(G, conversation_turn, lmb, mo):
-    msg4 = lmb.user("Can we try a simulation instead")
-
-    resp4 = conversation_turn(msg4)
-    print(resp4)
-    mo.mermaid(to_mermaid(G))
-    return msg4, resp4
-
-
-@app.cell
-def _(G, mo, resp4):
-    resp4
-
-    node_selector = mo.ui.dropdown(options=list(G.nodes()))
-    node_selector
-    return (node_selector,)
-
-
-@app.cell
-def _(G, node_selector):
-    G.nodes[node_selector.value]["node"].__dict__["message"].__dict__
     return
 
 
 @app.cell
-def _(G):
-    # Find bidirectional edges
-    for n1, n2 in G.edges():
-        if G.has_edge(n2, n1):
-            print(n1, "<-->", n2)
+def _():
+    # G
+    # msg1 = lmb.user("I'm looking to generate some code to help me make a coffee.")
+
+    # resp1 = conversation_turn(msg1)
+    # print(resp1)
+    # mo.mermaid(to_mermaid(G))
     return
 
 
 @app.cell
-def _(G, conversation_turn, lmb, mo):
-    msg5 = lmb.user("No good.")
+def _():
+    # msg2 = lmb.user("I'd like to try doing the checklist please.")
 
-    resp5 = conversation_turn(msg5)
-    print(resp5)
-    mo.mermaid(to_mermaid(G))
-    return (msg5,)
+    # resp2 = conversation_turn(msg2)
+    # print(resp2)
+    # mo.mermaid(to_mermaid(G))
+    return
 
 
 @app.cell
-def _(G, conversation_turn, lmb, mo):
-    msg6 = lmb.user(
-        "Let's go back to thinking about the simulation. Can you write it more concisely?"
-    )
+def _():
+    # msg3 = lmb.user("Let's do all three steps.")
 
-    resp6 = conversation_turn(msg6)
-    print(resp6)
-    mo.mermaid(to_mermaid(G))
-    return (msg6,)
+    # resp3 = conversation_turn(msg3)
+    # print(resp3)
+    # mo.mermaid(to_mermaid(G))
+    return
+
+
+@app.cell
+def _():
+    # msg4 = lmb.user("Can we try a simulation instead")
+
+    # resp4 = conversation_turn(msg4)
+    # print(resp4)
+    # mo.mermaid(to_mermaid(G))
+    return
+
+
+@app.cell
+def _():
+    # resp4
+
+    # node_selector = mo.ui.dropdown(options=list(G.nodes()))
+    # node_selector
+    return
+
+
+@app.cell
+def _():
+    # G.nodes[node_selector.value]["node"].__dict__["message"].__dict__
+    return
+
+
+@app.cell
+def _():
+    # # Find bidirectional edges
+    # for n1, n2 in G.edges():
+    #     if G.has_edge(n2, n1):
+    #         print(n1, "<-->", n2)
+    return
+
+
+@app.cell
+def _():
+    # msg5 = lmb.user("No good.")
+
+    # resp5 = conversation_turn(msg5)
+    # print(resp5)
+    # mo.mermaid(to_mermaid(G))
+    return
+
+
+@app.cell
+def _():
+    # msg6 = lmb.user(
+    #     "Let's go back to thinking about the simulation. Can you write it more concisely?"
+    # )
+
+    # resp6 = conversation_turn(msg6)
+    # print(resp6)
+    # mo.mermaid(to_mermaid(G))
+    return
 
 
 @app.cell
@@ -516,18 +560,17 @@ def _(ChosenNode, MessageSummary, Node, lmb, node_chooser_user_prompt, nx):
                     "You are an expert at summarizing messages. You will be given a message and your mission is to succinctly summarize the message."
                 ),
                 pydantic_model=MessageSummary,
-                model_name="gpt-4.1-mini",
+                model_name="gpt-4.1",
             )
 
             self.node_chooser = lmb.StructuredBot(
-                system_prompt="You are an expert that specializes in identifying a single node from a collection of nodes is most logical to be connected to the user message that is being sent into the system. Choose the node to be connected to based on the following criteria: (a) it is a direct response to an Assistant Message, and (b) out of the options available, it is the most semantically relevant to the User Message. You cannot return nothing (empty string), you must always return something.",
+                system_prompt="You are an expert that specializes in identifying a single node from a collection of nodes is most logical to be connected to the user message that is being sent into the system. Choose the node to be connected to based on the following criteria: (a) it is a direct response to an Assistant Message, and (b) out of the options available, it is the most semantically relevant to the User Message, or (c) it is in response to the last message provided (you'll know this through vague references in the user message). You cannot return nothing (empty string), you must always return something.",
                 pydantic_model=ChosenNode,
                 model_name="gpt-4.1-mini",
             )
 
         def __call__(self, message):
             # Perform retrieval
-            messages = []
             chosen_node = None
 
             if len(self.G):
@@ -539,27 +582,33 @@ def _(ChosenNode, MessageSummary, Node, lmb, node_chooser_user_prompt, nx):
                     for n, d in self.G.nodes(data=True)
                     if d["node"].message.role == "assistant"
                 )
-                print("Nodes to add: ", nodes_to_add)
+                print("\nNodes to add: ", nodes_to_add, "\n")
                 nodes_to_add = [
-                    f"summary: {self.G.nodes[nta]['node'].message_summary.summary} \nnode: {nta}"
+                    f"summary: {self.G.nodes[nta]['node'].message_summary.summary} \ncontent: {self.G.nodes[nta]['node'].message.content} \nnode: {nta}"
                     for nta in nodes_to_add
                 ]
                 ds.extend(nodes_to_add)
                 retrieved_messages = ds.retrieve(message.content, n_results=5)
 
                 chosen_node = self.node_chooser(
-                    node_chooser_user_prompt(retrieved_messages, message)
+                    node_chooser_user_prompt(
+                        retrieved_messages,
+                        self.linear_history[-1].content,
+                        message,
+                    )
                 )
 
             # Generate response
             if chosen_node is not None:
                 response = super().__call__(
                     self.G.nodes[chosen_node.node]["node"].message,
-                    messages[-1] if messages else "",
+                    self.linear_history[-1] if self.linear_history else "",
                     message,
                 )
             else:
-                response = super().__call__(messages[-1] if messages else "", message)
+                response = super().__call__(
+                    self.linear_history[-1] if self.linear_history else "", message
+                )
 
             # Update memory
             message_summary = self.message_summarizer_bot(message)
@@ -598,52 +647,120 @@ def _(ChosenNode, MessageSummary, Node, lmb, node_chooser_user_prompt, nx):
 
 
 @app.cell
-def _(GraphMemoryBot, msg1):
+def _(GraphMemoryBot, lmb, mo):
     gmbot = GraphMemoryBot()
-    r1 = gmbot(msg1)
+    r1 = gmbot(
+        lmb.user("I'd like for you to write me some code to make coffee please.")
+    )
+    mo.mermaid(to_mermaid(gmbot.G))
     return (gmbot,)
 
 
 @app.cell
-def _(gmbot, msg2):
-    r2 = gmbot(msg2)
-    return
-
-
-@app.cell
-def _(gmbot, msg3):
-    r3 = gmbot(msg3)
-    return
-
-
-@app.cell
-def _(gmbot, msg4):
-    r4 = gmbot(msg4)
-    return
-
-
-@app.cell
-def _(gmbot, msg5):
-    r5 = gmbot(msg5)
-    return
-
-
-@app.cell
-def _(gmbot, msg6):
-    r6 = gmbot(msg6)
-    return
-
-
-@app.cell
-def _(gmbot, mo):
+def _(gmbot, lmb, mo):
+    r2 = gmbot(lmb.user("Let's make that API actually."))
     mo.mermaid(to_mermaid(gmbot.G))
     return
 
 
 @app.cell
-def _(gmbot, lmb):
-    msg7 = lmb.user("You are a ")
+def _(gmbot, lmb, mo):
+    r3 = gmbot(lmb.user("Let's expand the API to handle those cases."))
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _(gmbot, lmb, mo):
+    r4 = gmbot(
+        lmb.user(
+            "Let's rewind and try a different thing. Make me a coffee-making checklist program."
+        )
+    )
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _(gmbot, lmb, mo):
+    r5 = gmbot(
+        lmb.user("Can you turn that checklist program into an API instead please?")
+    )
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _(gmbot, lmb, mo):
+    r6 = gmbot(
+        lmb.user(
+            "OK, let's go back to the coffee-making checklist program. What did we talk about last?"
+        )
+    )
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _(gmbot, lmb, mo):
+    msg7 = lmb.user(
+        "Let's make improvements to the interactive coffee-making checklist program. What did we last talk about?"
+    )
     r7 = gmbot(msg7)
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(gmbot, lmb, mo):
+    msg8 = lmb.user("let's add the feature where we can save progress between runs.")
+    r8 = gmbot(msg8)
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _(gmbot, lmb, mo):
+    gmbot(lmb.user("Let's go back to talking about interactive runs please."))
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _(gmbot, lmb, mo):
+    gmbot(lmb.user("Let's go back to talking about interactive runs please."))
+    mo.mermaid(to_mermaid(gmbot.G))
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell(column=3)
+def _(lmb):
+    memory = lmb.GraphChatMemory()
     return
 
 
