@@ -11,7 +11,7 @@
 
 import marimo
 
-__generated_with = "0.14.10"
+__generated_with = "0.14.11"
 app = marimo.App(width="full")
 
 
@@ -19,7 +19,11 @@ app = marimo.App(width="full")
 def _():
     import llamabot as lmb
 
-    bot = lmb.SimpleBot("You are a helpful bot.", chat_memory=lmb.GraphChatMemory())
+    bot = lmb.SimpleBot(
+        "You are a helpful bot.",
+        # model_name="ollama_chat/phi4:latest",
+        chat_memory=lmb.GraphChatMemory(),
+    )
     bot("Help me write a program to teach CI/CD.")
     return (bot,)
 
