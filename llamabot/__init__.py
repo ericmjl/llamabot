@@ -30,7 +30,7 @@ from .prompt_manager import prompt
 from .components.messages import user, system, dev
 from .components.tools import tool
 from .components.docstore import BM25DocStore, LanceDBDocStore
-from .components.chat_memory import GraphChatMemory, ChatMemory
+from .components.chat_memory import ChatMemory
 
 
 def set_debug_mode(enabled: bool = True) -> None:
@@ -76,7 +76,6 @@ __all__ = [
     "BM25DocStore",
     "LanceDBDocStore",
     "set_debug_mode",
-    "GraphChatMemory",
     "ChatMemory",
 ]
 
