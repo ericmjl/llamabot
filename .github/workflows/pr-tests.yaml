@@ -73,7 +73,6 @@ jobs:
         with:
           pixi-version: latest
           cache: true
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           environments: ${{ matrix.test-type == 'bare-package' && 'bare' || '' }}
 
       # Setup uv if needed
@@ -93,6 +92,13 @@ jobs:
           sleep 3
 
       # Install Gemma model for bare package test
+      - name: Cache Ollama
+        if: ${{ matrix.test-type == 'bare-package' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama
+          key: ${{ runner.os }}-ollama
+
       - name: Install gemma2:2b
         if: ${{ matrix.test-type == 'bare-package' }}
         run: ollama pull gemma2:2b
