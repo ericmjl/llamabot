@@ -85,6 +85,7 @@ dependencies = [
     "chonkie",
     "starlette",
     "duckduckgo-search",
+    "networkx"
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
