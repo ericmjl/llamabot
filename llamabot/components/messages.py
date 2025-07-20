@@ -432,3 +432,56 @@ def dev(*content: Union[str, Path, BaseMessage]) -> DeveloperMessage:
     # Process all items and join with spaces
     combined_content = " ".join(_process_item(item) for item in content)
     return DeveloperMessage(content=combined_content)
+
+
+def assistant(*content: Union[str, Path, BaseMessage]) -> AIMessage:
+    """Create an AIMessage from one or more pieces of content.
+
+    Similar to the system() and dev() functions, this combines multiple inputs into a single
+    AIMessage. Content can be provided as strings, file paths, or existing messages.
+
+    Examples:
+        >>> from pathlib import Path
+        >>> import llamabot as lmb
+        >>> lmb.assistant("Hello! How can I help you today?")
+        AIMessage(content="Hello! How can I help you today?")
+
+        >>> assistant("I can help you", "with Python programming")
+        AIMessage(content="I can help you with Python programming")
+
+        >>> assistant(Path("response.txt"))  # File containing "Here's the answer"
+        AIMessage(content="Here's the answer")
+
+        >>> assistant(AIMessage(content="Let me explain"), "step by step")
+        AIMessage(content="Let me explain step by step")
+
+        >>> assistant("Here's a solution", Path("code.txt"), AIMessage(content="Hope this helps"))
+        AIMessage(content="Here's a solution def hello(): print('world') Hope this helps")
+
+    :param content: One or more pieces of content to convert into an AI message.
+        Can be strings, Paths to text files, or BaseMessage objects.
+    :return: A single AIMessage containing all content
+    :raises FileNotFoundError: If a specified file path doesn't exist
+    """
+
+    def _process_item(item: Union[str, Path, BaseMessage]) -> str:
+        """Process a single content item into a string.
+
+        :param item: The item to process. Can be a string, Path to a text file,
+                    or BaseMessage object
+        :return: The string content of the item
+        :raises FileNotFoundError: If a Path item points to a non-existent file
+        """
+        if isinstance(item, AIMessage):
+            return item.content
+        if isinstance(item, BaseMessage):
+            return item.content
+        if isinstance(item, Path):
+            if not item.exists():
+                raise FileNotFoundError(f"File not found: {item}")
+            return item.read_text()
+        return str(item)
+
+    # Process all items and join with spaces
+    combined_content = " ".join(_process_item(item) for item in content)
+    return AIMessage(content=combined_content)
