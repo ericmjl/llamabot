@@ -1,16 +1,16 @@
 """Storage functions for chat memory."""
 
 import networkx as nx
-from typing import Optional
-from llamabot.components.messages import BaseMessage
+from typing import Optional, Union
+from llamabot.components.messages import BaseMessage, HumanMessage, AIMessage
 from llamabot.components.chat_memory.models import ConversationNode
 from llamabot.components.chat_memory.selectors import NodeSelector
 
 
 def append_linear(
     graph: nx.DiGraph,
-    human_message: BaseMessage,
-    assistant_message: BaseMessage,
+    human_message: Union[HumanMessage, BaseMessage],
+    assistant_message: Union[AIMessage, BaseMessage],
     next_node_id: int,
 ):
     """Append messages to linear memory.
@@ -43,8 +43,8 @@ def append_linear(
 
 def append_with_threading(
     graph: nx.DiGraph,
-    human_message: BaseMessage,
-    assistant_message: BaseMessage,
+    human_message: Union[HumanMessage, BaseMessage],
+    assistant_message: Union[AIMessage, BaseMessage],
     node_selector: NodeSelector,
     next_node_id: int,
 ):

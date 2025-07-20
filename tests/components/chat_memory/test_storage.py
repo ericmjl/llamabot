@@ -53,36 +53,39 @@ def test_append_linear_existing_graph():
 
 
 def test_append_linear_find_leaf_assistant_node():
-    """Test finding the correct leaf assistant node."""
+    """Test that linear append connects to the last assistant node."""
     graph = nx.DiGraph()
 
-    # Create: H1 -> A1 -> H2 -> A2 -> H3 (H3 is leaf, but human)
+    # Create conversation: H1 -> A1 -> H2 -> A2 -> H3 -> A3
     h1 = user("Hello")
     a1 = assistant("Hi there!")
     h2 = user("How are you?")
     a2 = assistant("I'm doing well!")
     h3 = user("What's the weather?")
+    a3 = assistant("It's sunny!")
 
     graph.add_node(1, node=Mock(message=h1, parent_id=None))
     graph.add_node(2, node=Mock(message=a1, parent_id=1))
     graph.add_node(3, node=Mock(message=h2, parent_id=2))
     graph.add_node(4, node=Mock(message=a2, parent_id=3))
     graph.add_node(5, node=Mock(message=h3, parent_id=4))
+    graph.add_node(6, node=Mock(message=a3, parent_id=5))
 
     graph.add_edge(1, 2)
     graph.add_edge(2, 3)
     graph.add_edge(3, 4)
     graph.add_edge(4, 5)
+    graph.add_edge(5, 6)
 
     # Append new conversation turn
     h4 = user("Tell me a joke")
     a4 = assistant("Why did the chicken cross the road?")
 
-    append_linear(graph, h4, a4, next_node_id=6)
+    append_linear(graph, h4, a4, next_node_id=7)
 
-    # Should connect to A2 (last assistant node), not H3
-    assert graph.nodes[6]["node"].parent_id == 4
-    assert graph.has_edge(4, 6)
+    # Should connect to A3 (last assistant node), which is the leaf node
+    assert graph.nodes[7]["node"].parent_id == 6
+    assert graph.has_edge(6, 7)
 
 
 def test_append_with_threading_empty_graph():
