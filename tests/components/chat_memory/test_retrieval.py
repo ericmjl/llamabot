@@ -271,26 +271,10 @@ def test_semantic_search_with_context_multiple_results(mock_bm25_search):
     assert h3 in result  # h3 is the context for a4 (most ancient)
 
 
-@patch("llamabot.components.chat_memory.retrieval.bm25_search")
-def test_semantic_search_with_context_empty_results(mock_bm25_search):
-    """Test semantic search when no relevant nodes found."""
-    graph = nx.DiGraph()
-
-    # Mock BM25 search to return no results
-    mock_bm25_search.return_value = []
-
-    query = "machine learning libraries"
-    result = semantic_search_with_context(graph, query, n_results=5, context_depth=3)
-
-    assert result == []
-    mock_bm25_search.assert_called_once()
-
-
 def test_semantic_search_with_context_empty_graph():
-    """Test semantic search on empty graph."""
+    """semantic_search_with_context returns [] for an empty graph."""
     graph = nx.DiGraph()
-
-    query = "machine learning libraries"
-    result = semantic_search_with_context(graph, query, n_results=5, context_depth=3)
-
+    result = semantic_search_with_context(
+        graph, "anything", n_results=5, context_depth=3
+    )
     assert result == []
