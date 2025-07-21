@@ -44,23 +44,24 @@ def semantic_search_with_context(
     if not graph.nodes():
         return []
 
-    # Find relevant nodes via semantic search
     relevant_nodes = bm25_search(graph, query, n_results)
-
     if not relevant_nodes:
         return []
 
-    # Collect messages with context
     all_messages = []
     for node_id in relevant_nodes:
-        # Get the relevant node
-        node_data = graph.nodes[node_id]["node"]
-        all_messages.append(node_data.message)
-
-        # Get context by traversing up the thread path
-        context_messages = traverse_thread_path(graph, node_id, context_depth)
-        all_messages.extend(context_messages)
-
+        # Collect context (up to context_depth ancestors, most ancient first)
+        context_messages = []
+        current_id = node_id
+        for _ in range(context_depth):
+            parent_id = graph.nodes[current_id]["node"].parent_id
+            if parent_id is None or parent_id not in graph.nodes:
+                break
+            context_messages.append(graph.nodes[parent_id]["node"].message)
+            current_id = parent_id
+        all_messages.extend(reversed(context_messages))
+        # Add the relevant node itself
+        all_messages.append(graph.nodes[node_id]["node"].message)
     return all_messages
 
 
