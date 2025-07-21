@@ -32,16 +32,16 @@ def test_get_recent_messages_multiple_messages():
     """Test getting recent messages from multiple messages."""
     graph = nx.DiGraph()
 
-    # Create: H1 -> A1 -> H2 -> A2
+    # Create: H1 -> A2 -> H3 -> A4
     h1 = user("Hello")
-    a1 = assistant("Hi there!")
-    h2 = user("How are you?")
-    a2 = assistant("I'm doing well!")
+    a2 = assistant("Hi there!")
+    h3 = user("How are you?")
+    a4 = assistant("I'm doing well!")
 
     graph.add_node(1, node=Mock(message=h1, parent_id=None))
-    graph.add_node(2, node=Mock(message=a1, parent_id=1))
-    graph.add_node(3, node=Mock(message=h2, parent_id=2))
-    graph.add_node(4, node=Mock(message=a2, parent_id=3))
+    graph.add_node(2, node=Mock(message=a2, parent_id=1))
+    graph.add_node(3, node=Mock(message=h3, parent_id=2))
+    graph.add_node(4, node=Mock(message=a4, parent_id=3))
 
     graph.add_edge(1, 2)
     graph.add_edge(2, 3)
@@ -49,10 +49,10 @@ def test_get_recent_messages_multiple_messages():
 
     result = get_recent_messages(graph, n_results=3)
     assert len(result) == 3
-    # Should return most recent messages in order
-    assert result[0] == h2
-    assert result[1] == a2
-    assert result[2] == a1
+    # Should return newest messages last
+    assert result[0] == a2
+    assert result[1] == h3
+    assert result[2] == a4
 
 
 def test_get_recent_messages_limited_results():
@@ -102,27 +102,27 @@ def test_traverse_thread_path_linear():
     """Test traversing linear thread path."""
     graph = nx.DiGraph()
 
-    # Create: H1 -> A1 -> H2 -> A2
+    # Create: H1 -> A2 -> H3 -> A4
     h1 = user("Hello")
-    a1 = assistant("Hi there!")
-    h2 = user("How are you?")
-    a2 = assistant("I'm doing well!")
+    a2 = assistant("Hi there!")
+    h3 = user("How are you?")
+    a4 = assistant("I'm doing well!")
 
     graph.add_node(1, node=Mock(message=h1, parent_id=None))
-    graph.add_node(2, node=Mock(message=a1, parent_id=1))
-    graph.add_node(3, node=Mock(message=h2, parent_id=2))
-    graph.add_node(4, node=Mock(message=a2, parent_id=3))
+    graph.add_node(2, node=Mock(message=a2, parent_id=1))
+    graph.add_node(3, node=Mock(message=h3, parent_id=2))
+    graph.add_node(4, node=Mock(message=a4, parent_id=3))
 
     graph.add_edge(1, 2)
     graph.add_edge(2, 3)
     graph.add_edge(3, 4)
 
-    # Traverse from A2 with depth 3
+    # Traverse from A4 with depth 3
     result = traverse_thread_path(graph, node_id=4, depth=3)
     assert len(result) == 3
-    assert result[0] == a2  # Start node
-    assert result[1] == h2  # Parent
-    assert result[2] == a1  # Grandparent
+    assert result[0] == a2  # Grandparent (most ancient in this path)
+    assert result[1] == h3  # Parent
+    assert result[2] == a4  # Start node (most recent)
 
 
 def test_traverse_thread_path_limited_depth():
@@ -153,8 +153,8 @@ def test_traverse_thread_path_limited_depth():
     # Traverse from A3 with depth 2
     result = traverse_thread_path(graph, node_id=6, depth=2)
     assert len(result) == 2
-    assert result[0] == a3  # Start node
-    assert result[1] == h3  # Parent
+    assert result[0] == h3  # Parent (most ancient in this path)
+    assert result[1] == a3  # Start node (most recent)
 
 
 def test_traverse_thread_path_branching():
@@ -186,16 +186,16 @@ def test_traverse_thread_path_branching():
     # Traverse from A2
     result = traverse_thread_path(graph, node_id=4, depth=3)
     assert len(result) == 3
-    assert result[0] == a2  # Start node
+    assert result[0] == a1  # Grandparent (most ancient in this path)
     assert result[1] == h2  # Parent
-    assert result[2] == a1  # Grandparent
+    assert result[2] == a2  # Start node (most recent)
 
     # Traverse from A3
     result = traverse_thread_path(graph, node_id=6, depth=3)
     assert len(result) == 3
-    assert result[0] == a3  # Start node
+    assert result[0] == a1  # Grandparent (most ancient in this path)
     assert result[1] == h3  # Parent
-    assert result[2] == a1  # Grandparent
+    assert result[2] == a3  # Start node (most recent)
 
 
 @patch("llamabot.components.chat_memory.retrieval.bm25_search")

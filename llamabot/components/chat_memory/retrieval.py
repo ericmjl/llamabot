@@ -64,38 +64,29 @@ def semantic_search_with_context(
     return all_messages
 
 
-def traverse_thread_path(
-    graph: nx.DiGraph, node_id: int, depth: int
-) -> List[BaseMessage]:
-    """Traverse up a conversation thread path from a given node.
+def traverse_thread_path(graph, node_id, depth):
+    """
+    Traverse the thread path upwards from the given node, including the start node.
+
+    Returns a list of messages such that the most ancient node is first and the starting node is last.
 
     :param graph: The conversation graph
-    :param node_id: Starting node ID
-    :param depth: Number of nodes to traverse up
-    :return: List of messages in the thread path
+    :param node_id: The starting node ID
+    :param depth: Maximum number of nodes to include
+    :return: List of messages from root to start node (inclusive)
     """
-    if node_id not in graph.nodes():
-        return []
-
-    messages = []
-    current_node_id = node_id
-
+    path = []
+    current_id = node_id
     for _ in range(depth):
-        # Get current node's parent
-        node_data = graph.nodes[current_node_id]["node"]
-        parent_id = node_data.parent_id
-
-        if parent_id is None or parent_id not in graph.nodes():
+        if current_id not in graph.nodes:
             break
-
-        # Add parent message to results
-        parent_data = graph.nodes[parent_id]["node"]
-        messages.append(parent_data.message)
-
-        # Move up to parent
-        current_node_id = parent_id
-
-    return messages
+        node = graph.nodes[current_id]["node"].message
+        path.append(node)
+        parent_id = graph.nodes[current_id]["node"].parent_id
+        if parent_id is None:
+            break
+        current_id = parent_id
+    return list(reversed(path))
 
 
 def bm25_search(graph: nx.DiGraph, query: str, n_results: int) -> List[int]:
