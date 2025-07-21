@@ -37,7 +37,7 @@ async def test_agent_bot_execution():
     bot = AgentBot(
         system_prompt="Test prompt",
         tools=[mock_tool],
-        mock_response='{"tool_name": "agent_finish", "tool_arguments": {"message": "Done"}, "use_cached_results": {}}',
+        mock_response='{"tool_name": "respond_to_user", "tool_arguments": {"message": "Done"}, "use_cached_results": {}}',
     )
 
     result = bot("Test message")
