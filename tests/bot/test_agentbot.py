@@ -49,7 +49,7 @@ async def test_agent_bot_max_iterations():
     """Test that AgentBot respects max_iterations."""
     bot = AgentBot(
         system_prompt="Test prompt",
-        functions=[mock_tool],
+        tools=[mock_tool],
         mock_response='{"tool_name": "mock_tool", "tool_arguments": {"value": "test"}, "use_cached_results": {}}',
     )
 
@@ -63,7 +63,7 @@ async def test_agent_bot_error_handling():
     """Test AgentBot's error handling."""
     bot = AgentBot(
         system_prompt="Test prompt",
-        functions=[mock_tool],
+        tools=[mock_tool],
         mock_response='{"tool_name": "return_error", "tool_arguments": {"message": "Test error"}, "use_cached_results": {}}',
     )
 
