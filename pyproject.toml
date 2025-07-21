@@ -1,7 +1,7 @@
 # https://setuptools.pypa.io/en/latest/userguide/quickstart.html
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 line-length = 88
@@ -71,7 +71,7 @@ dependencies = [
     "litellm>=1.71.0", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
     "python-slugify",
     "pydantic>=2.0",
-    "numpy", # https://github.com/ericmjl/llamabot/issues/56
+    "numpy",
     "jinja2",
     "fastapi>=0.115.9",
     "uvicorn",
@@ -129,12 +129,11 @@ cli = [
     "astor",
 ]
 all = [
-    "llamabot[notebooks,ui,rag,agent,cli]"
+    "llamabot[notebooks,rag,agent,cli]"
 ]
 
 [dependency-groups]
 notebooks = ["ollama>=0.4.4,<0.5"]
-ui = []
 agent = []
 cli = []
 
@@ -175,12 +174,15 @@ jlab = "jupyter lab"
 [tool.pixi.feature.tests.tasks]
 test = "pytest"
 
+[tool.pixi.feature.tests.dependencies]
+pytest-asyncio = ">=1.0.0,<2"
+
 [tool.pixi.feature.docs.tasks]
 docs = "mkdocs serve"
 build-docs = "mkdocs build"
 
 [tool.pixi.environments]
-default = ["tests", "devtools", "docs", "notebooks", "ui", "rag", "agent", "cli"]
+default = ["tests", "devtools", "docs", "notebooks", "rag", "agent", "cli"]
 docs = ["docs"]
 notebooks = ["notebooks", "rag", "agent"] # for those who just want to run notebooks
 bare = ["devtools"]
