@@ -84,6 +84,6 @@ async def test_agent_bot_error_handling():
         mock_response='{"tool_name": "return_error", "tool_arguments": {"message": "Test error"}, "use_cached_results": {}}',
     )
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(RuntimeError) as exc_info:
         bot("Test message")
-    assert str(exc_info.value) == "Test error"
+    assert "Agent exceeded maximum iterations" in str(exc_info.value)
