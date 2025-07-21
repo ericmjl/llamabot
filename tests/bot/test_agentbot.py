@@ -8,6 +8,8 @@ import pytest
 
 from llamabot.bot.agentbot import AgentBot, hash_result
 from llamabot.components.tools import tool
+from unittest.mock import patch, MagicMock
+from llamabot.components.messages import AIMessage
 
 
 @tool
@@ -37,11 +39,26 @@ async def test_agent_bot_execution():
     bot = AgentBot(
         system_prompt="Test prompt",
         tools=[mock_tool],
-        mock_response='{"tool_name": "respond_to_user", "tool_arguments": {"message": "Done"}, "use_cached_results": {}}',
     )
 
-    result = bot("Test message")
-    assert result.content == "Done"
+    # Patch make_response, stream_chunks, extract_tool_calls, and extract_content
+    with (
+        patch("llamabot.bot.agentbot.make_response") as mock_make_response,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_tool_calls") as mock_extract_tool_calls,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+    ):
+        tool_call = MagicMock()
+        tool_call.function.name = "respond_to_user"
+        tool_call.function.arguments = '{"response": "Done"}'  # Correct argument name
+        ai_message = AIMessage(content="Done", tool_calls=[tool_call])
+        mock_make_response.return_value = ai_message
+        mock_stream_chunks.return_value = ai_message
+        mock_extract_tool_calls.return_value = [tool_call]
+        mock_extract_content.return_value = "Done"
+
+        result = bot("Test message")
+        assert result.content == "Done"
 
 
 @pytest.mark.asyncio
