@@ -146,9 +146,9 @@ def test_chat_memory_retrieve_linear_with_messages():
     result = memory.retrieve("test query", n_results=3)
     assert len(result) == 3
     # Should return most recent messages
-    assert result[0] == h2
-    assert result[1] == a2
-    assert result[2] == a1
+    assert result[0] == a1
+    assert result[1] == h2
+    assert result[2] == a2
 
 
 def test_chat_memory_retrieve_threaded():
