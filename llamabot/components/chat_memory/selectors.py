@@ -139,26 +139,26 @@ class NodeSelector(ABC):
 
 
 class LinearNodeSelector(NodeSelector):
-    """Linear node selector that chooses the leaf node (node with no out_edges)."""
+    """Linear node selector that chooses the last assistant node."""
 
     def select_parent(self, graph: nx.DiGraph, message: BaseMessage) -> Optional[int]:
-        """Select the leaf node as parent.
+        """Select the last assistant node as parent.
 
         :param graph: The conversation graph
         :param message: The message to find a parent for
-        :return: Node ID of the leaf node, or None if no nodes exist
+        :return: Node ID of the last assistant node, or None if no assistant nodes exist
         """
         if not graph.nodes():
             return None
 
-        # Find nodes with no out_edges (leaf nodes)
-        leaf_nodes = [node for node in graph.nodes() if graph.out_degree(node) == 0]
+        # Get all assistant nodes
+        assistant_nodes = get_candidate_nodes(graph)
 
-        if not leaf_nodes:
+        if not assistant_nodes:
             return None
 
-        # Return the leaf node (in a linear graph, there should be only one)
-        return leaf_nodes[0]
+        # Return the last assistant node (most recent)
+        return assistant_nodes[-1]
 
 
 class LLMNodeSelector(NodeSelector):
