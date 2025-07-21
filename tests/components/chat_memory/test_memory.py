@@ -136,19 +136,19 @@ def test_chat_memory_retrieve_linear_with_messages():
 
     # Add some messages
     h1 = user("Hello")
-    a1 = assistant("Hi there!")
-    h2 = user("How are you?")
-    a2 = assistant("I'm doing well!")
+    a2 = assistant("Hi there!")
+    h3 = user("How are you?")
+    a4 = assistant("I'm doing well!")
 
-    memory.append(h1, a1)
-    memory.append(h2, a2)
+    memory.append(h1, a2)
+    memory.append(h3, a4)
 
     result = memory.retrieve("test query", n_results=3)
     assert len(result) == 3
-    # Should return most recent messages
-    assert result[0] == a1
-    assert result[1] == h2
-    assert result[2] == a2
+    # Should return newest messages last
+    assert result[0] == a2
+    assert result[1] == h3
+    assert result[2] == a4
 
 
 def test_chat_memory_retrieve_threaded():
@@ -223,8 +223,8 @@ def test_chat_memory_to_mermaid():
 
     assert "graph TD" in result
     assert "H1" in result
-    assert "A1" in result
-    assert "H1 --> A1" in result
+    assert "A2" in result
+    assert "H1 --> A2" in result
 
 
 def test_chat_memory_save_load():
