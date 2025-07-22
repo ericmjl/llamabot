@@ -222,9 +222,11 @@ def test_chat_memory_to_mermaid():
     result = memory.to_mermaid()
 
     assert "graph TD" in result
-    assert "H1" in result
-    assert "A2" in result
-    assert "H1 --> A2" in result
+    assert '1["H1: Hello"]' in result
+    assert '2["A2: Hi there!"]' in result
+    assert "1 --> 2" in result
+    assert "style 1 fill:#a7c7e7" in result
+    assert "style 2 fill:#cdb4f6" in result
 
 
 def test_chat_memory_save_load():

@@ -10,7 +10,7 @@ def test_to_mermaid_empty_graph():
     """Test converting empty graph to Mermaid."""
     graph = nx.DiGraph()
     result = to_mermaid(graph)
-    assert result == "graph TD\n"
+    assert result.strip() == "graph TD"
 
 
 def test_to_mermaid_single_node():
@@ -29,8 +29,8 @@ def test_to_mermaid_single_node():
     result = to_mermaid(graph)
 
     assert "graph TD" in result
-    assert "H1" in result
-    assert "Hello" in result
+    assert '1["H1: Hello"]' in result
+    assert "style 1 fill:#a7c7e7" in result
 
 
 def test_to_mermaid_linear_conversation():
@@ -66,19 +66,14 @@ def test_to_mermaid_linear_conversation():
 
     result = to_mermaid(graph)
 
-    # Check nodes are present
-    assert "H1" in result
-    assert "A2" in result
-    assert "H3" in result
-
-    # Check content is included
-    assert "Hello" in result
-    assert "Hi there!" in result
-    assert "How are you?" in result
-
-    # Check edge directions
-    assert "H1 --> A2" in result
-    assert "A2 --> H3" in result
+    assert '1["H1: Hello"]' in result
+    assert '2["A2: Hi there!"]' in result
+    assert '3["H3: How are you?"]' in result
+    assert "1 --> 2" in result
+    assert "2 --> 3" in result
+    assert "style 1 fill:#a7c7e7" in result
+    assert "style 2 fill:#cdb4f6" in result
+    assert "style 3 fill:#a7c7e7" in result
 
 
 def test_to_mermaid_branching_conversation():
@@ -138,28 +133,23 @@ def test_to_mermaid_branching_conversation():
 
     result = to_mermaid(graph)
 
-    # Check nodes are present
-    assert "H1" in result
-    assert "A2" in result
-    assert "H3" in result
-    assert "A4" in result
-    assert "H5" in result
-    assert "A6" in result
-
-    # Check content is included
-    assert "Let's discuss AI" in result
-    assert "AI is fascinating" in result
-    assert "What about machine learning?" in result
-    assert "ML is a subset of AI" in result
-    assert "Tell me about deep learning" in result
-    assert "Deep learning uses neural networks" in result
-
-    # Check edge directions
-    assert "H1 --> A2" in result
-    assert "A2 --> H3" in result
-    assert "H3 --> A4" in result
-    assert "A2 --> H5" in result
-    assert "H5 --> A6" in result
+    assert '1["H1: Let' in result
+    assert '2["A2: AI is fascinating"]' in result
+    assert '3["H3: What about machine learning?"]' in result
+    assert '4["A4: ML is a subset of AI"]' in result
+    assert '5["H5: Tell me about deep learning"]' in result
+    assert '6["A6: Deep learning uses neural networks"]' in result
+    assert "1 --> 2" in result
+    assert "2 --> 3" in result
+    assert "2 --> 5" in result
+    assert "3 --> 4" in result
+    assert "5 --> 6" in result
+    assert "style 1 fill:#a7c7e7" in result
+    assert "style 2 fill:#cdb4f6" in result
+    assert "style 3 fill:#a7c7e7" in result
+    assert "style 4 fill:#cdb4f6" in result
+    assert "style 5 fill:#a7c7e7" in result
+    assert "style 6 fill:#cdb4f6" in result
 
 
 def test_to_mermaid_with_summaries():
@@ -182,8 +172,8 @@ def test_to_mermaid_with_summaries():
     result = to_mermaid(graph, show_summaries=True)
 
     assert "graph TD" in result
-    assert "H1" in result
-    assert "Discussion about ML basics" in result
+    assert '1["H1: What is machine learning?"]' in result
+    assert "style 1 fill:#a7c7e7" in result
 
 
 def test_to_mermaid_without_summaries():
@@ -206,9 +196,8 @@ def test_to_mermaid_without_summaries():
     result = to_mermaid(graph, show_summaries=False)
 
     assert "graph TD" in result
-    assert "H1" in result
-    assert "What is machine learning?" in result
-    assert "Discussion about ML basics" not in result
+    assert '1["H1: What is machine learning?"]' in result
+    assert "style 1 fill:#a7c7e7" in result
 
 
 def test_to_mermaid_node_labeling():
@@ -234,9 +223,10 @@ def test_to_mermaid_node_labeling():
 
     result = to_mermaid(graph)
 
-    # Check that user messages get H prefix and assistant messages get A prefix
-    assert "H1" in result
-    assert "A2" in result
+    assert '1["H1: Hello"]' in result
+    assert '2["A2: Hi there!"]' in result
+    assert "style 1 fill:#a7c7e7" in result
+    assert "style 2 fill:#cdb4f6" in result
 
 
 def test_to_mermaid_edge_direction():
@@ -271,9 +261,8 @@ def test_to_mermaid_edge_direction():
 
     result = to_mermaid(graph)
 
-    # Check edge directions
-    assert "H1 --> A2" in result
-    assert "A2 --> H3" in result
+    assert "1 --> 2" in result
+    assert "2 --> 3" in result
 
 
 def test_to_mermaid_message_content():
@@ -362,22 +351,26 @@ def test_to_mermaid_complex_structure():
 
     result = to_mermaid(graph)
 
-    # Check all nodes are present
-    assert "H1" in result
-    assert "A2" in result
-    assert "H3" in result
-    assert "A4" in result
-    assert "H5" in result
-    assert "A6" in result
-    assert "H7" in result
-
-    # Check all edges are present
-    assert "H1 --> A2" in result
-    assert "A2 --> H3" in result
-    assert "H3 --> A4" in result
-    assert "A2 --> H5" in result
-    assert "H5 --> A6" in result
-    assert "A4 --> H7" in result
+    assert '1["H1: Let' in result
+    assert '2["A2: AI is fascinating"]' in result
+    assert '3["H3: What about machine learning?"]' in result
+    assert '4["A4: ML is a subset of AI"]' in result
+    assert '5["H5: Tell me about deep learning"]' in result
+    assert '6["A6: Deep learning uses neural networks"]' in result
+    assert '7["H7: What neural networks?"]' in result
+    assert "1 --> 2" in result
+    assert "2 --> 3" in result
+    assert "2 --> 5" in result
+    assert "3 --> 4" in result
+    assert "4 --> 7" in result
+    assert "5 --> 6" in result
+    assert "style 1 fill:#a7c7e7" in result
+    assert "style 2 fill:#cdb4f6" in result
+    assert "style 3 fill:#a7c7e7" in result
+    assert "style 4 fill:#cdb4f6" in result
+    assert "style 5 fill:#a7c7e7" in result
+    assert "style 6 fill:#cdb4f6" in result
+    assert "style 7 fill:#a7c7e7" in result
 
 
 def test_to_mermaid_with_custom_options():
@@ -406,6 +399,6 @@ def test_to_mermaid_with_custom_options():
     result = to_mermaid(graph, show_summaries=False, max_content_length=10)
 
     assert "graph TD" in result
-    assert "H1" in result
-    assert "A2" in result
+    assert '1["H1: Hello"]' in result
+    assert '2["A2: Hi there!"]' in result
     # Content should be truncated if longer than max_content_length

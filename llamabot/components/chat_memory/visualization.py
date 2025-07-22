@@ -3,57 +3,28 @@
 import networkx as nx
 
 
-def to_mermaid(
-    graph: nx.DiGraph, show_summaries: bool = True, max_content_length: int = 100
-) -> str:
-    """Convert graph to Mermaid diagram.
-
-    :param graph: The conversation graph
-    :param show_summaries: Whether to include message summaries
-    :param max_content_length: Maximum length of message content to show
-    :return: Mermaid diagram string
-    """
-    if not graph.nodes():
-        return "graph TD\n"
-
+def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:
+    """Convert graph to Mermaid diagram with colored nodes for human (pastel blue) and assistant (pastel purple) messages, and prefixed node labels (H<n>, A<n>)."""
     lines = ["graph TD"]
-
-    # Add nodes
-    for node_id in sorted(graph.nodes()):
-        node_data = graph.nodes[node_id]["node"]
-        message = node_data.message
-
-        # Determine node label
-        role_prefix = "H" if message.role == "user" else "A"
-        node_label = f"{role_prefix}{node_id}"
-
-        # Determine node content
-        if show_summaries and node_data.summary:
-            content = node_data.summary.title
+    node_styles = []
+    for node_id, node_data in graph.nodes(data=True):
+        node = node_data["node"]
+        content = node.message.content.replace("\n", " ")[:60]
+        if node.message.role == "human" or node.message.role == "user":
+            prefix = f"H{node_id}"
+            color = "#a7c7e7"  # pastel blue
+            style = f"style {node_id} fill:{color},stroke:#333,stroke-width:1px;"
+        elif node.message.role == "assistant":
+            prefix = f"A{node_id}"
+            color = "#cdb4f6"  # pastel purple
+            style = f"style {node_id} fill:{color},stroke:#333,stroke-width:1px;"
         else:
-            content = message.content
-            if len(content) > max_content_length:
-                content = content[:max_content_length] + "..."
-
-        # Escape quotes and special characters for Mermaid
-        content = content.replace('"', '\\"').replace("\n", " ")
-
-        # Add node
-        lines.append(f'    {node_label}["{node_label}: {content}"]')
-
-    # Add edges
-    for edge in graph.edges():
-        source_id, target_id = edge
-        source_role = (
-            "H" if graph.nodes[source_id]["node"].message.role == "user" else "A"
-        )
-        target_role = (
-            "H" if graph.nodes[target_id]["node"].message.role == "user" else "A"
-        )
-
-        source_label = f"{source_role}{source_id}"
-        target_label = f"{target_role}{target_id}"
-
-        lines.append(f"    {source_label} --> {target_label}")
-
+            prefix = f"N{node_id}"
+            color = "#e0e0e0"  # default gray
+            style = f"style {node_id} fill:{color},stroke:#333,stroke-width:1px;"
+        lines.append(f'{node_id}["{prefix}: {content}"]')
+        node_styles.append(style)
+    for u, v in graph.edges():
+        lines.append(f"{u} --> {v}")
+    lines.extend(node_styles)
     return "\n".join(lines)
