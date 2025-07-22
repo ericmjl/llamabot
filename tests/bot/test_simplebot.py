@@ -235,7 +235,7 @@ def test_simple_bot_call_with_chat_memory(
     ]
 
     # Create bot and call it
-    bot = SimpleBot(system_prompt="Test prompt", chat_memory=mock_chat_memory)
+    bot = SimpleBot(system_prompt="Test prompt", memory=mock_chat_memory)
     _ = bot("Human message")
 
     # Check that chat memory was used
