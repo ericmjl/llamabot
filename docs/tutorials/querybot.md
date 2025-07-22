@@ -4,7 +4,7 @@ In this tutorial, we will learn how to use the `QueryBot` class to create a chat
 
 ## Using QueryBot with a Document Store and Chat Memory
 
-The recommended way to use QueryBot is to explicitly create and manage your own document store and chat memory using `LanceDBDocStore`. This gives you full control over storage, persistence, and memory management. Below is the standard usage pattern (inspired by `notebooks/llamabot_docs.py`).
+The recommended way to use QueryBot is to explicitly create and manage your own document store using `LanceDBDocStore` and chat memory using `ChatMemory`. This gives you full control over storage, persistence, and memory management. Below is the standard usage pattern (inspired by `notebooks/llamabot_docs.py`).
 
 ```python
 from llamabot.components.docstore import LanceDBDocStore
@@ -27,7 +27,12 @@ docs_texts = [p.read_text() for p in docs_paths]
 docstore.extend(docs_texts)
 
 # Create a separate store for chat memory
-chat_memory = LanceDBDocStore(table_name="my-chat-history")
+# For simple linear memory (fast, no LLM calls)
+chat_memory = lmb.ChatMemory()
+
+# For intelligent threading (uses LLM for smart connections)
+# chat_memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+
 chat_memory.reset()  # Optionally clear previous chat history
 
 # Define a system prompt (optionally using the @prompt decorator)

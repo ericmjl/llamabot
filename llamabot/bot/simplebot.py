@@ -40,7 +40,7 @@ class SimpleBot:
     :param temperature: The model temperature to use.
         See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
         for more information.
-    :param chat_memory: An optional chat memory component to use. If provided,
+    :param memory: An optional chat memory component to use. If provided,
         the bot will retain chat history. It should be an instance of
         `AbstractDocumentStore` (such as `BM25DocStore` or `LanceDBDocStore`).
     :param model_name: The name of the model to use.
@@ -57,7 +57,7 @@ class SimpleBot:
         self,
         system_prompt: str,
         temperature=0.0,
-        chat_memory: Optional[AbstractDocumentStore] = None,
+        memory: Optional[AbstractDocumentStore] = None,
         model_name=default_language_model(),
         stream_target: str = "stdout",
         json_mode: bool = False,
@@ -78,7 +78,7 @@ class SimpleBot:
         self.model_name = model_name
         self.stream_target = stream_target
         self.temperature = temperature
-        self.chat_memory = chat_memory
+        self.memory = memory
         self.json_mode = json_mode
         self.api_key = api_key
         self.mock_response = mock_response
@@ -113,8 +113,8 @@ class SimpleBot:
         processed_messages = to_basemessage(human_messages)
 
         memory_messages = []
-        if self.chat_memory:
-            memory_messages = self.chat_memory.retrieve(
+        if self.memory:
+            memory_messages = self.memory.retrieve(
                 query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
             )
 
@@ -150,8 +150,8 @@ class SimpleBot:
                 self.run_meta["tool_usage"][tool_name]["calls"] += 1
 
         sqlite_log(self, messages + [response_message])
-        if self.chat_memory:
-            self.chat_memory.append(processed_messages[-1], response_message)
+        if self.memory:
+            self.memory.append(processed_messages[-1], response_message)
 
         # Record end time
         self.run_meta["end_time"] = datetime.now()

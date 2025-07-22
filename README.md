@@ -194,17 +194,23 @@ The `model_name` argument is optional. If you don't provide it, Llamabot will tr
 
 ### SimpleBot with memory for chat functionality
 
-If you want chat functionality with memory (similar to what ChatBot provided), you can use SimpleBot with a LanceDBDocStore as memory. This allows the bot to remember previous conversations:
+If you want chat functionality with memory (similar to what ChatBot provided), you can use SimpleBot with ChatMemory. This allows the bot to remember previous conversations:
 
 ```python
 import llamabot as lmb
 
 # Create a bot with memory
 system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
-chat_memory = lmb.LanceDBDocStore(table_name="feynman_chat")
+
+# For simple linear memory (fast, no LLM calls)
+memory = lmb.ChatMemory()
+
+# For intelligent threading (uses LLM for smart connections)
+# memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+
 feynman = lmb.SimpleBot(
     system_prompt,
-    chat_memory=chat_memory,
+    memory=memory,
     model_name="gpt-4.1-mini"
 )
 
@@ -217,7 +223,9 @@ response2 = feynman("Can you give me a simpler explanation?")
 print(response2)
 ```
 
-The LanceDBDocStore will persist your conversation history using vector embeddings, allowing the bot to semantically search through previous exchanges and maintain context across multiple interactions.
+The ChatMemory system provides intelligent conversation memory that can maintain context across multiple interactions. It supports both linear memory (fast, no LLM calls) and graph-based memory with intelligent threading (uses LLM to connect related conversation topics).
+
+For more details on chat memory, see the [Chat Memory module documentation](modules/chat_memory.md).
 
 ### QueryBot
 

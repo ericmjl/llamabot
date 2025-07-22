@@ -22,7 +22,7 @@ def _():
     bot = lmb.SimpleBot(
         "You are a helpful bot.",
         # model_name="ollama_chat/phi4:latest",
-        chat_memory=lmb.GraphChatMemory(),
+        memory=lmb.ChatMemory.threaded(model="gpt-4o-mini"),
     )
     bot("Help me write a program to teach CI/CD.")
     return (bot,)
@@ -58,8 +58,8 @@ def _(mo):
 def _(bot):
     import marimo as mo
 
-    # bot.chat_memory.graph.edges(data=True)
-    mo.mermaid(bot.chat_memory.to_mermaid())
+    # bot.memory.graph.edges(data=True)
+    mo.mermaid(bot.memory.to_mermaid())
     return (mo,)
 
 
