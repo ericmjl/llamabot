@@ -448,9 +448,9 @@ def __call__(self, *human_messages):
 
     # 2. RETRIEVAL: Get relevant context from memory
     memory_messages = []
-    if self.chat_memory:
+    if self.memory:
         # Memory system handles the complexity internally
-        memory_messages = self.chat_memory.retrieve(
+        memory_messages = self.memory.retrieve(
             query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}",
             n_results=10,
             context_depth=5
@@ -463,8 +463,8 @@ def __call__(self, *human_messages):
     response_message = AIMessage(content=content, tool_calls=tool_calls)
 
     # 5. STORAGE: Save conversation turn to memory
-    if self.chat_memory:
-        self.chat_memory.append(processed_messages[-1], response_message)
+    if self.memory:
+        self.memory.append(processed_messages[-1], response_message)
 
     return response_message
 ```

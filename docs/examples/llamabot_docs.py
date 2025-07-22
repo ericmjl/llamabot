@@ -113,9 +113,12 @@ def _(mo):
 
 @app.cell
 def _(lmb):
-    chat_memory = lmb.components.docstore.LanceDBDocStore(
-        table_name="llamabot-docs-chat-history",
-    )
+    # For simple linear memory (fast, no LLM calls)
+    chat_memory = lmb.ChatMemory()
+
+    # For intelligent threading (uses LLM for smart connections)
+    # chat_memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+
     return (chat_memory,)
 
 
@@ -155,7 +158,7 @@ def _(chat_memory, ds, lmb):
     qb = lmb.QueryBot(
         system_prompt=llamabot_docs_sysprompt(),
         docstore=ds,
-        chat_memory=chat_memory,
+        memory=chat_memory,
     )
     return (qb,)
 
