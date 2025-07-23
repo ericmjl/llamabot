@@ -11,7 +11,7 @@
 
 import marimo
 
-__generated_with = "0.14.11"
+__generated_with = "0.14.12"
 app = marimo.App(width="full")
 
 
@@ -46,6 +46,12 @@ def _(bot):
     return
 
 
+@app.cell
+def _(bot):
+    bot("I don't think I fully understand why a test is necessary, can you explain?")
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -58,7 +64,6 @@ def _(mo):
 def _(bot):
     import marimo as mo
 
-    # bot.memory.graph.edges(data=True)
     mo.mermaid(bot.memory.to_mermaid())
     return (mo,)
 
