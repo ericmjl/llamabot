@@ -26,6 +26,8 @@ The decorator uses your function's docstring as a Jinja2 template. Variables in 
 
 ### Using the prompt
 
+The `@prompt` decorated function is still a regular Python function that you can call directly. When you call it, it returns a message object with the rendered Jinja2 template:
+
 ```python
 # Create a prompt message
 message = explain_concept("machine learning", "high school students")
@@ -36,6 +38,26 @@ message = explain_concept("machine learning", "high school students")
 # - prompt_hash: A unique hash for version tracking
 print(message.content)
 ```
+
+**What happens when you call the function:**
+
+1. The function arguments (`"machine learning"` and `"high school students"`) are passed to the Jinja2 template
+2. The template variables `{{ concept }}` and `{{ audience }}` are replaced with the actual values
+3. The docstring is rendered as a complete prompt string
+4. A message object is returned containing the rendered content
+
+**Example of the rendered output:**
+```python
+message = explain_concept("machine learning", "high school students")
+print(message.content)
+# Output:
+# "Please explain machine learning to high school students in simple terms.
+#
+# Use examples and analogies that high school students would understand.
+# Break down complex ideas into digestible pieces."
+```
+
+The key insight is that **the decorated function executes normally** - it takes your arguments, interpolates them into the docstring template, and returns the final rendered prompt as a message object.
 
 ## Understanding message roles
 
