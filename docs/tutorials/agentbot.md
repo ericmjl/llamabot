@@ -43,10 +43,18 @@ def split_bill(total_amount: float, num_people: int) -> float:
 # Create the bot
 bot = lmb.AgentBot(
     system_prompt=lmb.system("You are my assistant with respect to restaurant bills."),
-    functions=[calculate_total_with_tip, split_bill],
+    tools=[calculate_total_with_tip, split_bill],  # Note: use 'tools', not 'functions'
     model_name="gpt-4.1",
 )
 ```
+
+**Key Parameters Explained:**
+
+- `tools`: List of callable functions that the bot can use (required)
+- `system_prompt`: Instructions for the bot's behavior
+- `model_name`: The language model to use
+- `temperature`: Controls randomness (default: 0.0 for deterministic responses)
+- `stream_target`: Where to stream responses ("none", "stdout", "panel", "api")
 
 ### Step 3: Using the Bot
 
@@ -72,6 +80,21 @@ You can also combine both actions in a single prompt:
 split_and_calculate_prompt = "My dinner was $2300 without tips. Calculate my total with an 18% tip and split the bill between 4 people."
 response = bot(split_and_calculate_prompt)
 print(response.content)
+```
+
+### Step 5: Understanding Bot Execution
+
+The AgentBot works by:
+
+1. **Planning**: Breaking down your request into steps
+2. **Executing**: Calling tools in sequence
+3. **Iterating**: Repeating until the task is complete or max iterations reached
+
+You can control the maximum number of iterations:
+
+```python
+# Limit to 5 iterations for faster responses
+response = bot("Complex task here", max_iterations=5)
 ```
 
 ## Part 2: Building a Stock Analysis Bot
@@ -126,7 +149,7 @@ from llamabot.bot.agentbot import AgentBot
 
 stats_bot = AgentBot(
     system_prompt=lmb.system("You are a stock market analysis assistant."),
-    functions=[scrape_stock_prices, calculate_moving_average, calculate_slope],
+    tools=[scrape_stock_prices, calculate_moving_average, calculate_slope],
     model_name="gpt-4.1",
 )
 ```
@@ -164,7 +187,7 @@ planner = planner_bot(model_name="gpt-4.1")
 # Create the main bot with the planner
 bot_with_planner = AgentBot(
     system_prompt=lmb.system("You are a task automation assistant."),
-    functions=[calculate_total_with_tip, split_bill],
+    tools=[calculate_total_with_tip, split_bill],
     planner_bot=planner,
     model_name="gpt-4.1",
 )
@@ -205,6 +228,100 @@ print(f"Plan revisions: {planning_metrics['plan_revisions']}")
 print(f"Planning time: {planning_metrics['plan_time']} seconds")
 ```
 
+## Part 4: Understanding Bot Analytics and Built-in Tools
+
+### Built-in Tools
+
+AgentBot automatically includes two built-in tools:
+
+```python
+# today_date - Returns current date
+# respond_to_user - Used for final responses to users
+```
+
+You don't need to define these - they're automatically available to your bot.
+
+### Run Metadata and Analytics
+
+Every AgentBot execution provides detailed analytics through `run_meta`:
+
+```python
+# Access comprehensive execution data
+run_data = bot.run_meta
+
+print(f"Execution time: {run_data['duration']} seconds")
+print(f"Iterations used: {run_data['current_iteration']}")
+print(f"Max iterations: {run_data['max_iteration']}")
+
+# Message counts
+message_counts = run_data['message_counts']
+print(f"User messages: {message_counts['user']}")
+print(f"Assistant messages: {message_counts['assistant']}")
+print(f"Tool messages: {message_counts['tool']}")
+
+# Tool usage statistics
+tool_usage = run_data['tool_usage']
+for tool_name, stats in tool_usage.items():
+    print(f"{tool_name}: {stats['calls']} calls, {stats['success']} successes, {stats['failures']} failures")
+    print(f"  Total duration: {stats['total_duration']:.2f} seconds")
+```
+
+### Error Handling
+
+AgentBot handles errors gracefully:
+
+```python
+# If max_iterations is exceeded
+try:
+    response = bot("Very complex task", max_iterations=3)
+except RuntimeError as e:
+    print(f"Bot exceeded iteration limit: {e}")
+
+# Tool errors are captured and returned
+# The bot will continue with other tools even if one fails
+```
+
+## Part 5: Advanced Configuration
+
+### Customizing Bot Behavior
+
+```python
+# Create a bot with custom settings
+custom_bot = AgentBot(
+    system_prompt=lmb.system("You are a helpful assistant."),
+    tools=[your_tools],
+    temperature=0.1,  # Slightly more creative responses
+    stream_target="stdout",  # Stream responses to console
+    model_name="gpt-4.1",
+)
+
+# Use with custom iteration limit
+response = custom_bot("Your request", max_iterations=15)
+```
+
+### Streaming Responses
+
+You can stream responses in real-time:
+
+```python
+# Stream to console
+streaming_bot = AgentBot(
+    tools=[your_tools],
+    stream_target="stdout",  # Options: "stdout", "panel", "api", "none"
+)
+
+# Responses will appear as they're generated
+response = streaming_bot("Your request")
+```
+
 ## Conclusion
 
-Congratulations! You have successfully built and used an AgentBot to automate tasks related to restaurant bills and stock price analysis. You've also learned how to use the planner bot to handle complex, multi-step tasks efficiently. You can now explore further by adding more tools and customizing the bot to suit your needs. Happy coding!
+Congratulations! You have successfully built and used an AgentBot to automate tasks related to restaurant bills and stock price analysis. You've also learned how to:
+
+- Create bots with custom tools
+- Use the planner bot for complex tasks
+- Monitor bot performance with analytics
+- Handle errors and configure advanced settings
+- Stream responses in real-time
+
+You can now explore further by adding more tools and customizing the bot to suit your needs. Happy coding!
