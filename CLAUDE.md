@@ -15,8 +15,13 @@ LlamaBot is a Pythonic interface to LLMs that makes it easier to experiment with
 - `pixi run docs` - Serve documentation locally with mkdocs
 - `pixi run build-docs` - Build documentation
 - `pixi run jlab` - Start Jupyter Lab (requires notebooks feature)
+- `pixi run llamabot-cli` - Test the CLI help command
+- `pytest tests/path/to/specific_test.py` - Run a single test file
+- `pytest tests/path/to/specific_test.py::test_function` - Run a specific test function
 
 **Environment Setup**: Use `pixi shell` to enter the development environment, or prefix commands with `pixi run`.
+
+**Pre-commit Hooks**: The project uses pre-commit hooks with Black, Ruff, interrogate (docstring coverage), pydoclint, and other tools. Hooks run automatically on commit.
 
 ## Core Architecture
 
@@ -57,8 +62,9 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 
 - **Functional over OOP**: Prefer functional programming except for Bot classes (PyTorch-like parameterized callables)
 - **Docstrings**: Use Sphinx-style arguments (`:param arg: description`)
-- **Testing**: Always add tests when making code changes
+- **Testing**: Always add tests when making code changes (tests mirror source structure in `tests/` directory)
 - **Linting**: Automatic linting tools handle formatting (don't worry about linting errors during development)
+- **File Editing**: When possible, only edit the requested file; avoid unnecessary changes to other files
 
 ### Bot Development
 
@@ -80,6 +86,8 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **Templates**: Use Jinja2 macros in `templates/macros.html` for reusable UI components
 - **HTMX**: Client-side JS must be re-initialized after HTMX swaps using initialization functions
 - **Never duplicate UI components** - always use macros for shared components
+- **Dynamic HTML**: When using HTMX/Turbo, encapsulate JS initialization in functions and call after content swaps (inline `<script>` tags in swapped HTML are not executed)
+- **Initialization Pattern**: Make init functions idempotent and call on both page load and after dynamic content loads
 
 ### Testing
 
