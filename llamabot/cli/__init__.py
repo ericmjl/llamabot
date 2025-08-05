@@ -19,7 +19,6 @@ from . import (
     python,
     repo,
     tutorial,
-    zotero,
 )
 from .utils import exit_if_asked, uniform_prompt
 
@@ -39,7 +38,6 @@ app.add_typer(
     name="tutorial",
     help="Automatically generate tutorials for given source files.",
 )
-app.add_typer(zotero.app, name="zotero", help="Chat with your Zotero library.")
 app.add_typer(doc.app, name="doc", help="Chat with your documents.")
 app.add_typer(
     blog.app,

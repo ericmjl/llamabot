@@ -118,7 +118,6 @@ agent = [
     "markdownify",
 ]
 cli = [
-    "pyzotero",
     "nbformat",
     "python-frontmatter",
     "rich",
