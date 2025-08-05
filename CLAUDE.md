@@ -48,7 +48,7 @@ The `llamabot/components/` directory contains modular, composable components:
 The CLI is built with Typer and organized in `llamabot/cli/`:
 
 - **Main entry point**: `llamabot.cli:app` (defined in pyproject.toml)
-- **Key commands**: blog, configure, doc, docs, git, logviewer, notebook, python, repo, tutorial, zotero
+- **Key commands**: blog, configure, doc, docs, git, logviewer, notebook, python, repo, tutorial
 - **Utilities**: Common CLI utilities in `utils.py`
 
 ## Development Patterns

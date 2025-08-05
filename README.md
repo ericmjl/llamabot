@@ -370,10 +370,6 @@ And now they will be viewable in the locally-stored message logs:
 
 Llamabot comes with CLI demos of what can be built with it and a bit of supporting code.
 
-Here is one where `llamabot` is used as part of the backend of a CLI app
-to chat with one's Zotero library using `llamabot zotero chat`:
-
-[![Watch the terminal session on Asciinema](https://asciinema.org/a/594326.png)](https://asciinema.org/a/594326)
 
 And here is one where I use `llamabot`'s `SimpleBot` to create a bot
 that automatically writes commit messages for me.
