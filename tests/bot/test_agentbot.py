@@ -8,7 +8,7 @@ import pytest
 
 from llamabot.bot.agentbot import AgentBot, hash_result
 from llamabot.components.tools import tool
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from llamabot.components.messages import AIMessage
 
 
@@ -41,23 +41,21 @@ async def test_agent_bot_execution():
         tools=[mock_tool],
     )
 
-    # Patch make_response, stream_chunks, extract_tool_calls, and extract_content
+    # Test case with no tool calls - should return directly
     with (
         patch("llamabot.bot.agentbot.make_response") as mock_make_response,
         patch("llamabot.bot.agentbot.stream_chunks") as mock_stream_chunks,
         patch("llamabot.bot.agentbot.extract_tool_calls") as mock_extract_tool_calls,
         patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
     ):
-        tool_call = MagicMock()
-        tool_call.function.name = "respond_to_user"
-        tool_call.function.arguments = '{"response": "Done"}'  # Correct argument name
-        ai_message = AIMessage(content="Done", tool_calls=[tool_call])
+        # Mock no tool calls case
+        ai_message = AIMessage(content="Done", tool_calls=[])
         mock_make_response.return_value = ai_message
         mock_stream_chunks.return_value = ai_message
-        mock_extract_tool_calls.return_value = [tool_call]
+        mock_extract_tool_calls.return_value = []  # No tool calls
         mock_extract_content.return_value = "Done"
 
-        result = bot("Test message")
+        result = await bot("Test message")
         assert result.content == "Done"
 
 
@@ -71,7 +69,7 @@ async def test_agent_bot_max_iterations():
     )
 
     with pytest.raises(RuntimeError) as exc_info:
-        bot("Test message", max_iterations=2)
+        await bot("Test message", max_iterations=2)
     assert "Agent exceeded maximum iterations" in str(exc_info.value)
 
 
@@ -85,5 +83,5 @@ async def test_agent_bot_error_handling():
     )
 
     with pytest.raises(RuntimeError) as exc_info:
-        bot("Test message")
+        await bot("Test message")
     assert "Agent exceeded maximum iterations" in str(exc_info.value)

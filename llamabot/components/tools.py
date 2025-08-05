@@ -9,13 +9,15 @@ The design of a tool is as follows:
    that is attached as an attribute.
 """
 
+import asyncio
 import os
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, List
 from uuid import uuid4
+from abc import ABC, abstractmethod
 
 import requests
 from bs4 import BeautifulSoup
@@ -29,8 +31,216 @@ from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.prompt_manager import prompt
 
 
+# ============================================================================
+# ASYNC-FIRST UNIFIED TOOL EXECUTION ARCHITECTURE
+# ============================================================================
+
+
+class ToolExecutor(ABC):
+    """Abstract base class for tool execution - all tools go through this."""
+
+    @abstractmethod
+    async def execute(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+        """Execute a tool with given arguments."""
+        pass
+
+    @abstractmethod
+    def get_schema(self, tool_name: str) -> Dict[str, Any]:
+        """Get the JSON schema for a tool."""
+        pass
+
+    @abstractmethod
+    def list_tool_names(self) -> List[str]:
+        """List all available tool names."""
+        pass
+
+
+class LocalToolExecutor(ToolExecutor):
+    """Executes local @tool decorated functions - async-first."""
+
+    def __init__(self, tools: List[Callable]):
+        self.tools = {func.__name__: func for func in tools}
+
+    async def execute(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+        """Execute a local tool - handles both sync and async functions."""
+        tool_func = self.tools.get(tool_name)
+        if not tool_func:
+            raise ValueError(f"Local tool {tool_name} not found")
+
+        logger.debug(f"Executing local tool: {tool_name}")
+
+        # Check if function is async
+        if asyncio.iscoroutinefunction(tool_func):
+            # Native async function
+            return await tool_func(**arguments)
+        else:
+            # Sync function - run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            return await loop.run_in_executor(None, lambda: tool_func(**arguments))
+
+    def get_schema(self, tool_name: str) -> Dict[str, Any]:
+        """Get schema for a local tool."""
+        tool_func = self.tools.get(tool_name)
+        if not tool_func:
+            raise ValueError(f"Local tool {tool_name} not found")
+        return tool_func.json_schema
+
+    def list_tool_names(self) -> List[str]:
+        """List all local tool names."""
+        return list(self.tools.keys())
+
+
+class MCPToolExecutor(ToolExecutor):
+    """Executes tools via MCP client - naturally async."""
+
+    def __init__(self, mcp_client, server_name: str = "mcp"):
+        self.client = mcp_client
+        self.server_name = server_name
+        self._tools_cache = None
+        self._schemas_cache = {}
+
+    async def execute(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+        """Execute an MCP tool."""
+        logger.debug(f"Executing MCP tool: {tool_name} via {self.server_name}")
+
+        try:
+            # Add timeout for MCP calls
+            result = await asyncio.wait_for(
+                self.client.call_tool(tool_name, arguments),
+                timeout=30,  # Default MCP timeout
+            )
+            return result
+        except asyncio.TimeoutError:
+            raise Exception(f"MCP tool {tool_name} timed out")
+        except Exception as e:
+            raise Exception(f"MCP tool {tool_name} failed: {e}")
+
+    def get_schema(self, tool_name: str) -> Dict[str, Any]:
+        """Get schema for an MCP tool."""
+        if tool_name in self._schemas_cache:
+            return self._schemas_cache[tool_name]
+
+        # Would need to get from MCP client - simplified for now
+        return {
+            "type": "function",
+            "function": {
+                "name": tool_name,
+                "description": f"MCP tool: {tool_name}",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        }
+
+    def list_tool_names(self) -> List[str]:
+        """List all MCP tool names."""
+        # Would need to discover from MCP client - simplified for now
+        return []
+
+    async def discover_tools(self):
+        """Discover available tools from MCP client."""
+        try:
+            tools = await self.client.list_tools()
+            self._tools_cache = tools
+
+            # Cache schemas
+            for tool in tools:
+                tool_name = tool.get("name")
+                if tool_name:
+                    # Convert MCP schema to llamabot format
+                    self._schemas_cache[tool_name] = {
+                        "type": "function",
+                        "function": {
+                            "name": tool_name,
+                            "description": tool.get("description", ""),
+                            "parameters": tool.get("inputSchema", {}),
+                        },
+                    }
+
+            return list(self._schemas_cache.keys())
+        except Exception as e:
+            logger.warning(f"Failed to discover MCP tools from {self.server_name}: {e}")
+            return []
+
+
+class UnifiedToolExecutor(ToolExecutor):
+    """Unified executor that manages both local and MCP tools."""
+
+    def __init__(self):
+        self.executors: List[ToolExecutor] = []
+        self._tool_to_executor = {}  # tool_name -> executor
+
+    def add_local_tools(self, tools: List[Callable]):
+        """Add local tools via LocalToolExecutor."""
+        if tools:
+            executor = LocalToolExecutor(tools)
+            self.executors.append(executor)
+
+            # Map tool names to executor
+            for tool_name in executor.list_tool_names():
+                self._tool_to_executor[tool_name] = executor
+
+    def add_mcp_client(self, mcp_client, server_name: str = "mcp"):
+        """Add MCP tools via MCPToolExecutor."""
+        executor = MCPToolExecutor(mcp_client, server_name)
+        self.executors.append(executor)
+        return executor  # Return for async discovery
+
+    async def discover_all_tools(self):
+        """Discover tools from all MCP executors."""
+        for executor in self.executors:
+            if isinstance(executor, MCPToolExecutor):
+                tool_names = await executor.discover_tools()
+                # Map discovered tools to executor
+                for tool_name in tool_names:
+                    self._tool_to_executor[tool_name] = executor
+
+    async def execute(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+        """Execute any tool - unified interface."""
+        executor = self._tool_to_executor.get(tool_name)
+        if not executor:
+            raise ValueError(f"Tool {tool_name} not found in any executor")
+
+        return await executor.execute(tool_name, arguments)
+
+    def get_schema(self, tool_name: str) -> Dict[str, Any]:
+        """Get schema for any tool."""
+        executor = self._tool_to_executor.get(tool_name)
+        if not executor:
+            raise ValueError(f"Tool {tool_name} not found")
+
+        return executor.get_schema(tool_name)
+
+    def list_tool_names(self) -> List[str]:
+        """List all available tool names."""
+        return list(self._tool_to_executor.keys())
+
+    def get_all_schemas(self) -> List[Dict[str, Any]]:
+        """Get all tool schemas for LLM."""
+        schemas = []
+        for tool_name in self.list_tool_names():
+            try:
+                schemas.append(self.get_schema(tool_name))
+            except Exception as e:
+                logger.warning(f"Failed to get schema for {tool_name}: {e}")
+        return schemas
+
+
+# Global unified executor instance
+_unified_executor = None
+
+
+def get_unified_executor() -> UnifiedToolExecutor:
+    """Get the global unified tool executor."""
+    global _unified_executor
+    if _unified_executor is None:
+        _unified_executor = UnifiedToolExecutor()
+    return _unified_executor
+
+
 def tool(func: Callable) -> Callable:
     """Decorator to create a tool from a function.
+
+    Now works with the unified async execution system.
+    The function can be sync or async - execution is handled automatically.
 
     :param func: The function to decorate.
     :returns: The decorated function with an attached Function schema.
@@ -56,7 +266,26 @@ def tool(func: Callable) -> Callable:
         "type": "function",
         "function": function_dict,  # Nest function dict under "function" key
     }
+
+    # Mark as async-compatible tool
+    wrapper._is_llamabot_tool = True
+    wrapper._tool_type = "async" if asyncio.iscoroutinefunction(func) else "sync"
+
     return wrapper
+
+
+# ============================================================================
+# ASYNC-COMPATIBLE TOOL EXECUTION FUNCTIONS
+# ============================================================================
+
+
+async def execute_tool_call_async(tool_name: str, arguments: Dict[str, Any]) -> Any:
+    """Execute any tool call asynchronously using the unified executor.
+
+    This is the new primary interface for tool execution.
+    """
+    executor = get_unified_executor()
+    return await executor.execute(tool_name, arguments)
 
 
 @tool
@@ -281,7 +510,9 @@ def summarize_web_results(
 
 
 @tool
-def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[str, str]:
+async def search_internet_and_summarize(
+    search_term: str, max_results: int
+) -> Dict[str, str]:
     """Search internet for a given term and summarize the results.
     To get a good summary, try increasing the number of results.
     When using search_internet, if you don't get an answer with 1 result,
@@ -298,14 +529,21 @@ def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[st
         max_results = int(max_results)
         logger.debug("Using max_results: {}", max_results)
 
-        webpage_contents = search_internet(search_term, max_results)
+        # Run search in executor to avoid blocking
+        loop = asyncio.get_event_loop()
+        webpage_contents = await loop.run_in_executor(
+            None, search_internet, search_term, max_results
+        )
         logger.debug("Search completed. Found {} webpages", len(webpage_contents))
         if not webpage_contents:
             logger.warning("No webpage contents found for search term: {}", search_term)
             return {}
 
         logger.debug("Starting summarization of {} webpages", len(webpage_contents))
-        summaries = summarize_web_results(search_term, webpage_contents)
+        # Run summarization in executor to avoid blocking
+        summaries = await loop.run_in_executor(
+            None, summarize_web_results, search_term, webpage_contents
+        )
         logger.debug("Summarization completed. Generated {} summaries", len(summaries))
         return summaries
     except Exception as e:
@@ -324,7 +562,7 @@ def today_date() -> str:
 
 
 @tool
-def write_and_execute_script(
+async def write_and_execute_script(
     code: str,
     dependencies_str: Optional[str] = None,
     python_version: str = ">=3.11",
@@ -359,12 +597,18 @@ def write_and_execute_script(
         timestamp=datetime.now(),
     )
 
-    # Initialize executor
-    executor = ScriptExecutor()
+    # Run script execution in executor to avoid blocking
+    loop = asyncio.get_event_loop()
 
-    # Write and run script
-    script_path = executor.write_script(code, metadata)
-    result = executor.run_script(script_path, 600)
+    def _execute_script():
+        """Execute a Python script in a secure sandbox."""
+        # Initialize executor
+        executor = ScriptExecutor()
+        # Write and run script
+        script_path = executor.write_script(code, metadata)
+        return executor.run_script(script_path, 600)
+
+    result = await loop.run_in_executor(None, _execute_script)
 
     # Return structured output
     return {
