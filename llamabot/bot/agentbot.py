@@ -6,9 +6,9 @@ The bot uses a decision-making system to determine which tools to call
 and in what order, making it suitable for complex, multi-step tasks.
 """
 
+import asyncio
 import hashlib
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Any, Callable, List, Optional, Union
 
@@ -27,7 +27,12 @@ from llamabot.components.messages import (
     HumanMessage,
     user,
 )
-from llamabot.components.tools import respond_to_user, today_date
+from llamabot.components.tools import (
+    respond_to_user,
+    today_date,
+    get_unified_executor,
+    execute_tool_call_async,
+)
 from llamabot.config import default_language_model
 from llamabot.experiments import metric
 from llamabot.prompt_manager import prompt
@@ -181,9 +186,13 @@ class AgentBot(SimpleBot):
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
 
+        # Initialize unified executor with local tools
+        self.unified_executor = get_unified_executor()
+        self.unified_executor.add_local_tools(all_tools)
+
         self.planner_bot = planner_bot
 
-    def __call__(
+    async def __call__(
         self,
         *messages: Union[str, BaseMessage, List[Union[str, BaseMessage]]],
         max_iterations: int = 10,
@@ -269,8 +278,9 @@ class AgentBot(SimpleBot):
                         "Found respond_to_user in tool calls, executing only that"
                     )
                     start_time = datetime.now()
-                    content = execute_tool_call(
-                        respond_to_user_calls[0], self.name_to_tool_map
+                    # Use async execution for respond_to_user
+                    content = await self._execute_tool_call_async(
+                        respond_to_user_calls[0]
                     )
                     duration = (datetime.now() - start_time).total_seconds()
 
@@ -301,71 +311,60 @@ class AgentBot(SimpleBot):
                 logger.debug(
                     "Calling functions: {}", [call.function.name for call in tool_calls]
                 )
-                futures = {}
-                with ThreadPoolExecutor() as executor:
-                    futures = {
-                        executor.submit(
-                            execute_tool_call, call, self.name_to_tool_map
-                        ): call
-                        for call in tool_calls
-                    }
+
+                # Execute all tool calls asynchronously
+                tasks = [self._execute_tool_call_async(call) for call in tool_calls]
 
                 message_list.append(
                     user(f"Here is the result of the tool calls: {tool_calls}")
                 )
                 self.run_meta["message_counts"]["user"] += 1
 
-                for future in as_completed(futures):
-                    call = futures[future]
-                    start_time = datetime.now()
-                    try:
-                        result = future.result()
-                        duration = (datetime.now() - start_time).total_seconds()
+                # Execute all tasks concurrently
+                task_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                        # Record successful tool usage
-                        tool_name = call.function.name
-                        if tool_name not in self.run_meta["tool_usage"]:
-                            self.run_meta["tool_usage"][tool_name] = {
-                                "calls": 0,
-                                "success": 0,
-                                "failures": 0,
-                                "total_duration": 0.0,
-                            }
-                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
-                        self.run_meta["tool_usage"][tool_name]["success"] += 1
-                        self.run_meta["tool_usage"][tool_name][
-                            "total_duration"
-                        ] += duration
+                # Process results
+                for i, (call, result) in enumerate(zip(tool_calls, task_results)):
+                    tool_name = call.function.name
 
-                    except Exception as e:
-                        duration = (datetime.now() - start_time).total_seconds()
+                    # Initialize tool usage tracking if needed
+                    if tool_name not in self.run_meta["tool_usage"]:
+                        self.run_meta["tool_usage"][tool_name] = {
+                            "calls": 0,
+                            "success": 0,
+                            "failures": 0,
+                            "total_duration": 0.0,
+                        }
 
-                        # Record failed tool usage
-                        tool_name = call.function.name
-                        if tool_name not in self.run_meta["tool_usage"]:
-                            self.run_meta["tool_usage"][tool_name] = {
-                                "calls": 0,
-                                "success": 0,
-                                "failures": 0,
-                                "total_duration": 0.0,
-                            }
-                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                    self.run_meta["tool_usage"][tool_name]["calls"] += 1
+
+                    if isinstance(result, Exception):
+                        # Handle exceptions
                         self.run_meta["tool_usage"][tool_name]["failures"] += 1
-                        self.run_meta["tool_usage"][tool_name][
-                            "total_duration"
-                        ] += duration
-
-                        result = f"Error: {str(e)}"
+                        result_str = f"Error: {str(result)}"
+                    else:
+                        # Handle successful execution
+                        self.run_meta["tool_usage"][tool_name]["success"] += 1
+                        result_str = str(result)
 
                     logger.debug(
                         "Completed: {}(**{})",
                         call.function.name,
                         call.function.arguments,
                     )
-                    message_list.append(HumanMessage(content=str(result)))
+                    message_list.append(HumanMessage(content=result_str))
                     self.run_meta["message_counts"]["tool"] += 1
-                    results.append(result)
+                    results.append(result_str)
+
                 logger.debug("Results: {}", results)
+            else:
+                # No tool calls - return the response as is
+                self.run_meta["end_time"] = datetime.now()
+                self.run_meta["duration"] = (
+                    self.run_meta["end_time"] - self.run_meta["start_time"]
+                ).total_seconds()
+                sqlite_log(self, message_list)
+                return response_message
 
         self.run_meta["end_time"] = datetime.now()
         self.run_meta["duration"] = (
@@ -373,9 +372,31 @@ class AgentBot(SimpleBot):
         ).total_seconds()
         raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
 
+    async def _execute_tool_call_async(self, tool_call) -> Any:
+        """Execute a tool call using the unified async executor.
+
+        :param tool_call: The tool call to execute
+        :return: The result of the tool call
+        """
+        func_name = tool_call.function.name
+        func_args = json.loads(tool_call.function.arguments)
+
+        try:
+            logger.debug(
+                f"Executing async tool call: {func_name} with arguments: {func_args}"
+            )
+            return await execute_tool_call_async(func_name, func_args)
+        except Exception as e:
+            result = (
+                f"Error executing tool call: {e}! "
+                f"Arguments were: {func_args}. "
+                "If you get a timeout error, try bumping up the timeout parameter."
+            )
+            return result
+
 
 def execute_tool_call(tool_call, name_to_tool_map: dict[str, Callable]) -> Any:
-    """Execute a tool call.
+    """Execute a tool call (legacy sync version).
 
     :param tool_call: The tool call to execute
     :return: The result of the tool call
