@@ -8,7 +8,7 @@ import pytest
 
 from llamabot.bot.agentbot import AgentBot, hash_result
 from llamabot.components.tools import tool
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from llamabot.components.messages import AIMessage
 
 
@@ -65,12 +65,28 @@ async def test_agent_bot_max_iterations():
     bot = AgentBot(
         system_prompt="Test prompt",
         tools=[mock_tool],
-        mock_response='{"tool_name": "mock_tool", "tool_arguments": {"value": "test"}, "use_cached_results": {}}',
     )
 
-    with pytest.raises(RuntimeError) as exc_info:
-        await bot("Test message", max_iterations=2)
-    assert "Agent exceeded maximum iterations" in str(exc_info.value)
+    # Mock infinite loop with non-respond_to_user tools
+    with (
+        patch("llamabot.bot.agentbot.make_response") as mock_make_response,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_tool_calls") as mock_extract_tool_calls,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+    ):
+
+        tool_call = MagicMock()
+        tool_call.function.name = "mock_tool"
+        tool_call.function.arguments = '{"value": "test"}'
+        ai_message = AIMessage(content="Processing", tool_calls=[tool_call])
+        mock_make_response.return_value = ai_message
+        mock_stream_chunks.return_value = ai_message
+        mock_extract_tool_calls.return_value = [tool_call]  # Always return tool calls
+        mock_extract_content.return_value = "Processing"
+
+        with pytest.raises(RuntimeError) as exc_info:
+            await bot("Test message", max_iterations=2)
+        assert "Agent exceeded maximum iterations" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -79,9 +95,25 @@ async def test_agent_bot_error_handling():
     bot = AgentBot(
         system_prompt="Test prompt",
         tools=[mock_tool],
-        mock_response='{"tool_name": "return_error", "tool_arguments": {"message": "Test error"}, "use_cached_results": {}}',
     )
 
-    with pytest.raises(RuntimeError) as exc_info:
-        await bot("Test message")
-    assert "Agent exceeded maximum iterations" in str(exc_info.value)
+    # Mock infinite loop to trigger max iterations
+    with (
+        patch("llamabot.bot.agentbot.make_response") as mock_make_response,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_tool_calls") as mock_extract_tool_calls,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+    ):
+
+        tool_call = MagicMock()
+        tool_call.function.name = "nonexistent_tool"
+        tool_call.function.arguments = '{"message": "Test error"}'
+        ai_message = AIMessage(content="Error", tool_calls=[tool_call])
+        mock_make_response.return_value = ai_message
+        mock_stream_chunks.return_value = ai_message
+        mock_extract_tool_calls.return_value = [tool_call]  # Always return tool calls
+        mock_extract_content.return_value = "Error"
+
+        with pytest.raises(RuntimeError) as exc_info:
+            await bot("Test message")
+        assert "Agent exceeded maximum iterations" in str(exc_info.value)
