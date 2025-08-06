@@ -1,3 +1,5 @@
+gpt-oss
+qwen3-coder
 mistral-small3.2
 gemma3n
 magistral
