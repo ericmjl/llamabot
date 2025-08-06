@@ -273,8 +273,17 @@ class LanceDBDocStore(AbstractDocumentStore):
             self.table.add([document_to_add])
             self.existing_records.append(document)
 
-        # Ensure FTS index exists
-        self.table.optimize()
+        # Try to optimize table, but don't fail if it errors
+        try:
+            self.table.optimize()
+        except Exception as e:
+            # Log the error but continue - optimize is not critical for basic functionality
+            import logging
+
+            logging.warning(
+                f"Table optimize failed: {e}. "
+                f"You may want to call store.table.optimize() manually later for better performance."
+            )
 
     def extend(
         self,
@@ -300,8 +309,18 @@ class LanceDBDocStore(AbstractDocumentStore):
         if stuff_to_add:
             self.table.add(stuff_to_add)
             self.existing_records.extend(documents)
-            # Ensure FTS index exists
+
+        # Try to optimize table, but don't fail if it errors
+        try:
             self.table.optimize()
+        except Exception as e:
+            # Log the error but continue - optimize is not critical for basic functionality
+            import logging
+
+            logging.warning(
+                f"Table optimize failed: {e}. "
+                f"You may want to call store.table.optimize() manually later for better performance."
+            )
 
     def retrieve(self, query: str, n_results: int = 10) -> list[str]:
         """Retrieve a list of documents from the store.
