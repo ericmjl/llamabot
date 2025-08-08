@@ -1,6 +1,6 @@
-# LlamaBot: A Pythonic bot interface to LLMs
+# Developer Guide
 
-This is a `developer` README for LlamaBot.
+This is the developer guide for LlamaBot.
 
 LlamaBot implements a Pythonic interface to LLMs,
 making it much easier to experiment with LLMs in a Jupyter notebook
@@ -9,11 +9,47 @@ All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are suppor
 
 ## Setting up your developer environment
 
-Make sure that you have followed the [README.md](../README.md) before jumping on the next steps.
+Make sure that you have followed the main installation instructions before jumping to the next steps.
 
-## Creating a Conda virtual environment
+## Option 1: Development Container (Recommended)
 
-It is recommended to have [Conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) available on your system.
+For the easiest setup experience, especially on Windows, use the pre-configured development container:
+
+### Prerequisites
+- <a href="https://git-scm.com/downloads" target="_blank">Git</a> installed on your system
+- <a href="https://www.docker.com/get-started" target="_blank">Docker</a> installed and running
+- <a href="https://code.visualstudio.com/" target="_blank">VS Code</a> with the <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers" target="_blank">Dev Containers extension</a>
+
+### Setup Steps
+1. **Fork and Clone**: Fork the LlamaBot repository on GitHub and clone your fork locally
+2. **Open in VS Code**: Open the cloned repository folder in VS Code
+3. **Reopen in Container**: When prompted (or use Command Palette > "Dev Containers: Reopen in Container"), VS Code will build and start the development container
+4. **Wait for Setup**: The container includes Python, all dependencies, and even Ollama pre-installed
+
+The development container provides:
+- Pre-configured Python environment with all dependencies
+- Ollama for local LLM testing
+- Pre-commit hooks already set up
+- All development tools ready to use
+
+## Option 2: Local Development with Pixi (Alternative)
+
+If you prefer local development, use pixi for dependency management:
+
+```bash
+# Install pixi (if not already installed)
+curl -fsSL https://pixi.sh/install.sh | bash
+
+# Set up the development environment
+pixi install
+
+# Enter the development shell
+pixi shell
+```
+
+## Option 3: Creating a Conda virtual environment (Legacy)
+
+It is recommended to have <a href="https://conda.io/projects/conda/en/latest/user-guide/install/index.html" target="_blank">Conda</a> available on your system.
 
 ```bash
 conda env create -f environment.yml
@@ -33,7 +69,7 @@ pip install -e .
 
 ## Installing pre-commit hook
 
-It is recommended to install and use the [pre-commit](https://pre-commit.com/) hook if you plan to commit this project.
+It is recommended to install and use the <a href="https://pre-commit.com/" target="_blank">pre-commit</a> hook if you plan to commit this project.
 This will check for any issues before committing your code. It is also one of the recommended developers' best practices.
 
 The following command will install pre-commit in your virtual environment.
