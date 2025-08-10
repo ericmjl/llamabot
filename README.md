@@ -7,9 +7,20 @@ All models supported by [LiteLLM](https://github.com/BerriAI/litellm) are suppor
 
 ## Install LlamaBot
 
-To install LlamaBot:
+### Prerequisites
 
-```python
+Before installing LlamaBot, ensure you have Python 3.8 or later installed on your system.
+
+If you don't have `pip` installed, you can install it by:
+- **On macOS/Linux**: `pip` usually comes with Python. If not, run `python -m ensurepip --upgrade`
+- **On Windows**: Download Python from <a href="https://python.org" target="_blank">python.org</a> which includes `pip`
+- **Alternative**: Use <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank">uv</a> for faster package management
+
+### Standard Installation
+
+To install LlamaBot with pip:
+
+```bash
 pip install llamabot==0.13.0
 ```
 
@@ -17,18 +28,79 @@ This will give you the minimum set of dependencies for running LlamaBot.
 
 To install all of the optional dependencies, run:
 
-```python
+```bash
 pip install "llamabot[all]"
 ```
 
+### Alternative: Marimo Notebook Installation
 
+For an interactive notebook experience, we recommend using LlamaBot with <a href="https://marimo.io" target="_blank">Marimo notebooks</a>. See the [Marimo Installation Guide](#marimo-installation-guide) below for a complete setup walkthrough.
+
+## Marimo Installation Guide
+
+For the best interactive experience, especially for beginners, we recommend using LlamaBot with Marimo notebooks:
+
+### Step 1: Install uv
+
+First, install <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank">uv</a>, a fast Python package manager:
+
+```bash
+# On macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### Step 2: Create a Marimo Notebook
+
+Navigate to the directory where you want your notebook and create a new Marimo notebook:
+
+```bash
+cd your-project-directory
+uvx marimo edit -- --sandbox notebook_name.py
+```
+
+This command will:
+- Create a new Marimo notebook named `notebook_name.py`
+- Launch Marimo in your browser
+- Set up an isolated environment
+
+### Step 3: Install LlamaBot in Marimo
+
+Once in the Marimo interface:
+
+1. **Import LlamaBot**: In your first code cell, run:
+   ```python
+   import llamabot as lmb
+   ```
+
+2. **Install Dependencies**: Marimo will show an installation popup. Click the "+" button next to "Llamabot" dropdown and select "all" to install all optional dependencies.
+
+3. **Install with UV**: Click "Install with UV" to complete the installation.
+
+4. **Success Confirmation**: You'll see "DEBUG" text in red, which indicates successful installation (this will be improved in future versions).
+
+### Step 4: Start Using LlamaBot
+
+You can now start using LlamaBot in your Marimo notebook:
+
+```python
+# Create your first bot
+system_prompt = "You are a helpful assistant."
+bot = lmb.SimpleBot(system_prompt, model_name="gpt-4o-mini")
+
+# Use the bot
+response = bot("Hello! Tell me about Python.")
+print(response.content)
+```
 
 ## Get access to LLMs
 
 ### Option 1: Using local models with Ollama
 
 LlamaBot supports using local models through Ollama.
-To do so, head over to the [Ollama website](https://ollama.ai) and install Ollama.
+To do so, head over to the <a href="https://ollama.ai" target="_blank">Ollama website</a> and install Ollama.
 Then follow the instructions below.
 
 ### Option 2: Use an API provider
@@ -59,7 +131,7 @@ If you have an API key, then set the environment variable accordingly.
 LlamaBot supports using local models through LMStudio via LiteLLM.
 To use LMStudio with LlamaBot:
 
-1. Install and set up [LMStudio](https://lmstudio.ai/)
+1. Install and set up <a href="https://lmstudio.ai/" target="_blank">LMStudio</a>
 2. Load your desired model in LMStudio
 3. Start the local server in LMStudio (usually runs on `http://localhost:1234`)
 4. Set the environment variable for LMStudio's API base:
@@ -177,17 +249,17 @@ import llamabot as lmb
 system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
 bot = lmb.SimpleBot(
     system_prompt,
-    model_name="ollama_chat/llama2:13b"
+    model_name="ollama_chat/llama3.2"
 )
 ```
 
 Simply specify the `model_name` keyword argument following the `<provider>/<model name>` format. For example:
 
 * `ollama_chat/` as the prefix, and
-* a model name from the [Ollama library of models](https://ollama.ai/library)
+* a model name from the <a href="https://ollama.ai/library" target="_blank">Ollama library of models</a>
 
 All you need to do is make sure Ollama is running locally;
-see the [Ollama documentation](https://ollama.ai/) for more details.
+see the <a href="https://ollama.ai/" target="_blank">Ollama documentation</a> for more details.
 (The same can be done for the `QueryBot` class below!)
 
 The `model_name` argument is optional. If you don't provide it, Llamabot will try to use the default model. You can configure that in the `DEFAULT_LANGUAGE_MODEL` environment variable.
@@ -219,8 +291,12 @@ response1 = feynman("Can you explain quantum mechanics?")
 print(response1)
 
 # The bot remembers the previous conversation
+# Note: You don't need to store responses in variables if you just want to print them
 response2 = feynman("Can you give me a simpler explanation?")
 print(response2)
+
+# Alternatively, you can call directly:
+# feynman("Can you give me a simpler explanation?")
 ```
 
 The ChatMemory system provides intelligent conversation memory that can maintain context across multiple interactions. It supports both linear memory (fast, no LLM calls) and graph-based memory with intelligent threading (uses LLM to connect related conversation topics).
@@ -282,6 +358,19 @@ result = bot("Do you have any advice for me on career development?")
 ```
 
 For more explanation about the `model_name`, see [the examples with `SimpleBot`](#using-simplebot-with-a-local-ollama-model).
+
+#### Example Documents and Images for Testing
+
+To help you get started with QueryBot, we provide example documents and images in the `docs/examples/` directory:
+
+- **Sample documents**: 
+  - `sample_python_guide.md` - Python programming guide for testing document queries
+  - `ai_fundamentals.txt` - AI concepts and terminology
+  - `anthropic_api.md` - API documentation example
+- **Sample image**: `Bearly_There.JPG` - Image file for testing vision capabilities  
+- **Working notebooks**: Complete examples in `querybot.ipynb`, `simplebot.ipynb`, and others
+
+You can download these files directly from the <a href="https://github.com/ericmjl/llamabot/tree/main/docs/examples" target="_blank">GitHub repository examples folder</a> to test QueryBot functionality.
 
 ### ImageBot
 
