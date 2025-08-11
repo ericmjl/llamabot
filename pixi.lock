@@ -6505,7 +6505,7 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.13.0
-  sha256: 0b7158597f3d6908d34aad26e19959effecc7c4d68334550903ee561edf1a522
+  sha256: f5801150e539b43e753cbd7009137508cd0e0526d230f79c9a6906878a45692c
   requires_dist:
   - openai
   - loguru
@@ -6531,6 +6531,7 @@ packages:
   - starlette
   - duckduckgo-search
   - networkx
+  - aiohttp
   - ics ; extra == 'notebooks'
   - tzlocal ; extra == 'notebooks'
   - modal ; extra == 'notebooks'

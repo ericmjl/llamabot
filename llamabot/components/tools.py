@@ -19,7 +19,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, List
 from uuid import uuid4
 from abc import ABC, abstractmethod
 
-import requests
 from bs4 import BeautifulSoup
 from duckduckgo_search.exceptions import DuckDuckGoSearchException
 from litellm.utils import function_to_dict
@@ -305,7 +304,7 @@ def respond_to_user(response: str) -> str:
     return response
 
 
-def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
+async def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
     """Search the internet for a given term and get webpage contents.
 
     :param search_term: The search term to look up
@@ -323,6 +322,13 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
     except ImportError:
         raise ImportError(
             "The Python package `markdownify` cannot be found. Please install it using `pip install llamabot[agent]`."
+        )
+
+    try:
+        import aiohttp
+    except ImportError:
+        raise ImportError(
+            "The Python package `aiohttp` cannot be found. Please install it using `pip install aiohttp`."
         )
 
     def perform_search(ddgs, search_term, max_results):
@@ -389,34 +395,47 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
         "Connection": "keep-alive",
     }
 
-    # Use the retry-enabled function
+    # Use the retry-enabled function (DuckDuckGo search is still sync)
     ddgs = DDGS(headers=headers)
-    results = perform_search(ddgs, search_term, max_results)
+    # Run DDG search in executor since it's sync
+    loop = asyncio.get_event_loop()
+    results = await loop.run_in_executor(
+        None, perform_search, ddgs, search_term, max_results
+    )
+
     webpage_contents = {}
 
-    def fetch_url(url: str, headers: Dict[str, str]) -> Tuple[str, str]:
-        """Fetch a URL and return the content.
+    async def fetch_url(session: aiohttp.ClientSession, url: str) -> Tuple[str, str]:
+        """Fetch a URL asynchronously and return the content.
 
+        :param session: The aiohttp session to use
         :param url: The URL to fetch
-        :param headers: The headers to use for the request
-        :return: The content of the URL
+        :return: Tuple of (url, content) or (url, None) on error
         """
         try:
-            response = requests.get(url, headers=headers, timeout=10)
-            soup = BeautifulSoup(response.text, "html.parser")
-            return url, md(soup.get_text())
+            async with session.get(
+                url, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                text = await response.text()
+                soup = BeautifulSoup(text, "html.parser")
+                return url, md(soup.get_text())
         except Exception as e:
             logger.debug("Error fetching {}: {}", url, e)
             return url, None
 
-    with ThreadPoolExecutor() as executor:
-        futures = [
-            executor.submit(fetch_url, result["href"], headers) for result in results
-        ]
-    for future in as_completed(futures):
-        url, summarized_content = future.result()
-        if summarized_content is not None:
-            webpage_contents[url] = summarized_content
+    # Use aiohttp for concurrent async HTTP requests
+    async with aiohttp.ClientSession(headers=headers) as session:
+        tasks = [fetch_url(session, result["href"]) for result in results]
+        fetch_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in fetch_results:
+            if isinstance(result, Exception):
+                logger.debug("Fetch task failed: {}", result)
+                continue
+
+            url, content = result
+            if content is not None:
+                webpage_contents[url] = content
 
     return webpage_contents
 
