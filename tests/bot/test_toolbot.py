@@ -12,7 +12,8 @@ def test_write_and_execute_code_syntax_error():
     invalid_code = "def test_function():\n    print('hello'\n    return 42"  # Missing closing parenthesis
 
     # Get the wrapper function
-    wrapper = write_and_execute_code()
+    globals_dict = {}
+    wrapper = write_and_execute_code(globals_dict)
     result = wrapper(invalid_code, {})
 
     assert "Syntax error" in result
@@ -25,7 +26,8 @@ def test_write_and_execute_code_no_function_found():
     code_without_function = "print('hello world')\nx = 42"
 
     # Get the wrapper function
-    wrapper = write_and_execute_code()
+    globals_dict = {}
+    wrapper = write_and_execute_code(globals_dict)
     result = wrapper(code_without_function, {})
 
     assert "Code validation error" in result
@@ -40,7 +42,8 @@ def test_function():
 """
 
     # Get the wrapper function
-    wrapper = write_and_execute_code()
+    globals_dict = {}
+    wrapper = write_and_execute_code(globals_dict)
     result = wrapper(valid_code, {})
 
     assert result == "Hello, World!"
@@ -55,7 +58,8 @@ def test_function():
 """
 
     # Get the wrapper function
-    wrapper = write_and_execute_code()
+    globals_dict = {}
+    wrapper = write_and_execute_code(globals_dict)
     result = wrapper(code_with_global, {})
 
     assert result == 3
