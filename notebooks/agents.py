@@ -6,12 +6,18 @@
 #     "marimo",
 #     "numpy==2.3.2",
 #     "pandas==2.3.1",
+#     "matplotlib",
+#     "seaborn",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../", editable = true }
+#
 # ///
 
 import marimo
 
-__generated_with = "0.14.17"
+__generated_with = "0.15.0"
 app = marimo.App(width="medium")
 
 
@@ -153,7 +159,6 @@ def _(ChatMemory, ToolBot, toolbot_sysprompt, write_and_execute_code):
         chat_memory=ChatMemory(),
         temperature=0.7,
     )
-
     return bot, json
 
 
