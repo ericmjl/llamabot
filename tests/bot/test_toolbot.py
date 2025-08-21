@@ -70,7 +70,7 @@ def test_toolbot_initialization():
     system_prompt = "You are a helpful assistant."
     bot = ToolBot(
         system_prompt=system_prompt,
-        model_name="gpt-4",
+        model_name="gpt-4.1",
         tools=[write_and_execute_code(globals_dict={})],
     )
 
@@ -79,7 +79,7 @@ def test_toolbot_initialization():
 
     assert isinstance(bot.system_prompt, SystemMessage)
     assert bot.system_prompt.content == system_prompt
-    assert bot.model_name == "gpt-4"
+    assert bot.model_name == "gpt-4.1"
     assert len(bot.tools) == 3  # today_date, respond_to_user, write_and_execute_code
     assert "write_and_execute_code" in bot.name_to_tool_map
     assert bot.chat_memory is not None
@@ -90,7 +90,7 @@ def test_toolbot_without_tools():
     system_prompt = "You are a helpful assistant."
     bot = ToolBot(
         system_prompt=system_prompt,
-        model_name="gpt-4",
+        model_name="gpt-4.1",
     )
 
     assert len(bot.tools) == 2  # today_date, respond_to_user
@@ -106,7 +106,7 @@ def test_toolbot_with_custom_chat_memory():
     custom_memory = ChatMemory()
     bot = ToolBot(
         system_prompt=system_prompt,
-        model_name="gpt-4",
+        model_name="gpt-4.1",
         chat_memory=custom_memory,
     )
 
@@ -134,7 +134,7 @@ def test_toolbot_call(
     system_prompt = "You are a helpful assistant."
     bot = ToolBot(
         system_prompt=system_prompt,
-        model_name="gpt-4",
+        model_name="gpt-4.1",
     )
 
     # Test calling the bot
