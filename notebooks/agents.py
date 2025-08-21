@@ -17,8 +17,6 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    # """Setup and imports."""
-
     import llamabot as lmb
     from llamabot.components.tools import (
         search_internet_and_summarize,
