@@ -71,7 +71,7 @@ def test_toolbot_initialization():
     bot = ToolBot(
         system_prompt=system_prompt,
         model_name="gpt-4",
-        tools=[write_and_execute_code],
+        tools=[write_and_execute_code(globals_dict={})],
     )
 
     # The system prompt should be converted to a SystemMessage
