@@ -73,7 +73,14 @@ def add(a: int, b: int) -> int:
 
 @tool
 def respond_to_user(response: str) -> str:
-    """Respond to the user with a message. Use this tool to respond to the user when you have a final answer."""
+    """Respond to the user with a message.
+
+    Use this tool when you don't think there's code to write (e.g., greetings, general questions,
+    explanations, or when the user just needs a conversational response).
+
+    :param response: The message to send to the user
+    :return: The response message
+    """
     return response
 
 
@@ -320,7 +327,12 @@ def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[st
 
 @tool
 def today_date() -> str:
-    """Get the current date."""
+    """Get the current date.
+
+    Use this tool when users need current date/time information.
+
+    :return: The current date in YYYY-MM-DD format
+    """
     return datetime.now().strftime("%Y-%m-%d")
 
 
@@ -375,7 +387,7 @@ def write_and_execute_script(
     }
 
 
-def write_and_execute_code(globals_dictionary: dict):
+def write_and_execute_code(globals_dict: dict):
     """Write and execute code in a secure sandbox.
 
     :param globals_dictionary: The dictionary of global variables to use in the sandbox.
@@ -383,12 +395,56 @@ def write_and_execute_code(globals_dictionary: dict):
     """
 
     @tool
-    def wrapper(placeholder_function: str, kwargs: dict):
+    def write_and_execute_code_wrapper(placeholder_function: str, kwargs: dict):
         """Write and execute `placeholder_function` with the passed in `kwargs`.
-        `placeholder_function` should contain all of the imports that it needs.
-        `kwargs` should be a dictionary of keyword arguments to pass to the function.
-        :param placeholder_function: The function to execute.
-        :param kwargs: The keyword arguments to pass to the function.
+        Use this tool for any task that requires custom Python code generation and execution.
+        This tool has access to ALL globals in the current runtime environment (variables, dataframes, functions, etc.).
+        Perfect for: data analysis, calculations, transformations, visualizations, custom algorithms.
+        ## Code Generation Guidelines:
+        1. **Write self-contained Python functions** with ALL imports inside the function body
+        2. **Place all imports at the beginning of the function**: import statements must be the first lines inside the function
+        3. **Include all required libraries**: pandas, numpy, matplotlib, etc. - import everything the function needs
+        4. **Leverage existing global variables**: Can reference variables that exist in the runtime
+        5. **Include proper error handling** and docstrings
+        6. **Provide keyword arguments** when the function requires parameters
+        7. **Make functions reusable** - they will be stored globally for future use
+        8. **ALWAYS RETURN A VALUE**: Every function must explicitly return something - never just print, display, or show results without returning them. Even for plotting functions, return the figure/axes object.
+        ## Function Arguments Handling:
+        **CRITICAL**: You MUST match the function signature with the kwargs:
+        - **If your function takes NO parameters** (e.g., `def analyze_data():`), then pass an **empty dictionary**: `{}`
+        - **If your function takes parameters** (e.g., `def filter_data(min_age, department):`), then pass the required arguments as a dictionary: `{"min_age": 30, "department": "Engineering"}`
+        - **Never pass kwargs that don't match the function signature** - this will cause execution errors
+        ## Code Structure Example:
+        ```python
+        # Function with NO parameters - use empty dict {}
+        def analyze_departments():
+            '''Analyze department performance.'''
+            import pandas as pd
+            import numpy as np
+            result = fake_df.groupby('department')['salary'].mean()
+            return result
+        # Function WITH parameters - pass matching kwargs
+        def filter_employees(min_age, department):
+            '''Filter employees by criteria.'''
+            import pandas as pd
+            filtered = fake_df[(fake_df['age'] >= min_age) & (fake_df['department'] == department)]
+            return filtered
+        ```
+        ## Return Value Requirements:
+        - **Data analysis functions**: Return the computed results (numbers, DataFrames, lists, dictionaries)
+        - **Plotting functions**: Return the figure or axes object (e.g., `return fig` or `return plt.gca()`)
+        - **Filter/transformation functions**: Return the processed data
+        - **Calculation functions**: Return the calculated values
+        - **Utility functions**: Return relevant output (status, processed data, etc.)
+        - **Never return None implicitly** - always have an explicit return statement
+        ## Code Access Capabilities:
+        The generated code will have access to:
+        - All global variables and dataframes in the current session
+        - Any previously defined functions
+        - The ability to import any standard Python libraries within the function
+        - The ability to create new reusable functions that will be stored globally
+        :param placeholder_function: The function to execute (complete Python function as string).
+        :param kwargs: The keyword arguments to pass to the function (dictionary matching function parameters).
         :return: The result of the function execution.
         """
 
@@ -414,9 +470,9 @@ def write_and_execute_code(globals_dictionary: dict):
         print(f"Found function name: {function_name}")
 
         try:
-            ns = globals_dictionary
+            ns = globals_dict
             compiled = compile(placeholder_function, "<llm>", "exec")
-            exec(compiled, globals_dictionary, ns)
+            exec(compiled, globals_dict, ns)
         except SyntaxError as e:
             return f"Syntax error during compilation: {str(e)}"
         except NameError as e:
@@ -435,4 +491,4 @@ def write_and_execute_code(globals_dictionary: dict):
         except Exception as e:
             return f"Error executing function '{function_name}': {str(e)}"
 
-    return wrapper
+    return write_and_execute_code_wrapper
