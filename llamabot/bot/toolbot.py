@@ -1,19 +1,17 @@
 """ToolBot - A single-turn bot that can execute tools."""
 
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional
 from loguru import logger
 
 from llamabot.components.tools import today_date, respond_to_user
 from llamabot.components.chat_memory import ChatMemory
-from llamabot.components.messages import AIMessage, BaseMessage, to_basemessage
+from llamabot.components.messages import AIMessage
 from llamabot.bot.simplebot import (
     SimpleBot,
-    extract_content,
     extract_tool_calls,
     make_response,
     stream_chunks,
 )
-from litellm import stream_chunk_builder
 
 
 class ToolBot(SimpleBot):
@@ -53,48 +51,29 @@ class ToolBot(SimpleBot):
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
         self.chat_memory = chat_memory or ChatMemory()
 
-    def __call__(
-        self, *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]]
-    ) -> list:
+    def __call__(self, message):
         """Process a message and return tool calls.
 
-        :param human_messages: One or more human messages to process
+        :param message: The message to process
         :return: List of tool calls to execute
         """
-        # Convert message to BaseMessage format
-        processed_messages = to_basemessage(human_messages)
+        from llamabot.components.messages import user
 
-        # Get memory messages if available
-        memory_messages = []
+        message = user(message)
+        # Convert messages to a list of UserMessage objects
+        message_list = [self.system_prompt]
         if self.chat_memory:
-            memory_messages = self.chat_memory.retrieve(
-                query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
-            )
-
-        # Build message list - cast to list[BaseMessage] to satisfy type checker
-        messages = [self.system_prompt] + memory_messages + processed_messages
-        messages = list(messages)  # Ensure it's a list
+            message_list.extend(self.chat_memory.retrieve(message.content))
+        message_list.extend([message])
 
         # Execute the plan
         stream = self.stream_target != "none"
-        logger.debug("Message list: {}", messages)
-        response = make_response(self, messages, stream=stream)
+        logger.debug("Message list: {}", message_list)
+        response = make_response(self, message_list, stream=stream)
         response = stream_chunks(response, target=self.stream_target)
         logger.debug("Response: {}", response)
-
-        # Handle streaming response
-        if hasattr(response, "__iter__") and not hasattr(response, "choices"):
-            # It's a generator, we need to consume it
-            chunks = []
-            for chunk in response:
-                chunks.append(chunk)
-            response = stream_chunk_builder(chunks)
-
         tool_calls = extract_tool_calls(response)
-        content = extract_content(response)
 
-        # Store in chat memory
-        if self.chat_memory:
-            self.chat_memory.append(processed_messages[-1], AIMessage(content=content))
+        self.chat_memory.append(message, AIMessage(content=str(tool_calls)))
 
         return tool_calls

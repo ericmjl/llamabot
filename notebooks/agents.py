@@ -77,9 +77,7 @@ def _(Callable, List, lmb, logger):
 
             from llamabot.components.messages import AIMessage
 
-            self.chat_memory.append(
-                message,
-            )
+            self.chat_memory.append(message, AIMessage(content=str(tool_calls)))
 
             return tool_calls
 
