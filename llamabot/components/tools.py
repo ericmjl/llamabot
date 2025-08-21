@@ -372,3 +372,38 @@ def write_and_execute_script(
         "stderr": result["stderr"].strip(),
         "status": result["status"],
     }
+
+
+@tool
+def write_and_execute_code(placeholder_function: str, kwargs: dict):
+    """Write and execute `placeholder_function` with the passed in `kwargs`.
+
+    `placeholder_function` should contain all of the imports that it needs.
+
+    :param placeholder_function: Complete Python function code as a string
+    :param kwargs: Dictionary matching the function parameters
+    :return: The result of executing the function
+    """
+    import ast
+
+    # Parse the code to extract the function name
+    try:
+        tree = ast.parse(placeholder_function)
+        function_name = None
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                function_name = node.name
+                break
+
+        if function_name is None:
+            raise ValueError("No function definition found in the code")
+
+    except Exception as e:
+        return f"Error parsing function name: {str(e)}"
+
+    # Execute the function in the current global namespace
+    ns = dict(globals())
+    compiled = compile(placeholder_function, "<llm>", "exec")
+    exec(compiled, dict(globals()), ns)
+
+    return ns[function_name](**kwargs)
