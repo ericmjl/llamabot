@@ -1,3 +1,13 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "llamabot==0.13.0",
+#     "loguru==0.7.3",
+#     "marimo",
+#     "numpy==2.3.2",
+#     "pandas==2.3.1",
+# ]
+# ///
 import marimo
 
 __generated_with = "0.14.17"
@@ -26,60 +36,8 @@ def _():
 
 @app.cell
 def _(Callable, List, lmb, logger):
-    from llamabot.components.tools import respond_to_user, today_date
-    from llamabot.bot.simplebot import (
-        SimpleBot,
-        extract_content,
-        extract_tool_calls,
-        make_response,
-        stream_chunks,
-    )
     from llamabot.components.chat_memory import ChatMemory
-    from typing import Optional
-
-    class ToolBot(SimpleBot):
-        def __init__(
-            self,
-            system_prompt: str,
-            model_name: str,
-            tools: List[Callable] = None,
-            chat_memory: Optional[ChatMemory] = None,
-            **completion_kwargs,
-        ):
-            super().__init__(
-                system_prompt=system_prompt,
-                model_name=model_name,
-                **completion_kwargs,
-            )
-            all_tools = [today_date, respond_to_user]
-            if tools is not None:
-                all_tools.extend([f for f in tools])
-            self.tools = [f.json_schema for f in all_tools]
-            self.name_to_tool_map = {f.__name__: f for f in all_tools}
-            self.chat_memory = chat_memory
-
-        def __call__(self, message):
-            message = lmb.user(message)
-            # Convert messages to a list of UserMessage objects
-            message_list = [self.system_prompt]
-            if self.chat_memory:
-                message_list.extend(self.chat_memory.retrieve(message.content))
-            message_list.extend([message])
-
-            # Execute the plan
-            stream = self.stream_target != "none"
-            logger.debug("Message list: {}", message_list)
-            response = make_response(self, message_list, stream=stream)
-            response = stream_chunks(response, target=self.stream_target)
-            logger.debug("Response: {}", response)
-            tool_calls = extract_tool_calls(response)
-            content = extract_content(response)
-
-            from llamabot.components.messages import AIMessage
-
-            self.chat_memory.append(message, AIMessage(content=str(tool_calls)))
-
-            return tool_calls
+    from llamabot.bot.toolbot import ToolBot
 
     return ChatMemory, ToolBot
 
@@ -299,57 +257,7 @@ def _(fake_df, pd):
 
 @app.cell
 def _(lmb):
-    import ast
-
-    @lmb.tool
-    def write_and_execute_code(placeholder_function: str, kwargs: dict):
-        """Write and execute `placeholder_function` with the passed in `kwargs`. `placeholder_function` should contain all of the imports that it needs."""
-        print("------")
-        print(placeholder_function)
-        print("------")
-
-        # Parse the code to extract the function name
-        try:
-            tree = ast.parse(placeholder_function)
-            function_name = None
-            for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
-                    function_name = node.name
-                    break
-
-            if function_name is None:
-                raise ValueError("No function definition found in the code")
-
-        except SyntaxError as e:
-            return f"Syntax error in the provided code: {str(e)}"
-        except ValueError as e:
-            return f"Code validation error: {str(e)}"
-        except Exception as e:
-            return f"Unexpected error parsing function name: {str(e)}"
-
-        print(f"Found function name: {function_name}")
-
-        try:
-            ns = dict(globals())
-            compiled = compile(placeholder_function, "<llm>", "exec")
-            exec(compiled, dict(globals()), ns)
-        except SyntaxError as e:
-            return f"Syntax error during compilation: {str(e)}"
-        except NameError as e:
-            return f"Name error during execution: {str(e)}"
-        except ImportError as e:
-            return f"Import error during execution: {str(e)}"
-        except Exception as e:
-            return f"Error during code execution: {str(e)}"
-
-        try:
-            return ns[function_name](**kwargs)
-        except KeyError:
-            return f"Function '{function_name}' not found in compiled namespace"
-        except TypeError as e:
-            return f"Type error calling function '{function_name}': {str(e)}"
-        except Exception as e:
-            return f"Error executing function '{function_name}': {str(e)}"
+    from llamabot.components.tools import write_and_execute_code
 
     return (write_and_execute_code,)
 
