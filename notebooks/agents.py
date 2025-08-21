@@ -151,7 +151,7 @@ def _(ChatMemory, ToolBot, toolbot_sysprompt, write_and_execute_code):
     bot = ToolBot(
         system_prompt=toolbot_sysprompt(globals_dict=globals()),
         model_name="gpt-4.1",
-        tools=[write_and_execute_code(globals_dictionary=globals())],
+        tools=[write_and_execute_code(globals_dict=globals())],
         chat_memory=ChatMemory(),
         temperature=0.7,
     )
