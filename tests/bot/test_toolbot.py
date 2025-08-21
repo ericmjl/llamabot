@@ -6,6 +6,40 @@ from llamabot.bot.toolbot import ToolBot
 from llamabot.components.tools import write_and_execute_code
 
 
+def test_write_and_execute_code_syntax_error():
+    """Test that write_and_execute_code handles syntax errors properly."""
+    # Test with invalid Python syntax
+    invalid_code = "def test_function():\n    print('hello'\n    return 42"  # Missing closing parenthesis
+
+    result = write_and_execute_code(invalid_code, {})
+
+    assert "Syntax error" in result
+    assert "provided code" in result
+
+
+def test_write_and_execute_code_no_function_found():
+    """Test that write_and_execute_code handles missing function definitions."""
+    # Test with code that has no function definition
+    code_without_function = "print('hello world')\nx = 42"
+
+    result = write_and_execute_code(code_without_function, {})
+
+    assert "Code validation error" in result
+    assert "No function definition found" in result
+
+
+def test_write_and_execute_code_successful_execution():
+    """Test that write_and_execute_code executes valid code successfully."""
+    valid_code = """
+def test_function():
+    return "Hello, World!"
+"""
+
+    result = write_and_execute_code(valid_code, {})
+
+    assert result == "Hello, World!"
+
+
 def test_toolbot_initialization():
     """Test that ToolBot initializes correctly."""
     system_prompt = "You are a helpful assistant."

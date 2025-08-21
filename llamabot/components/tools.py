@@ -9,6 +9,7 @@ The design of a tool is as follows:
    that is attached as an attribute.
 """
 
+import ast
 import os
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -376,15 +377,7 @@ def write_and_execute_script(
 
 @tool
 def write_and_execute_code(placeholder_function: str, kwargs: dict):
-    """Write and execute `placeholder_function` with the passed in `kwargs`.
-
-    `placeholder_function` should contain all of the imports that it needs.
-
-    :param placeholder_function: Complete Python function code as a string
-    :param kwargs: Dictionary matching the function parameters
-    :return: The result of executing the function
-    """
-    import ast
+    """Write and execute `placeholder_function` with the passed in `kwargs`. `placeholder_function` should contain all of the imports that it needs."""
 
     # Parse the code to extract the function name
     try:
@@ -398,12 +391,33 @@ def write_and_execute_code(placeholder_function: str, kwargs: dict):
         if function_name is None:
             raise ValueError("No function definition found in the code")
 
+    except SyntaxError as e:
+        return f"Syntax error in the provided code: {str(e)}"
+    except ValueError as e:
+        return f"Code validation error: {str(e)}"
     except Exception as e:
-        return f"Error parsing function name: {str(e)}"
+        return f"Unexpected error parsing function name: {str(e)}"
 
-    # Execute the function in the current global namespace
-    ns = dict(globals())
-    compiled = compile(placeholder_function, "<llm>", "exec")
-    exec(compiled, dict(globals()), ns)
+    print(f"Found function name: {function_name}")
 
-    return ns[function_name](**kwargs)
+    try:
+        ns = dict(globals())
+        compiled = compile(placeholder_function, "<llm>", "exec")
+        exec(compiled, dict(globals()), ns)
+    except SyntaxError as e:
+        return f"Syntax error during compilation: {str(e)}"
+    except NameError as e:
+        return f"Name error during execution: {str(e)}"
+    except ImportError as e:
+        return f"Import error during execution: {str(e)}"
+    except Exception as e:
+        return f"Error during code execution: {str(e)}"
+
+    try:
+        return ns[function_name](**kwargs)
+    except KeyError:
+        return f"Function '{function_name}' not found in compiled namespace"
+    except TypeError as e:
+        return f"Type error calling function '{function_name}': {str(e)}"
+    except Exception as e:
+        return f"Error executing function '{function_name}': {str(e)}"
