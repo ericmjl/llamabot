@@ -375,49 +375,64 @@ def write_and_execute_script(
     }
 
 
-@tool
-def write_and_execute_code(placeholder_function: str, kwargs: dict):
-    """Write and execute `placeholder_function` with the passed in `kwargs`. `placeholder_function` should contain all of the imports that it needs."""
+def write_and_execute_code(globals_dictionary: dict):
+    """Write and execute code in a secure sandbox.
 
-    # Parse the code to extract the function name
-    try:
-        tree = ast.parse(placeholder_function)
-        function_name = None
-        for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef):
-                function_name = node.name
-                break
+    :param globals_dictionary: The dictionary of global variables to use in the sandbox.
+    :return: A function that can be used to execute code in the sandbox.
+    """
 
-        if function_name is None:
-            raise ValueError("No function definition found in the code")
+    @tool
+    def wrapper(placeholder_function: str, kwargs: dict):
+        """Write and execute `placeholder_function` with the passed in `kwargs`.
+        `placeholder_function` should contain all of the imports that it needs.
+        `kwargs` should be a dictionary of keyword arguments to pass to the function.
+        :param placeholder_function: The function to execute.
+        :param kwargs: The keyword arguments to pass to the function.
+        :return: The result of the function execution.
+        """
 
-    except SyntaxError as e:
-        return f"Syntax error in the provided code: {str(e)}"
-    except ValueError as e:
-        return f"Code validation error: {str(e)}"
-    except Exception as e:
-        return f"Unexpected error parsing function name: {str(e)}"
+        # Parse the code to extract the function name
+        try:
+            tree = ast.parse(placeholder_function)
+            function_name = None
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    function_name = node.name
+                    break
 
-    print(f"Found function name: {function_name}")
+            if function_name is None:
+                raise ValueError("No function definition found in the code")
 
-    try:
-        ns = dict(globals())
-        compiled = compile(placeholder_function, "<llm>", "exec")
-        exec(compiled, dict(globals()), ns)
-    except SyntaxError as e:
-        return f"Syntax error during compilation: {str(e)}"
-    except NameError as e:
-        return f"Name error during execution: {str(e)}"
-    except ImportError as e:
-        return f"Import error during execution: {str(e)}"
-    except Exception as e:
-        return f"Error during code execution: {str(e)}"
+        except SyntaxError as e:
+            return f"Syntax error in the provided code: {str(e)}"
+        except ValueError as e:
+            return f"Code validation error: {str(e)}"
+        except Exception as e:
+            return f"Unexpected error parsing function name: {str(e)}"
 
-    try:
-        return ns[function_name](**kwargs)
-    except KeyError:
-        return f"Function '{function_name}' not found in compiled namespace"
-    except TypeError as e:
-        return f"Type error calling function '{function_name}': {str(e)}"
-    except Exception as e:
-        return f"Error executing function '{function_name}': {str(e)}"
+        print(f"Found function name: {function_name}")
+
+        try:
+            ns = globals_dictionary
+            compiled = compile(placeholder_function, "<llm>", "exec")
+            exec(compiled, globals_dictionary, ns)
+        except SyntaxError as e:
+            return f"Syntax error during compilation: {str(e)}"
+        except NameError as e:
+            return f"Name error during execution: {str(e)}"
+        except ImportError as e:
+            return f"Import error during execution: {str(e)}"
+        except Exception as e:
+            return f"Error during code execution: {str(e)}"
+
+        try:
+            return ns[function_name](**kwargs)
+        except KeyError:
+            return f"Function '{function_name}' not found in compiled namespace"
+        except TypeError as e:
+            return f"Type error calling function '{function_name}': {str(e)}"
+        except Exception as e:
+            return f"Error executing function '{function_name}': {str(e)}"
+
+    return wrapper

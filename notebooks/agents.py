@@ -8,6 +8,7 @@
 #     "pandas==2.3.1",
 # ]
 # ///
+
 import marimo
 
 __generated_with = "0.14.17"
@@ -31,11 +32,11 @@ def _():
 
     # Enable debug mode to see detailed logs
     lmb.set_debug_mode(True)
-    return Callable, List, lmb, logger
+    return (lmb,)
 
 
 @app.cell
-def _(Callable, List, lmb, logger):
+def _():
     from llamabot.components.chat_memory import ChatMemory
     from llamabot.bot.toolbot import ToolBot
 
@@ -163,7 +164,7 @@ def _():
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     import pandas as pd
     import numpy as np
@@ -207,7 +208,7 @@ def _():
     return fake_df, pd
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(fake_df, pd):
     # Get unique departments from fake_df to ensure consistency
     departments = fake_df["department"].unique()
@@ -256,10 +257,17 @@ def _(fake_df, pd):
 
 
 @app.cell
-def _(lmb):
+def _():
     from llamabot.components.tools import write_and_execute_code
 
     return (write_and_execute_code,)
+
+
+@app.cell
+def _(write_and_execute_code):
+    func = write_and_execute_code(globals_dictionary=dict(globals()))
+
+    return
 
 
 @app.cell
@@ -269,7 +277,7 @@ def _(ChatMemory, ToolBot, toolbot_sysprompt, write_and_execute_code):
     bot = ToolBot(
         system_prompt=toolbot_sysprompt(),
         model_name="gpt-4.1",
-        tools=[write_and_execute_code],
+        tools=[write_and_execute_code(globals_dictionary=dict(globals()))],
         chat_memory=ChatMemory(),
     )
 
@@ -320,7 +328,7 @@ def _(ChatMemory, ToolBot, toolbot_sysprompt, write_and_execute_code):
     return bot, json, toolbot_userprompt
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(bot, json, toolbot_userprompt):
     def model(messages):
         print(messages[-1].content)

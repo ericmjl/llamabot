@@ -11,7 +11,9 @@ def test_write_and_execute_code_syntax_error():
     # Test with invalid Python syntax
     invalid_code = "def test_function():\n    print('hello'\n    return 42"  # Missing closing parenthesis
 
-    result = write_and_execute_code(invalid_code, {})
+    # Get the wrapper function
+    wrapper = write_and_execute_code()
+    result = wrapper(invalid_code, {})
 
     assert "Syntax error" in result
     assert "provided code" in result
@@ -22,7 +24,9 @@ def test_write_and_execute_code_no_function_found():
     # Test with code that has no function definition
     code_without_function = "print('hello world')\nx = 42"
 
-    result = write_and_execute_code(code_without_function, {})
+    # Get the wrapper function
+    wrapper = write_and_execute_code()
+    result = wrapper(code_without_function, {})
 
     assert "Code validation error" in result
     assert "No function definition found" in result
@@ -35,9 +39,26 @@ def test_function():
     return "Hello, World!"
 """
 
-    result = write_and_execute_code(valid_code, {})
+    # Get the wrapper function
+    wrapper = write_and_execute_code()
+    result = wrapper(valid_code, {})
 
     assert result == "Hello, World!"
+
+
+def test_write_and_execute_code_accesses_globals():
+    """Test that write_and_execute_code can access variables from the current globals."""
+    # Create a function that references a built-in global
+    code_with_global = """
+def test_function():
+    return len([1, 2, 3])
+"""
+
+    # Get the wrapper function
+    wrapper = write_and_execute_code()
+    result = wrapper(code_with_global, {})
+
+    assert result == 3
 
 
 def test_toolbot_initialization():
