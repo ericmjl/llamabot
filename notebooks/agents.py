@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "llamabot==0.13.0",
+#     "llamabot==0.13.1",
 #     "loguru==0.7.3",
 #     "marimo",
 #     "numpy==2.3.2",
@@ -36,7 +36,7 @@ def _():
 
     # Enable debug mode to see detailed logs
     lmb.set_debug_mode(True)
-    return (lmb,)
+    return lmb, logger
 
 
 @app.cell
@@ -163,18 +163,18 @@ def _(ChatMemory, ToolBot, toolbot_sysprompt, write_and_execute_code):
 
 
 @app.cell
-def _(bot, json):
+def _(bot, json, logger):
     def model(messages):
-        print(messages[-1].content)
+        logger.debug(messages[-1].content)
         # prompt = toolbot_userprompt(messages[-1].content)
         tool = bot(messages[-1].content)
-        print(tool)
+        logger.debug(tool)
         function = tool[0].function
-        print(function.name)
-        print("----")
-        print(json.loads(function.arguments).keys())
-        print("----")
-        print("----")
+        logger.debug(function.name)
+        logger.debug("----")
+        logger.debug(json.loads(function.arguments).keys())
+        logger.debug("----")
+        logger.debug("----")
         return bot.name_to_tool_map[function.name](**json.loads(function.arguments))
 
     return (model,)

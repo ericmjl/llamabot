@@ -395,8 +395,8 @@ def write_and_execute_code(globals_dict: dict):
     """
 
     @tool
-    def write_and_execute_code_wrapper(placeholder_function: str, kwargs: dict):
-        """Write and execute `placeholder_function` with the passed in `kwargs`.
+    def write_and_execute_code_wrapper(placeholder_function: str, keyword_args: dict):
+        """Write and execute `placeholder_function` with the passed in `keyword_args`.
         Use this tool for any task that requires custom Python code generation and execution.
         This tool has access to ALL globals in the current runtime environment (variables, dataframes, functions, etc.).
         Perfect for: data analysis, calculations, transformations, visualizations, custom algorithms.
@@ -410,10 +410,10 @@ def write_and_execute_code(globals_dict: dict):
         7. **Make functions reusable** - they will be stored globally for future use
         8. **ALWAYS RETURN A VALUE**: Every function must explicitly return something - never just print, display, or show results without returning them. Even for plotting functions, return the figure/axes object.
         ## Function Arguments Handling:
-        **CRITICAL**: You MUST match the function signature with the kwargs:
+        **CRITICAL**: You MUST match the function signature with the keyword_args:
         - **If your function takes NO parameters** (e.g., `def analyze_data():`), then pass an **empty dictionary**: `{}`
         - **If your function takes parameters** (e.g., `def filter_data(min_age, department):`), then pass the required arguments as a dictionary: `{"min_age": 30, "department": "Engineering"}`
-        - **Never pass kwargs that don't match the function signature** - this will cause execution errors
+        - **Never pass keyword_args that don't match the function signature** - this will cause execution errors
         ## Code Structure Example:
         ```python
         # Function with NO parameters - use empty dict {}
@@ -423,7 +423,7 @@ def write_and_execute_code(globals_dict: dict):
             import numpy as np
             result = fake_df.groupby('department')['salary'].mean()
             return result
-        # Function WITH parameters - pass matching kwargs
+        # Function WITH parameters - pass matching keyword_args
         def filter_employees(min_age, department):
             '''Filter employees by criteria.'''
             import pandas as pd
@@ -444,7 +444,7 @@ def write_and_execute_code(globals_dict: dict):
         - The ability to import any standard Python libraries within the function
         - The ability to create new reusable functions that will be stored globally
         :param placeholder_function: The function to execute (complete Python function as string).
-        :param kwargs: The keyword arguments to pass to the function (dictionary matching function parameters).
+        :param keyword_args: The keyword arguments to pass to the function (dictionary matching function parameters).
         :return: The result of the function execution.
         """
 
@@ -467,8 +467,6 @@ def write_and_execute_code(globals_dict: dict):
         except Exception as e:
             return f"Unexpected error parsing function name: {str(e)}"
 
-        print(f"Found function name: {function_name}")
-
         try:
             ns = globals_dict
             compiled = compile(placeholder_function, "<llm>", "exec")
@@ -483,7 +481,7 @@ def write_and_execute_code(globals_dict: dict):
             return f"Error during code execution: {str(e)}"
 
         try:
-            return ns[function_name](**kwargs)
+            return ns[function_name](**keyword_args)
         except KeyError:
             return f"Function '{function_name}' not found in compiled namespace"
         except TypeError as e:
