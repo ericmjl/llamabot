@@ -109,7 +109,7 @@ jobs:
 
       - name: Publish package
         if: github.event_name != 'pull_request'
-        run: uv publish --token ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish
 
       - name: Push changes with tags
         if: github.event_name != 'pull_request'
