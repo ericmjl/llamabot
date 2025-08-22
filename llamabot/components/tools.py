@@ -12,6 +12,7 @@ The design of a tool is as follows:
 import ast
 import os
 import random
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import wraps
@@ -21,13 +22,248 @@ from uuid import uuid4
 import requests
 from bs4 import BeautifulSoup
 from duckduckgo_search.exceptions import DuckDuckGoSearchException
-from litellm.utils import function_to_dict
 from loguru import logger
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import user
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.prompt_manager import prompt
+
+
+def json_schema_type(type_name: str) -> str:
+    """Convert Python type names to JSON schema types.
+
+    :param type_name: The Python type name
+    :return: The corresponding JSON schema type
+    """
+    type_mapping = {
+        "str": "string",
+        "string": "string",
+        "int": "integer",
+        "integer": "integer",
+        "float": "number",
+        "number": "number",
+        "bool": "boolean",
+        "boolean": "boolean",
+        "list": "array",
+        "array": "array",
+        "dict": "object",
+        "object": "object",
+        "tuple": "array",
+        "set": "array",
+        "None": "null",
+        "null": "null",
+    }
+    return type_mapping.get(type_name.lower(), "string")
+
+
+def parse_docstring(docstring: str) -> Dict[str, Any]:
+    """Parse a docstring and extract summary and parameter information.
+
+    Supports numpy, google, and sphinx-style docstrings.
+
+    :param docstring: The docstring to parse
+    :return: Dictionary with 'summary' and 'parameters' keys
+    """
+    if not docstring:
+        return {"summary": "", "parameters": {}}
+
+    lines = docstring.strip().split("\n")
+    summary_lines = []
+    parameters = {}
+    current_param_desc = []
+
+    # Detect docstring style and parse accordingly
+    style = "unknown"
+
+    # Check for numpy style (Parameters section with dashes)
+    if any("Parameters" in line and "---" in line for line in lines):
+        style = "numpy"
+    # Check for google style (Args: section)
+    elif any(re.match(r"^\s*Args?:", line) for line in lines):
+        style = "google"
+    # Check for sphinx style (:param: or :type: directives)
+    elif any(
+        re.search(r":param\s+", line) or re.search(r":type\s+", line) for line in lines
+    ):
+        style = "sphinx"
+
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+
+        if style == "numpy":
+            # Parse numpy style
+            if "Parameters" in line and "---" in line:
+                i += 1  # Skip the separator line
+                while i < len(lines) and lines[i].strip():
+                    param_line = lines[i].strip()
+                    if param_line and not param_line.startswith("---"):
+                        # Parse parameter line: name : type, optional
+                        param_match = re.match(
+                            r"^(\w+)\s*:\s*(.+?)(?:\s*,\s*optional)?$", param_line
+                        )
+                        if param_match:
+                            param_name = param_match.group(1)
+                            param_type = param_match.group(2).strip()
+                            current_param_desc = []
+
+                            # Extract description from next lines
+                            i += 1
+                            while (
+                                i < len(lines)
+                                and lines[i].strip()
+                                and not re.match(r"^\w+\s*:", lines[i])
+                            ):
+                                current_param_desc.append(lines[i].strip())
+                                i += 1
+
+                            parameters[param_name] = {
+                                "type": json_schema_type(param_type),
+                                "description": (
+                                    " ".join(current_param_desc)
+                                    if current_param_desc
+                                    else None
+                                ),
+                            }
+                            continue
+                    i += 1
+            elif not line.startswith("---") and not re.match(r"^\w+\s*:", line):
+                summary_lines.append(line)
+        elif style == "google":
+            # Parse google style
+            if re.match(r"^\s*Args?:", line):
+                i += 1
+                while i < len(lines) and lines[i].strip():
+                    param_line = lines[i].strip()
+                    if param_line.startswith("    ") and ":" in param_line:
+                        # Parse parameter line: name (type): description
+                        param_match = re.match(
+                            r"^(\w+)\s*\(([^)]+)\):\s*(.+)$", param_line
+                        )
+                        if param_match:
+                            param_name = param_match.group(1)
+                            param_type = param_match.group(2)
+                            param_desc = param_match.group(3)
+
+                            parameters[param_name] = {
+                                "type": json_schema_type(param_type),
+                                "description": param_desc,
+                            }
+                    i += 1
+            elif not re.match(r"^\s*(Args?|Returns?|Raises?):", line):
+                summary_lines.append(line)
+        elif style == "sphinx":
+            # Parse sphinx style
+            param_match = re.search(r":param\s+(\w+):\s*(.+)$", line)
+            if param_match:
+                param_name = param_match.group(1)
+                param_desc = param_match.group(2)
+
+                # Look for type information
+                param_type = "string"  # default
+                for j in range(i, min(i + 3, len(lines))):
+                    type_match = re.search(
+                        r":type\s+" + re.escape(param_name) + r":\s*(.+)$", lines[j]
+                    )
+                    if type_match:
+                        param_type = json_schema_type(type_match.group(1).strip())
+                        break
+
+                parameters[param_name] = {"type": param_type, "description": param_desc}
+            elif not re.search(r":(param|type|return|rtype):", line):
+                summary_lines.append(line)
+        else:
+            # Unknown style - just collect summary
+            if not line.startswith("---") and not re.match(r"^\w+\s*:", line):
+                summary_lines.append(line)
+
+        i += 1
+
+    return {"summary": " ".join(summary_lines).strip(), "parameters": parameters}
+
+
+def function_to_dict(input_function: Callable) -> Dict[str, Any]:
+    """Convert a function to a dictionary for OpenAI function calling.
+
+    Supports numpy, google, and sphinx-style docstrings.
+
+    :param input_function: The function to convert
+    :return: Dictionary suitable for OpenAI function calling
+    """
+    import inspect
+
+    name = input_function.__name__
+    docstring = inspect.getdoc(input_function) or ""
+
+    # Parse docstring
+    parsed = parse_docstring(docstring)
+    description = parsed["summary"]
+
+    # Get function parameters and their types from annotations
+    parameters = {}
+    required_params = []
+    param_info = inspect.signature(input_function).parameters
+
+    for param_name, param in param_info.items():
+        # Get type from annotation
+        param_type = None
+        if hasattr(param, "annotation") and param.annotation != inspect.Parameter.empty:
+            if hasattr(param.annotation, "__name__"):
+                param_type = json_schema_type(param.annotation.__name__)
+            else:
+                # Handle complex types like Optional[str]
+                type_str = str(param.annotation)
+                if "Optional" in type_str or "Union" in type_str:
+                    # Extract the base type
+                    if "str" in type_str:
+                        param_type = "string"
+                    elif "int" in type_str:
+                        param_type = "integer"
+                    elif "float" in type_str:
+                        param_type = "number"
+                    elif "bool" in type_str:
+                        param_type = "boolean"
+                    else:
+                        param_type = "string"
+                else:
+                    param_type = "string"
+
+        # Get description from parsed docstring
+        param_description = None
+        if param_name in parsed["parameters"]:
+            param_description = parsed["parameters"][param_name].get("description")
+            # Override type if specified in docstring
+            if parsed["parameters"][param_name].get("type"):
+                param_type = parsed["parameters"][param_name]["type"]
+
+        param_dict = {
+            "type": param_type or "string",
+            "description": param_description,
+        }
+
+        # Remove None values
+        parameters[param_name] = {k: v for k, v in param_dict.items() if v is not None}
+
+        # Check if the parameter has no default value (i.e., it's required)
+        if param.default == param.empty:
+            required_params.append(param_name)
+
+    # Create the dictionary
+    result = {
+        "name": name,
+        "description": description,
+        "parameters": {
+            "type": "object",
+            "properties": parameters,
+        },
+    }
+
+    # Add "required" key if there are required parameters
+    if required_params:
+        result["parameters"]["required"] = required_params
+
+    return result
 
 
 def tool(func: Callable) -> Callable:

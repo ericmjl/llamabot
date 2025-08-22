@@ -6505,7 +6505,7 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.13.3
-  sha256: 9890c0b2dff153cdb633ea84d24f2b0ff7196ae00ff783a20fe3f710f1576b66
+  sha256: 061d0d19ff9485c849e32ece1f4636c63f6f09280f42c8274a4b329db06be4d7
   requires_dist:
   - openai
   - loguru
