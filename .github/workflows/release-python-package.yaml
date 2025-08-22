@@ -7,14 +7,15 @@ on:
         description: "One of major, minor, or patch"
         required: true
         type: choice
-        options:
-          - major
-          - minor
-          - patch
+        options: [major, minor, patch]
         default: patch
   pull_request:
     branches:
       - '**'
+
+permissions:
+  contents: read
+  id-token: write
 
 env:
   UV_SYSTEM_PYTHON: 1
@@ -28,6 +29,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -50,19 +52,17 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' }}
 
-      - name: Set up Python
-        run: |
-          uv tool install bump2version
+      - name: Set up Python tools
+        run: uv tool install bump2version
 
       - name: Set version name
         run: echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
 
       - name: Dry run bump2version
-        run: |
-          bump2version --dry-run ${{ env.VERSION_NAME }} --allow-dirty --verbose
+        run: bump2version --dry-run ${{ env.VERSION_NAME }} --allow-dirty --verbose
 
       - name: Store new version number
-        run: echo "version_number=`bump2version --dry-run --list ${{ env.VERSION_NAME }} | grep new_version | sed -r s,"^.*=",,`" >> $GITHUB_ENV
+        run: echo "version_number=$(bump2version --dry-run --list ${{ env.VERSION_NAME }} | grep new_version | sed -r 's/^.*=//')" >> $GITHUB_ENV
 
       - name: Display new version number
         run: |
@@ -104,12 +104,11 @@ jobs:
           git commit -m "Add release notes for ${{ env.version_number }}"
 
       - name: Build package
-        run: |
-          uv build --sdist --wheel
+        run: uv build --sdist --wheel
 
-      - name: Publish package
+      - name: Publish package (trusted publishing)
         if: github.event_name != 'pull_request'
-        run: uv publish
+        run: uv publish --trusted-publishing always
 
       - name: Push changes with tags
         if: github.event_name != 'pull_request'
