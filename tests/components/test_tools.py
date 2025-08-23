@@ -581,3 +581,26 @@ print(f"Result: {result}")
     assert "Hello, world!" in result["stdout"]
     assert "Result: 12" in result["stdout"]
     assert result["status"] == 0  # Success
+
+
+def test_function_description_combines_short_and_long():
+    """Test that function descriptions combine short and long descriptions."""
+
+    def test_func(a: int) -> str:
+        """Short description.
+
+        This is the long description that should be included
+        along with the short description.
+        """
+        return str(a)
+
+    result = function_to_dict(test_func)
+
+    # Should include both short and long descriptions
+    description = result["description"]
+    assert "Short description." in description
+    assert "This is the long description" in description
+    assert "should be included" in description
+
+    # Should have proper formatting with double newlines
+    assert "\n\n" in description

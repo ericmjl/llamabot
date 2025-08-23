@@ -111,7 +111,15 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
 
     # Parse docstring
     parsed = parse(docstring)
-    description = parsed.short_description or ""
+
+    # Combine short and long descriptions
+    description_parts = []
+    if parsed.short_description:
+        description_parts.append(parsed.short_description)
+    if parsed.long_description:
+        description_parts.append(parsed.long_description)
+
+    description = "\n\n".join(description_parts) if description_parts else ""
 
     # Get function parameters and their types from annotations
     parameters = {}
