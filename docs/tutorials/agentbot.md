@@ -14,6 +14,21 @@ Before you begin, ensure you have the following:
 
 In this section, we will create a bot that can calculate the total bill amount including a tip and split the bill among multiple people.
 
+### Enhanced Tool Documentation
+
+LlamaBot now supports comprehensive docstring parsing for tools, automatically extracting rich contextual information that helps LLMs understand when and how to use your tools. This means you can write self-documenting tools that don't require additional system prompt instructions.
+
+**Supported Docstring Styles:**
+- **NumPy style**: Traditional scientific Python format
+- **Google style**: Clean, readable format popular in Google's Python codebase
+- **Sphinx style**: reStructuredText format used in Sphinx documentation
+
+**Key Features:**
+- **Automatic parameter extraction**: Type hints and descriptions are parsed from docstrings
+- **Rich descriptions**: Both short and long descriptions are combined for comprehensive context
+- **Optional parameters**: Tools can have default values and optional parameters
+- **Self-documenting**: Tools contain all the context an LLM needs to use them effectively
+
 ### Step 1: Setting Up the Environment
 
 First, ensure you have the `llamabot` library installed. You can install it using pip:
@@ -29,15 +44,72 @@ We will use the `AgentBot` class to create our bot. The bot will use two tools: 
 ```python
 import llamabot as lmb
 
-# Define the tools
+# Define the tools with comprehensive documentation
 @lmb.tool
 def calculate_total_with_tip(bill_amount: float, tip_rate: float) -> float:
+    """Calculate the total bill amount including tip.
+
+    This function takes a base bill amount and applies a tip percentage to calculate
+    the final total. The tip rate should be provided as a decimal (e.g., 0.18 for 18%).
+
+    Parameters
+    ----------
+    bill_amount : float
+        The base amount of the bill before tip
+    tip_rate : float
+        The tip rate as a decimal (e.g., 0.18 for 18% tip)
+
+    Returns
+    -------
+    float
+        The total amount including tip
+
+    Raises
+    ------
+    ValueError
+        If tip_rate is negative or greater than 1.0
+
+    Examples
+    --------
+    >>> calculate_total_with_tip(100.0, 0.18)
+    118.0
+    """
     if tip_rate < 0 or tip_rate > 1.0:
         raise ValueError("Tip rate must be between 0 and 1.0")
     return bill_amount * (1 + tip_rate)
 
 @lmb.tool
 def split_bill(total_amount: float, num_people: int) -> float:
+    """Split a bill equally among a specified number of people.
+
+    This function divides a total bill amount equally among the specified number
+    of people. Use this when you need to calculate how much each person should pay
+    for a shared expense.
+
+    Parameters
+    ----------
+    total_amount : float
+        The total bill amount to split
+    num_people : int
+        The number of people to split the bill among
+
+    Returns
+    -------
+    float
+        The amount each person should pay
+
+    Raises
+    ------
+    ValueError
+        If num_people is less than or equal to 0
+
+    Examples
+    --------
+    >>> split_bill(120.0, 4)
+    30.0
+    """
+    if num_people <= 0:
+        raise ValueError("Number of people must be positive")
     return total_amount / num_people
 
 # Create the bot
@@ -55,6 +127,27 @@ bot = lmb.AgentBot(
 - `model_name`: The language model to use
 - `temperature`: Controls randomness (default: 0.0 for deterministic responses)
 - `stream_target`: Where to stream responses ("none", "stdout", "panel", "api")
+
+### Benefits of Self-Documenting Tools
+
+With comprehensive docstring parsing, your tools become self-documenting:
+
+1. **No Additional Context Needed**: The LLM automatically understands when to use each tool based on the rich descriptions
+2. **Automatic Parameter Validation**: Type hints and descriptions help the LLM provide correct arguments
+3. **Clear Usage Examples**: Examples in docstrings show the LLM exactly how to use the tool
+4. **Error Handling**: The LLM understands what errors to expect and how to handle them
+
+### Best Practices for Tool Documentation
+
+When writing tools for LLM agents, follow these best practices:
+
+1. **Use Descriptive Names**: Function names should clearly indicate their purpose
+2. **Comprehensive Docstrings**: Include both short and long descriptions
+3. **Parameter Documentation**: Document each parameter with its type, purpose, and constraints
+4. **Return Value Documentation**: Explain what the function returns and in what format
+5. **Error Handling**: Document what errors can occur and under what conditions
+6. **Usage Examples**: Provide clear examples of how to use the function
+7. **Type Hints**: Always include type hints for better LLM understanding
 
 ### Step 3: Using the Bot
 
@@ -101,6 +194,70 @@ response = bot("Complex task here", max_iterations=5)
 
 In this section, we will extend the bot to analyze stock price trends using additional tools.
 
+### Docstring Style Examples
+
+LlamaBot supports multiple docstring styles. Here are examples of how to document the same function in different styles:
+
+#### NumPy Style (Scientific Python)
+```python
+@lmb.tool
+def calculate_compound_interest(principal: float, rate: float, time: float) -> float:
+    """Calculate compound interest using the standard formula.
+
+    Parameters
+    ----------
+    principal : float
+        The initial amount of money invested
+    rate : float
+        The annual interest rate as a decimal (e.g., 0.05 for 5%)
+    time : float
+        The time period in years
+
+    Returns
+    -------
+    float
+        The final amount after compound interest
+    """
+    return principal * (1 + rate) ** time
+```
+
+#### Google Style (Clean and Readable)
+```python
+@lmb.tool
+def calculate_compound_interest(principal: float, rate: float, time: float) -> float:
+    """Calculate compound interest using the standard formula.
+
+    Args:
+        principal (float): The initial amount of money invested
+        rate (float): The annual interest rate as a decimal (e.g., 0.05 for 5%)
+        time (float): The time period in years
+
+    Returns:
+        float: The final amount after compound interest
+    """
+    return principal * (1 + rate) ** time
+```
+
+#### Sphinx Style (reStructuredText)
+```python
+@lmb.tool
+def calculate_compound_interest(principal: float, rate: float, time: float) -> float:
+    """Calculate compound interest using the standard formula.
+
+    :param principal: The initial amount of money invested
+    :type principal: float
+    :param rate: The annual interest rate as a decimal (e.g., 0.05 for 5%)
+    :type rate: float
+    :param time: The time period in years
+    :type time: float
+    :return: The final amount after compound interest
+    :rtype: float
+    """
+    return principal * (1 + rate) ** time
+```
+
+All three styles are automatically parsed and provide the same rich context to the LLM. Choose the style that best fits your project's conventions.
+
 ### Step 1: Defining New Tools
 
 We will define tools for scraping stock prices, calculating moving averages, and determining trends.
@@ -112,6 +269,37 @@ from typing import List
 
 @lmb.tool
 def scrape_stock_prices(symbol: str) -> List[float]:
+    """Fetch historical stock prices for a given symbol.
+
+    Retrieves the last 100 days of daily closing prices for a stock symbol
+    from Yahoo Finance. This data can be used for technical analysis and
+    trend calculations.
+
+    Parameters
+    ----------
+    symbol : str
+        The stock symbol to fetch data for (e.g., 'AAPL', 'MSFT', 'GOOGL')
+
+    Returns
+    -------
+    List[float]
+        List of closing prices for the last 100 trading days
+
+    Raises
+    ------
+    httpx.RequestError
+        If the request to Yahoo Finance fails
+    KeyError
+        If the response format is unexpected
+
+    Examples
+    --------
+    >>> prices = scrape_stock_prices('AAPL')
+    >>> len(prices)
+    100
+    >>> all(isinstance(p, float) for p in prices)
+    True
+    """
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
     params = {"range": "100d", "interval": "1d"}
     with httpx.Client() as client:
@@ -122,6 +310,36 @@ def scrape_stock_prices(symbol: str) -> List[float]:
 
 @lmb.tool
 def calculate_moving_average(data: List[float], window: int = 20) -> List[float]:
+    """Calculate the moving average of a time series.
+
+    Computes a simple moving average over a specified window size. The moving
+    average is useful for smoothing out price fluctuations and identifying trends.
+    Values before the window size are filled with NaN.
+
+    Parameters
+    ----------
+    data : List[float]
+        The time series data to calculate moving average for
+    window : int, optional
+        The window size for the moving average, by default 20
+
+    Returns
+    -------
+    List[float]
+        List of moving average values (same length as input data)
+
+    Raises
+    ------
+    ValueError
+        If window size is larger than the data length
+
+    Examples
+    --------
+    >>> data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    >>> ma = calculate_moving_average(data, window=3)
+    >>> ma[2:5]  # First valid moving average values
+    [2.0, 3.0, 4.0]
+    """
     if window > len(data):
         raise ValueError("Window size cannot be larger than data length")
     ma = np.full(len(data), np.nan)
@@ -131,6 +349,36 @@ def calculate_moving_average(data: List[float], window: int = 20) -> List[float]
 
 @lmb.tool
 def calculate_slope(data: List[float], days: int = None) -> float:
+    """Calculate the slope of a linear trend in time series data.
+
+    Fits a linear regression to the time series data and returns the slope,
+    which indicates the direction and strength of the trend. A positive slope
+    indicates an upward trend, while a negative slope indicates a downward trend.
+
+    Parameters
+    ----------
+    data : List[float]
+        The time series data to analyze
+    days : int, optional
+        Number of most recent days to analyze. If None, uses all data.
+
+    Returns
+    -------
+    float
+        The slope of the linear trend (positive = upward, negative = downward)
+
+    Raises
+    ------
+    ValueError
+        If the requested number of days exceeds the data length
+
+    Examples
+    --------
+    >>> data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    >>> slope = calculate_slope(data)
+    >>> slope > 0  # Should be positive for upward trend
+    True
+    """
     if days is not None and days > len(data):
         raise ValueError("Requested days exceeds data length")
     if days:
@@ -314,14 +562,64 @@ streaming_bot = AgentBot(
 response = streaming_bot("Your request")
 ```
 
+## Part 6: The Impact on System Prompts
+
+With self-documenting tools, you can significantly simplify your system prompts. Instead of providing detailed instructions about when and how to use each tool, the LLM automatically understands this from the tool documentation.
+
+### Before: Complex System Prompts
+```python
+# Old approach - required detailed system prompt
+bot = lmb.AgentBot(
+    system_prompt=lmb.system("""
+    You are a financial assistant. You have access to these tools:
+
+    1. calculate_total_with_tip: Use this when users want to add a tip to a bill.
+       Takes bill_amount (float) and tip_rate (float, 0-1). Returns total with tip.
+
+    2. split_bill: Use this when users want to split a bill among people.
+       Takes total_amount (float) and num_people (int). Returns amount per person.
+
+    3. scrape_stock_prices: Use this to get stock data for analysis.
+       Takes symbol (str). Returns list of prices.
+
+    Always use the appropriate tool for each task.
+    """),
+    tools=[calculate_total_with_tip, split_bill, scrape_stock_prices],
+)
+```
+
+### After: Simple System Prompts
+```python
+# New approach - tools are self-documenting
+bot = lmb.AgentBot(
+    system_prompt=lmb.system("You are a helpful financial assistant."),
+    tools=[calculate_total_with_tip, split_bill, scrape_stock_prices],
+)
+```
+
+The LLM automatically understands:
+- When to use each tool based on the comprehensive descriptions
+- What parameters each tool expects and their types
+- What each tool returns and in what format
+- How to handle errors and edge cases
+- Usage examples for each tool
+
+This makes your bots more maintainable and reduces the cognitive load of writing complex system prompts.
+
 ## Conclusion
 
 Congratulations! You have successfully built and used an AgentBot to automate tasks related to restaurant bills and stock price analysis. You've also learned how to:
 
-- Create bots with custom tools
+- Create bots with custom tools using comprehensive documentation
+- Write self-documenting tools that don't require additional system prompt instructions
+- Use multiple docstring styles (NumPy, Google, Sphinx) for tool documentation
+- Follow best practices for tool documentation that maximize LLM understanding
 - Use the planner bot for complex tasks
 - Monitor bot performance with analytics
 - Handle errors and configure advanced settings
 - Stream responses in real-time
+- Simplify system prompts through self-documenting tools
+
+The enhanced docstring parsing capabilities make LlamaBot tools more powerful and easier to use. By writing comprehensive, well-documented tools, you create a more intelligent and autonomous agent system that requires less manual instruction and configuration.
 
 You can now explore further by adding more tools and customizing the bot to suit your needs. Happy coding!
