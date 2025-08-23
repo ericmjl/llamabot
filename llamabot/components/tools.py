@@ -12,15 +12,15 @@ The design of a tool is as follows:
 import ast
 import os
 import random
-import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Tuple
 from uuid import uuid4
 
 import requests
 from bs4 import BeautifulSoup
+from docstring_parser import parse
 from duckduckgo_search.exceptions import DuckDuckGoSearchException
 from loguru import logger
 
@@ -28,17 +28,6 @@ from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import user
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.prompt_manager import prompt
-
-# Pre-compile regex patterns for better performance
-NUMPY_PARAM_PATTERN = re.compile(r"^(\w+)\s*:\s*(.+?)(?:\s*,\s*optional)?$")
-NUMPY_SECTION_PATTERN = re.compile(r"^\w+\s*:")
-GOOGLE_ARGS_PATTERN = re.compile(r"^\s*Args?:")
-GOOGLE_PARAM_PATTERN = re.compile(r"^(\w+)\s*(?:\(([^)]+)\))?:\s*(.+)?$")
-GOOGLE_SECTION_PATTERN = re.compile(r"^\s*(Args?|Returns?|Raises?):")
-SPHINX_PARAM_PATTERN = re.compile(r":param\s+(\w+):\s*(.+)$")
-SPHINX_TYPE_PATTERN = re.compile(r":type\s+(\w+):\s*(.+)$")
-SPHINX_DIRECTIVE_PATTERN = re.compile(r":(param|type|return|rtype):")
-DASH_PATTERN = re.compile(r"^---")
 
 
 def json_schema_type(type_name: str) -> str:
@@ -68,137 +57,10 @@ def json_schema_type(type_name: str) -> str:
         "path": "string",
         "uuid": "string",
         "decimal": "number",
-        "None": "null",
+        "none": "null",
         "null": "null",
     }
     return type_mapping.get(type_name.lower(), "string")
-
-
-def parse_docstring(docstring: str) -> Dict[str, Any]:
-    """Parse a docstring and extract summary and parameter information.
-
-    Supports numpy, google, and sphinx-style docstrings.
-
-    :param docstring: The docstring to parse
-    :return: Dictionary with 'summary' and 'parameters' keys
-    """
-    if not docstring:
-        return {"summary": "", "parameters": {}}
-
-    lines = docstring.strip().split("\n")
-    summary_lines = []
-    parameters = {}
-    current_param_desc = []
-
-    # Detect docstring style and parse accordingly
-    style = "unknown"
-
-    # Check for numpy style (Parameters section with dashes)
-    if any("Parameters" in line and "---" in line for line in lines):
-        style = "numpy"
-    # Check for google style (Args: section)
-    elif any(GOOGLE_ARGS_PATTERN.match(line) for line in lines):
-        style = "google"
-    # Check for sphinx style (:param: or :type: directives)
-    elif any(
-        SPHINX_PARAM_PATTERN.search(line) or SPHINX_TYPE_PATTERN.search(line)
-        for line in lines
-    ):
-        style = "sphinx"
-
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip()
-
-        if style == "numpy":
-            # Parse numpy style
-            if "Parameters" in line and "---" in line:
-                i += 1  # Skip the separator line
-                while i < len(lines) and lines[i].strip():
-                    param_line = lines[i].strip()
-                    if param_line and not DASH_PATTERN.match(param_line):
-                        # Parse parameter line: name : type, optional
-                        param_match = NUMPY_PARAM_PATTERN.match(param_line)
-                        if param_match:
-                            param_name = param_match.group(1)
-                            param_type = param_match.group(2).strip()
-                            current_param_desc = []
-
-                            # Extract description from next lines
-                            i += 1
-                            while (
-                                i < len(lines)
-                                and lines[i].strip()
-                                and not NUMPY_SECTION_PATTERN.match(lines[i])
-                            ):
-                                current_param_desc.append(lines[i].strip())
-                                i += 1
-
-                            parameters[param_name] = {
-                                "type": json_schema_type(param_type),
-                                "description": (
-                                    " ".join(current_param_desc)
-                                    if current_param_desc
-                                    else None
-                                ),
-                            }
-                            continue
-                    i += 1
-            elif not DASH_PATTERN.match(line) and not NUMPY_SECTION_PATTERN.match(line):
-                summary_lines.append(line)
-        elif style == "google":
-            # Parse google style
-            if GOOGLE_ARGS_PATTERN.match(line):
-                i += 1
-                while i < len(lines) and lines[i].strip():
-                    param_line = lines[i].strip()
-                    # More flexible indentation detection - any whitespace at start
-                    if re.match(r"^\s+", param_line) and ":" in param_line:
-                        # Parse parameter line: name (type): description
-                        # More flexible pattern that handles missing type or description
-                        param_match = GOOGLE_PARAM_PATTERN.match(param_line)
-                        if param_match:
-                            param_name = param_match.group(1)
-                            param_type = (
-                                param_match.group(2) or "string"
-                            )  # Default to string if no type
-                            param_desc = (
-                                param_match.group(3) or ""
-                            )  # Default to empty if no description
-
-                            parameters[param_name] = {
-                                "type": json_schema_type(param_type),
-                                "description": param_desc,
-                            }
-                    i += 1
-            elif not GOOGLE_SECTION_PATTERN.match(line):
-                summary_lines.append(line)
-        elif style == "sphinx":
-            # Parse sphinx style
-            param_match = SPHINX_PARAM_PATTERN.search(line)
-            if param_match:
-                param_name = param_match.group(1)
-                param_desc = param_match.group(2)
-
-                # Look for type information
-                param_type = "string"  # default
-                for j in range(i, min(i + 3, len(lines))):
-                    type_match = SPHINX_TYPE_PATTERN.search(lines[j])
-                    if type_match and type_match.group(1) == param_name:
-                        param_type = json_schema_type(type_match.group(2).strip())
-                        break
-
-                parameters[param_name] = {"type": param_type, "description": param_desc}
-            elif not SPHINX_DIRECTIVE_PATTERN.search(line):
-                summary_lines.append(line)
-        else:
-            # Unknown style - just collect summary
-            if not DASH_PATTERN.match(line) and not NUMPY_SECTION_PATTERN.match(line):
-                summary_lines.append(line)
-
-        i += 1
-
-    return {"summary": " ".join(summary_lines).strip(), "parameters": parameters}
 
 
 def _extract_type_from_annotation(annotation) -> str:
@@ -211,15 +73,24 @@ def _extract_type_from_annotation(annotation) -> str:
     from typing import Union
 
     try:
+        # Handle basic types (int, str, etc.) - they have __name__ attribute
+        # But skip type aliases like Optional, Union, etc.
+        if hasattr(annotation, "__name__") and not hasattr(annotation, "__origin__"):
+            return json_schema_type(annotation.__name__)
+
+        # Handle complex types
         origin = typing.get_origin(annotation)
+
         if origin is Union:
             args = typing.get_args(annotation)
             # Handle Optional[T] and Union[T, None]
             non_none_args = [arg for arg in args if arg is not type(None)]
             if non_none_args:
-                return json_schema_type(non_none_args[0].__name__)
-        elif hasattr(annotation, "__name__"):
-            return json_schema_type(annotation.__name__)
+                return _extract_type_from_annotation(non_none_args[0])
+        elif origin is list:
+            return "array"
+        elif origin is dict:
+            return "object"
     except Exception:
         pass
     return "string"  # fallback
@@ -239,8 +110,8 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
     docstring = inspect.getdoc(input_function) or ""
 
     # Parse docstring
-    parsed = parse_docstring(docstring)
-    description = parsed["summary"]
+    parsed = parse(docstring)
+    description = parsed.short_description or ""
 
     # Get function parameters and their types from annotations
     parameters = {}
@@ -248,29 +119,42 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
     param_info = inspect.signature(input_function).parameters
 
     for param_name, param in param_info.items():
+        # Require type hints for all parameters
+        if param.annotation == inspect.Parameter.empty:
+            raise ValueError(
+                f"Parameter '{param_name}' in function '{name}' must have a type annotation"
+            )
+
+        # Handle optional parameters
+        is_required = param.default == param.empty
+        if not is_required:
+            # For optional parameters, we'll still include them but mark as not required
+            pass
+
         # Get type from annotation
-        param_type = None
-        if hasattr(param, "annotation") and param.annotation != inspect.Parameter.empty:
-            param_type = _extract_type_from_annotation(param.annotation)
+        param_type = _extract_type_from_annotation(param.annotation)
+        if not param_type:
+            raise ValueError(
+                f"Could not extract type for parameter '{param_name}' in function '{name}'"
+            )
 
         # Get description from parsed docstring
-        param_description = None
-        if param_name in parsed["parameters"]:
-            param_description = parsed["parameters"][param_name].get("description")
-            # Override type if specified in docstring
-            if parsed["parameters"][param_name].get("type"):
-                param_type = parsed["parameters"][param_name]["type"]
+        param_description = ""
+        for param in parsed.params:
+            if param.arg_name == param_name:
+                param_description = param.description or ""
+                break
 
         param_dict = {
-            "type": param_type or "string",
+            "type": param_type,
             "description": param_description,
         }
 
-        # Remove None values
+        # Remove None values but keep empty strings
         parameters[param_name] = {k: v for k, v in param_dict.items() if v is not None}
 
-        # Check if the parameter has no default value (i.e., it's required)
-        if param.default == param.empty:
+        # Only add to required list if parameter has no default
+        if is_required:
             required_params.append(param_name)
 
     # Create the dictionary
@@ -283,9 +167,8 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
         },
     }
 
-    # Add "required" key if there are required parameters
-    if required_params:
-        result["parameters"]["required"] = required_params
+    # Always add "required" key (even if empty)
+    result["parameters"]["required"] = required_params
 
     return result
 
@@ -589,8 +472,6 @@ def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[st
 def today_date() -> str:
     """Get the current date.
 
-    Use this tool when users need current date/time information.
-
     :return: The current date in YYYY-MM-DD format
     """
     return datetime.now().strftime("%Y-%m-%d")
@@ -599,25 +480,23 @@ def today_date() -> str:
 @tool
 def write_and_execute_script(
     code: str,
-    dependencies_str: Optional[str] = None,
+    dependencies_str: str = "",
     python_version: str = ">=3.11",
 ) -> Dict[str, Any]:
     """Write and execute a Python script in a secure sandbox.
     Dependencies should be specified as a comma-separated string, e.g. "requests,beautifulsoup4".
     Script output will be captured from stdout. Use print() to output results.
     Include lots of print() statements in your code to see what is happening.
-    Estimate the timeout parameter to avoid errors.
 
     :param code: The Python code to execute
     :param dependencies_str: Comma-separated string of pip dependencies
-    :param python_version: Python version requirement
-    :param timeout: Execution timeout in seconds
+    :param python_version: Python version requirement. Should look like ">=3.11"
     :return: Dictionary containing script execution results
     """
     # Parse dependencies string into list
     dependencies = list(
         dep.strip()
-        for dep in (dependencies_str or "").split(",")
+        for dep in dependencies_str.split(",")
         if dep.strip()  # Filter out empty strings
     )
     # Modify the Python version if it doesn't have a version specifier
@@ -657,10 +536,13 @@ def write_and_execute_code(globals_dict: dict):
     @tool
     def write_and_execute_code_wrapper(placeholder_function: str, keyword_args: dict):
         """Write and execute `placeholder_function` with the passed in `keyword_args`.
+
         Use this tool for any task that requires custom Python code generation and execution.
         This tool has access to ALL globals in the current runtime environment (variables, dataframes, functions, etc.).
         Perfect for: data analysis, calculations, transformations, visualizations, custom algorithms.
+
         ## Code Generation Guidelines:
+
         1. **Write self-contained Python functions** with ALL imports inside the function body
         2. **Place all imports at the beginning of the function**: import statements must be the first lines inside the function
         3. **Include all required libraries**: pandas, numpy, matplotlib, etc. - import everything the function needs
@@ -669,12 +551,16 @@ def write_and_execute_code(globals_dict: dict):
         6. **Provide keyword arguments** when the function requires parameters
         7. **Make functions reusable** - they will be stored globally for future use
         8. **ALWAYS RETURN A VALUE**: Every function must explicitly return something - never just print, display, or show results without returning them. Even for plotting functions, return the figure/axes object.
+
         ## Function Arguments Handling:
+
         **CRITICAL**: You MUST match the function signature with the keyword_args:
         - **If your function takes NO parameters** (e.g., `def analyze_data():`), then pass an **empty dictionary**: `{}`
         - **If your function takes parameters** (e.g., `def filter_data(min_age, department):`), then pass the required arguments as a dictionary: `{"min_age": 30, "department": "Engineering"}`
         - **Never pass keyword_args that don't match the function signature** - this will cause execution errors
+
         ## Code Structure Example:
+
         ```python
         # Function with NO parameters - use empty dict {}
         def analyze_departments():
@@ -690,19 +576,25 @@ def write_and_execute_code(globals_dict: dict):
             filtered = fake_df[(fake_df['age'] >= min_age) & (fake_df['department'] == department)]
             return filtered
         ```
+
         ## Return Value Requirements:
+
         - **Data analysis functions**: Return the computed results (numbers, DataFrames, lists, dictionaries)
         - **Plotting functions**: Return the figure or axes object (e.g., `return fig` or `return plt.gca()`)
         - **Filter/transformation functions**: Return the processed data
         - **Calculation functions**: Return the calculated values
         - **Utility functions**: Return relevant output (status, processed data, etc.)
         - **Never return None implicitly** - always have an explicit return statement
+
         ## Code Access Capabilities:
+
         The generated code will have access to:
+
         - All global variables and dataframes in the current session
         - Any previously defined functions
         - The ability to import any standard Python libraries within the function
         - The ability to create new reusable functions that will be stored globally
+
         :param placeholder_function: The function to execute (complete Python function as string).
         :param keyword_args: The keyword arguments to pass to the function (dictionary matching function parameters).
         :return: The result of the function execution.
