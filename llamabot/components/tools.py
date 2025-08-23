@@ -29,6 +29,17 @@ from llamabot.components.messages import user
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.prompt_manager import prompt
 
+# Pre-compile regex patterns for better performance
+NUMPY_PARAM_PATTERN = re.compile(r"^(\w+)\s*:\s*(.+?)(?:\s*,\s*optional)?$")
+NUMPY_SECTION_PATTERN = re.compile(r"^\w+\s*:")
+GOOGLE_ARGS_PATTERN = re.compile(r"^\s*Args?:")
+GOOGLE_PARAM_PATTERN = re.compile(r"^(\w+)\s*(?:\(([^)]+)\))?:\s*(.+)?$")
+GOOGLE_SECTION_PATTERN = re.compile(r"^\s*(Args?|Returns?|Raises?):")
+SPHINX_PARAM_PATTERN = re.compile(r":param\s+(\w+):\s*(.+)$")
+SPHINX_TYPE_PATTERN = re.compile(r":type\s+(\w+):\s*(.+)$")
+SPHINX_DIRECTIVE_PATTERN = re.compile(r":(param|type|return|rtype):")
+DASH_PATTERN = re.compile(r"^---")
+
 
 def json_schema_type(type_name: str) -> str:
     """Convert Python type names to JSON schema types.
@@ -86,11 +97,12 @@ def parse_docstring(docstring: str) -> Dict[str, Any]:
     if any("Parameters" in line and "---" in line for line in lines):
         style = "numpy"
     # Check for google style (Args: section)
-    elif any(re.match(r"^\s*Args?:", line) for line in lines):
+    elif any(GOOGLE_ARGS_PATTERN.match(line) for line in lines):
         style = "google"
     # Check for sphinx style (:param: or :type: directives)
     elif any(
-        re.search(r":param\s+", line) or re.search(r":type\s+", line) for line in lines
+        SPHINX_PARAM_PATTERN.search(line) or SPHINX_TYPE_PATTERN.search(line)
+        for line in lines
     ):
         style = "sphinx"
 
@@ -104,11 +116,9 @@ def parse_docstring(docstring: str) -> Dict[str, Any]:
                 i += 1  # Skip the separator line
                 while i < len(lines) and lines[i].strip():
                     param_line = lines[i].strip()
-                    if param_line and not param_line.startswith("---"):
+                    if param_line and not DASH_PATTERN.match(param_line):
                         # Parse parameter line: name : type, optional
-                        param_match = re.match(
-                            r"^(\w+)\s*:\s*(.+?)(?:\s*,\s*optional)?$", param_line
-                        )
+                        param_match = NUMPY_PARAM_PATTERN.match(param_line)
                         if param_match:
                             param_name = param_match.group(1)
                             param_type = param_match.group(2).strip()
@@ -119,7 +129,7 @@ def parse_docstring(docstring: str) -> Dict[str, Any]:
                             while (
                                 i < len(lines)
                                 and lines[i].strip()
-                                and not re.match(r"^\w+\s*:", lines[i])
+                                and not NUMPY_SECTION_PATTERN.match(lines[i])
                             ):
                                 current_param_desc.append(lines[i].strip())
                                 i += 1
@@ -134,34 +144,38 @@ def parse_docstring(docstring: str) -> Dict[str, Any]:
                             }
                             continue
                     i += 1
-            elif not line.startswith("---") and not re.match(r"^\w+\s*:", line):
+            elif not DASH_PATTERN.match(line) and not NUMPY_SECTION_PATTERN.match(line):
                 summary_lines.append(line)
         elif style == "google":
             # Parse google style
-            if re.match(r"^\s*Args?:", line):
+            if GOOGLE_ARGS_PATTERN.match(line):
                 i += 1
                 while i < len(lines) and lines[i].strip():
                     param_line = lines[i].strip()
-                    if param_line.startswith("    ") and ":" in param_line:
+                    # More flexible indentation detection - any whitespace at start
+                    if re.match(r"^\s+", param_line) and ":" in param_line:
                         # Parse parameter line: name (type): description
-                        param_match = re.match(
-                            r"^(\w+)\s*\(([^)]+)\):\s*(.+)$", param_line
-                        )
+                        # More flexible pattern that handles missing type or description
+                        param_match = GOOGLE_PARAM_PATTERN.match(param_line)
                         if param_match:
                             param_name = param_match.group(1)
-                            param_type = param_match.group(2)
-                            param_desc = param_match.group(3)
+                            param_type = (
+                                param_match.group(2) or "string"
+                            )  # Default to string if no type
+                            param_desc = (
+                                param_match.group(3) or ""
+                            )  # Default to empty if no description
 
                             parameters[param_name] = {
                                 "type": json_schema_type(param_type),
                                 "description": param_desc,
                             }
                     i += 1
-            elif not re.match(r"^\s*(Args?|Returns?|Raises?):", line):
+            elif not GOOGLE_SECTION_PATTERN.match(line):
                 summary_lines.append(line)
         elif style == "sphinx":
             # Parse sphinx style
-            param_match = re.search(r":param\s+(\w+):\s*(.+)$", line)
+            param_match = SPHINX_PARAM_PATTERN.search(line)
             if param_match:
                 param_name = param_match.group(1)
                 param_desc = param_match.group(2)
@@ -169,19 +183,17 @@ def parse_docstring(docstring: str) -> Dict[str, Any]:
                 # Look for type information
                 param_type = "string"  # default
                 for j in range(i, min(i + 3, len(lines))):
-                    type_match = re.search(
-                        r":type\s+" + re.escape(param_name) + r":\s*(.+)$", lines[j]
-                    )
-                    if type_match:
-                        param_type = json_schema_type(type_match.group(1).strip())
+                    type_match = SPHINX_TYPE_PATTERN.search(lines[j])
+                    if type_match and type_match.group(1) == param_name:
+                        param_type = json_schema_type(type_match.group(2).strip())
                         break
 
                 parameters[param_name] = {"type": param_type, "description": param_desc}
-            elif not re.search(r":(param|type|return|rtype):", line):
+            elif not SPHINX_DIRECTIVE_PATTERN.search(line):
                 summary_lines.append(line)
         else:
             # Unknown style - just collect summary
-            if not line.startswith("---") and not re.match(r"^\w+\s*:", line):
+            if not DASH_PATTERN.match(line) and not NUMPY_SECTION_PATTERN.match(line):
                 summary_lines.append(line)
 
         i += 1
