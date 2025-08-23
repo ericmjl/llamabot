@@ -37,7 +37,7 @@ ignore-property-decorators = false
 ignore-module = false
 fail-under = 100
 exclude = ["setup.py", "docs", "build", "examples"]
-ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*", "^no_docstring_func$"]
+ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*", "^no_docstring_func$", "^empty_func$"]
 verbose = 2
 quiet = false
 whitelist-regex = []
@@ -85,7 +85,8 @@ dependencies = [
     "chonkie",
     "starlette",
     "duckduckgo-search",
-    "networkx"
+    "networkx",
+    "docstring-parser>=0.17.0,<0.18"
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
