@@ -311,6 +311,82 @@ def test_function_to_dict_no_docstring():
     assert "b" in result["parameters"]["required"]
 
 
+def test_parse_docstring_malformed():
+    """Test parsing malformed docstrings."""
+    # Test docstring with broken numpy format
+    docstring = "Broken\nParameters\n--\na : int missing description"
+    result = parse_docstring(docstring)
+    # Should handle gracefully and extract what it can
+    assert "Broken" in result["summary"]
+    # The malformed parameter section should be ignored
+    assert result["parameters"] == {}
+
+    # Test docstring with broken google format
+    docstring = "Broken\nArgs:\n    x (int: missing closing paren"
+    result = parse_docstring(docstring)
+    assert "Broken" in result["summary"]
+    assert result["parameters"] == {}
+
+    # Test docstring with broken sphinx format
+    docstring = "Broken\n:param x: description\n:type x: broken type"
+    result = parse_docstring(docstring)
+    assert "Broken" in result["summary"]
+    # Should still try to extract parameters even if malformed
+    assert "x" in result["parameters"]
+
+
+def test_parse_docstring_long_descriptions():
+    """Test parsing docstrings with long parameter descriptions."""
+    # Test numpy style with multi-paragraph descriptions
+    docstring = """
+    Process complex data with extensive documentation.
+
+    Parameters
+    ----------
+    data : list
+        The input data to process. This parameter accepts a list of items
+        that will be processed according to the specified algorithm.
+
+        The data should be pre-sorted and validated before passing to this
+        function. Invalid data will be filtered out automatically.
+
+        Examples of valid data:
+        - [1, 2, 3, 4, 5]
+        - ['a', 'b', 'c']
+        - [{'id': 1, 'value': 100}]
+
+    threshold : float
+        The threshold value for processing. This is a critical parameter
+        that determines the sensitivity of the algorithm. Values between
+        0.0 and 1.0 are recommended for optimal performance.
+
+        Lower values (0.0-0.3) will result in more aggressive filtering.
+        Higher values (0.7-1.0) will be more permissive.
+
+    Returns
+    -------
+    dict
+        The processed result containing statistics and filtered data.
+    """
+
+    result = parse_docstring(docstring)
+    assert "Process complex data with extensive documentation." in result["summary"]
+    assert "data" in result["parameters"]
+    assert result["parameters"]["data"]["type"] == "array"
+    # Should capture the full multi-paragraph description
+    description = result["parameters"]["data"]["description"]
+    assert "The input data to process" in description
+    assert "Examples of valid data" in description
+    assert "pre-sorted and validated" in description
+
+    assert "threshold" in result["parameters"]
+    assert result["parameters"]["threshold"]["type"] == "number"
+    threshold_desc = result["parameters"]["threshold"]["description"]
+    assert "The threshold value for processing" in threshold_desc
+    assert "Lower values (0.0-0.3)" in threshold_desc
+    assert "Higher values (0.7-1.0)" in threshold_desc
+
+
 def test_tool_decorator():
     """Test that the tool decorator properly attaches JSON schema to functions."""
 

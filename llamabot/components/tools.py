@@ -51,6 +51,12 @@ def json_schema_type(type_name: str) -> str:
         "object": "object",
         "tuple": "array",
         "set": "array",
+        "datetime": "string",
+        "date": "string",
+        "time": "string",
+        "path": "string",
+        "uuid": "string",
+        "decimal": "number",
         "None": "null",
         "null": "null",
     }
@@ -183,6 +189,30 @@ def parse_docstring(docstring: str) -> Dict[str, Any]:
     return {"summary": " ".join(summary_lines).strip(), "parameters": parameters}
 
 
+def _extract_type_from_annotation(annotation) -> str:
+    """Extract JSON schema type from type annotation using typing module.
+
+    :param annotation: The type annotation to extract from
+    :return: The corresponding JSON schema type
+    """
+    import typing
+    from typing import Union
+
+    try:
+        origin = typing.get_origin(annotation)
+        if origin is Union:
+            args = typing.get_args(annotation)
+            # Handle Optional[T] and Union[T, None]
+            non_none_args = [arg for arg in args if arg is not type(None)]
+            if non_none_args:
+                return json_schema_type(non_none_args[0].__name__)
+        elif hasattr(annotation, "__name__"):
+            return json_schema_type(annotation.__name__)
+    except Exception:
+        pass
+    return "string"  # fallback
+
+
 def function_to_dict(input_function: Callable) -> Dict[str, Any]:
     """Convert a function to a dictionary for OpenAI function calling.
 
@@ -209,25 +239,7 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
         # Get type from annotation
         param_type = None
         if hasattr(param, "annotation") and param.annotation != inspect.Parameter.empty:
-            if hasattr(param.annotation, "__name__"):
-                param_type = json_schema_type(param.annotation.__name__)
-            else:
-                # Handle complex types like Optional[str]
-                type_str = str(param.annotation)
-                if "Optional" in type_str or "Union" in type_str:
-                    # Extract the base type
-                    if "str" in type_str:
-                        param_type = "string"
-                    elif "int" in type_str:
-                        param_type = "integer"
-                    elif "float" in type_str:
-                        param_type = "number"
-                    elif "bool" in type_str:
-                        param_type = "boolean"
-                    else:
-                        param_type = "string"
-                else:
-                    param_type = "string"
+            param_type = _extract_type_from_annotation(param.annotation)
 
         # Get description from parsed docstring
         param_description = None
