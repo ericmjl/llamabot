@@ -38,6 +38,8 @@ def _(lmb):
         This function computes the final amount after compound interest is applied
         to a principal amount over a specified time period.
 
+        If we have no other notes...
+
         Parameters
         ----------
         principal : float

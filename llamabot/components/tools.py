@@ -158,6 +158,13 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
             "description": param_description,
         }
 
+        # Add default value if parameter has one
+        if not is_required:
+            # Convert default value to appropriate JSON-serializable type
+            default_value = param.default
+            if default_value is not None:
+                param_dict["default"] = default_value
+
         # Remove None values but keep empty strings
         parameters[param_name] = {k: v for k, v in param_dict.items() if v is not None}
 
@@ -542,7 +549,9 @@ def write_and_execute_code(globals_dict: dict):
     """
 
     @tool
-    def write_and_execute_code_wrapper(placeholder_function: str, keyword_args: dict):
+    def write_and_execute_code_wrapper(
+        placeholder_function: str, keyword_args: dict = dict()
+    ):
         """Write and execute `placeholder_function` with the passed in `keyword_args`.
 
         Use this tool for any task that requires custom Python code generation and execution.
@@ -562,9 +571,10 @@ def write_and_execute_code(globals_dict: dict):
 
         ## Function Arguments Handling:
 
-        **CRITICAL**: You MUST match the function signature with the keyword_args:
-        - **If your function takes NO parameters** (e.g., `def analyze_data():`), then pass an **empty dictionary**: `{}`
-        - **If your function takes parameters** (e.g., `def filter_data(min_age, department):`), then pass the required arguments as a dictionary: `{"min_age": 30, "department": "Engineering"}`
+        **CRITICAL**: You MUST always pass in keyword_args, which is a dictionary that can be empty, and match the function signature with the keyword_args:
+
+        - **If your function takes NO parameters** (e.g., `def analyze_data():`), then pass keyword_args as an **empty dictionary**: `{}`
+        - **If your function takes parameters** (e.g., `def filter_data(min_age, department):`), then pass keyword_args as a dictionary: `{"min_age": 30, "department": "Engineering"}`
         - **Never pass keyword_args that don't match the function signature** - this will cause execution errors
 
         ## Code Structure Example:

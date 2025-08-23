@@ -1,13 +1,14 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "llamabot==0.13.2",
+#     "llamabot==0.13.6",
 #     "loguru==0.7.3",
 #     "marimo",
 #     "numpy==2.3.2",
 #     "pandas==2.3.1",
 #     "matplotlib",
 #     "seaborn",
+#     "scikit-learn",
 # ]
 #
 # [tool.uv.sources]
@@ -33,10 +34,11 @@ def _():
     from llamabot.bot.agentbot import planner_bot_system_prompt
     from loguru import logger
     from typing import Callable, List
+    import marimo as mo
 
     # Enable debug mode to see detailed logs
     lmb.set_debug_mode(True)
-    return lmb, logger
+    return lmb, logger, mo
 
 
 @app.cell
@@ -147,6 +149,13 @@ def _():
 
 
 @app.cell
+def _(write_and_execute_code):
+    f = write_and_execute_code(globals_dict=globals())
+    f.json_schema
+    return
+
+
+@app.cell
 def _(ChatMemory, ToolBot, toolbot_sysprompt, write_and_execute_code):
     import json
 
@@ -163,39 +172,48 @@ def _(ChatMemory, ToolBot, toolbot_sysprompt, write_and_execute_code):
 
 
 @app.cell
-def _(bot, json, logger):
+def _(bot, json, logger, mo):
     def model(messages):
         logger.debug(messages[-1].content)
         # prompt = toolbot_userprompt(messages[-1].content)
-        tool = bot(messages[-1].content)
-        logger.debug(tool)
-        function = tool[0].function
-        logger.debug(function.name)
-        logger.debug("----")
-        logger.debug(json.loads(function.arguments).keys())
-        logger.debug("----")
-        logger.debug("----")
-        return bot.name_to_tool_map[function.name](**json.loads(function.arguments))
+        tools = bot(messages[-1].content)
+
+        responses = []
+        for tool in tools:
+            function = tool.function
+            logger.debug(f"Function name: {function.name}")
+            logger.debug(
+                f"Function arguments returned: {json.loads(function.arguments).keys()}"
+            )
+            try:
+                result = bot.name_to_tool_map[function.name](
+                    **json.loads(function.arguments)
+                )
+                if isinstance(result, str):
+                    result = mo.md(result)
+                responses.append(result)
+            except Exception as e:
+                responses.append(f"Error: {e}")
+        return responses
 
     return (model,)
 
 
 @app.cell
 def _(lmb, model):
-    model(
+    result = model(
         [
             lmb.user(
-                "Calculate the salary-to-budget ratio for each department and identify employees whose salaries are above or below the department average, considering when each department was established. Return for me as a pandas dataframe"
+                "Calculate the salary-to-budget ratio for each department and identify employees whose salaries are above or below the department average, considering when each department was established. Return for me as a pandas dataframe, and also return the code that you wrote to make it happen."
             )
         ]
     )
+    result
     return
 
 
 @app.cell
-def _(model):
-    import marimo as mo
-
+def _(mo, model):
     starter_prompts = [
         "Compare the average salary per employee against the total department budget. Which departments are most cost-efficient in terms of salary spending relative to their budget?",
         "Analyze employee performance scores by office type (Open Office, Creative Space, etc.). Create a visualization showing how different work environments correlate with performance.",
@@ -205,6 +223,20 @@ def _(model):
 
     chat = mo.ui.chat(model, prompts=starter_prompts)
     chat
+    return
+
+
+@app.cell
+def _(mo):
+    m1 = mo.md("Hey there!")
+    m2 = mo.md("What's up?")
+
+    [m1, m2]
+    return
+
+
+@app.cell
+def _():
     return
 
 

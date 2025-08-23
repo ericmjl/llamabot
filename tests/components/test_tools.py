@@ -454,6 +454,41 @@ def test_tool_decorator():
     assert example_func(1) == "1 default"
     assert example_func(2, "test") == "2 test"
 
+    # Test that default values are included in the schema
+    assert "default" in schema["function"]["parameters"]["properties"]["b"]
+    assert schema["function"]["parameters"]["properties"]["b"]["default"] == "default"
+
+
+def test_function_to_dict_with_default_values():
+    """Test that function_to_dict properly includes default values in the schema."""
+
+    def test_func(a: int, b: str = "hello", c: float = 3.14, d: bool = True) -> str:
+        """Test function with various default values."""
+        return f"{a} {b} {c} {d}"
+
+    result = function_to_dict(test_func)
+
+    # Check that required parameter doesn't have default
+    assert "a" in result["parameters"]["properties"]
+    assert "default" not in result["parameters"]["properties"]["a"]
+    assert "a" in result["parameters"]["required"]
+
+    # Check that optional parameters have defaults
+    assert "b" in result["parameters"]["properties"]
+    assert "default" in result["parameters"]["properties"]["b"]
+    assert result["parameters"]["properties"]["b"]["default"] == "hello"
+    assert "b" not in result["parameters"]["required"]
+
+    assert "c" in result["parameters"]["properties"]
+    assert "default" in result["parameters"]["properties"]["c"]
+    assert result["parameters"]["properties"]["c"]["default"] == 3.14
+    assert "c" not in result["parameters"]["required"]
+
+    assert "d" in result["parameters"]["properties"]
+    assert "default" in result["parameters"]["properties"]["d"]
+    assert result["parameters"]["properties"]["d"]["default"] is True
+    assert "d" not in result["parameters"]["required"]
+
 
 def test_add_tool():
     """Test the add tool function."""
