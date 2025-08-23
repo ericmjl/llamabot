@@ -2,7 +2,7 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #     "anthropic==0.64.0",
-#     "llamabot==0.13.3",
+#     "llamabot==0.13.5",
 #     "marimo",
 # ]
 #
@@ -19,14 +19,16 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     from llamabot.components.tools import function_to_dict
+    import llamabot as lmb
 
-    return (function_to_dict,)
+    return function_to_dict, lmb
 
 
 @app.cell
-def _():
+def _(lmb):
     from typing import Dict
 
+    @lmb.tool
     def calculate_compound_interest(
         principal: float, rate: float, time: float, compound_frequency: int = 1
     ) -> Dict[str, float]:
@@ -107,6 +109,12 @@ def _():
 @app.cell
 def _(calculate_compound_interest, function_to_dict):
     function_to_dict(calculate_compound_interest)
+    return
+
+
+@app.cell
+def _(calculate_compound_interest):
+    calculate_compound_interest.json_schema
     return
 
 
