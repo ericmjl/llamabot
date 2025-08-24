@@ -38,7 +38,7 @@ def _():
 
     # Enable debug mode to see detailed logs
     lmb.set_debug_mode(True)
-    return lmb, logger, mo
+    return logger, mo
 
 
 @app.cell
@@ -47,6 +47,12 @@ def _():
     from llamabot.bot.toolbot import ToolBot, toolbot_sysprompt
 
     return ChatMemory, ToolBot, toolbot_sysprompt
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""## First DataFrame on Personnel""")
+    return
 
 
 @app.cell(hide_code=True)
@@ -91,6 +97,12 @@ def _():
 
     fake_df
     return fake_df, pd
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""## Second DataFrame on Departments""")
+    return
 
 
 @app.cell(hide_code=True)
@@ -149,9 +161,9 @@ def _():
 
 
 @app.cell
-def _(write_and_execute_code):
-    f = write_and_execute_code(globals_dict=globals())
-    f.json_schema
+def _():
+    # f = write_and_execute_code(globals_dict=globals())
+    # f.json_schema
     return
 
 
@@ -200,15 +212,15 @@ def _(bot, json, logger, mo):
 
 
 @app.cell
-def _(lmb, model):
-    result = model(
-        [
-            lmb.user(
-                "Calculate the salary-to-budget ratio for each department and identify employees whose salaries are above or below the department average, considering when each department was established. Return for me as a pandas dataframe, and also return the code that you wrote to make it happen."
-            )
-        ]
-    )
-    result
+def _():
+    # result = model(
+    #     [
+    #         lmb.user(
+    #             "Calculate the salary-to-budget ratio for each department and identify employees whose salaries are above or below the department average, considering when each department was established. Return for me as a pandas dataframe, and also return the code that you wrote to make it happen."
+    #         )
+    #     ]
+    # )
+    # result
     return
 
 
@@ -227,11 +239,11 @@ def _(mo, model):
 
 
 @app.cell
-def _(mo):
-    m1 = mo.md("Hey there!")
-    m2 = mo.md("What's up?")
+def _():
+    # m1 = mo.md("Hey there!")
+    # m2 = mo.md("What's up?")
 
-    [m1, m2]
+    # [m1, m2]
     return
 
 
