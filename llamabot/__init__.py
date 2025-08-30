@@ -57,7 +57,6 @@ level_map = {
 }
 
 # Remove default logger configuration and set the desired level
-logger.remove()
 logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNING"))
 
 __all__ = [
