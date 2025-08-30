@@ -87,7 +87,7 @@ dependencies = [
     "duckduckgo-search",
     "networkx",
     "docstring-parser>=0.17.0,<0.18"
-]
+, "restrictedpython>=8.0,<9"]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
 readme = "README.md"

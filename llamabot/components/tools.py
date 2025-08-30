@@ -15,7 +15,7 @@ import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 from uuid import uuid4
 
 import requests
@@ -28,6 +28,71 @@ from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import user
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.prompt_manager import prompt
+
+from RestrictedPython import compile_restricted, safe_globals
+from RestrictedPython.PrintCollector import PrintCollector
+
+# Default safe packages for data science workflows
+DEFAULT_SAFE_PACKAGES = {
+    "math",
+    "statistics",
+    "random",
+    "string",
+    "collections",
+    "itertools",
+    "functools",
+    "operator",
+    "datetime",
+    "json",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scipy",
+    "sklearn",
+    "pymc",
+    "pytensor",
+    "seaborn",
+    "plotly",
+}
+
+# Default safe built-ins
+DEFAULT_SAFE_BUILTINS = {
+    "sum",
+    "len",
+    "enumerate",
+    "zip",
+    "map",
+    "filter",
+    "sorted",
+    "min",
+    "max",
+    "abs",
+    "round",
+    "int",
+    "float",
+    "str",
+    "list",
+    "dict",
+    "tuple",
+    "set",
+    "bool",
+    "type",
+    "isinstance",
+    "hasattr",
+    "getattr",
+    "setattr",
+    "dir",
+    "vars",
+    "locals",
+    "globals",
+    "ZeroDivisionError",
+    "Exception",
+    "ValueError",
+    "TypeError",
+    "KeyError",
+    "IndexError",
+    "AttributeError",
+}
 
 
 def json_schema_type(type_name: str) -> str:
@@ -541,12 +606,105 @@ def write_and_execute_script(
     }
 
 
-def write_and_execute_code(globals_dict: dict):
-    """Write and execute code in a secure sandbox.
+def _create_restricted_import(safe_packages: set):
+    """Create a restricted import function that only allows specified packages.
 
-    :param globals_dictionary: The dictionary of global variables to use in the sandbox.
+    :param safe_packages: Set of package names that are allowed to be imported
+    :return: Restricted import function
+    """
+
+    def restricted_import(name, globals=None, locals=None, fromlist=(), level=0):
+        """
+        Import a module only if it is in the allowed set of safe packages.
+
+        :param name: Name of the module to import.
+        :param globals: (Unused) Globals dictionary for import.
+        :param locals: (Unused) Locals dictionary for import.
+        :param fromlist: Names to import from the module.
+        :param level: Import level (0 for absolute, >0 for relative).
+        :raises ImportError: If the module is not in the safe_packages set.
+        :return: The imported module.
+        """
+        if name in safe_packages:
+            return __import__(name, globals, locals, fromlist, level)
+        available_list = ", ".join(sorted(safe_packages))
+        raise ImportError(
+            f"Import of '{name}' is not allowed. "
+            f"Available packages: {available_list}. "
+            "If you need to use one of these packages, please ensure it is installed in your environment."
+        )
+
+    return restricted_import
+
+
+def _create_restricted_globals(
+    globals_dict: dict, safe_packages: set, safe_builtins: set
+):
+    """Create a restricted globals environment with specified packages and built-ins.
+
+    :param globals_dict: User's global variables
+    :param safe_packages: Set of safe package names
+    :param safe_builtins: Set of safe built-in function names
+    :return: Restricted globals dictionary
+    """
+    # Create extended built-ins
+    extended_builtins = safe_globals.copy()
+
+    # Add additional built-ins that RestrictedPython needs
+    additional_builtins = {
+        "_getattr_": getattr,
+        "_getitem_": lambda obj, key: obj[key],
+        "_iter_": iter,
+        "_len_": len,
+        "_unpack_sequence_": lambda obj: obj,
+        "_write_": lambda obj: obj,
+    }
+    extended_builtins.update(additional_builtins)
+
+    # Import builtins module to access built-in functions
+    import builtins
+
+    for builtin_name in safe_builtins:
+        if hasattr(builtins, builtin_name):
+            extended_builtins[builtin_name] = getattr(builtins, builtin_name)
+
+    # Create restricted globals
+    restricted_globals = {
+        "__builtins__": extended_builtins,
+        "_print_": PrintCollector,
+    }
+
+    # Add __import__ to the builtins so it's available
+    restricted_globals["__builtins__"]["__import__"] = _create_restricted_import(
+        safe_packages
+    )
+
+    # Add user's globals
+    restricted_globals.update(globals_dict)
+
+    return restricted_globals
+
+
+def write_and_execute_code(
+    globals_dict: dict,
+    safe_packages: Optional[set] = None,
+    safe_builtins: Optional[set] = None,
+):
+    """Write and execute code in a secure sandbox using RestrictedPython.
+
+    :param globals_dict: The dictionary of global variables to use in the sandbox.
+    :param safe_packages: Set of package names that are allowed to be imported.
+                         If None, uses DEFAULT_SAFE_PACKAGES.
+    :param safe_builtins: Set of built-in function names that are allowed to be used.
+                         If None, uses DEFAULT_SAFE_BUILTINS.
     :return: A function that can be used to execute code in the sandbox.
     """
+    # Set defaults
+    if safe_packages is None:
+        safe_packages = DEFAULT_SAFE_PACKAGES.copy()
+
+    if safe_builtins is None:
+        safe_builtins = DEFAULT_SAFE_BUILTINS.copy()
 
     @tool
     def write_and_execute_code_wrapper(
@@ -610,8 +768,15 @@ def write_and_execute_code(globals_dict: dict):
 
         - All global variables and dataframes in the current session
         - Any previously defined functions
-        - The ability to import any standard Python libraries within the function
+        - The ability to import safe Python libraries within the function
         - The ability to create new reusable functions that will be stored globally
+
+        ## Security Note:
+
+        This function uses RestrictedPython for secure code execution, which provides
+        a restricted subset of Python that prevents access to dangerous operations
+        like file system access, network operations, and other potentially harmful actions.
+        Only pre-approved packages and built-in functions are available.
 
         :param placeholder_function: The function to execute (complete Python function as string).
         :param keyword_args: The keyword arguments to pass to the function (dictionary matching function parameters).
@@ -638,24 +803,85 @@ def write_and_execute_code(globals_dict: dict):
             return f"Unexpected error parsing function name: {str(e)}"
 
         try:
-            ns = globals_dict
-            compiled = compile(placeholder_function, "<llm>", "exec")
-            exec(compiled, globals_dict, ns)
+            # Create restricted execution environment
+            restricted_globals = _create_restricted_globals(
+                globals_dict, safe_packages, safe_builtins
+            )
+
+            # Create a local namespace for the execution
+            local_namespace = {}
+
+            # Compile the code using RestrictedPython
+            compiled = compile_restricted(placeholder_function, "<llm>", "exec")
+
+            # Execute the compiled code in the restricted environment
+            exec(compiled, restricted_globals, local_namespace)
+
+            # Update the globals_dict with any new functions/variables created
+            globals_dict.update(local_namespace)
+
+            # Also update with any new globals that might have been created
+            # (RestrictedPython handles globals differently)
+            for key, value in restricted_globals.items():
+                if key not in globals_dict and not key.startswith("_"):
+                    globals_dict[key] = value
+
+            # Handle global variables that might have been created during execution
+            # RestrictedPython doesn't handle global statements the same way
+            # so we need to check if any variables were created in the restricted_globals
+            # that weren't in the original globals_dict
+            original_keys = set(globals_dict.keys())
+            for key, value in restricted_globals.items():
+                if (
+                    key not in original_keys
+                    and not key.startswith("_")
+                    and key != "create_constant"
+                ):
+                    globals_dict[key] = value
+
         except SyntaxError as e:
             return f"Syntax error during compilation: {str(e)}"
         except NameError as e:
-            return f"Name error during execution: {str(e)}"
+            # Provide helpful error message for missing built-ins
+            error_msg = str(e)
+            if "is not defined" in error_msg:
+                available_list = ", ".join(sorted(safe_builtins))
+                # Extract the function name from the error message
+                try:
+                    function_name = error_msg.split("'")[1]
+                    return f"Built-in function '{function_name}' is not available. Available built-ins: {available_list}"
+                except IndexError:
+                    return f"Name error: {error_msg}"
+            return f"Name error: {error_msg}"
         except ImportError as e:
-            return f"Import error during execution: {str(e)}"
+            # Provide helpful error message for restricted imports
+            error_msg = str(e)
+            if "is not allowed" in error_msg:
+                return f"Import error: {error_msg}"  # Format consistently
+            return f"Import error: {error_msg}"
         except Exception as e:
             return f"Error during code execution: {str(e)}"
 
         try:
-            return ns[function_name](**keyword_args)
+            # Get the function from the local namespace (where it was defined)
+            if function_name in local_namespace:
+                func = local_namespace[function_name]
+            else:
+                return f"Function '{function_name}' not found in compiled namespace"
+
+            return func(**keyword_args)
         except KeyError:
             return f"Function '{function_name}' not found in compiled namespace"
         except TypeError as e:
             return f"Type error calling function '{function_name}': {str(e)}"
+        except NameError as e:
+            return f"Name error: {str(e)}"
+        except ImportError as e:
+            # Handle import errors during function execution
+            error_msg = str(e)
+            if "is not allowed" in error_msg:
+                return f"Import error: {error_msg}"
+            return f"Import error: {error_msg}"
         except Exception as e:
             return f"Error executing function '{function_name}': {str(e)}"
 

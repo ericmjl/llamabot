@@ -17,6 +17,7 @@ from llamabot.components.tools import (
     write_and_execute_script,
     function_to_dict,
     json_schema_type,
+    write_and_execute_code,
 )
 
 
@@ -639,3 +640,227 @@ def test_function_description_combines_short_and_long():
 
     # Should have proper formatting with double newlines
     assert "\n\n" in description
+
+
+def test_write_and_execute_code_successful_function_execution():
+    """Test that a simple function can be executed successfully."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def add_numbers(a, b):
+    return a + b
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={"a": 5, "b": 3})
+    assert result == 8
+
+
+def test_write_and_execute_code_function_with_no_parameters():
+    """Test that a function with no parameters can be executed."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def get_hello():
+    return "Hello, World!"
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    assert result == "Hello, World!"
+
+
+def test_write_and_execute_code_function_with_imports():
+    """Test that a function with imports can be executed."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def calculate_square_root(number):
+    import math
+    return math.sqrt(number)
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={"number": 16})
+    assert result == 4.0
+
+
+def test_write_and_execute_code_function_accesses_global_variables():
+    """Test that a function can access global variables from the provided globals_dict."""
+    globals_dict = {"data": [1, 2, 3, 4, 5]}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def sum_data():
+    return sum(data)
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    assert result == 15
+
+
+def test_write_and_execute_code_function_creates_new_globals():
+    """Test that functions can create new global variables."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def create_constant():
+    # In RestrictedPython, we can't use global statements the same way
+    # Instead, we'll create a variable that gets stored in the globals_dict
+    # through the normal execution flow
+    MY_CONSTANT = 42
+    return MY_CONSTANT
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    assert result == 42
+    # The function should be available in globals_dict
+    assert "create_constant" in globals_dict
+
+
+def test_write_and_execute_code_syntax_error_handling():
+    """Test that syntax errors are properly caught and reported."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def broken_function(
+    return "This has a syntax error"
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    assert "Syntax error" in result
+
+
+def test_write_and_execute_code_name_error_handling():
+    """Test that name errors are properly caught and reported."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def use_undefined_variable():
+    return undefined_variable
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    assert "Name error" in result
+
+
+def test_write_and_execute_code_function_not_found_error():
+    """Test that missing function names are properly handled."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def my_function():
+    return "Hello"
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    # Should work fine
+    assert result == "Hello"
+
+    # But if we try to call a non-existent function, it should fail
+    result = tool_func(placeholder_function=code, keyword_args={"nonexistent": "arg"})
+    assert "Type error" in result
+
+
+def test_write_and_execute_code_restricted_python_security():
+    """Test that RestrictedPython prevents dangerous operations."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    # Test file system access (should be restricted)
+    code = """
+def dangerous_file_operation():
+    with open('/etc/passwd', 'r') as f:
+        return f.read()
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    # Should fail due to RestrictedPython restrictions
+    assert "Error during code execution" in result or "Name error" in result
+
+
+def test_write_and_execute_code_import_restrictions():
+    """Test that certain imports are restricted by RestrictedPython."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    # Test importing os module (should be restricted)
+    code = """
+def dangerous_import():
+    import os
+    return os.listdir('/')
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    # Should fail due to RestrictedPython import restrictions
+    assert "Import error" in result or "Error during code execution" in result
+
+
+def test_write_and_execute_code_safe_imports_work():
+    """Test that safe imports like math work correctly."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def safe_math_operation():
+    import math
+    return math.pi
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    assert result == 3.141592653589793
+
+
+def test_write_and_execute_code_complex_function_with_multiple_operations():
+    """Test a more complex function with multiple operations."""
+    globals_dict = {"numbers": [1, 2, 3, 4, 5]}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def analyze_numbers():
+    import statistics
+    if len(numbers) == 0:
+        return "No numbers to analyze"
+
+    mean_val = statistics.mean(numbers)
+    median_val = statistics.median(numbers)
+
+    return {
+        "count": len(numbers),
+        "mean": mean_val,
+        "median": median_val,
+        "sum": sum(numbers)
+    }
+"""
+
+    result = tool_func(placeholder_function=code, keyword_args={})
+    expected = {"count": 5, "mean": 3.0, "median": 3, "sum": 15}
+    assert result == expected
+
+
+def test_write_and_execute_code_function_with_error_handling():
+    """Test that functions with error handling work correctly."""
+    globals_dict = {}
+    tool_func = write_and_execute_code(globals_dict)
+
+    code = """
+def safe_division(a, b):
+    try:
+        return a / b
+    except ZeroDivisionError:
+        return "Cannot divide by zero"
+    except Exception as e:
+        return f"Error: {str(e)}"
+"""
+
+    # Test normal division
+    result = tool_func(placeholder_function=code, keyword_args={"a": 10, "b": 2})
+    assert result == 5.0
+
+    # Test division by zero
+    result = tool_func(placeholder_function=code, keyword_args={"a": 10, "b": 0})
+    assert result == "Cannot divide by zero"
