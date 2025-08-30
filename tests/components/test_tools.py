@@ -719,6 +719,32 @@ def create_constant():
     assert "create_constant" in globals_dict
 
 
+def test_extract_new_globals():
+    """Test the _extract_new_globals helper function."""
+    from llamabot.components.tools import _extract_new_globals
+
+    # Original globals
+    original_globals = {"existing_var": 42, "existing_func": lambda: None}
+
+    # Restricted globals after execution
+    restricted_globals = {
+        "existing_var": 42,  # Should be skipped (already exists)
+        "existing_func": lambda: None,  # Should be skipped (already exists)
+        "new_var": 100,  # Should be included
+        "new_func": lambda x: x,  # Should be skipped (callable)
+        "_private_var": 200,  # Should be skipped (starts with _)
+        "__builtin__": "builtin",  # Should be skipped (starts with _)
+        "another_var": "hello",  # Should be included
+    }
+
+    result = _extract_new_globals(restricted_globals, original_globals)
+
+    # Should only contain new non-callable variables that don't start with _
+    expected = {"new_var": 100, "another_var": "hello"}
+
+    assert result == expected
+
+
 def test_write_and_execute_code_syntax_error_handling():
     """Test that syntax errors are properly caught and reported."""
     globals_dict = {}

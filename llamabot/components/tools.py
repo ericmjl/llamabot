@@ -606,6 +606,34 @@ def write_and_execute_script(
     }
 
 
+def _extract_new_globals(restricted_globals: dict, original_globals: dict) -> dict:
+    """Extract new global variables created during restricted execution.
+
+    :param restricted_globals: The globals dictionary after restricted execution
+    :param original_globals: The original globals dictionary before execution
+    :return: Dictionary of new global variables (excluding functions and special names)
+    """
+    new_globals = {}
+    original_keys = set(original_globals.keys())
+
+    for key, value in restricted_globals.items():
+        # Skip if already in original globals
+        if key in original_keys:
+            continue
+
+        # Skip special names (built-ins, etc.)
+        if key.startswith("_"):
+            continue
+
+        # Skip function definitions (they're handled separately)
+        if callable(value):
+            continue
+
+        new_globals[key] = value
+
+    return new_globals
+
+
 def _create_restricted_import(safe_packages: set):
     """Create a restricted import function that only allows specified packages.
 
@@ -820,24 +848,9 @@ def write_and_execute_code(
             # Update the globals_dict with any new functions/variables created
             globals_dict.update(local_namespace)
 
-            # Also update with any new globals that might have been created
-            # (RestrictedPython handles globals differently)
-            for key, value in restricted_globals.items():
-                if key not in globals_dict and not key.startswith("_"):
-                    globals_dict[key] = value
-
-            # Handle global variables that might have been created during execution
-            # RestrictedPython doesn't handle global statements the same way
-            # so we need to check if any variables were created in the restricted_globals
-            # that weren't in the original globals_dict
-            original_keys = set(globals_dict.keys())
-            for key, value in restricted_globals.items():
-                if (
-                    key not in original_keys
-                    and not key.startswith("_")
-                    and key != "create_constant"
-                ):
-                    globals_dict[key] = value
+            # Extract and add any new global variables created during execution
+            new_globals = _extract_new_globals(restricted_globals, globals_dict)
+            globals_dict.update(new_globals)
 
         except SyntaxError as e:
             return f"Syntax error during compilation: {str(e)}"

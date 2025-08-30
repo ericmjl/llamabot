@@ -6556,7 +6556,61 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.13.6
-  sha256: b9f025572b85a0dfbe4e14d5f2a0f9e3ffe569d436657e7b4fa43983e54b81a9
+  sha256: 3c62ae0a7f3afdc4af488ba6534bd905c29a68c0f6beec918a3fe0fa5783cd26
+  requires_dist:
+  - openai
+  - loguru
+  - python-dotenv
+  - typer>=0.15.3
+  - pyprojroot
+  - beautifulsoup4
+  - litellm>=1.71.0
+  - python-slugify
+  - pydantic>=2.0
+  - numpy
+  - jinja2
+  - fastapi>=0.115.9
+  - uvicorn
+  - tenacity
+  - python-multipart
+  - httpx
+  - tqdm
+  - sqlalchemy
+  - pdfminer-six
+  - numpydoc
+  - chonkie
+  - starlette
+  - duckduckgo-search
+  - networkx
+  - docstring-parser>=0.17.0,<0.18
+  - restrictedpython>=8.0,<9
+  - ics ; extra == 'notebooks'
+  - tzlocal ; extra == 'notebooks'
+  - modal ; extra == 'notebooks'
+  - ipykernel ; extra == 'notebooks'
+  - lancedb>=0.22 ; extra == 'rag'
+  - tantivy ; extra == 'rag'
+  - rank-bm25 ; extra == 'rag'
+  - pylance ; extra == 'rag'
+  - sentence-transformers ; extra == 'rag'
+  - rerankers ; extra == 'rag'
+  - docker ; extra == 'agent'
+  - markdownify ; extra == 'agent'
+  - nbformat ; extra == 'cli'
+  - python-frontmatter ; extra == 'cli'
+  - rich ; extra == 'cli'
+  - gitpython ; extra == 'cli'
+  - prompt-toolkit ; extra == 'cli'
+  - case-converter ; extra == 'cli'
+  - pyperclip ; extra == 'cli'
+  - astor ; extra == 'cli'
+  - llamabot[notebooks,rag,agent,cli] ; extra == 'all'
+  requires_python: '>=3.9,<3.13'
+  editable: true
+- pypi: ./
+  name: llamabot
+  version: 0.13.6
+  sha256: 6d1a529b4aa3761ff7ac78791c57d8caddee49d460cf2431c4bbe7ac2f0f9591
   requires_dist:
   - openai
   - loguru
