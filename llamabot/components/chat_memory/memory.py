@@ -21,7 +21,7 @@ from llamabot.components.chat_memory.retrieval import (
     semantic_search_with_context,
 )
 from llamabot.components.chat_memory.visualization import to_mermaid
-from llamabot import prompt
+from llamabot.prompt_manager import prompt
 
 
 @prompt("system")
