@@ -227,10 +227,44 @@ The ChatMemory system provides intelligent conversation memory that can maintain
 
 For more details on chat memory, see the [Chat Memory module documentation](modules/chat_memory.md).
 
+### ToolBot
+
+ToolBot is a specialized bot designed for single-turn tool execution and function calling. It analyzes user requests and selects the most appropriate tool to execute, making it perfect for automation tasks and data analysis workflows.
+
+```python
+import llamabot as lmb
+from llamabot.components.tools import write_and_execute_code
+
+# Create a ToolBot with code execution capabilities
+bot = lmb.ToolBot(
+    system_prompt="You are a data analysis assistant.",
+    model_name="gpt-4.1",
+    tools=[write_and_execute_code(globals_dict=globals())],
+    memory=lmb.ChatMemory(),
+)
+
+# Create some data
+import pandas as pd
+import numpy as np
+data = pd.DataFrame({
+    'x': np.random.randn(100),
+    'y': np.random.randn(100)
+})
+
+# Use the bot to analyze the data
+response = bot("Calculate the correlation between x and y in the data DataFrame")
+print(response)
+```
+
+ToolBot is ideal for:
+- **Data analysis workflows** where you need to execute custom code
+- **Automation tasks** that require specific function calls
+- **API integrations** that need to call external services
+- **Single-turn function calling** scenarios
+
 ### QueryBot
 
-The final bot provided is a QueryBot.
-This bot lets you query a collection of documents.
+QueryBot lets you query a collection of documents.
 QueryBot now works with a docstore that you create first, making it more modular.
 
 Here's how to use QueryBot with a docstore:

@@ -109,17 +109,30 @@ class ToolBot(SimpleBot):
         self.chat_memory = chat_memory or ChatMemory()
 
     def __call__(
-        self, *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]]
+        self,
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
     ):
         """Process messages and return tool calls.
 
-        :param messages: One or more messages to process. Can be strings or BaseMessage objects.
+        :param messages: One or more messages to process. Can be strings, BaseMessage objects, or callable functions.
         :return: List of tool calls to execute
         """
-        from llamabot.components.messages import to_basemessage
+        from llamabot.components.messages import to_basemessage, HumanMessage
+
+        # Handle callable functions by calling them and converting to strings
+        processed_messages = []
+        for msg in messages:
+            if callable(msg):
+                # Call the function and validate it returns a string
+                result = msg()
+                if not isinstance(result, str):
+                    raise ValueError("Callable function must return a string")
+                processed_messages.append(HumanMessage(content=result))
+            else:
+                processed_messages.append(msg)
 
         # Convert messages to BaseMessage objects using the same utility as other bots
-        user_messages = to_basemessage(messages)
+        user_messages = to_basemessage(processed_messages)
 
         # Build message list: system prompt, chat memory, then user messages
         message_list = [self.system_prompt]

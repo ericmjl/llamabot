@@ -10,7 +10,8 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from llamabot import prompt, Experiment, metric
+from llamabot.prompt_manager import prompt
+from llamabot.experiments import Experiment, metric
 from llamabot.experiments import ExperimentRun, Base
 from llamabot.recorder import sqlite_log
 from llamabot.components.messages import BaseMessage
