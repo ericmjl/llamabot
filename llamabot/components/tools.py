@@ -604,6 +604,19 @@ def write_and_execute_code(globals_dict: dict):
         - **Utility functions**: Return relevant output (status, processed data, etc.)
         - **Never return None implicitly** - always have an explicit return statement
 
+        ## Output Format:
+
+        This tool returns a dictionary with two keys:
+        - `"code"`: The generated Python function code as a string
+        - `"result"`: The execution result of the function
+
+        Example access pattern:
+        ```python
+        output = write_and_execute_code_wrapper(function_code, keyword_args)
+        print("Generated code:", output["code"])
+        print("Execution result:", output["result"])
+        ```
+
         ## Code Access Capabilities:
 
         The generated code will have access to:
@@ -651,7 +664,8 @@ def write_and_execute_code(globals_dict: dict):
         #     return f"Error during code execution: {str(e)}"
 
         # try:
-        return ns[function_name](**keyword_args)
+        result = ns[function_name](**keyword_args)
+        return {"code": placeholder_function, "result": result}
         # except KeyError:
         #     return f"Function '{function_name}' not found in compiled namespace"
         # except TypeError as e:

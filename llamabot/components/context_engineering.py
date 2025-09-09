@@ -57,7 +57,15 @@ def describe_dataframes_in_globals(globals_dict):
                     f"\nColumn '{column}' is likely an identifier based on unique ratio."
                 )
             else:
-                desc.append(f"\nColumn '{column}' is potentially categorical.")
+                # Get unique values for categorical columns
+                unique_values = non_null_series.unique()
+                unique_count = len(unique_values)
+
+                # Show all categorical values
+                values_str = ", ".join([str(val) for val in unique_values])
+                desc.append(
+                    f"\nColumn '{column}' is categorical with {unique_count} unique values: {values_str}"
+                )
 
         return "\n".join(desc)
 
