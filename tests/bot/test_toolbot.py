@@ -47,7 +47,8 @@ def test_function():
     wrapper = write_and_execute_code(globals_dict)
     result = wrapper(valid_code, {})
 
-    assert result == "Hello, World!"
+    assert result["result"] == "Hello, World!"
+    assert result["code"] == valid_code
 
 
 def test_write_and_execute_code_accesses_globals():
@@ -63,7 +64,8 @@ def test_function():
     wrapper = write_and_execute_code(globals_dict)
     result = wrapper(code_with_global, {})
 
-    assert result == 3
+    assert result["result"] == 3
+    assert result["code"] == code_with_global
 
 
 def test_toolbot_initialization():
