@@ -544,6 +544,9 @@ def write_and_execute_script(
 def write_and_execute_code(globals_dict: dict):
     """Write and execute code in a secure sandbox.
 
+    Note: This function raises exceptions for error cases (syntax errors, missing functions, etc.).
+    Users are expected to handle these exceptions when using this function.
+
     :param globals_dictionary: The dictionary of global variables to use in the sandbox.
     :return: A function that can be used to execute code in the sandbox.
     """
@@ -632,43 +635,21 @@ def write_and_execute_code(globals_dict: dict):
         """
 
         # Parse the code to extract the function name
-        try:
-            tree = ast.parse(placeholder_function)
-            function_name = None
-            for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
-                    function_name = node.name
-                    break
+        tree = ast.parse(placeholder_function)
+        function_name = None
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                function_name = node.name
+                break
 
-            if function_name is None:
-                return "Code validation error: No function definition found in the code"
+        if function_name is None:
+            raise ValueError("No function definition found in the provided code.")
 
-        except SyntaxError as e:
-            return f"Syntax error in the provided code: {str(e)}"
-        except Exception as e:
-            return f"Unexpected error parsing function name: {str(e)}"
+        ns = globals_dict
+        compiled = compile(placeholder_function, "<llm>", "exec")
+        exec(compiled, globals_dict, ns)
 
-        try:
-            ns = globals_dict
-            compiled = compile(placeholder_function, "<llm>", "exec")
-            exec(compiled, globals_dict, ns)
-        except SyntaxError as e:
-            return f"Syntax error during compilation: {str(e)}"
-        except NameError as e:
-            return f"Name error during execution: {str(e)}"
-        except ImportError as e:
-            return f"Import error during execution: {str(e)}"
-        except Exception as e:
-            return f"Error during code execution: {str(e)}"
-
-        try:
-            result = ns[function_name](**keyword_args)
-            return {"code": placeholder_function, "result": result}
-        except KeyError:
-            return f"Function '{function_name}' not found in compiled namespace"
-        except TypeError as e:
-            return f"Type error calling function '{function_name}': {str(e)}"
-        except Exception as e:
-            return f"Error executing function '{function_name}': {str(e)}"
+        result = ns[function_name](**keyword_args)
+        return {"code": placeholder_function, "result": result}
 
     return write_and_execute_code_wrapper
