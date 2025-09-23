@@ -98,3 +98,24 @@ def describe_dataframes_in_globals(globals_dict):
             ret_str += f"\nVariable '{var_name}': {recurse_structure(var_value)}"
 
     return ret_str
+
+
+def describe_imported_modules(global_dict):
+    """
+    Find and describe all imported modules within the global dictionary.
+
+    Args:
+        global_dict (dict): A dictionary of global variables (typically globals())
+
+    Returns:
+        str: A detailed description of imported modules with their full package names
+    """
+    import types
+
+    imported_modules = [
+        f"{name}: {module.__name__}"
+        for name, module in global_dict.items()
+        if isinstance(module, types.ModuleType)
+    ]
+
+    return "Imported modules that you can use:\n" + "\n".join(imported_modules)
