@@ -1,3 +1,10 @@
+granite4
+kimi-k2
+qwen3-embedding
+embeddinggemma
+deepseek-v3.1
+gpt-oss
+qwen3-coder
 mistral-small3.2
 gemma3n
 magistral
