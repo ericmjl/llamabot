@@ -27,6 +27,8 @@ LlamaBot is a Pythonic interface to LLMs that makes it easier to experiment with
 
 **Pre-commit Hooks**: The project uses pre-commit hooks with Black, Ruff, interrogate (docstring coverage), pydoclint, and other tools. Hooks run automatically on commit.
 
+**Notebooks**: All notebooks in this repository are Marimo notebooks. When agents create or edit notebooks, they must run `uvx marimo check <path/to/notebook.py>` to validate the notebook and fix any issues raised by the check command.
+
 ## Core Architecture
 
 ### Bot Hierarchy
