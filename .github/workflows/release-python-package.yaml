@@ -38,7 +38,7 @@ jobs:
           fetch-tags: true
 
       - name: Setup Python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
 
@@ -46,7 +46,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Setup Pixi Environment
-        uses: prefix-dev/setup-pixi@v0.9.0
+        uses: prefix-dev/setup-pixi@v0.9.1
         with:
           pixi-version: latest
           cache: true

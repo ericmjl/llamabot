@@ -6,6 +6,10 @@ on:
     - cron: '0 15 * * *'
   workflow_dispatch: # Allow manual trigger
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   update-ollama-models:
     runs-on: ubuntu-latest

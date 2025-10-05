@@ -1,11 +1,11 @@
 """ToolBot - A single-turn bot that can execute tools."""
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 from loguru import logger
 
 from llamabot.components.tools import today_date, respond_to_user
 from llamabot.components.chat_memory import ChatMemory
-from llamabot.components.messages import AIMessage
+from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.bot.simplebot import (
     SimpleBot,
     extract_tool_calls,
@@ -108,20 +108,38 @@ class ToolBot(SimpleBot):
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
         self.chat_memory = chat_memory or ChatMemory()
 
-    def __call__(self, message):
-        """Process a message and return tool calls.
+    def __call__(
+        self,
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
+    ):
+        """Process messages and return tool calls.
 
-        :param message: The message to process
+        :param messages: One or more messages to process. Can be strings, BaseMessage objects, or callable functions.
         :return: List of tool calls to execute
         """
-        from llamabot.components.messages import user
+        from llamabot.components.messages import to_basemessage, HumanMessage
 
-        message = user(message)
-        # Convert messages to a list of UserMessage objects
+        # Handle callable functions by calling them and converting to strings
+        processed_messages = []
+        for msg in messages:
+            if callable(msg):
+                # Call the function and validate it returns a string
+                result = msg()
+                if not isinstance(result, str):
+                    raise ValueError("Callable function must return a string")
+                processed_messages.append(HumanMessage(content=result))
+            else:
+                processed_messages.append(msg)
+
+        # Convert messages to BaseMessage objects using the same utility as other bots
+        user_messages = to_basemessage(processed_messages)
+
+        # Build message list: system prompt, chat memory, then user messages
         message_list = [self.system_prompt]
-        if self.chat_memory:
-            message_list.extend(self.chat_memory.retrieve(message.content))
-        message_list.extend([message])
+        if self.chat_memory and user_messages:
+            # Use the first message content for chat memory retrieval
+            message_list.extend(self.chat_memory.retrieve(user_messages[0].content))
+        message_list.extend(user_messages)
 
         # Execute the plan
         stream = self.stream_target != "none"
@@ -131,6 +149,9 @@ class ToolBot(SimpleBot):
         logger.debug("Response: {}", response)
         tool_calls = extract_tool_calls(response)
 
-        self.chat_memory.append(message, AIMessage(content=str(tool_calls)))
+        if user_messages:
+            self.chat_memory.append(
+                user_messages[0], AIMessage(content=str(tool_calls))
+            )
 
         return tool_calls

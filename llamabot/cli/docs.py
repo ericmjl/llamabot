@@ -16,7 +16,7 @@ from pyprojroot import here
 from typer import Typer
 
 import llamabot as lmb
-from llamabot import prompt
+from llamabot.prompt_manager import prompt
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import AIMessage
 
@@ -89,7 +89,7 @@ class MarkdownSourceFile(BaseModel):
         # Handle raw content
         with open(file_path, "r+") as f:
             self.raw_content = "".join(
-                f"{i+1}: {line}" for i, line in enumerate(f.readlines())
+                f"{i + 1}: {line}" for i, line in enumerate(f.readlines())
             )
 
     def save(self):

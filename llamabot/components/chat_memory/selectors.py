@@ -6,7 +6,7 @@ import networkx as nx
 from pydantic import BaseModel, Field, model_validator
 from llamabot.components.messages import BaseMessage
 from llamabot.bot.structuredbot import StructuredBot
-from llamabot import prompt
+from llamabot.prompt_manager import prompt
 from loguru import logger
 
 

@@ -25,6 +25,7 @@ from .bot.imagebot import ImageBot
 from .bot.querybot import QueryBot
 from .bot.simplebot import SimpleBot
 from .bot.structuredbot import StructuredBot
+from .bot.toolbot import ToolBot
 from .experiments import Experiment, metric
 from .prompt_manager import prompt
 from .components.messages import user, system, dev
@@ -65,6 +66,7 @@ __all__ = [
     "SimpleBot",
     "QueryBot",
     "StructuredBot",
+    "ToolBot",
     "prompt",
     "Experiment",
     "metric",
