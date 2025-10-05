@@ -16,10 +16,14 @@ LlamaBot is a Pythonic interface to LLMs that makes it easier to experiment with
 - `pixi run build-docs` - Build documentation
 - `pixi run jlab` - Start Jupyter Lab (requires notebooks feature)
 - `pixi run llamabot-cli` - Test the CLI help command
-- `pytest tests/path/to/specific_test.py` - Run a single test file
-- `pytest tests/path/to/specific_test.py::test_function` - Run a specific test function
+- `pixi run -e tests pytest tests/path/to/specific_test.py` - Run a single test file
+- `pixi run -e tests pytest tests/path/to/specific_test.py::test_function` - Run a specific test function
 
 **Environment Setup**: Use `pixi shell` to enter the development environment, or prefix commands with `pixi run`.
+
+**Important for LLM Agents**: All commands must be run with the `pixi run` prefix to ensure they execute within the pixi environment. Never run commands directly without this prefix.
+
+**Testing Environment**: Tests must be run within the test environment using `pixi run test` or by activating the test environment first. For pytest commands, use `pixi run -e tests pytest...` since pytest is only installed in the test environment.
 
 **Pre-commit Hooks**: The project uses pre-commit hooks with Black, Ruff, interrogate (docstring coverage), pydoclint, and other tools. Hooks run automatically on commit.
 
