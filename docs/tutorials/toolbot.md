@@ -52,6 +52,8 @@ bot = ToolBot(
     system_prompt="You are a helpful assistant that can execute Python code.",
     model_name="gpt-4.1",
     tools=[write_and_execute_code(globals_dict=globals())],
+    # Optional: Add chat memory for conversation context
+    # chat_memory=lmb.ChatMemory(),
 )
 ```
 
@@ -202,6 +204,30 @@ bot = ToolBot(
 response = bot("Calculate the total sales and average sales by region")
 print(response)
 ```
+
+## Using Chat Memory with ToolBot
+
+ToolBot supports chat memory for maintaining conversation context across multiple interactions:
+
+```python
+import llamabot as lmb
+
+# Create a ToolBot with chat memory
+bot = ToolBot(
+    system_prompt="You are a data analysis assistant.",
+    model_name="gpt-4.1",
+    tools=[write_and_execute_code(globals_dict=globals())],
+    chat_memory=lmb.ChatMemory(),  # Enable conversation memory
+)
+
+# The bot will remember previous interactions
+response1 = bot("Create a DataFrame with sample data")
+response2 = bot("Now analyze the data you just created")  # Bot remembers the DataFrame
+```
+
+**Memory Options:**
+- `lmb.ChatMemory()` - Linear memory (fast, no LLM calls)
+- `lmb.ChatMemory.threaded(model="gpt-4o-mini")` - Intelligent threading (uses LLM for smart connections)
 
 ## ToolBot vs Other Bots
 

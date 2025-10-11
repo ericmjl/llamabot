@@ -194,7 +194,7 @@ The `model_name` argument is optional. If you don't provide it, Llamabot will tr
 
 ### SimpleBot with memory for chat functionality
 
-If you want chat functionality with memory (similar to what ChatBot provided), you can use SimpleBot with ChatMemory. This allows the bot to remember previous conversations:
+If you want chat functionality with memory, you can use SimpleBot with ChatMemory. This allows the bot to remember previous conversations:
 
 ```python
 import llamabot as lmb
@@ -224,6 +224,8 @@ print(response2)
 ```
 
 The ChatMemory system provides intelligent conversation memory that can maintain context across multiple interactions. It supports both linear memory (fast, no LLM calls) and graph-based memory with intelligent threading (uses LLM to connect related conversation topics).
+
+**Note**: For RAG (Retrieval-Augmented Generation) with document stores, use `QueryBot` with a document store instead of SimpleBot with memory. SimpleBot's memory parameter is specifically for conversational memory, while QueryBot is designed for document retrieval and question answering.
 
 For more details on chat memory, see the [Chat Memory module documentation](modules/chat_memory.md).
 
@@ -317,6 +319,42 @@ result = bot("Do you have any advice for me on career development?")
 
 For more explanation about the `model_name`, see [the examples with `SimpleBot`](#using-simplebot-with-a-local-ollama-model).
 
+### StructuredBot
+
+StructuredBot is designed for getting structured, validated outputs from LLMs.
+Unlike SimpleBot, StructuredBot enforces Pydantic schema validation and provides
+automatic retry logic when the LLM doesn't produce valid output.
+
+```python
+import llamabot as lmb
+from pydantic import BaseModel
+from typing import List
+
+class Person(BaseModel):
+    name: str
+    age: int
+    hobbies: List[str]
+
+# Create a StructuredBot with your Pydantic model
+bot = lmb.StructuredBot(
+    system_prompt="Extract person information from text.",
+    pydantic_model=Person,
+    model_name="gpt-4o"
+)
+
+# The bot will return a validated Person object
+person = bot("John is 25 years old and enjoys hiking and photography.")
+print(person.name)  # "John"
+print(person.age)   # 25
+print(person.hobbies)  # ["hiking", "photography"]
+```
+
+StructuredBot is perfect for:
+- **Data extraction** from unstructured text
+- **API responses** that need to match specific schemas
+- **Form processing** with validation
+- **Structured outputs** for downstream processing
+
 ### ImageBot
 
 With the release of the OpenAI API updates,
@@ -368,6 +406,43 @@ print(response)
 The `lmb.user()` function automatically detects image files (PNG, JPG, JPEG, GIF, WebP)
 and converts them to the appropriate format for the model.
 You can use local file paths or even image URLs.
+
+### Developer Messages with `lmb.dev()`
+
+For development and debugging scenarios, you can use `lmb.dev()` to create developer messages that provide context about code changes, debugging instructions, or development tasks:
+
+```python
+import llamabot as lmb
+
+# Create a bot for code development
+dev_bot = lmb.SimpleBot(
+    "You are a helpful coding assistant. Help with development tasks.",
+    model_name="gpt-4o-mini"
+)
+
+# Use dev() for development context
+response = dev_bot(lmb.dev("Add error handling to this function"))
+print(response)
+
+# Combine multiple development instructions
+response = dev_bot(lmb.dev(
+    "Refactor this code to be more modular",
+    "Add comprehensive docstrings",
+    "Follow PEP8 style guidelines"
+))
+print(response)
+```
+
+**When to use `lmb.dev()`:**
+- **Development tasks**: Code refactoring, debugging, testing
+- **Code review**: Providing feedback on code quality
+- **Documentation**: Adding docstrings, comments, or README updates
+- **Debugging**: Describing issues or requesting fixes
+
+**Message Type Hierarchy:**
+- `lmb.system()` - Bot behavior and instructions
+- `lmb.user()` - User input and questions
+- `lmb.dev()` - Development context and tasks
 
 ### Experimentation
 

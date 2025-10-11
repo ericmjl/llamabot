@@ -46,22 +46,6 @@ from llamabot.components.messages import AIMessage
 }
 ```
 
-## Using the Panel App
-
-`SimpleBot` also comes with a built-in Panel app that provides a graphical user interface for interacting with the chatbot. To create the app, call the `panel()` method on your `SimpleBot` instance:
-
-```python
-app = bot.panel()
-```
-
-You can customize the appearance of the app by providing optional parameters such as `input_text_label`, `output_text_label`, `submit_button_label`, `site_name`, and `title`.
-
-To display the app in your browser, call the `show()` method on the app:
-
-```python
-app.show()
-```
-
 ## Example
 
 Here's a complete example of how to create and interact with a `SimpleBot`:
@@ -77,15 +61,11 @@ bot = SimpleBot(system_prompt)
 human_message = "What is the capital of France?"
 response = bot(human_message)
 print(response.content)
-
-# Create and display the Panel app
-app = bot.panel()
-app.show()
 ```
 
 ## Conclusion
 
-In this tutorial, we learned how to use the `SimpleBot` class to create a simple chatbot that interacts with OpenAI's GPT-4 model. We also learned how to create a Panel app for a more user-friendly interface. With this knowledge, you can now create your own chatbots and experiment with different system prompts and settings.
+In this tutorial, we learned how to use the `SimpleBot` class to create a simple chatbot that interacts with OpenAI's GPT-4 model. With this knowledge, you can now create your own chatbots and experiment with different system prompts and settings.
 
 ## Additional Information
 

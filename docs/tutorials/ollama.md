@@ -43,9 +43,9 @@ For a list of available models, visit [Ollama's Model Library](https://ollama.ai
 1. Open a Python session and import the `SimpleBot` class from the `llamabot` library.
 
 ```python
-from llamabot import SimpleBot  # you can also use QueryBot or ChatBot
+from llamabot import SimpleBot  # you can also use QueryBot or StructuredBot
 
-bot = SimpleBot("You are a conversation expert", model_name="vicuna:7b-16k")
+bot = SimpleBot("You are a conversation expert", model_name="ollama_chat/vicuna:7b-16k")
 ```
 
 > Note: `vicuna:7b-16k` includes tags from the [vicuna model page](https://ollama.ai/library/vicuna/tags).

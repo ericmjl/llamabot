@@ -31,11 +31,11 @@ you'll be able to integrate a bot into a chat interface and see how it interacts
 ### Import Necessary Libraries
 
 ```python
-from llamabot import SimpleBot, ChatBot
+from llamabot import SimpleBot
 import panel as pn
 ```
 
-- `SimpleBot` and `ChatBot`: Classes from the `llamabot` library that allow you to create chatbot instances.
+- `SimpleBot`: Class from the `llamabot` library that allows you to create chatbot instances.
 - `panel` (aliased as `pn`): A Python library for creating web-based interactive apps and dashboards.
 
 ### Initialize Panel Extension
@@ -121,12 +121,12 @@ This will open up a new browser window with the chat interface.
 
 ```python
 # chat_interface.py
-from llamabot import SimpleBot, ChatBot
+from llamabot import SimpleBot
 import panel as pn
 
 pn.extension()
 
-bot = SimpleBot("You are Richard Feynman.") # can be ChatBot as well
+bot = SimpleBot("You are Richard Feynman.")
 
 
 async def callback(contents: str, user: str, instance: pn.chat.ChatInterface):

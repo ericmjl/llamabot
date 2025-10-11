@@ -41,8 +41,9 @@ class SimpleBot:
         See https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature
         for more information.
     :param memory: An optional chat memory component to use. If provided,
-        the bot will retain chat history. It should be an instance of
-        `AbstractDocumentStore` (such as `BM25DocStore` or `LanceDBDocStore`).
+        the bot will retain chat history. For conversational memory, use
+        `ChatMemory` (e.g., `lmb.ChatMemory()`). For RAG/document retrieval,
+        use an `AbstractDocumentStore` (such as `BM25DocStore` or `LanceDBDocStore`).
     :param model_name: The name of the model to use.
     :param stream_target: The target to stream the response to.
         Should be one of ("stdout", "panel", "api").

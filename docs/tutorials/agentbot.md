@@ -115,7 +115,7 @@ def split_bill(total_amount: float, num_people: int) -> float:
 # Create the bot
 bot = lmb.AgentBot(
     system_prompt=lmb.system("You are my assistant with respect to restaurant bills."),
-    tools=[calculate_total_with_tip, split_bill],  # Note: use 'tools', not 'functions'
+    tools=[calculate_total_with_tip, split_bill],  # Note: LlamaBot uses 'tools' parameter (not 'functions' like some other libraries)
     model_name="gpt-4.1",
 )
 ```
@@ -123,6 +123,8 @@ bot = lmb.AgentBot(
 **Key Parameters Explained:**
 
 - `tools`: List of callable functions that the bot can use (required)
+  - **Note**: LlamaBot uses the `tools` parameter, not `functions` like some other libraries
+  - This follows the current OpenAI function calling standard
 - `system_prompt`: Instructions for the bot's behavior
 - `model_name`: The language model to use
 - `temperature`: Controls randomness (default: 0.0 for deterministic responses)
@@ -605,6 +607,478 @@ The LLM automatically understands:
 - Usage examples for each tool
 
 This makes your bots more maintainable and reduces the cognitive load of writing complex system prompts.
+
+## Comprehensive Tool Creation Guide
+
+### Understanding the `@lmb.tool` Decorator
+
+The `@lmb.tool` decorator is the foundation of LlamaBot's tool system. It automatically:
+- Converts your Python functions into LLM-callable tools
+- Parses docstrings to provide rich context to the LLM
+- Generates JSON schemas for function calling
+- Handles type validation and error reporting
+
+### Basic Tool Creation
+
+```python
+import llamabot as lmb
+
+@lmb.tool
+def calculate_tip(bill_amount: float, tip_percentage: float) -> float:
+    """Calculate the tip amount for a bill.
+
+    This function calculates the tip amount based on the bill total
+    and the desired tip percentage.
+
+    Parameters
+    ----------
+    bill_amount : float
+        The total bill amount before tip
+    tip_percentage : float
+        The tip percentage as a decimal (e.g., 0.18 for 18%)
+
+    Returns
+    -------
+    float
+        The calculated tip amount
+
+    Examples
+    --------
+    >>> calculate_tip(100.0, 0.18)
+    18.0
+    """
+    return bill_amount * tip_percentage
+```
+
+### Supported Docstring Styles
+
+LlamaBot supports three major docstring styles. Choose the one that fits your project:
+
+#### 1. NumPy Style (Scientific Python)
+
+```python
+@lmb.tool
+def analyze_data(data: List[float], method: str = "mean") -> dict:
+    """Analyze numerical data using statistical methods.
+
+    Parameters
+    ----------
+    data : List[float]
+        The numerical data to analyze
+    method : str, optional
+        The analysis method to use, by default "mean"
+
+    Returns
+    -------
+    dict
+        Dictionary containing analysis results
+
+    Raises
+    ------
+    ValueError
+        If method is not supported
+    """
+    if method not in ["mean", "median", "std"]:
+        raise ValueError(f"Method {method} not supported")
+
+    if method == "mean":
+        return {"result": sum(data) / len(data)}
+    # ... other methods
+```
+
+#### 2. Google Style (Clean and Readable)
+
+```python
+@lmb.tool
+def process_text(text: str, operation: str) -> str:
+    """Process text using various operations.
+
+    Args:
+        text (str): The input text to process
+        operation (str): The operation to perform ('upper', 'lower', 'title')
+
+    Returns:
+        str: The processed text
+
+    Raises:
+        ValueError: If operation is not supported
+    """
+    operations = {
+        "upper": str.upper,
+        "lower": str.lower,
+        "title": str.title
+    }
+
+    if operation not in operations:
+        raise ValueError(f"Operation {operation} not supported")
+
+    return operations[operation](text)
+```
+
+#### 3. Sphinx Style (reStructuredText)
+
+```python
+@lmb.tool
+def fetch_data(url: str, timeout: int = 30) -> dict:
+    """Fetch data from a URL.
+
+    :param url: The URL to fetch data from
+    :type url: str
+    :param timeout: Request timeout in seconds, defaults to 30
+    :type timeout: int
+    :return: Dictionary containing the fetched data
+    :rtype: dict
+    :raises requests.RequestException: If the request fails
+    """
+    import requests
+
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
+```
+
+### Advanced Tool Features
+
+#### Type Hints and Validation
+
+```python
+from typing import List, Optional, Union
+from datetime import datetime
+
+@lmb.tool
+def create_event(
+    title: str,
+    start_time: datetime,
+    duration_minutes: int,
+    attendees: List[str],
+    is_online: bool = False,
+    location: Optional[str] = None
+) -> dict:
+    """Create a calendar event with validation.
+
+    Parameters
+    ----------
+    title : str
+        The event title
+    start_time : datetime
+        When the event starts
+    duration_minutes : int
+        Event duration in minutes
+    attendees : List[str]
+        List of attendee email addresses
+    is_online : bool, optional
+        Whether this is an online event, by default False
+    location : Optional[str], optional
+        Physical location (required if not online), by default None
+
+    Returns
+    -------
+    dict
+        Event details with ID and confirmation
+
+    Raises
+    ------
+    ValueError
+        If required fields are missing or invalid
+    """
+    if not title.strip():
+        raise ValueError("Event title cannot be empty")
+
+    if duration_minutes <= 0:
+        raise ValueError("Duration must be positive")
+
+    if not is_online and not location:
+        raise ValueError("Location required for in-person events")
+
+    # Create event logic here
+    return {
+        "event_id": f"evt_{hash(title)}",
+        "title": title,
+        "start_time": start_time.isoformat(),
+        "duration_minutes": duration_minutes,
+        "attendees": attendees,
+        "is_online": is_online,
+        "location": location,
+        "created_at": datetime.now().isoformat()
+    }
+```
+
+#### Error Handling Best Practices
+
+```python
+@lmb.tool
+def safe_divide(a: float, b: float) -> float:
+    """Safely divide two numbers with proper error handling.
+
+    Parameters
+    ----------
+    a : float
+        The dividend
+    b : float
+        The divisor
+
+    Returns
+    -------
+    float
+        The result of a / b
+
+    Raises
+    ------
+    ValueError
+        If divisor is zero or inputs are invalid
+    """
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+        raise ValueError("Both inputs must be numbers")
+
+    if b == 0:
+        raise ValueError("Cannot divide by zero")
+
+    return a / b
+```
+
+#### Tool Composition and Reuse
+
+```python
+# Base tool for data validation
+@lmb.tool
+def validate_email(email: str) -> bool:
+    """Validate email address format.
+
+    Parameters
+    ----------
+    email : str
+        Email address to validate
+
+    Returns
+    -------
+    bool
+        True if email is valid, False otherwise
+    """
+    import re
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
+# Composed tool that uses validation
+@lmb.tool
+def send_notification(email: str, message: str) -> dict:
+    """Send notification to email address.
+
+    Parameters
+    ----------
+    email : str
+        Recipient email address
+    message : str
+        Notification message
+
+    Returns
+    -------
+    dict
+        Send status and details
+
+    Raises
+    ------
+    ValueError
+        If email is invalid or message is empty
+    """
+    if not validate_email(email):
+        raise ValueError(f"Invalid email address: {email}")
+
+    if not message.strip():
+        raise ValueError("Message cannot be empty")
+
+    # Send notification logic here
+    return {
+        "status": "sent",
+        "recipient": email,
+        "message_length": len(message),
+        "sent_at": datetime.now().isoformat()
+    }
+```
+
+### Tool Documentation Best Practices
+
+#### 1. Write Clear, Descriptive Names
+
+```python
+# Good: Clear purpose
+@lmb.tool
+def calculate_monthly_payment(principal: float, rate: float, years: int) -> float:
+    """Calculate monthly mortgage payment."""
+
+# Avoid: Vague names
+@lmb.tool
+def do_math(a: float, b: float, c: float) -> float:
+    """Do some math."""
+```
+
+#### 2. Document All Parameters
+
+```python
+@lmb.tool
+def process_order(
+    customer_id: str,
+    items: List[dict],
+    shipping_address: dict,
+    payment_method: str,
+    discount_code: Optional[str] = None
+) -> dict:
+    """Process a customer order with full validation.
+
+    Parameters
+    ----------
+    customer_id : str
+        Unique identifier for the customer
+    items : List[dict]
+        List of items with 'name', 'price', and 'quantity' keys
+    shipping_address : dict
+        Address dict with 'street', 'city', 'state', 'zip' keys
+    payment_method : str
+        Payment method ('credit_card', 'paypal', 'bank_transfer')
+    discount_code : Optional[str], optional
+        Optional discount code to apply, by default None
+
+    Returns
+    -------
+    dict
+        Order confirmation with total, tax, and shipping details
+
+    Raises
+    ------
+    ValueError
+        If required fields are missing or invalid
+    KeyError
+        If address or item dicts are missing required keys
+    """
+    # Implementation here
+    pass
+```
+
+#### 3. Include Usage Examples
+
+```python
+@lmb.tool
+def format_currency(amount: float, currency: str = "USD") -> str:
+    """Format a number as currency.
+
+    Parameters
+    ----------
+    amount : float
+        The amount to format
+    currency : str, optional
+        Currency code, by default "USD"
+
+    Returns
+    -------
+    str
+        Formatted currency string
+
+    Examples
+    --------
+    >>> format_currency(1234.56, "USD")
+    "$1,234.56"
+    >>> format_currency(1000, "EUR")
+    "€1,000.00"
+    """
+    import locale
+
+    # Set locale based on currency
+    if currency == "USD":
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    elif currency == "EUR":
+        locale.setlocale(locale.LC_ALL, 'en_GB.UTF-8')
+
+    return locale.currency(amount, grouping=True)
+```
+
+#### 4. Handle Edge Cases
+
+```python
+@lmb.tool
+def safe_file_read(filepath: str, encoding: str = "utf-8") -> str:
+    """Safely read a text file with error handling.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the file to read
+    encoding : str, optional
+        File encoding, by default "utf-8"
+
+    Returns
+    -------
+    str
+        File contents as string
+
+    Raises
+    ------
+    FileNotFoundError
+        If file doesn't exist
+    PermissionError
+        If file cannot be read
+    UnicodeDecodeError
+        If file encoding is incorrect
+    """
+    import os
+
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"File not found: {filepath}")
+
+    if not os.access(filepath, os.R_OK):
+        raise PermissionError(f"Cannot read file: {filepath}")
+
+    try:
+        with open(filepath, 'r', encoding=encoding) as f:
+            return f.read()
+    except UnicodeDecodeError as e:
+        raise UnicodeDecodeError(
+            f"Failed to decode file with {encoding} encoding: {e}"
+        )
+```
+
+### Tool Testing and Validation
+
+```python
+# Test your tools before using them in AgentBot
+def test_tool():
+    """Test tool functionality."""
+    # Test normal case
+    result = calculate_tip(100.0, 0.18)
+    assert result == 18.0
+
+    # Test edge cases
+    try:
+        calculate_tip(100.0, -0.1)  # Negative tip
+        assert False, "Should have raised ValueError"
+    except ValueError:
+        pass
+
+    print("All tests passed!")
+
+# Run tests
+if __name__ == "__main__":
+    test_tool()
+```
+
+### Integration with AgentBot
+
+```python
+# Create AgentBot with your tools
+bot = lmb.AgentBot(
+    system_prompt="You are a helpful assistant with access to various tools.",
+    tools=[
+        calculate_tip,
+        analyze_data,
+        process_text,
+        create_event,
+        send_notification
+    ],
+    model_name="gpt-4o"
+)
+
+# Use the bot
+response = bot("Calculate a 20% tip on a $50 bill and analyze the result.")
+print(response.content)
+```
 
 ## Conclusion
 
