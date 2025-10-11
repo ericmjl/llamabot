@@ -52,6 +52,17 @@ agents create or edit notebooks, they must run `uvx marimo check
 <path/to/notebook.py>` to validate the notebook and fix any issues raised by
 the check command.
 
+**No Jupyter Notebooks**: This project does not use `.ipynb` files anymore.
+All examples and notebooks should be created as Marimo notebooks (`.py` files).
+If you encounter any `.ipynb` files, they should be converted to Marimo format.
+
+**Markdown Linting**: Always run `markdownlint` on any markdown file that you edit.
+Use `markdownlint filename.md` to check for issues and fix them before committing.
+
+**Documentation Workflow**: When editing any markdown file, always run markdownlint
+after making changes to ensure proper formatting and catch any issues before
+the user sees them.
+
 ## Core Architecture
 
 ### Bot Hierarchy
@@ -181,6 +192,43 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **No Secrets**: Never commit API keys or sensitive data to repository
 - **Docker Isolation**: Agent code execution is containerized with resource limits
 
+## Documentation Guidelines
+
+### Documentation Structure
+
+- **Follow Diátaxis framework**: Tutorials (learning), How-to guides (tasks),
+  Reference (API), Explanation (concepts)
+- **Single source of truth**: Structure defined in `mkdocs.yaml`, don't duplicate
+  in documentation
+- **Reference external frameworks**: Link to Diátaxis documentation rather than
+  duplicating content
+- **Avoid stale content**: Don't include version-specific information that can't
+  be automatically updated
+
+### Code Style Documentation
+
+- **Pre-commit hooks handle formatting**: Don't create separate code-style guides
+- **Emphasize automation**: Let pre-commit hooks handle Black, Ruff, type
+  checking automatically
+- **Focus on patterns**: Show typical extension patterns (custom `__init__` and
+  `__call__` methods)
+
+### Development Setup
+
+- **Pixi-only approach**: This project only supports pixi for development setup
+- **No alternative methods**: Don't document pip install or other setup methods
+- **Simple workflow**: `pixi install` and `pixi shell` covers everything
+
+### Content Guidelines
+
+- **Avoid duplication**: Don't repeat information that's already defined
+  elsewhere
+- **Keep it simple**: Prefer concise, focused content over comprehensive guides
+- **Link to sources**: Reference authoritative sources rather than duplicating
+  their content
+- **Remove stale sections**: Delete sections that can't be kept up-to-date
+  automatically
+
 ## Writing Style
 
 When generating text, avoid the following categories of wording, structures,
@@ -229,3 +277,26 @@ and symbols:
    - Inconsistent curly vs. straight quotation marks
    - "From … to …" constructions when not a real range
    - Unnecessary Markdown or formatting in plain-text contexts
+
+## Development Tools
+
+**Pre-commit Installation**: Pre-commit should be installed as a global tool
+using `uv tool install pre-commit` rather than as a development dependency.
+This eliminates the need for the `pixi run` prefix when running pre-commit
+commands.
+
+## Documentation Content Guidelines
+
+**Avoid File Trees**: Don't include detailed file tree structures in
+documentation as they become stale quickly and are hard to maintain. Instead,
+reference the actual project structure or provide high-level overviews.
+
+**Focus on Essential Content**: Documentation should focus on:
+
+- How to accomplish tasks (not exhaustive reference)
+- Key concepts and patterns
+- Practical examples
+- Links to authoritative sources
+
+**Remove Redundant Sections**: Avoid duplicating content that's already
+covered elsewhere or that can't be kept up-to-date automatically.
