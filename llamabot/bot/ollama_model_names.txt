@@ -1,3 +1,4 @@
+qwen3-vl
 granite4
 kimi-k2
 qwen3-embedding
