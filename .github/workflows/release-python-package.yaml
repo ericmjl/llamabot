@@ -86,6 +86,9 @@ jobs:
       - name: Install llamabot package
         run: uv pip install -e .[cli]
 
+      - name: Build MCP documentation database
+        run: pixi run python scripts/build_mcp_docs.py
+
       - name: Write release notes
         if: github.event_name != 'pull_request'
         env:

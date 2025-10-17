@@ -1,0 +1,15 @@
+{
+	"servers": {
+		"llamabot-mcp-server-dev": {
+			"type": "stdio",
+			"command": "pixi",
+			"args": [
+				"run",
+				"llamabot",
+				"mcp",
+				"launch"
+			]
+		}
+	},
+	"inputs": []
+}
