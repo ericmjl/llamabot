@@ -111,12 +111,29 @@ def test_build_docstore():
     """Test that the docstore can be built."""
     import tempfile
     import shutil
-    from unittest.mock import patch
+    from unittest.mock import patch, MagicMock
 
     # Mock the docstore path to use a temporary directory
-    with patch("llamabot.mcp_server.get_docstore_path") as mock_path:
+    with (
+        patch("llamabot.mcp_server.get_docstore_path") as mock_path,
+        patch("llamabot.mcp_server.fetch_docs_from_github") as mock_fetch,
+        patch("llamabot.mcp_server.collect_markdown_files") as mock_markdown,
+        patch("llamabot.mcp_server.collect_python_modules") as mock_python,
+        patch("llamabot.mcp_server.LanceDBDocStore") as mock_docstore_class,
+    ):
         temp_dir = Path(tempfile.mkdtemp())
         mock_path.return_value = temp_dir
+
+        # Mock GitHub fetch to return None (use local docs)
+        mock_fetch.return_value = None
+
+        # Mock file collections to return minimal test data
+        mock_markdown.return_value = [Path("test.md")]
+        mock_python.return_value = {"test.py": "Test docstring"}
+
+        # Mock the docstore to avoid expensive embedding operations
+        mock_docstore = MagicMock()
+        mock_docstore_class.return_value = mock_docstore
 
         try:
             # This should not raise an exception
@@ -124,6 +141,14 @@ def test_build_docstore():
 
             # Check that the docstore directory was created
             assert temp_dir.exists()
+
+            # Verify docstore was called with correct parameters
+            mock_docstore_class.assert_called_once_with(
+                table_name="llamabot_docs", storage_path=temp_dir
+            )
+
+            # Verify documents were added (append should be called)
+            assert mock_docstore.append.called
         finally:
             # Clean up
             if temp_dir.exists():
