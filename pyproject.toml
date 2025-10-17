@@ -57,6 +57,15 @@ include-package-data = true
 where = ["."]
 namespaces = false
 
+[tool.hatch.build.targets.wheel]
+packages = ["llamabot"]
+
+[tool.hatch.build.targets.wheel.sources]
+"llamabot" = "llamabot"
+
+[tool.hatch.build.targets.wheel.include]
+"llamabot/data/**/*" = "llamabot/data"
+
 [project]
 name = "llamabot"
 version = "0.13.9"
@@ -86,7 +95,9 @@ dependencies = [
     "starlette",
     "duckduckgo-search",
     "networkx",
-    "docstring-parser>=0.17.0,<0.18"
+    "docstring-parser>=0.17.0,<0.18",
+    "fastmcp",
+    "python-frontmatter",
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
@@ -167,6 +178,7 @@ mknotebooks = "*"
 # TASKS BELOW!
 [tool.pixi.tasks]
 llamabot-cli = "llamabot --help"
+build-mcp-docs = "python scripts/build_mcp_docs.py"
 
 [tool.pixi.feature.notebooks.tasks]
 jlab = "jupyter lab"
@@ -190,6 +202,7 @@ bare = ["devtools"]
 [tool.pixi.dependencies]
 python-multipart = "*"
 numpydoc = ">=1.8.0,<2"
+python-frontmatter = ">=1.1.0,<2"
 
 [tool.ty.environment]
 python = "./.pixi/envs/default"

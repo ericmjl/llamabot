@@ -15,6 +15,7 @@ from . import (
     docs,
     git,
     logviewer,
+    mcp,
     notebook,
     python,
     repo,
@@ -54,6 +55,11 @@ app.add_typer(
 )
 app.add_typer(notebook.app, name="notebook", help="Explain your notebooks.")
 app.add_typer(logviewer.app, name="log-viewer", help="Visualize the LlamaBot logs.")
+app.add_typer(
+    mcp.app,
+    name="mcp",
+    help="MCP server for exposing LlamaBot documentation to AI agents.",
+)
 
 
 @app.command()
