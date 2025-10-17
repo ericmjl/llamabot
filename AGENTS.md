@@ -171,7 +171,7 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
   ]
   ```
 - **MCP Database**: The `llamabot/data/mcp_docs/` directory is built during CI/CD and included in the package using the `artifacts` configuration, even though it's in `.gitignore`
-- **CI/CD Workflow**: Database is built after the initial package build, then the package is rebuilt to include the database files
+- **CI/CD Workflow**: Database is built first, then the package is built once to include the database files
 
 ## Key Dependencies
 

@@ -103,9 +103,6 @@ jobs:
           git add .
           git commit -m "Add release notes for ${{ env.version_number }}"
 
-      - name: Build package
-        run: uv build --sdist --wheel
-
       - name: Build MCP documentation database
         run: pixi run python scripts/build_mcp_docs.py
 
@@ -115,7 +112,7 @@ jobs:
           echo "MCP database files:"
           find llamabot/data/mcp_docs/ -type f | head -10
 
-      - name: Rebuild package with MCP database
+      - name: Build package
         run: uv build --sdist --wheel
 
       - name: Publish package (trusted publishing)
