@@ -29,9 +29,16 @@ environment setup.
 **Environment Setup**: Use `pixi shell` to enter the development environment,
 or prefix commands with `pixi run`.
 
-**Important for LLM Agents**: All commands must be run with the `pixi run`
+**CRITICAL FOR LLM AGENTS**: All commands must be run with the `pixi run`
 prefix to ensure they execute within the pixi environment. Never run commands
-directly without this prefix.
+directly without this prefix. This is essential for proper dependency management
+and environment isolation.
+
+**Examples**:
+- ✅ `pixi run test` (correct)
+- ❌ `pytest` (incorrect - will fail)
+- ✅ `pixi run pytest tests/specific_test.py` (correct)
+- ❌ `python -m pytest tests/specific_test.py` (incorrect - will fail)
 
 **Testing Environment**: Tests must be run within the test environment using
 `pixi run test` or by activating the test environment first. For pytest
