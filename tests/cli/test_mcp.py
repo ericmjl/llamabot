@@ -110,49 +110,56 @@ def test_collect_python_modules():
 def test_build_docstore():
     """Test that the docstore can be built."""
     import tempfile
-    import shutil
     from unittest.mock import patch, MagicMock
 
-    # Mock the docstore path to use a temporary directory
-    with (
-        patch("llamabot.mcp_server.get_docstore_path") as mock_path,
-        patch("llamabot.mcp_server.fetch_docs_from_github") as mock_fetch,
-        patch("llamabot.mcp_server.collect_markdown_files") as mock_markdown,
-        patch("llamabot.mcp_server.collect_python_modules") as mock_python,
-        patch("llamabot.mcp_server.LanceDBDocStore") as mock_docstore_class,
-    ):
-        temp_dir = Path(tempfile.mkdtemp())
-        mock_path.return_value = temp_dir
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Mock the docstore path to use a temporary directory
+        with (
+            patch("llamabot.mcp_server.get_docstore_path") as mock_path,
+            patch("llamabot.mcp_server.fetch_docs_from_github") as mock_fetch,
+            patch("llamabot.mcp_server.collect_markdown_files") as mock_markdown,
+            patch("llamabot.mcp_server.collect_python_modules") as mock_python,
+            patch("llamabot.mcp_server.LanceDBDocStore") as mock_docstore_class,
+        ):
+            mock_path.return_value = Path(temp_dir)
 
-        # Mock GitHub fetch to return None (use local docs)
-        mock_fetch.return_value = None
+            # Mock GitHub fetch to return None (use local docs)
+            mock_fetch.return_value = None
 
-        # Mock file collections to return minimal test data
-        mock_markdown.return_value = [Path("test.md")]
-        mock_python.return_value = {"test.py": "Test docstring"}
+            # Mock file collections to return minimal test data
+            # Create a temporary file in the docs directory for the mock
+            docs_dir = Path("docs")
+            docs_dir.mkdir(exist_ok=True)
 
-        # Mock the docstore to avoid expensive embedding operations
-        mock_docstore = MagicMock()
-        mock_docstore_class.return_value = mock_docstore
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".md", dir=docs_dir, delete=False
+            ) as temp_md:
+                temp_md.write("# Test Document\n\nThis is a test markdown file.")
+                temp_md_path = Path(temp_md.name)
 
-        try:
+            mock_markdown.return_value = [temp_md_path]
+            mock_python.return_value = {"test.py": "Test docstring"}
+
+            # Mock the docstore to avoid expensive embedding operations
+            mock_docstore = MagicMock()
+            mock_docstore_class.return_value = mock_docstore
+
             # This should not raise an exception
             build_docstore()
 
             # Check that the docstore directory was created
-            assert temp_dir.exists()
+            assert Path(temp_dir).exists()
 
             # Verify docstore was called with correct parameters
             mock_docstore_class.assert_called_once_with(
-                table_name="llamabot_docs", storage_path=temp_dir
+                table_name="llamabot_docs", storage_path=Path(temp_dir)
             )
 
             # Verify documents were added (append should be called)
             assert mock_docstore.append.called
-        finally:
-            # Clean up
-            if temp_dir.exists():
-                shutil.rmtree(temp_dir)
+
+            # Clean up the temporary markdown file
+            temp_md_path.unlink()
 
 
 def test_create_mcp_server():
