@@ -86,9 +86,6 @@ jobs:
       - name: Install llamabot package
         run: uv pip install -e .[cli]
 
-      - name: Build MCP documentation database
-        run: pixi run python scripts/build_mcp_docs.py
-
       - name: Write release notes
         if: github.event_name != 'pull_request'
         env:
@@ -107,6 +104,18 @@ jobs:
           git commit -m "Add release notes for ${{ env.version_number }}"
 
       - name: Build package
+        run: uv build --sdist --wheel
+
+      - name: Build MCP documentation database
+        run: pixi run python scripts/build_mcp_docs.py
+
+      - name: Verify MCP database exists
+        run: |
+          ls -la llamabot/data/mcp_docs/
+          echo "MCP database files:"
+          find llamabot/data/mcp_docs/ -type f | head -10
+
+      - name: Rebuild package with MCP database
         run: uv build --sdist --wheel
 
       - name: Publish package (trusted publishing)

@@ -59,12 +59,13 @@ namespaces = false
 
 [tool.hatch.build.targets.wheel]
 packages = ["llamabot"]
+include-package-data = true
+artifacts = [
+    "llamabot/data/mcp_docs/**/*",
+]
 
 [tool.hatch.build.targets.wheel.sources]
 "llamabot" = "llamabot"
-
-[tool.hatch.build.targets.wheel.include]
-"llamabot/data/**/*" = "llamabot/data"
 
 [project]
 name = "llamabot"

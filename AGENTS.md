@@ -159,6 +159,20 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **Exclusions**: Tests marked with `llm_eval` are excluded from default runs
 - **Structure**: Tests mirror the source structure in the `tests/` directory
 
+### Packaging
+
+- **Build Backend**: Uses Hatchling for wheel and source distribution builds
+- **Hatchling respects .gitignore**: By default, Hatchling excludes files listed in `.gitignore` from package distribution
+- **Including ignored files**: To include files that are in `.gitignore` (like build artifacts or generated data), use the `artifacts` configuration in `pyproject.toml`:
+  ```toml
+  [tool.hatch.build.targets.wheel]
+  artifacts = [
+      "path/to/files/**/*",
+  ]
+  ```
+- **MCP Database**: The `llamabot/data/mcp_docs/` directory is built during CI/CD and included in the package using the `artifacts` configuration, even though it's in `.gitignore`
+- **CI/CD Workflow**: Database is built after the initial package build, then the package is rebuilt to include the database files
+
 ## Key Dependencies
 
 - **LLM Interface**: LiteLLM (supports all major LLM providers)
