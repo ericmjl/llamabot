@@ -167,5 +167,8 @@ test.db
 # SQLite database
 test_message_log.db
 
+# LanceDB documentation database (built during CI/CD)
+llamabot/data/mcp_docs/
+
 # Marimo's cache
 __marimo__
