@@ -181,6 +181,7 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **Vector Store**: LanceDB (default), ChromaDB (optional)
 - **Testing**: pytest, hypothesis, pytest-cov
 - **Docs**: MkDocs with Material theme
+- **MCP Integration**: FastMCP (provides both server and client functionality)
 
 ## Common Development Tasks
 
@@ -205,6 +206,14 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 2. Follow abstract base class patterns where applicable
 3. Ensure composability with existing components
 4. Add comprehensive tests in `tests/components/`
+
+### MCP Integration
+
+**MCP Dependencies**: This project uses FastMCP for MCP (Model Context Protocol) integration. FastMCP provides both server and client functionality, so we only need the `fastmcp` dependency - do not add the `mcp` package as it's redundant.
+
+**MCP Client Pattern**: Use `fastmcp.Client` directly instead of creating custom wrappers. The `MCPConnectionManager` class manages multiple server connections with lazy loading.
+
+**Functional Approach**: MCP tool adapters use functions rather than classes, aligning with the repo's functional programming preference.
 
 ## Security Considerations
 

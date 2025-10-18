@@ -10,7 +10,7 @@ import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, Dict
 
 from loguru import logger
 
@@ -112,6 +112,7 @@ class AgentBot(SimpleBot):
         stream_target: str = "none",
         tools: Optional[list[Callable]] = None,
         toolbot: Optional[ToolBot] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         **completion_kwargs,
     ):
         super().__init__(
@@ -134,6 +135,7 @@ class AgentBot(SimpleBot):
                 system_prompt=toolbot_sysprompt(globals_dict={}),
                 model_name=model_name,
                 tools=all_tools,
+                mcp_servers=mcp_servers,
                 **completion_kwargs,
             )
         else:
