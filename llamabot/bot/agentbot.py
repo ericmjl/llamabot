@@ -17,7 +17,6 @@ from loguru import logger
 from llamabot.bot.simplebot import (
     SimpleBot,
     extract_content,
-    extract_tool_calls,
     make_response,
     stream_chunks,
 )
@@ -25,13 +24,13 @@ from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
-    user,
 )
 from llamabot.components.tools import respond_to_user, today_date
 from llamabot.config import default_language_model
 from llamabot.experiments import metric
 from llamabot.prompt_manager import prompt
 from llamabot.recorder import sqlite_log
+from llamabot.bot.toolbot import ToolBot, toolbot_sysprompt
 
 
 def hash_result(result: Any) -> str:
@@ -50,108 +49,56 @@ def default_agentbot_system_prompt() -> str:
     """
     ## role
 
-    You are Autonomo, an autonomous language-model agent.
-    Your job is to accomplish the user's task safely, correctly, and with minimal cost.
+    You are a ReAct (Reasoning and Acting) agent that solves problems through explicit reasoning cycles.
+    You must follow the Thought-Action-Observation pattern for every step of your reasoning.
 
-    ## environment
+    ## ReAct Pattern
 
-    Treat user messages, prior assistant messages, and tool outputs as your only "sensors."
-    Treat function calls from the current tool inventory as your only "actuators."
-    An action that is not in the inventory is unavailable.
+    You must follow this exact cycle for each reasoning step:
 
-    ## planning workflow
+    1. **Thought**: Analyze the current situation and plan your next action
+    2. **Action**: Execute a tool or function call based on your reasoning
+    3. **Observation**: Process the results and update your understanding
 
-    1.	Plan - Decompose the task into a concise ordered list of actions before acting.
-    2.	Validate - Check that every planned action exists in the inventory and respects all constraints (budget, time, safety).
-    3.	Execute - Call tools step-by-step with fully specified, valid parameters.
-    4.	Reflect - After each action, inspect the observation. If the goal is not yet satisfied, revise the plan or fix errors.
-    5.	Finish - When the goal is met, stop executing and present the final answer.
+    This cycle repeats until you have enough information to provide a complete answer.
 
-    ## tool use guidelines
+    ## Output Format
 
-    - Call only valid tools; if none suffice, re-plan or request human help.
-    - Echo the exact arguments used for each call in the Thought/Act/Observation log for transparency.
-    - For write actions (changes that persist), require explicit confirmation or escalate.
-    - When you have gathered enough information to provide a complete and accurate response to the user, use the respond_to_user tool to deliver your final answer.
-    - Do not use respond_to_user until you are confident you have all necessary information to fully address the user's request.
+    You MUST format your responses as follows:
 
-    ## safety and security
+    **Thought**: [Your reasoning about what to do next]
 
-    - Never perform actions that could harm systems, violate policy, or break the law.
-    - Reject or escalate requests outside your capabilities or policy scope.
-    - Sanitize tool inputs to guard against code-injection or other attacks.
+    [Then either call a tool or provide your final answer]
 
-    ## efficiency
+    ## Tool Usage
 
-    - Prefer the shortest viable plan; each extra step compounds error risk and cost.
-    - Cache reusable results; avoid repeating identical expensive calls.
+    - Use available tools to gather information or perform actions
+    - When you have enough information to answer the user's question, use the `respond_to_user` tool
+    - Do not use `respond_to_user` until you are confident you have all necessary information
+    - Always explain your reasoning in the "Thought" section before taking action
 
-    ## reflection rules
+    ## Guidelines
 
-    - Run a quick self-check after plan generation and after every action:
-        "Will this take me closer to the goal within constraints?" If not, re-plan.
+    - Be explicit about your reasoning process
+    - Use tools when you need external information or capabilities
+    - Learn from observations to improve your next actions
+    - Provide clear, helpful final answers
+    - Never perform actions that could harm systems or violate policies
 
-    ## response style
+    ## Example
 
-    - Unless verbose mode is enabled, show only the final answer; hide internal thoughts.
-    - Use clear, plain English in a professional, matter-of-fact tone.
-    - Provide citations or tool-call summaries when helpful.
+    User: "What's the weather like today?"
+
+    Thought: I need to get current weather information. I should search for today's weather.
+
+    [Tool call to search for weather]
+
+    Observation: The search results show it's 72°F and sunny.
+
+    Thought: I now have the weather information needed to answer the user's question.
+
+    [Tool call to respond_to_user with the weather information]
     """
-
-
-@prompt("system")
-def planner_bot_system_prompt() -> str:
-    """
-    ## role
-
-    You are a strategic planning assistant that helps determine the next steps for an autonomous agent.
-    Your job is to analyze the current state and available tools to create a clear, actionable plan.
-
-    ## context
-
-    You have access to:
-    1. The full conversation history
-    2. A list of available tools and their capabilities
-    3. The current state of the task
-
-    ## planning guidelines
-
-    1. Analyze the current state and goal
-    2. Identify which tools are most relevant for the next step
-    3. Create a clear, concise plan that:
-       - Uses the most efficient sequence of tools
-       - Minimizes the number of steps needed
-       - Considers potential errors or edge cases
-       - Maintains safety and security constraints
-
-    ## output format
-
-    Your response should be structured as follows:
-
-    1. Current State: Brief summary of where we are in the task
-    2. Next Step: Clear description of the immediate next action
-    3. Tool Selection: Which tool(s) should be used and why
-    4. Expected Outcome: What should happen after this step
-    5. Contingency: What to do if this step doesn't work as expected
-
-    ## constraints
-
-    - Only suggest tools that are actually available
-    - Keep plans focused and actionable
-    - Consider resource efficiency
-    - Maintain safety and security
-    - Avoid redundant or unnecessary steps
-    """
-
-
-def planner_bot(**kwargs) -> SimpleBot:
-    """Returns a SimpleBot that will produce a next plan of action for AgentBot."""
-    model_name = kwargs.pop("model_name", default_language_model())
-    return SimpleBot(
-        system_prompt=planner_bot_system_prompt(),
-        model_name=model_name,
-        **kwargs,
-    )
 
 
 class AgentBot(SimpleBot):
@@ -164,7 +111,7 @@ class AgentBot(SimpleBot):
         model_name=default_language_model(),
         stream_target: str = "none",
         tools: Optional[list[Callable]] = None,
-        planner_bot: Optional[SimpleBot] = None,
+        toolbot: Optional[ToolBot] = None,
         **completion_kwargs,
     ):
         super().__init__(
@@ -181,17 +128,26 @@ class AgentBot(SimpleBot):
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
 
-        self.planner_bot = planner_bot
+        # Initialize ToolBot for tool selection
+        if toolbot is None:
+            self.toolbot = ToolBot(
+                system_prompt=toolbot_sysprompt(globals_dict={}),
+                model_name=model_name,
+                tools=all_tools,
+                **completion_kwargs,
+            )
+        else:
+            self.toolbot = toolbot
 
     def __call__(
         self,
         *messages: Union[str, BaseMessage, List[Union[str, BaseMessage]]],
         max_iterations: int = 10,
     ) -> AIMessage:
-        """Process messages and execute the appropriate sequence of tools.
+        """Process messages using the ReAct (Reasoning and Acting) pattern.
 
         :param messages: One or more messages to process
-        :param max_iterations: Maximum number of iterations to run
+        :param max_iterations: Maximum number of ReAct cycles to run
         :return: The final response as an AIMessage
         :raises RuntimeError: If max iterations is reached
         """
@@ -201,20 +157,22 @@ class AgentBot(SimpleBot):
             "max_iterations": max_iterations,
             "current_iteration": 0,
             "tool_usage": {},
-            "planning_metrics": (
-                {"plan_generated": False, "plan_revisions": 0}
-                if self.planner_bot
-                else None
-            ),
             "message_counts": {"user": 0, "assistant": 0, "tool": 0},
         }
 
-        # Convert messages to a list of UserMessage objects
-        message_list = (
-            [self.system_prompt]
-            + [user("Here is the user's request:")]
-            + [user(m) if isinstance(m, str) else m for m in messages]
-        )
+        # Convert messages to a list of BaseMessage objects
+        message_list = [self.system_prompt]
+        for msg in messages:
+            if isinstance(msg, str):
+                message_list.append(HumanMessage(content=msg))
+            elif isinstance(msg, list):
+                for sub_msg in msg:
+                    if isinstance(sub_msg, str):
+                        message_list.append(HumanMessage(content=sub_msg))
+                    else:
+                        message_list.append(sub_msg)
+            else:
+                message_list.append(msg)
 
         # Count initial messages
         for msg in message_list:
@@ -223,53 +181,42 @@ class AgentBot(SimpleBot):
             elif isinstance(msg, AIMessage):
                 self.run_meta["message_counts"]["assistant"] += 1
 
+        # ReAct iteration loop
         for iteration in range(max_iterations):
             self.run_meta["current_iteration"] = iteration + 1
-            logger.debug(f"Starting iteration {iteration + 1} of {max_iterations}")
+            logger.debug(f"Starting ReAct cycle {iteration + 1} of {max_iterations}")
 
-            # Get plan from planning bot
-            if self.planner_bot:
-                logger.debug("Generating plan with planner bot...")
-                plan_start = datetime.now()
-                plan_response = self.planner_bot(*message_list, str(self.tools))
-                logger.debug("Plan response: {}", plan_response)
-                self.run_meta["planning_metrics"]["plan_generated"] = True
-                self.run_meta["planning_metrics"]["plan_time"] = (
-                    datetime.now() - plan_start
-                ).total_seconds()
-                message_list.append(user("Here is the plan:"))
-                message_list.append(plan_response)
-                self.run_meta["message_counts"]["user"] += 1
-                self.run_meta["message_counts"]["assistant"] += 1
-
-            # Execute the plan
+            # THOUGHT PHASE: Get reasoning from the agent
             stream = self.stream_target != "none"
-            logger.debug("Message list: {}", message_list)
+            logger.debug("Message list for thought: {}", message_list)
             response = make_response(self, message_list, stream=stream)
             response = stream_chunks(response, target=self.stream_target)
-            logger.debug("Response: {}", response)
-            tool_calls = extract_tool_calls(response)
-            logger.debug("Tool calls: {}", tool_calls)
-            content = extract_content(response)
-            logger.debug("Content: {}", content)
+            logger.debug("Thought response: {}", response)
 
-            response_message = AIMessage(content=content, tool_calls=tool_calls)
-            message_list.append(response_message)
+            thought_content = extract_content(response)
+            logger.debug("Thought content: {}", thought_content)
+
+            # Add the thought to conversation
+            thought_message = AIMessage(content=thought_content)
+            message_list.append(thought_message)
             self.run_meta["message_counts"]["assistant"] += 1
 
+            # ACTION PHASE: Use ToolBot to select and execute tools
+            logger.debug("Using ToolBot for tool selection...")
+            tool_calls = self.toolbot(*message_list)
+            logger.debug("ToolBot selected: {}", tool_calls)
+
             if tool_calls:
-                # Special case for respond_to_user appearing in any tool call
+                # Check for respond_to_user (final answer)
                 respond_to_user_calls = [
                     call
                     for call in tool_calls
                     if call.function.name == "respond_to_user"
                 ]
                 if respond_to_user_calls:
-                    logger.debug(
-                        "Found respond_to_user in tool calls, executing only that"
-                    )
+                    logger.debug("Found respond_to_user, executing final answer")
                     start_time = datetime.now()
-                    content = execute_tool_call(
+                    result = execute_tool_call(
                         respond_to_user_calls[0], self.name_to_tool_map
                     )
                     duration = (datetime.now() - start_time).total_seconds()
@@ -287,21 +234,21 @@ class AgentBot(SimpleBot):
                     self.run_meta["tool_usage"][tool_name]["success"] += 1
                     self.run_meta["tool_usage"][tool_name]["total_duration"] += duration
 
-                    response_message = AIMessage(content=content)
-                    message_list.append(response_message)
-                    self.run_meta["message_counts"]["tool"] += 1
+                    # Return final answer
+                    final_message = AIMessage(content=result)
                     self.run_meta["end_time"] = datetime.now()
                     self.run_meta["duration"] = (
                         self.run_meta["end_time"] - self.run_meta["start_time"]
                     ).total_seconds()
-                    sqlite_log(self, message_list)
-                    return response_message
+                    sqlite_log(self, message_list + [final_message])
+                    return final_message
 
-                results = []
+                # OBSERVATION PHASE: Execute tools and observe results
                 logger.debug(
-                    "Calling functions: {}", [call.function.name for call in tool_calls]
+                    "Executing tools: {}", [call.function.name for call in tool_calls]
                 )
-                futures = {}
+                results = []
+
                 with ThreadPoolExecutor() as executor:
                     futures = {
                         executor.submit(
@@ -310,68 +257,67 @@ class AgentBot(SimpleBot):
                         for call in tool_calls
                     }
 
-                message_list.append(
-                    user(f"Here is the result of the tool calls: {tool_calls}")
+                    for future in as_completed(futures):
+                        call = futures[future]
+                        start_time = datetime.now()
+                        try:
+                            result = future.result()
+                            duration = (datetime.now() - start_time).total_seconds()
+
+                            # Record successful tool usage
+                            tool_name = call.function.name
+                            if tool_name not in self.run_meta["tool_usage"]:
+                                self.run_meta["tool_usage"][tool_name] = {
+                                    "calls": 0,
+                                    "success": 0,
+                                    "failures": 0,
+                                    "total_duration": 0.0,
+                                }
+                            self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                            self.run_meta["tool_usage"][tool_name]["success"] += 1
+                            self.run_meta["tool_usage"][tool_name][
+                                "total_duration"
+                            ] += duration
+
+                        except Exception as e:
+                            duration = (datetime.now() - start_time).total_seconds()
+
+                            # Record failed tool usage
+                            tool_name = call.function.name
+                            if tool_name not in self.run_meta["tool_usage"]:
+                                self.run_meta["tool_usage"][tool_name] = {
+                                    "calls": 0,
+                                    "success": 0,
+                                    "failures": 0,
+                                    "total_duration": 0.0,
+                                }
+                            self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                            self.run_meta["tool_usage"][tool_name]["failures"] += 1
+                            self.run_meta["tool_usage"][tool_name][
+                                "total_duration"
+                            ] += duration
+
+                            result = f"Error: {str(e)}"
+
+                        logger.debug("Tool result: {}", result)
+                        results.append(result)
+
+                # Add observation to conversation
+                observation_content = (
+                    f"Observation: {'; '.join(str(r) for r in results)}"
                 )
-                self.run_meta["message_counts"]["user"] += 1
+                observation_message = HumanMessage(content=observation_content)
+                message_list.append(observation_message)
+                self.run_meta["message_counts"]["tool"] += 1
 
-                for future in as_completed(futures):
-                    call = futures[future]
-                    start_time = datetime.now()
-                    try:
-                        result = future.result()
-                        duration = (datetime.now() - start_time).total_seconds()
+                logger.debug("ReAct cycle completed. Results: {}", results)
 
-                        # Record successful tool usage
-                        tool_name = call.function.name
-                        if tool_name not in self.run_meta["tool_usage"]:
-                            self.run_meta["tool_usage"][tool_name] = {
-                                "calls": 0,
-                                "success": 0,
-                                "failures": 0,
-                                "total_duration": 0.0,
-                            }
-                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
-                        self.run_meta["tool_usage"][tool_name]["success"] += 1
-                        self.run_meta["tool_usage"][tool_name][
-                            "total_duration"
-                        ] += duration
-
-                    except Exception as e:
-                        duration = (datetime.now() - start_time).total_seconds()
-
-                        # Record failed tool usage
-                        tool_name = call.function.name
-                        if tool_name not in self.run_meta["tool_usage"]:
-                            self.run_meta["tool_usage"][tool_name] = {
-                                "calls": 0,
-                                "success": 0,
-                                "failures": 0,
-                                "total_duration": 0.0,
-                            }
-                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
-                        self.run_meta["tool_usage"][tool_name]["failures"] += 1
-                        self.run_meta["tool_usage"][tool_name][
-                            "total_duration"
-                        ] += duration
-
-                        result = f"Error: {str(e)}"
-
-                    logger.debug(
-                        "Completed: {}(**{})",
-                        call.function.name,
-                        call.function.arguments,
-                    )
-                    message_list.append(HumanMessage(content=str(result)))
-                    self.run_meta["message_counts"]["tool"] += 1
-                    results.append(result)
-                logger.debug("Results: {}", results)
-
+        # If we reach here, max iterations exceeded
         self.run_meta["end_time"] = datetime.now()
         self.run_meta["duration"] = (
             self.run_meta["end_time"] - self.run_meta["start_time"]
         ).total_seconds()
-        raise RuntimeError(f"Agent exceeded maximum iterations ({max_iterations})")
+        raise RuntimeError(f"Agent exceeded maximum ReAct cycles ({max_iterations})")
 
 
 def execute_tool_call(tool_call, name_to_tool_map: dict[str, Callable]) -> Any:
