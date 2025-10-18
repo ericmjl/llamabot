@@ -6,12 +6,15 @@ The bot uses a decision-making system to determine which tools to call
 and in what order, making it suitable for complex, multi-step tasks.
 """
 
+import asyncio
 import hashlib
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Note: ThreadPoolExecutor and as_completed are no longer used with MCP approach
 from datetime import datetime
 from typing import Any, Callable, List, Optional, Union
 
+from fastmcp import Client
 from loguru import logger
 
 from llamabot.bot.simplebot import (
@@ -20,6 +23,7 @@ from llamabot.bot.simplebot import (
     make_response,
     stream_chunks,
 )
+from llamabot.components.local_mcp_server import LocalMCPServer
 from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
@@ -31,6 +35,21 @@ from llamabot.experiments import metric
 from llamabot.prompt_manager import prompt
 from llamabot.recorder import sqlite_log
 from llamabot.bot.toolbot import ToolBot, toolbot_sysprompt
+
+
+def run_async_in_sync(coro):
+    """Run async coroutine in a sync context, handling both regular and notebook environments."""
+    try:
+        # Try to get the current event loop
+        loop = asyncio.get_running_loop()
+        # If we're in a running loop (like Jupyter), use nest_asyncio
+        import nest_asyncio
+
+        nest_asyncio.apply()
+        return loop.run_until_complete(coro)
+    except RuntimeError:
+        # No event loop running, safe to use asyncio.run()
+        return asyncio.run(coro)
 
 
 def hash_result(result: Any) -> str:
@@ -111,6 +130,7 @@ class AgentBot(SimpleBot):
         model_name=default_language_model(),
         stream_target: str = "none",
         tools: Optional[list[Callable]] = None,
+        mcp_servers: Optional[List[str]] = None,
         toolbot: Optional[ToolBot] = None,
         **completion_kwargs,
     ):
@@ -122,18 +142,36 @@ class AgentBot(SimpleBot):
             **completion_kwargs,
         )
 
+        # Create local MCP server for local tools
+        local_server = LocalMCPServer("local")
         all_tools = [today_date, respond_to_user]
         if tools is not None:
             all_tools.extend([f for f in tools])
+        local_server.register_tools(all_tools)
+
+        # Create MCP clients
+        mcp_clients = []
+
+        # Add local client
+        local_client = Client(local_server.get_server())
+        mcp_clients.append(local_client)
+
+        # Add remote clients
+        if mcp_servers:
+            for server_url in mcp_servers:
+                remote_client = Client(server_url)
+                mcp_clients.append(remote_client)
+
+        # Keep legacy tool schemas for backward compatibility
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
 
-        # Initialize ToolBot for tool selection
+        # Initialize ToolBot with MCP clients
         if toolbot is None:
             self.toolbot = ToolBot(
                 system_prompt=toolbot_sysprompt(globals_dict={}),
                 model_name=model_name,
-                tools=all_tools,
+                mcp_clients=mcp_clients,
                 **completion_kwargs,
             )
         else:
@@ -206,6 +244,30 @@ class AgentBot(SimpleBot):
             tool_calls = self.toolbot(*message_list)
             logger.debug("ToolBot selected: {}", tool_calls)
 
+            # Check if agent provided a final answer without using tools
+            if not tool_calls and thought_content and len(thought_content.strip()) > 0:
+                # Check if the thought content looks like a final answer
+                if any(
+                    phrase in thought_content.lower()
+                    for phrase in [
+                        "equals",
+                        "is",
+                        "the answer is",
+                        "the result is",
+                        "final answer",
+                        "answer:",
+                        "result:",
+                    ]
+                ):
+                    logger.debug("Agent provided final answer without tools")
+                    final_message = AIMessage(content=thought_content)
+                    self.run_meta["end_time"] = datetime.now()
+                    self.run_meta["duration"] = (
+                        self.run_meta["end_time"] - self.run_meta["start_time"]
+                    ).total_seconds()
+                    sqlite_log(self, message_list)
+                    return final_message
+
             if tool_calls:
                 # Check for respond_to_user (final answer)
                 respond_to_user_calls = [
@@ -216,8 +278,8 @@ class AgentBot(SimpleBot):
                 if respond_to_user_calls:
                     logger.debug("Found respond_to_user, executing final answer")
                     start_time = datetime.now()
-                    result = execute_tool_call(
-                        respond_to_user_calls[0], self.name_to_tool_map
+                    result = run_async_in_sync(
+                        self.toolbot.execute_tool_call(respond_to_user_calls[0])
                     )
                     duration = (datetime.now() - start_time).total_seconds()
 
@@ -243,64 +305,56 @@ class AgentBot(SimpleBot):
                     sqlite_log(self, message_list + [final_message])
                     return final_message
 
-                # OBSERVATION PHASE: Execute tools and observe results
+                # OBSERVATION PHASE: Execute tools via MCP and observe results
                 logger.debug(
                     "Executing tools: {}", [call.function.name for call in tool_calls]
                 )
                 results = []
 
-                with ThreadPoolExecutor() as executor:
-                    futures = {
-                        executor.submit(
-                            execute_tool_call, call, self.name_to_tool_map
-                        ): call
-                        for call in tool_calls
-                    }
+                # Execute tools via ToolBot's MCP execution
+                for call in tool_calls:
+                    start_time = datetime.now()
+                    try:
+                        result = run_async_in_sync(self.toolbot.execute_tool_call(call))
+                        duration = (datetime.now() - start_time).total_seconds()
 
-                    for future in as_completed(futures):
-                        call = futures[future]
-                        start_time = datetime.now()
-                        try:
-                            result = future.result()
-                            duration = (datetime.now() - start_time).total_seconds()
+                        # Record successful tool usage
+                        tool_name = call.function.name
+                        if tool_name not in self.run_meta["tool_usage"]:
+                            self.run_meta["tool_usage"][tool_name] = {
+                                "calls": 0,
+                                "success": 0,
+                                "failures": 0,
+                                "total_duration": 0.0,
+                            }
+                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                        self.run_meta["tool_usage"][tool_name]["success"] += 1
+                        self.run_meta["tool_usage"][tool_name][
+                            "total_duration"
+                        ] += duration
 
-                            # Record successful tool usage
-                            tool_name = call.function.name
-                            if tool_name not in self.run_meta["tool_usage"]:
-                                self.run_meta["tool_usage"][tool_name] = {
-                                    "calls": 0,
-                                    "success": 0,
-                                    "failures": 0,
-                                    "total_duration": 0.0,
-                                }
-                            self.run_meta["tool_usage"][tool_name]["calls"] += 1
-                            self.run_meta["tool_usage"][tool_name]["success"] += 1
-                            self.run_meta["tool_usage"][tool_name][
-                                "total_duration"
-                            ] += duration
+                    except Exception as e:
+                        duration = (datetime.now() - start_time).total_seconds()
 
-                        except Exception as e:
-                            duration = (datetime.now() - start_time).total_seconds()
+                        # Record failed tool usage
+                        tool_name = call.function.name
+                        if tool_name not in self.run_meta["tool_usage"]:
+                            self.run_meta["tool_usage"][tool_name] = {
+                                "calls": 0,
+                                "success": 0,
+                                "failures": 0,
+                                "total_duration": 0.0,
+                            }
+                        self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                        self.run_meta["tool_usage"][tool_name]["failures"] += 1
+                        self.run_meta["tool_usage"][tool_name][
+                            "total_duration"
+                        ] += duration
 
-                            # Record failed tool usage
-                            tool_name = call.function.name
-                            if tool_name not in self.run_meta["tool_usage"]:
-                                self.run_meta["tool_usage"][tool_name] = {
-                                    "calls": 0,
-                                    "success": 0,
-                                    "failures": 0,
-                                    "total_duration": 0.0,
-                                }
-                            self.run_meta["tool_usage"][tool_name]["calls"] += 1
-                            self.run_meta["tool_usage"][tool_name]["failures"] += 1
-                            self.run_meta["tool_usage"][tool_name][
-                                "total_duration"
-                            ] += duration
+                        result = f"Error: {str(e)}"
 
-                            result = f"Error: {str(e)}"
-
-                        logger.debug("Tool result: {}", result)
-                        results.append(result)
+                    logger.debug("Tool result: {}", result)
+                    results.append(result)
 
                 # Add observation to conversation
                 observation_content = (

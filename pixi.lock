@@ -8275,7 +8275,7 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.13.11
-  sha256: 47db4608c0d91aa5e85fc37dce431e7e7b128e5d61595be99a050f9ccaca423a
+  sha256: 2a3f3b69f7d05837a69c30d8ed7bcca90e8817521dc33029567b5b8321b848ac
   requires_dist:
   - openai
   - loguru
@@ -8304,6 +8304,7 @@ packages:
   - docstring-parser>=0.17.0,<0.18
   - fastmcp
   - python-frontmatter
+  - nest-asyncio
   - ics ; extra == 'notebooks'
   - tzlocal ; extra == 'notebooks'
   - modal ; extra == 'notebooks'
