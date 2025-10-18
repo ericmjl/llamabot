@@ -35,6 +35,7 @@ directly without this prefix. This is essential for proper dependency management
 and environment isolation.
 
 **Examples**:
+
 - ✅ `pixi run test` (correct)
 - ❌ `pytest` (incorrect - will fail)
 - ✅ `pixi run pytest tests/specific_test.py` (correct)
@@ -62,6 +63,55 @@ the check command.
 **No Jupyter Notebooks**: This project does not use `.ipynb` files anymore.
 All examples and notebooks should be created as Marimo notebooks (`.py` files).
 If you encounter any `.ipynb` files, they should be converted to Marimo format.
+
+**Notebook Dependencies**: All notebooks should install llamabot locally using the
+`[tool.uv.sources]` section to ensure they use the latest development version:
+
+```python
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "llamabot==0.13.11",
+# ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../", editable = true }
+# ///
+```
+
+This pattern ensures notebooks use the local development version of llamabot
+instead of the published version, allowing them to test new features and changes.
+
+**FastMCP Usage**: When creating MCP clients from FastMCP servers, pass the FastMCP
+object directly to the Client constructor. Do NOT call `get_server()` method:
+
+```python
+# ✅ Correct
+server = FastMCP('my-server')
+client = Client(server)
+
+# ❌ Incorrect - FastMCP objects don't have get_server() method
+client = Client(server.get_server())  # AttributeError
+```
+
+**Notebook Async Issues**: When using async code in Jupyter notebooks, avoid
+`asyncio.run()` as it conflicts with the existing event loop. Use `nest_asyncio`
+instead:
+
+```python
+# ✅ Correct for notebooks
+import nest_asyncio
+nest_asyncio.apply()
+loop = asyncio.get_running_loop()
+result = loop.run_until_complete(async_function())
+
+# ❌ Incorrect - will fail in notebooks
+result = asyncio.run(async_function())  # RuntimeError
+```
+
+The codebase includes helper functions (`run_async_in_sync` in AgentBot,
+`_run_async_in_sync` in ToolBot) that automatically handle this for both regular
+Python and notebook environments.
 
 **Markdown Linting**: Always run `markdownlint` on any markdown file that you edit.
 Use `markdownlint filename.md` to check for issues and fix them before committing.
@@ -162,16 +212,23 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 ### Packaging
 
 - **Build Backend**: Uses Hatchling for wheel and source distribution builds
-- **Hatchling respects .gitignore**: By default, Hatchling excludes files listed in `.gitignore` from package distribution
-- **Including ignored files**: To include files that are in `.gitignore` (like build artifacts or generated data), use the `artifacts` configuration in `pyproject.toml`:
+- **Hatchling respects .gitignore**: By default, Hatchling excludes files listed
+  in `.gitignore` from package distribution
+- **Including ignored files**: To include files that are in `.gitignore` (like build
+  artifacts or generated data), use the `artifacts` configuration in `pyproject.toml`:
+
   ```toml
   [tool.hatch.build.targets.wheel]
   artifacts = [
       "path/to/files/**/*",
   ]
   ```
-- **MCP Database**: The `llamabot/data/mcp_docs/` directory is built during CI/CD and included in the package using the `artifacts` configuration, even though it's in `.gitignore`
-- **CI/CD Workflow**: Database is built first, then the package is built once to include the database files
+
+- **MCP Database**: The `llamabot/data/mcp_docs/` directory is built during CI/CD
+  and included in the package using the `artifacts` configuration, even though it's
+  in `.gitignore`
+- **CI/CD Workflow**: Database is built first, then the package is built once to
+  include the database files
 
 ## Key Dependencies
 

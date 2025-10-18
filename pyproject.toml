@@ -99,6 +99,7 @@ dependencies = [
     "docstring-parser>=0.17.0,<0.18",
     "fastmcp",
     "python-frontmatter",
+    "nest-asyncio",
 ]
 requires-python = ">=3.9,<3.13"
 description = "A Pythonic interface to LLMs."
