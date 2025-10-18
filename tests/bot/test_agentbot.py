@@ -45,13 +45,30 @@ async def test_agent_bot_react_execution():
     with (
         patch("llamabot.bot.simplebot.make_response") as mock_make_response,
         patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
-        patch("llamabot.bot.simplebot.extract_content") as mock_extract_content,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
     ):
         # Mock the thought phase
         thought_message = AIMessage(content="Thought: I need to respond to the user.")
         mock_make_response.return_value = thought_message
         mock_stream_chunks.return_value = thought_message
         mock_extract_content.return_value = "Thought: I need to respond to the user."
+
+        # Mock the completion call to prevent real API calls
+        mock_completion.return_value = thought_message
+
+        # Mock stream_chunks to return the message directly
+        mock_stream_chunks.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        # Mock extract_content to return the content directly
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "Thought: I need to respond to the user."
+
+        mock_extract_content.side_effect = mock_extract_content_func
 
         # Mock ToolBot's internal LLM calls
         with (
@@ -87,13 +104,30 @@ async def test_agent_bot_max_iterations():
     with (
         patch("llamabot.bot.simplebot.make_response") as mock_make_response,
         patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
-        patch("llamabot.bot.simplebot.extract_content") as mock_extract_content,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
     ):
         # Mock thought phase
         thought_message = AIMessage(content="Thought: I need to do something.")
         mock_make_response.return_value = thought_message
         mock_stream_chunks.return_value = thought_message
         mock_extract_content.return_value = "Thought: I need to do something."
+
+        # Mock the completion call to prevent real API calls
+        mock_completion.return_value = thought_message
+
+        # Mock stream_chunks to return the message directly
+        mock_stream_chunks.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        # Mock extract_content to return the content directly
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "Thought: I need to do something."
+
+        mock_extract_content.side_effect = mock_extract_content_func
 
         # Mock ToolBot to return a non-respond_to_user tool call
         with (
@@ -136,13 +170,30 @@ async def test_agent_bot_error_handling():
     with (
         patch("llamabot.bot.simplebot.make_response") as mock_make_response,
         patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
-        patch("llamabot.bot.simplebot.extract_content") as mock_extract_content,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
     ):
         # Mock thought phase
         thought_message = AIMessage(content="Thought: I need to do something.")
         mock_make_response.return_value = thought_message
         mock_stream_chunks.return_value = thought_message
         mock_extract_content.return_value = "Thought: I need to do something."
+
+        # Mock the completion call to prevent real API calls
+        mock_completion.return_value = thought_message
+
+        # Mock stream_chunks to return the message directly
+        mock_stream_chunks.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        # Mock extract_content to return the content directly
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "Thought: I need to do something."
+
+        mock_extract_content.side_effect = mock_extract_content_func
 
         # Mock ToolBot to return the error tool call
         with (
