@@ -5,9 +5,11 @@ particularly its ReAct pattern implementation and tool execution capabilities.
 """
 
 import pytest
+from unittest.mock import patch, MagicMock
 
 from llamabot.bot.agentbot import AgentBot, hash_result
 from llamabot.components.tools import tool
+from llamabot.components.messages import AIMessage
 
 
 @tool
@@ -35,35 +37,84 @@ def test_hash_result():
 async def test_agent_bot_react_execution():
     """Test the AgentBot's ReAct execution flow."""
     bot = AgentBot(
-        system_prompt="You are a helpful assistant. Always use the respond_to_user tool to answer questions.",
+        system_prompt="Test prompt",
         tools=[mock_tool],
-        model_name="ollama_chat/llama3.2",
     )
 
-    # Test with a simple question that should trigger respond_to_user
-    result = bot("Hello, how are you?")
+    # Mock the LLM calls at the deepest level
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.simplebot.extract_content") as mock_extract_content,
+    ):
+        # Mock the thought phase
+        thought_message = AIMessage(content="Thought: I need to respond to the user.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "Thought: I need to respond to the user."
 
-    # Verify we get a response (content should not be empty)
-    assert result.content is not None
-    assert len(result.content) > 0
+        # Mock ToolBot's internal LLM calls
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            # Create a mock tool call response
+            tool_call = MagicMock()
+            tool_call.function.name = "respond_to_user"
+            tool_call.function.arguments = '{"response": "Done"}'
 
-    # Verify the response is a string
-    assert isinstance(result.content, str)
+            # Mock the ToolBot's LLM response
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = [tool_call]
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            result = bot("Test message")
+            assert result.content == "Done"
 
 
 @pytest.mark.asyncio
 async def test_agent_bot_max_iterations():
     """Test that AgentBot respects max_iterations in ReAct pattern."""
     bot = AgentBot(
-        system_prompt="You are a helpful assistant. Never use the respond_to_user tool.",
+        system_prompt="Test prompt",
         tools=[mock_tool],
-        model_name="ollama_chat/llama3.2",
     )
 
-    # Test with max_iterations=1 to ensure it hits the limit quickly
-    with pytest.raises(RuntimeError) as exc_info:
-        bot("Hello, how are you?", max_iterations=1)
-    assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
+    # Mock ToolBot to never return respond_to_user (causing max iterations)
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.simplebot.extract_content") as mock_extract_content,
+    ):
+        # Mock thought phase
+        thought_message = AIMessage(content="Thought: I need to do something.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "Thought: I need to do something."
+
+        # Mock ToolBot to return a non-respond_to_user tool call
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            tool_call = MagicMock()
+            tool_call.function.name = "mock_tool"
+            tool_call.function.arguments = '{"value": "test"}'
+
+            # Mock the ToolBot's LLM response
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = [tool_call]
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            with pytest.raises(RuntimeError) as exc_info:
+                bot("Test message", max_iterations=2)
+            assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -77,12 +128,39 @@ async def test_agent_bot_error_handling():
         raise ValueError("This tool always fails")
 
     bot = AgentBot(
-        system_prompt="You are a helpful assistant. Always use the error_tool.",
+        system_prompt="Test prompt",
         tools=[error_tool],
-        model_name="ollama_chat/llama3.2",
     )
 
-    # Test that the agent handles tool errors gracefully
-    with pytest.raises(RuntimeError) as exc_info:
-        bot("Hello, how are you?", max_iterations=2)
-    assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
+    # Mock ToolBot to return the error tool
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.simplebot.extract_content") as mock_extract_content,
+    ):
+        # Mock thought phase
+        thought_message = AIMessage(content="Thought: I need to do something.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "Thought: I need to do something."
+
+        # Mock ToolBot to return the error tool call
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            tool_call = MagicMock()
+            tool_call.function.name = "error_tool"
+            tool_call.function.arguments = "{}"
+
+            # Mock the ToolBot's LLM response
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = [tool_call]
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            with pytest.raises(RuntimeError) as exc_info:
+                bot("Test message", max_iterations=2)
+            assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
