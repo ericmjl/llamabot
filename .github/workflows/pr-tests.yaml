@@ -91,9 +91,9 @@ jobs:
           curl -fsSL https://ollama.com/install.sh | sh
           sleep 3
 
-      # Install Gemma model for bare package test
+      # Install models for testing
       - name: Cache Ollama
-        if: ${{ matrix.test-type == 'bare-package' }}
+        if: ${{ matrix.test-type == 'bare-package' || matrix.test-type == 'unit-tests' }}
         uses: actions/cache@v4
         with:
           path: ~/.ollama
@@ -102,6 +102,10 @@ jobs:
       - name: Install gemma2:2b
         if: ${{ matrix.test-type == 'bare-package' }}
         run: ollama pull gemma2:2b
+
+      - name: Install llama3.2 for unit tests
+        if: ${{ matrix.test-type == 'unit-tests' }}
+        run: ollama pull llama3.2
 
       # Run the appropriate test based on matrix variables
       - name: Run unit tests
