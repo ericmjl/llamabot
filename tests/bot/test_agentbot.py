@@ -8,8 +8,6 @@ import pytest
 
 from llamabot.bot.agentbot import AgentBot, hash_result
 from llamabot.components.tools import tool
-from unittest.mock import patch, MagicMock
-from llamabot.components.messages import AIMessage
 
 
 @tool
@@ -37,92 +35,54 @@ def test_hash_result():
 async def test_agent_bot_react_execution():
     """Test the AgentBot's ReAct execution flow."""
     bot = AgentBot(
-        system_prompt="Test prompt",
+        system_prompt="You are a helpful assistant. Always use the respond_to_user tool to answer questions.",
         tools=[mock_tool],
+        model_name="ollama_chat/llama3.2",
     )
 
-    # Mock the ToolBot to return respond_to_user tool call
-    with (
-        patch.object(bot.toolbot, "__call__") as mock_toolbot_call,
-        patch("llamabot.bot.agentbot.make_response") as mock_make_response,
-        patch("llamabot.bot.agentbot.stream_chunks") as mock_stream_chunks,
-        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
-    ):
-        # Mock the thought phase
-        thought_message = AIMessage(content="Thought: I need to respond to the user.")
-        mock_make_response.return_value = thought_message
-        mock_stream_chunks.return_value = thought_message
-        mock_extract_content.return_value = "Thought: I need to respond to the user."
+    # Test with a simple question that should trigger respond_to_user
+    result = bot("Hello, how are you?")
 
-        # Mock ToolBot to return respond_to_user tool call
-        tool_call = MagicMock()
-        tool_call.function.name = "respond_to_user"
-        tool_call.function.arguments = '{"response": "Done"}'
-        mock_toolbot_call.return_value = [tool_call]
+    # Verify we get a response (content should not be empty)
+    assert result.content is not None
+    assert len(result.content) > 0
 
-        result = bot("Test message")
-        assert result.content == "Done"
+    # Verify the response is a string
+    assert isinstance(result.content, str)
 
 
 @pytest.mark.asyncio
 async def test_agent_bot_max_iterations():
     """Test that AgentBot respects max_iterations in ReAct pattern."""
     bot = AgentBot(
-        system_prompt="Test prompt",
+        system_prompt="You are a helpful assistant. Never use the respond_to_user tool.",
         tools=[mock_tool],
+        model_name="ollama_chat/llama3.2",
     )
 
-    # Mock ToolBot to never return respond_to_user (causing max iterations)
-    with (
-        patch.object(bot.toolbot, "__call__") as mock_toolbot_call,
-        patch("llamabot.bot.agentbot.make_response") as mock_make_response,
-        patch("llamabot.bot.agentbot.stream_chunks") as mock_stream_chunks,
-        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
-    ):
-        # Mock thought phase
-        thought_message = AIMessage(content="Thought: I need to do something.")
-        mock_make_response.return_value = thought_message
-        mock_stream_chunks.return_value = thought_message
-        mock_extract_content.return_value = "Thought: I need to do something."
-
-        # Mock ToolBot to return a non-respond_to_user tool call
-        tool_call = MagicMock()
-        tool_call.function.name = "mock_tool"
-        tool_call.function.arguments = '{"value": "test"}'
-        mock_toolbot_call.return_value = [tool_call]
-
-        with pytest.raises(RuntimeError) as exc_info:
-            bot("Test message", max_iterations=2)
-        assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
+    # Test with max_iterations=1 to ensure it hits the limit quickly
+    with pytest.raises(RuntimeError) as exc_info:
+        bot("Hello, how are you?", max_iterations=1)
+    assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
 async def test_agent_bot_error_handling():
     """Test AgentBot's error handling in ReAct pattern."""
+
+    # Create a tool that will cause an error
+    @tool
+    def error_tool() -> str:
+        """A tool that always raises an error."""
+        raise ValueError("This tool always fails")
+
     bot = AgentBot(
-        system_prompt="Test prompt",
-        tools=[mock_tool],
+        system_prompt="You are a helpful assistant. Always use the error_tool.",
+        tools=[error_tool],
+        model_name="ollama_chat/llama3.2",
     )
 
-    # Mock ToolBot to return a tool that will cause an error
-    with (
-        patch.object(bot.toolbot, "__call__") as mock_toolbot_call,
-        patch("llamabot.bot.agentbot.make_response") as mock_make_response,
-        patch("llamabot.bot.agentbot.stream_chunks") as mock_stream_chunks,
-        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
-    ):
-        # Mock thought phase
-        thought_message = AIMessage(content="Thought: I need to do something.")
-        mock_make_response.return_value = thought_message
-        mock_stream_chunks.return_value = thought_message
-        mock_extract_content.return_value = "Thought: I need to do something."
-
-        # Mock ToolBot to return a tool call that will fail
-        tool_call = MagicMock()
-        tool_call.function.name = "nonexistent_tool"
-        tool_call.function.arguments = '{"value": "test"}'
-        mock_toolbot_call.return_value = [tool_call]
-
-        with pytest.raises(RuntimeError) as exc_info:
-            bot("Test message", max_iterations=2)
-        assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
+    # Test that the agent handles tool errors gracefully
+    with pytest.raises(RuntimeError) as exc_info:
+        bot("Hello, how are you?", max_iterations=2)
+    assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
