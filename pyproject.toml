@@ -138,7 +138,6 @@ cli = [
     "prompt-toolkit",
     "case-converter",
     "pyperclip",
-    "astor",
 ]
 all = [
     "llamabot[notebooks,rag,agent,cli]"

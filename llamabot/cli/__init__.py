@@ -17,18 +17,12 @@ from . import (
     logviewer,
     mcp,
     notebook,
-    python,
     repo,
     tutorial,
 )
 from .utils import exit_if_asked, uniform_prompt
 
 app = typer.Typer()
-app.add_typer(
-    python.app,
-    name="python",
-    help="Python bot for generating docstrings, code, and tests.",
-)
 app.add_typer(
     git.gitapp,
     name="git",
