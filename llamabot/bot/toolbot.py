@@ -1,11 +1,13 @@
 """ToolBot - A single-turn bot that can execute tools."""
 
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Union, Dict, Any
 from loguru import logger
 
 from llamabot.components.tools import today_date, respond_to_user
 from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.messages import AIMessage, BaseMessage
+from llamabot.components.mcp_client import MCPConnectionManager
+from llamabot.components.mcp_tools import discover_all_mcp_tools
 from llamabot.bot.simplebot import (
     SimpleBot,
     extract_tool_calls,
@@ -82,6 +84,7 @@ class ToolBot(SimpleBot):
     :param model_name: The name of the model to use
     :param tools: Optional list of additional tools to include
     :param chat_memory: Chat memory component for context retrieval
+    :param mcp_servers: Optional list of MCP server configurations
     :param completion_kwargs: Additional keyword arguments for completion
     """
 
@@ -91,6 +94,7 @@ class ToolBot(SimpleBot):
         model_name: str,
         tools: Optional[List[Callable]] = None,
         chat_memory: Optional[ChatMemory] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         **completion_kwargs,
     ):
         super().__init__(
@@ -108,6 +112,42 @@ class ToolBot(SimpleBot):
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
         self.chat_memory = chat_memory or ChatMemory()
 
+        # Initialize MCP support
+        self.mcp_servers = mcp_servers or []
+        self.mcp_connection_manager = None
+        self.mcp_tools_discovered = False
+
+    def _discover_mcp_tools(self):
+        """Discover and add MCP tools to the bot's tool list.
+
+        This method is called lazily on the first tool call to avoid
+        connection overhead during initialization.
+        """
+        if self.mcp_tools_discovered or not self.mcp_servers:
+            return
+
+        try:
+            # Create connection manager
+            self.mcp_connection_manager = MCPConnectionManager(self.mcp_servers)
+
+            # Discover all MCP tools
+            mcp_tools = discover_all_mcp_tools(self.mcp_connection_manager)
+
+            if mcp_tools:
+                # Add MCP tools to the bot's tool list
+                self.tools.extend([tool.json_schema for tool in mcp_tools])
+                self.name_to_tool_map.update(
+                    {tool.__name__: tool for tool in mcp_tools}
+                )
+
+                logger.info(f"Added {len(mcp_tools)} MCP tools to ToolBot")
+
+            self.mcp_tools_discovered = True
+
+        except Exception as e:
+            logger.error(f"Failed to discover MCP tools: {e}")
+            # Continue without MCP tools - don't fail the bot
+
     def __call__(
         self,
         *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
@@ -118,6 +158,9 @@ class ToolBot(SimpleBot):
         :return: List of tool calls to execute
         """
         from llamabot.components.messages import to_basemessage, HumanMessage
+
+        # Discover MCP tools on first call
+        self._discover_mcp_tools()
 
         # Handle callable functions by calling them and converting to strings
         processed_messages = []
