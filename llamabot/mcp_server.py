@@ -13,10 +13,14 @@ from llamabot import LanceDBDocStore
 def collect_markdown_files(docs_dir: Path) -> List[Path]:
     """Recursively collect all markdown files from the docs directory.
 
+    Excludes release notes from docs/releases/ directory.
+
     :param docs_dir: Path to the documentation directory.
     :return: List of Path objects for all markdown files.
     """
-    return list(docs_dir.rglob("*.md"))
+    all_md_files = list(docs_dir.rglob("*.md"))
+    # Filter out release notes
+    return [f for f in all_md_files if "releases/" not in str(f.relative_to(docs_dir))]
 
 
 def extract_module_docstring(module_path: Path) -> str:
@@ -75,7 +79,11 @@ def fetch_docs_from_github() -> Optional[Path]:
 
         # Find all markdown files in docs/ directory
         for item in tree_data["tree"]:
-            if item["path"].startswith("docs/") and item["path"].endswith(".md"):
+            if (
+                item["path"].startswith("docs/")
+                and item["path"].endswith(".md")
+                and "docs/releases/" not in item["path"]
+            ):
                 # Download the file
                 file_url = f"https://raw.githubusercontent.com/ericmjl/llamabot/main/{item['path']}"
                 file_response = requests.get(file_url, timeout=10)
