@@ -203,7 +203,7 @@ class LanceDBDocStore(AbstractDocumentStore):
 
         registry: EmbeddingFunctionRegistry = get_registry()
         self.embedding_func = registry.get(embedding_registry).create(
-            name=embedding_model
+            name=embedding_model, trust_remote_code=True
         )
 
         class DocstoreEntry(LanceModel):
