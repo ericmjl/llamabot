@@ -172,6 +172,18 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
   ```
 - **MCP Database**: The `llamabot/data/mcp_docs/` directory is built during CI/CD and included in the package using the `artifacts` configuration, even though it's in `.gitignore`
 - **CI/CD Workflow**: Database is built first, then the package is built once to include the database files
+- **Two-Phase Build Pattern**:
+  1. Build artifacts (e.g., MCP database) using `scripts/build_mcp_docs.py`
+  2. Copy artifacts to package data directory (`llamabot/data/mcp_docs/`)
+  3. Build package once with all artifacts included
+- **Artifacts Configuration Example**:
+  ```toml
+  [tool.hatch.build.targets.wheel]
+  artifacts = [
+      "llamabot/data/mcp_docs/**/*",
+  ]
+  ```
+- **CI/CD Implementation**: See `.github/workflows/release-python-package.yaml` for the complete workflow
 
 ## Key Dependencies
 

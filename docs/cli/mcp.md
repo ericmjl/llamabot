@@ -100,6 +100,41 @@ The MCP server uses a two-tier approach:
 The server automatically uses the user database if it exists, otherwise falls back
 to the packaged database. Most users will use the packaged database.
 
+## CI/CD and Packaging
+
+The MCP documentation database follows a two-phase build process during CI/CD to ensure the database is included in the final package.
+
+### Build Process
+
+1. **Database Build**: The MCP database is built using `scripts/build_mcp_docs.py`
+2. **Database Copy**: The built database is copied to `llamabot/data/mcp_docs/`
+3. **Package Build**: The Python package is built once with the database included
+4. **Artifacts Inclusion**: Hatchling includes the database files via `artifacts` configuration
+
+### Configuration
+
+The database directory is in `.gitignore` but still gets packaged through the `artifacts` configuration in `pyproject.toml`:
+
+```toml
+[tool.hatch.build.targets.wheel]
+artifacts = [
+    "llamabot/data/mcp_docs/**/*",
+]
+```
+
+This pattern allows build artifacts to be included in the package even when they're not tracked in git.
+
+### CI/CD Workflow
+
+The process is implemented in `.github/workflows/release-python-package.yaml`:
+
+1. Build MCP database with `pixi run python scripts/build_mcp_docs.py`
+2. Verify database files exist in `llamabot/data/mcp_docs/`
+3. Build package with `uv build --sdist --wheel`
+4. Publish to PyPI
+
+This ensures every release includes a fresh, up-to-date documentation database.
+
 ## Troubleshooting
 
 ### Database Not Found
