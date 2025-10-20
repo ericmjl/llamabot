@@ -148,7 +148,7 @@ notebooks = ["ollama>=0.4.4,<0.5"]
 agent = []
 cli = []
 
-[tool.pixi.project]
+[tool.pixi.workspace]
 name = "llamabot"
 description = "A Pythonic interface to LLMs"
 channels = ["https://prefix.dev/conda-forge"]
