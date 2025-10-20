@@ -255,17 +255,24 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
 
     repo = git.Repo(here())
     tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+
+    # The newest tag (just created by bump2version) is always used for the filename
     if len(tags) == 0:
-        # No tags, get all commit messages from the very first commit
+        raise ValueError(
+            "No tags found. Please ensure bump2version has run and created a tag before generating release notes."
+        )
+
+    newest_tag = tags[-1]
+
+    if len(tags) == 1:
+        # First release: get all commit messages from the very first commit
         log_info = repo.git.log()
-    elif len(tags) == 1:
-        # Only one tag, get all commit messages from that tag to the current commit
-        tag = tags[0]
-        log_info = repo.git.log(f"{tag.commit.hexsha}..HEAD")
+    elif len(tags) == 2:
+        # Second release: get commits from first tag to second tag
+        log_info = repo.git.log(f"{tags[0].commit.hexsha}..{tags[1].commit.hexsha}")
     else:
-        # More than one tag, get all commit messages between the last two tags
-        tag1, tag2 = tags[-2], tags[-1]
-        log_info = repo.git.log(f"{tag1.commit.hexsha}..{tag2.commit.hexsha}")
+        # Third+ release: get commits between the last two tags
+        log_info = repo.git.log(f"{tags[-2].commit.hexsha}..{tags[-1].commit.hexsha}")
 
     console = Console()
     bot = SimpleBot(
@@ -282,8 +289,8 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
     # Ensure only one newline at the end of the file
     trimmed_notes = notes.content.rstrip() + "\n"
 
-    # Write release notes to the file
-    with open(release_notes_dir / f"{tag2.name}.md", "w+") as f:
+    # Write release notes using the newest tag
+    with open(release_notes_dir / f"{newest_tag.name}.md", "w+") as f:
         f.write(trimmed_notes)
 
 
