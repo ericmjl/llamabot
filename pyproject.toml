@@ -120,7 +120,6 @@ notebooks = [
 ]
 rag = [
     "lancedb>=0.22",
-    "tantivy",
     "rank-bm25",
     "pylance",
     "sentence-transformers",
