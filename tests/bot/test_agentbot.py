@@ -215,3 +215,52 @@ async def test_agent_bot_error_handling():
             with pytest.raises(RuntimeError) as exc_info:
                 bot("Test message", max_iterations=2)
             assert "Agent exceeded maximum ReAct cycles" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_agent_bot_empty_tool_calls():
+    """Test AgentBot automatically responds when no tools are selected."""
+    bot = AgentBot(
+        system_prompt="Test prompt",
+        tools=[mock_tool],
+    )
+
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
+    ):
+        # Mock thought phase
+        thought_message = AIMessage(content="I need more information from the user.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "I need more information from the user."
+
+        mock_completion.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "I need more information from the user."
+
+        mock_extract_content.side_effect = mock_extract_content_func
+
+        # Mock ToolBot to return empty list
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = []
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            result = bot("Test message")
+            assert result.content == "I need more information from the user."
+            assert bot.run_meta["tool_usage"]["respond_to_user"]["calls"] == 1

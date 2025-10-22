@@ -152,7 +152,8 @@ class SimpleBot:
 
         sqlite_log(self, messages + [response_message])
         if self.memory:
-            self.memory.append(processed_messages[-1], response_message)
+            self.memory.append(processed_messages[-1])
+            self.memory.append(response_message)
 
         # Record end time
         self.run_meta["end_time"] = datetime.now()

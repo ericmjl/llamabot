@@ -25,6 +25,8 @@ from llamabot.components.messages import (
     BaseMessage,
     HumanMessage,
 )
+from llamabot.components.docstore import AbstractDocumentStore
+from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.tools import respond_to_user, today_date
 from llamabot.config import default_language_model
 from llamabot.experiments import metric
@@ -112,6 +114,7 @@ class AgentBot(SimpleBot):
         stream_target: str = "none",
         tools: Optional[list[Callable]] = None,
         toolbot: Optional[ToolBot] = None,
+        memory: Optional[Union[ChatMemory, AbstractDocumentStore]] = None,
         **completion_kwargs,
     ):
         super().__init__(
@@ -119,6 +122,7 @@ class AgentBot(SimpleBot):
             temperature=temperature,
             model_name=model_name,
             stream_target=stream_target,
+            memory=memory,
             **completion_kwargs,
         )
 
@@ -181,6 +185,29 @@ class AgentBot(SimpleBot):
             elif isinstance(msg, AIMessage):
                 self.run_meta["message_counts"]["assistant"] += 1
 
+        # Append user message to memory at start
+        if self.memory:
+            # Get the user message (should be last in initial message_list)
+            user_messages = [msg for msg in messages if isinstance(msg, HumanMessage)]
+            if user_messages:
+                self.memory.append(user_messages[-1])
+
+        # Retrieve from memory if available
+        memory_messages = []
+        if self.memory and message_list:
+            # Get the user messages from the current call
+            user_messages = [
+                msg for msg in message_list if isinstance(msg, HumanMessage)
+            ]
+            if user_messages:
+                memory_messages = self.memory.retrieve(
+                    query=f"From our conversation history, give me the most relevant information to the query, {user_messages[-1].content}"
+                )
+
+        # Insert memory messages after system prompt
+        if memory_messages:
+            message_list = [message_list[0]] + memory_messages + message_list[1:]
+
         # ReAct iteration loop
         for iteration in range(max_iterations):
             self.run_meta["current_iteration"] = iteration + 1
@@ -201,10 +228,50 @@ class AgentBot(SimpleBot):
             message_list.append(thought_message)
             self.run_meta["message_counts"]["assistant"] += 1
 
+            # Append thought to memory immediately
+            if self.memory:
+                self.memory.append(thought_message)
+
             # ACTION PHASE: Use ToolBot to select and execute tools
             logger.debug("Using ToolBot for tool selection...")
             tool_calls = self.toolbot(*message_list)
             logger.debug("ToolBot selected: {}", tool_calls)
+
+            # If no tools selected, automatically respond to user with the thought
+            if not tool_calls:
+                logger.debug(
+                    "No tools selected, automatically responding to user with thought"
+                )
+                start_time = datetime.now()
+                result = thought_content
+                duration = (datetime.now() - start_time).total_seconds()
+
+                # Record tool usage for respond_to_user
+                tool_name = "respond_to_user"
+                if tool_name not in self.run_meta["tool_usage"]:
+                    self.run_meta["tool_usage"][tool_name] = {
+                        "calls": 0,
+                        "success": 0,
+                        "failures": 0,
+                        "total_duration": 0.0,
+                    }
+                self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                self.run_meta["tool_usage"][tool_name]["success"] += 1
+                self.run_meta["tool_usage"][tool_name]["total_duration"] += duration
+
+                # Return final answer
+                final_message = AIMessage(content=result)
+                self.run_meta["end_time"] = datetime.now()
+                self.run_meta["duration"] = (
+                    self.run_meta["end_time"] - self.run_meta["start_time"]
+                ).total_seconds()
+
+                # Append to memory if available
+                if self.memory:
+                    self.memory.append(final_message)
+
+                sqlite_log(self, message_list + [final_message])
+                return final_message
 
             if tool_calls:
                 # Check for respond_to_user (final answer)
@@ -240,6 +307,11 @@ class AgentBot(SimpleBot):
                     self.run_meta["duration"] = (
                         self.run_meta["end_time"] - self.run_meta["start_time"]
                     ).total_seconds()
+
+                    # Append to memory if available
+                    if self.memory:
+                        self.memory.append(final_message)
+
                     sqlite_log(self, message_list + [final_message])
                     return final_message
 
@@ -309,6 +381,10 @@ class AgentBot(SimpleBot):
                 observation_message = HumanMessage(content=observation_content)
                 message_list.append(observation_message)
                 self.run_meta["message_counts"]["tool"] += 1
+
+                # Append observation to memory immediately
+                if self.memory:
+                    self.memory.append(observation_message)
 
                 logger.debug("ReAct cycle completed. Results: {}", results)
 
