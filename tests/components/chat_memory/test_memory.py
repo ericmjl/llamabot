@@ -369,11 +369,13 @@ def test_chat_memory_node_id_increment():
 
 def test_chat_memory_append_individual_messages():
     """Test appending individual messages to memory with relationship labels."""
+    from llamabot.components.messages import ThoughtMessage, ObservationMessage
+
     memory = ChatMemory()
 
     msg1 = user("Question 1")
-    msg2 = assistant("Thought: Let me think")
-    msg3 = user("Observation: Result")
+    msg2 = ThoughtMessage(content="Let me think")
+    msg3 = ObservationMessage(content="Result")
     msg4 = assistant("Answer")
 
     memory.append(msg1)
