@@ -235,10 +235,8 @@ class LanceDBDocStore(AbstractDocumentStore):
             self.existing_records = []
 
         if auto_create_fts_index:
-            # NOTE: 23 Jun 2025 -- set use_tantivy=False to avoid
-            # the following error:
-            #
-            #   ValueError: field_names must be a string when use_tantivy=False
+            # NOTE: Using LanceDB's native FTS implementation instead of Tantivy
+            # for better performance and incremental indexing capabilities
             self.table.create_fts_index(
                 field_names="document", replace=True, use_tantivy=False
             )
