@@ -8014,8 +8014,8 @@ packages:
   requires_python: '!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8'
 - pypi: ./
   name: llamabot
-  version: 0.15.4
-  sha256: 33dcd5590f4dd81f79d1b51bb30ad734f2d18c5f30f75339b45d14fa48d106d0
+  version: 0.15.5
+  sha256: ebd14a7ca367d7b01c1941816f5181e66f85f44c60e371ad896cb917a1e52a2a
   requires_dist:
   - openai
   - loguru
