@@ -24,6 +24,8 @@ from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
+    ObservationMessage,
+    ThoughtMessage,
 )
 from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.chat_memory import ChatMemory
@@ -188,7 +190,9 @@ class AgentBot(SimpleBot):
         # Append user message to memory at start
         if self.memory:
             # Get the user message (should be last in initial message_list)
-            user_messages = [msg for msg in messages if isinstance(msg, HumanMessage)]
+            user_messages = [
+                msg for msg in message_list if isinstance(msg, HumanMessage)
+            ]
             if user_messages:
                 self.memory.append(user_messages[-1])
 
@@ -224,7 +228,7 @@ class AgentBot(SimpleBot):
             logger.debug("Thought content: {}", thought_content)
 
             # Add the thought to conversation
-            thought_message = AIMessage(content=thought_content)
+            thought_message = ThoughtMessage(content=thought_content)
             message_list.append(thought_message)
             self.run_meta["message_counts"]["assistant"] += 1
 
@@ -378,7 +382,7 @@ class AgentBot(SimpleBot):
                 observation_content = (
                     f"Observation: {'; '.join(str(r) for r in results)}"
                 )
-                observation_message = HumanMessage(content=observation_content)
+                observation_message = ObservationMessage(content=observation_content)
                 message_list.append(observation_message)
                 self.run_meta["message_counts"]["tool"] += 1
 
