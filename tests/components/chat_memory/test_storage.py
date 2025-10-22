@@ -265,23 +265,21 @@ def test_relationship_detection_with_new_message_types():
     from llamabot.components.messages import (
         HumanMessage,
         AIMessage,
-        ThoughtMessage,
-        ObservationMessage,
+        thought,
+        observation,
     )
     from llamabot.components.chat_memory.storage import _get_simple_relationship
 
     # Test thought message relationships
     user_msg = HumanMessage(content="Hello")
-    thought_msg = ThoughtMessage(content="I need to think about this")
+    thought_msg = thought("I need to think about this")
 
     # User -> Thought
     relationship = _get_simple_relationship(user_msg, thought_msg)
     assert relationship == "question→response"
 
     # Thought -> Action (observation)
-    observation_msg = ObservationMessage(
-        content="Observation: Tool executed successfully"
-    )
+    observation_msg = observation("Tool executed successfully")
     relationship = _get_simple_relationship(thought_msg, observation_msg)
     assert relationship == "response→observation"
 

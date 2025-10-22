@@ -499,3 +499,69 @@ def assistant(*content: Union[str, Path, BaseMessage]) -> AIMessage:
     # Process all items and join with spaces
     combined_content = " ".join(_process_item(item) for item in content)
     return AIMessage(content=combined_content)
+
+
+def thought(*content: Union[str, Path, BaseMessage]) -> ThoughtMessage:
+    """Create a thought message from content.
+
+    :param content: The content of the thought message. Can be strings, Path objects,
+                   or BaseMessage objects
+    :return: A ThoughtMessage object
+    """
+    if not content:
+        return ThoughtMessage(content="")
+
+    def _process_item(item: Union[str, Path, BaseMessage]) -> str:
+        """Process a single content item into a string.
+
+        :param item: The item to process. Can be a string, Path to a text file,
+                    or BaseMessage object
+        :return: The string content of the item
+        :raises FileNotFoundError: If a Path item points to a non-existent file
+        """
+        if isinstance(item, (AIMessage, ThoughtMessage)):
+            return item.content
+        if isinstance(item, BaseMessage):
+            return item.content
+        if isinstance(item, Path):
+            if not item.exists():
+                raise FileNotFoundError(f"File not found: {item}")
+            return item.read_text()
+        return str(item)
+
+    # Process all items and join with spaces
+    combined_content = " ".join(_process_item(item) for item in content)
+    return ThoughtMessage(content=combined_content)
+
+
+def observation(*content: Union[str, Path, BaseMessage]) -> ObservationMessage:
+    """Create an observation message from content.
+
+    :param content: The content of the observation message. Can be strings, Path objects,
+                   or BaseMessage objects
+    :return: An ObservationMessage object
+    """
+    if not content:
+        return ObservationMessage(content="")
+
+    def _process_item(item: Union[str, Path, BaseMessage]) -> str:
+        """Process a single content item into a string.
+
+        :param item: The item to process. Can be a string, Path to a text file,
+                    or BaseMessage object
+        :return: The string content of the item
+        :raises FileNotFoundError: If a Path item points to a non-existent file
+        """
+        if isinstance(item, (AIMessage, ObservationMessage)):
+            return item.content
+        if isinstance(item, BaseMessage):
+            return item.content
+        if isinstance(item, Path):
+            if not item.exists():
+                raise FileNotFoundError(f"File not found: {item}")
+            return item.read_text()
+        return str(item)
+
+    # Process all items and join with spaces
+    combined_content = " ".join(_process_item(item) for item in content)
+    return ObservationMessage(content=combined_content)
