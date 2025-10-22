@@ -15,7 +15,10 @@ from llamabot.components.chat_memory.selectors import (
     LinearNodeSelector,
     LLMNodeSelector,
 )
-from llamabot.components.chat_memory.storage import append_linear, append_with_threading
+from llamabot.components.chat_memory.storage import (
+    append_linear_message,
+    append_threaded_message,
+)
 from llamabot.components.chat_memory.retrieval import (
     get_recent_messages,
     semantic_search_with_context,
@@ -147,26 +150,18 @@ class ChatMemory:
                 self.graph, query, n_results, context_depth
             )
 
-    def append(self, human_message: BaseMessage, assistant_message: BaseMessage):
-        """Add conversation turn to memory.
+    def append(self, message: BaseMessage):
+        """Add a message to memory.
 
-        :param human_message: The human message
-        :param assistant_message: The assistant message
+        :param message: Any message to append (HumanMessage, AIMessage, etc.)
         """
         if isinstance(self.node_selector, LinearNodeSelector):
-            append_linear(
-                self.graph, human_message, assistant_message, self._next_node_id
-            )
-            self._next_node_id += 2  # Increment for both messages
+            append_linear_message(self.graph, message, self._next_node_id)
         else:
-            append_with_threading(
-                self.graph,
-                human_message,
-                assistant_message,
-                self.node_selector,
-                self._next_node_id,
+            append_threaded_message(
+                self.graph, message, self.node_selector, self._next_node_id
             )
-            self._next_node_id += 2  # Increment for both messages
+        self._next_node_id += 1
 
     def reset(self):
         """Reset the memory system."""

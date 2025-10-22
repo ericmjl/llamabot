@@ -71,12 +71,13 @@ def test_chat_memory_append_linear():
     h1 = user("Hello")
     a1 = assistant("Hi there!")
 
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     assert len(memory.graph.nodes()) == 2
     assert memory.graph.nodes[1]["node"].message == h1
     assert memory.graph.nodes[2]["node"].message == a1
-    assert memory._next_node_id == 3  # Incremented by 2
+    assert memory._next_node_id == 3  # Incremented by 2 (1 for h1, 1 for a1)
 
 
 def test_chat_memory_append_threaded():
@@ -89,14 +90,18 @@ def test_chat_memory_append_threaded():
     h1 = user("Hello")
     a1 = assistant("Hi there!")
 
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     assert len(memory.graph.nodes()) == 2
     assert memory.graph.nodes[1]["node"].message == h1
     assert memory.graph.nodes[2]["node"].message == a1
     assert memory._next_node_id == 3
 
-    node_selector.select_parent.assert_called_once_with(memory.graph, h1)
+    # Should be called twice - once for each message
+    assert node_selector.select_parent.call_count == 2
+    node_selector.select_parent.assert_any_call(memory.graph, h1)
+    node_selector.select_parent.assert_any_call(memory.graph, a1)
 
 
 def test_chat_memory_append_multiple_turns():
@@ -106,15 +111,17 @@ def test_chat_memory_append_multiple_turns():
     # First turn
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     # Second turn
     h2 = user("How are you?")
     a2 = assistant("I'm doing well!")
-    memory.append(h2, a2)
+    memory.append(h2)
+    memory.append(a2)
 
     assert len(memory.graph.nodes()) == 4
-    assert memory._next_node_id == 5
+    assert memory._next_node_id == 5  # 1, 2, 3, 4 used, next is 5
 
     # Check connections
     assert memory.graph.has_edge(1, 2)  # H1 -> A1
@@ -140,8 +147,10 @@ def test_chat_memory_retrieve_linear_with_messages():
     h3 = user("How are you?")
     a4 = assistant("I'm doing well!")
 
-    memory.append(h1, a2)
-    memory.append(h3, a4)
+    memory.append(h1)
+    memory.append(a2)
+    memory.append(h3)
+    memory.append(a4)
 
     result = memory.retrieve("test query", n_results=3)
     assert len(result) == 3
@@ -164,8 +173,10 @@ def test_chat_memory_retrieve_threaded():
     h2 = user("What about machine learning?")
     a2 = assistant("ML libraries include scikit-learn")
 
-    memory.append(h1, a1)
-    memory.append(h2, a2)
+    memory.append(h1)
+    memory.append(a1)
+    memory.append(h2)
+    memory.append(a2)
 
     with patch(
         "llamabot.components.chat_memory.memory.semantic_search_with_context"
@@ -185,7 +196,8 @@ def test_chat_memory_retrieve_custom_context_depth():
     # Add some messages
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     # Test with custom context depth
     _ = memory.retrieve("test", context_depth=10)
@@ -199,7 +211,8 @@ def test_chat_memory_reset():
     # Add some messages
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     assert len(memory.graph.nodes()) == 2
 
@@ -217,7 +230,8 @@ def test_chat_memory_to_mermaid():
     # Add some messages
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     result = memory.to_mermaid()
 
@@ -236,7 +250,8 @@ def test_chat_memory_save_load():
     # Add some messages
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     # Save to temporary file
     import tempfile
@@ -266,7 +281,8 @@ def test_chat_memory_export_json():
     # Add some messages
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     result = memory.export(format="json")
 
@@ -288,7 +304,8 @@ def test_chat_memory_export_jsonl():
     # Add some messages
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     result = memory.export(format="jsonl")
 
@@ -310,7 +327,8 @@ def test_chat_memory_export_plain_text():
     # Add some messages
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     result = memory.export(format="plain_text")
 
@@ -335,16 +353,42 @@ def test_chat_memory_node_id_increment():
     # First conversation turn
     h1 = user("Hello")
     a1 = assistant("Hi there!")
-    memory.append(h1, a1)
+    memory.append(h1)
+    memory.append(a1)
 
     assert memory._next_node_id == 3  # 1, 2 used, next is 3
 
     # Second conversation turn
     h2 = user("How are you?")
     a2 = assistant("I'm doing well!")
-    memory.append(h2, a2)
+    memory.append(h2)
+    memory.append(a2)
 
-    assert memory._next_node_id == 5  # 3, 4 used, next is 5
+    assert memory._next_node_id == 5  # 1, 2, 3, 4 used, next is 5
+
+
+def test_chat_memory_append_individual_messages():
+    """Test appending individual messages to memory with relationship labels."""
+    memory = ChatMemory()
+
+    msg1 = user("Question 1")
+    msg2 = assistant("Thought: Let me think")
+    msg3 = user("Observation: Result")
+    msg4 = assistant("Answer")
+
+    memory.append(msg1)
+    memory.append(msg2)
+    memory.append(msg3)
+    memory.append(msg4)
+
+    assert len(memory.graph.nodes) == 4
+    assert len(memory.graph.edges) == 3
+
+    # Check edge relationships
+    edges = list(memory.graph.edges(data=True))
+    assert edges[0][2]["relationship"] == "question→response"
+    assert edges[1][2]["relationship"] == "response→observation"
+    assert edges[2][2]["relationship"] == "observation→response"
 
 
 def test_chat_memory_threading_detection():

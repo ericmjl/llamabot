@@ -94,3 +94,81 @@ def _find_leaf_node(graph: nx.DiGraph) -> Optional[int]:
 
     # Return the leaf node (in a linear graph, there should be only one)
     return leaf_nodes[0]
+
+
+def append_linear_message(
+    graph: nx.DiGraph,
+    message: BaseMessage,
+    next_node_id: int,
+):
+    """Append a single message to linear memory.
+
+    :param graph: The conversation graph
+    :param message: Any message to append
+    :param next_node_id: The next node ID to use
+    """
+    # Find the leaf node (last message in linear chain)
+    parent_id = _find_leaf_node(graph)
+
+    # Create node
+    node = ConversationNode(id=next_node_id, message=message, parent_id=parent_id)
+    graph.add_node(next_node_id, node=node)
+
+    # Add edge with simple relationship label
+    if parent_id:
+        relationship = _get_simple_relationship(
+            graph.nodes[parent_id]["node"].message, message
+        )
+        graph.add_edge(parent_id, next_node_id, relationship=relationship)
+
+
+def append_threaded_message(
+    graph: nx.DiGraph,
+    message: BaseMessage,
+    node_selector: NodeSelector,
+    next_node_id: int,
+):
+    """Append message with semantic threading.
+
+    :param graph: The conversation graph
+    :param message: Any message to append
+    :param node_selector: The node selector to use
+    :param next_node_id: The next node ID to use
+    """
+    # Use node selector to find best parent
+    parent_id = node_selector.select_parent(graph, message)
+
+    # Create node
+    node = ConversationNode(id=next_node_id, message=message, parent_id=parent_id)
+    graph.add_node(next_node_id, node=node)
+
+    # Add edge with relationship label
+    if parent_id:
+        relationship = _get_simple_relationship(
+            graph.nodes[parent_id]["node"].message, message
+        )
+        graph.add_edge(parent_id, next_node_id, relationship=relationship)
+
+
+def _get_simple_relationship(parent_msg: BaseMessage, child_msg: BaseMessage) -> str:
+    """Generate simple relationship label based on message types.
+
+    :param parent_msg: Parent message
+    :param child_msg: Child message
+    :return: Relationship label
+    """
+    # Map message roles to readable names
+    role_map = {"user": "question", "assistant": "response", "system": "instruction"}
+
+    parent_role = role_map.get(parent_msg.role, parent_msg.role)
+    child_role = role_map.get(child_msg.role, child_msg.role)
+
+    # Special case: observation messages (tool results)
+    if "Observation:" in child_msg.content:
+        return f"{parent_role}→observation"
+    if "Observation:" in parent_msg.content:
+        return "observation→response"
+    if "Thought:" in parent_msg.content:
+        return "thought→action"
+
+    return f"{parent_role}→{child_role}"

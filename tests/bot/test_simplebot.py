@@ -240,7 +240,7 @@ def test_simple_bot_call_with_chat_memory(
 
     # Check that chat memory was used
     mock_chat_memory.retrieve.assert_called_once()
-    mock_chat_memory.append.assert_called_once()
+    assert mock_chat_memory.append.call_count == 2  # User message + assistant response
 
     # Check that make_response was called with the correct messages
     args, _ = mock_make_response.call_args

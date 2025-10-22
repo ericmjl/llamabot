@@ -150,8 +150,7 @@ class ToolBot(SimpleBot):
         tool_calls = extract_tool_calls(response)
 
         if user_messages:
-            self.chat_memory.append(
-                user_messages[0], AIMessage(content=str(tool_calls))
-            )
+            self.chat_memory.append(user_messages[0])
+            self.chat_memory.append(AIMessage(content=str(tool_calls)))
 
         return tool_calls
