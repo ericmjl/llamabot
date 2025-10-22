@@ -76,6 +76,20 @@ class AIMessage(BaseMessage):
     role: str = "assistant"
 
 
+class ThoughtMessage(AIMessage):
+    """A message representing the agent's reasoning/thought process."""
+
+    content: str
+    role: str = "assistant"
+
+
+class ObservationMessage(AIMessage):
+    """A message representing the agent's observation of tool results."""
+
+    content: str
+    role: str = "assistant"
+
+
 class ToolMessage(BaseMessage):
     """A message from the AI."""
 

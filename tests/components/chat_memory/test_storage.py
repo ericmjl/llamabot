@@ -258,3 +258,50 @@ def test_append_increments_node_ids():
     assert graph.nodes[2]["node"].id == 2
     assert graph.nodes[3]["node"].id == 3
     assert graph.nodes[4]["node"].id == 4
+
+
+def test_relationship_detection_with_new_message_types():
+    """Test relationship detection with ThoughtMessage and ObservationMessage."""
+    from llamabot.components.messages import (
+        HumanMessage,
+        AIMessage,
+        ThoughtMessage,
+        ObservationMessage,
+    )
+    from llamabot.components.chat_memory.storage import _get_simple_relationship
+
+    # Test thought message relationships
+    user_msg = HumanMessage(content="Hello")
+    thought_msg = ThoughtMessage(content="I need to think about this")
+
+    # User -> Thought
+    relationship = _get_simple_relationship(user_msg, thought_msg)
+    assert relationship == "question→response"
+
+    # Thought -> Action (observation)
+    observation_msg = ObservationMessage(
+        content="Observation: Tool executed successfully"
+    )
+    relationship = _get_simple_relationship(thought_msg, observation_msg)
+    assert relationship == "response→observation"
+
+    # Observation -> Response
+    response_msg = AIMessage(content="Based on the observation, here's my answer")
+    relationship = _get_simple_relationship(observation_msg, response_msg)
+    assert relationship == "observation→response"
+
+    # Test that string matching is no longer used
+    # Create messages that contain "Observation:" and "Thought:" in content but aren't the right types
+    fake_observation = AIMessage(
+        content="This contains Observation: but isn't an ObservationMessage"
+    )
+    fake_thought = AIMessage(
+        content="This contains Thought: but isn't a ThoughtMessage"
+    )
+
+    # These should use the default role-based relationship, not the special cases
+    relationship = _get_simple_relationship(user_msg, fake_observation)
+    assert relationship == "question→response"  # Not "question→observation"
+
+    relationship = _get_simple_relationship(fake_thought, response_msg)
+    assert relationship == "response→response"  # Not "thought→action"

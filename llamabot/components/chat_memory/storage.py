@@ -2,7 +2,13 @@
 
 import networkx as nx
 from typing import Optional, Union
-from llamabot.components.messages import BaseMessage, HumanMessage, AIMessage
+from llamabot.components.messages import (
+    BaseMessage,
+    HumanMessage,
+    AIMessage,
+    ObservationMessage,
+    ThoughtMessage,
+)
 from llamabot.components.chat_memory.models import ConversationNode
 from llamabot.components.chat_memory.selectors import NodeSelector
 
@@ -163,12 +169,12 @@ def _get_simple_relationship(parent_msg: BaseMessage, child_msg: BaseMessage) ->
     parent_role = role_map.get(parent_msg.role, parent_msg.role)
     child_role = role_map.get(child_msg.role, child_msg.role)
 
-    # Special case: observation messages (tool results)
-    if "Observation:" in child_msg.content:
+    # Check for specific message types using isinstance()
+    if isinstance(child_msg, ObservationMessage):
         return f"{parent_role}→observation"
-    if "Observation:" in parent_msg.content:
+    if isinstance(parent_msg, ObservationMessage):
         return "observation→response"
-    if "Thought:" in parent_msg.content:
+    if isinstance(parent_msg, ThoughtMessage):
         return "thought→action"
 
     return f"{parent_role}→{child_role}"

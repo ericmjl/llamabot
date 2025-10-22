@@ -264,3 +264,131 @@ async def test_agent_bot_empty_tool_calls():
             result = bot("Test message")
             assert result.content == "I need more information from the user."
             assert bot.run_meta["tool_usage"]["respond_to_user"]["calls"] == 1
+
+
+def test_agentbot_memory_with_string_input():
+    """Test that AgentBot properly appends string user inputs to memory."""
+    from llamabot.components.chat_memory import ChatMemory
+
+    # Create a mock memory
+    mock_memory = MagicMock(spec=ChatMemory)
+
+    # Create bot with memory
+    bot = AgentBot(
+        name="test_bot",
+        system_prompt="You are a helpful assistant.",
+        tools=[mock_tool],
+        memory=mock_memory,
+    )
+
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
+    ):
+        # Mock thought phase
+        thought_message = AIMessage(content="I need to process this.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "I need to process this."
+        mock_completion.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "I need to process this."
+
+        mock_extract_content.side_effect = mock_extract_content_func
+
+        # Mock ToolBot to return empty list (no tools selected)
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = []
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            # Test with string input
+            result = bot("Hello, process this string")
+
+            # Verify that memory.append was called with the user message
+            assert mock_memory.append.called
+            # The first call should be the user message
+            user_message = mock_memory.append.call_args_list[0][0][0]
+            assert user_message.content == "Hello, process this string"
+            assert user_message.role == "user"
+
+            # Verify the result
+            assert result.content == "I need to process this."
+
+
+def test_agentbot_memory_with_list_input():
+    """Test that AgentBot properly appends list user inputs to memory."""
+    from llamabot.components.chat_memory import ChatMemory
+    from llamabot.components.messages import HumanMessage
+
+    # Create a mock memory
+    mock_memory = MagicMock(spec=ChatMemory)
+
+    # Create bot with memory
+    bot = AgentBot(
+        name="test_bot",
+        system_prompt="You are a helpful assistant.",
+        tools=[mock_tool],
+        memory=mock_memory,
+    )
+
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
+    ):
+        # Mock thought phase
+        thought_message = AIMessage(content="I need to process this.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "I need to process this."
+        mock_completion.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "I need to process this."
+
+        mock_extract_content.side_effect = mock_extract_content_func
+
+        # Mock ToolBot to return empty list (no tools selected)
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = []
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            # Test with list input containing HumanMessage
+            user_msg = HumanMessage(content="Hello from list")
+            result = bot([user_msg])
+
+            # Verify that memory.append was called with the user message
+            assert mock_memory.append.called
+            # The first call should be the user message
+            user_message = mock_memory.append.call_args_list[0][0][0]
+            assert user_message.content == "Hello from list"
+            assert user_message.role == "user"
+
+            # Verify the result
+            assert result.content == "I need to process this."
