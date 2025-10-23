@@ -402,3 +402,25 @@ def test_to_mermaid_with_custom_options():
     assert '1["H1: Hello"]' in result
     assert '2["A2: Hi there!"]' in result
     # Content should be truncated if longer than max_content_length
+
+
+def test_to_mermaid_with_quotes_in_content():
+    """Test that double quotes in message content are sanitized."""
+    graph = nx.DiGraph()
+
+    # Create node with double quotes in content
+    h1 = user('Observation: {"response":"Soil nutrient content"}')
+
+    mock_node = Mock()
+    mock_node.message = h1
+    mock_node.parent_id = None
+    mock_node.summary = None
+
+    graph.add_node(1, node=mock_node)
+
+    result = to_mermaid(graph)
+
+    # Verify double quotes are replaced with single quotes
+    assert "{'response':'Soil nutrient content'}" in result
+    # Verify the result is valid Mermaid syntax (no unescaped double quotes in content)
+    assert '1["H1: Observation: {' in result

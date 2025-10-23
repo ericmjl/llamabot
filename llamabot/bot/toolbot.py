@@ -1,6 +1,6 @@
 """ToolBot - A single-turn bot that can execute tools."""
 
-from typing import Callable, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 from loguru import logger
 
 from llamabot.components.tools import today_date, respond_to_user
@@ -111,10 +111,12 @@ class ToolBot(SimpleBot):
     def __call__(
         self,
         *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
+        execution_history: Optional[List[Dict]] = None,
     ):
         """Process messages and return tool calls.
 
         :param messages: One or more messages to process. Can be strings, BaseMessage objects, or callable functions.
+        :param execution_history: Optional list of previously executed tool calls for context
         :return: List of tool calls to execute
         """
         from llamabot.components.messages import to_basemessage, HumanMessage
@@ -134,11 +136,30 @@ class ToolBot(SimpleBot):
         # Convert messages to BaseMessage objects using the same utility as other bots
         user_messages = to_basemessage(processed_messages)
 
-        # Build message list: system prompt, chat memory, then user messages
+        # Build message list: system prompt, chat memory, execution history, then user messages
         message_list = [self.system_prompt]
         if self.chat_memory and user_messages:
             # Use the first message content for chat memory retrieval
             message_list.extend(self.chat_memory.retrieve(user_messages[0].content))
+
+        # Add execution history context if provided
+        if execution_history:
+            history_context = "Previously called tools:\n"
+            for call in execution_history[-5:]:  # Show last 5 tool calls
+                tool_name = call.get("tool_name", "unknown")
+                args = call.get("args", {})
+                result = call.get("result", "")
+                was_cached = call.get("was_cached", False)
+                cache_indicator = " (cached)" if was_cached else ""
+                history_context += (
+                    f"- {tool_name}({args}) -> {result}{cache_indicator}\n"
+                )
+
+            from llamabot.components.messages import SystemMessage
+
+            history_message = SystemMessage(content=history_context)
+            message_list.append(history_message)
+
         message_list.extend(user_messages)
 
         # Execute the plan

@@ -204,7 +204,9 @@ def make_response(
     if hasattr(bot, "tools"):
         logger.debug(f"Passing in tools: {bot.tools}")
         completion_kwargs["tools"] = bot.tools
-        completion_kwargs["tool_choice"] = "auto"
+        # Allow bots to specify their own tool_choice, default to "auto"
+        tool_choice = getattr(bot, "tool_choice", "auto")
+        completion_kwargs["tool_choice"] = tool_choice
 
     logger.debug("Completion kwargs: {}", completion_kwargs)
     return completion(**completion_kwargs)
