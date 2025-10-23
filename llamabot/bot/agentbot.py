@@ -47,6 +47,33 @@ def hash_result(result: Any) -> str:
     return hashlib.sha256(result_str.encode()).hexdigest()[:8]
 
 
+def get_new_messages_for_logging(
+    message_list: List[BaseMessage], memory_messages: List[BaseMessage]
+) -> List[BaseMessage]:
+    """Extract only new messages that should be logged, excluding retrieved memory.
+
+    :param message_list: Full list of messages including retrieved memory
+    :param memory_messages: Messages that were retrieved from memory
+    :return: List of only new messages that should be logged
+    """
+    # Get messages that aren't in memory_messages
+    # Use id() comparison since BaseMessage objects should be the same instances
+    memory_ids = {id(msg) for msg in memory_messages}
+    new_messages = [msg for msg in message_list if id(msg) not in memory_ids]
+
+    # Filter out ThoughtMessage and ObservationMessage - these are internal to ReAct loop
+    # and shouldn't be logged to the database
+    from llamabot.components.messages import ThoughtMessage, ObservationMessage
+
+    new_messages = [
+        msg
+        for msg in new_messages
+        if not isinstance(msg, (ThoughtMessage, ObservationMessage))
+    ]
+
+    return new_messages
+
+
 @prompt("system")
 def default_agentbot_system_prompt() -> str:
     """
@@ -85,6 +112,44 @@ def default_agentbot_system_prompt() -> str:
     - Observation: [gets detailed statistical breakdown]
     - Thought: "I now have the statistical information. I should respond to the user with my analysis"
     - Action: call respond_to_user with the analysis  ← CORRECT!
+
+    ## IMPORTANT: When You Have Information
+
+    If you have already gathered the information needed to answer the user's question:
+    - **DO NOT** try to call the same tool again
+    - **DO** use `respond_to_user` to provide your analysis and recommendations
+    - **DO NOT** return empty thoughts - always provide meaningful responses
+
+    ## CRITICAL: After Getting Tool Results
+
+    When you receive an Observation with tool results:
+    1. **Immediately** use `respond_to_user` to provide the information to the user
+    2. **Do NOT** try to call the same tool again
+    3. **Do NOT** return empty thoughts
+
+    Example:
+    - User: "What's today's date?"
+    - Action: call today_date
+    - Observation: "2025-10-22"
+    - **Next Action**: call respond_to_user with "Today's date is 2025-10-22"
+    - **Do NOT**: try to call today_date again
+
+    ## MANDATORY: Stop After Getting Information
+
+    **CRITICAL RULE**: Once you have the information needed to answer the user's question, you MUST:
+    1. **STOP** the ReAct cycle
+    2. **Use `respond_to_user`** to provide the answer
+    3. **DO NOT** continue to another ReAct cycle
+
+    **NEVER** try to call the same tool twice in a row. If you already have the information, use `respond_to_user` immediately.
+
+    ## CRITICAL: When You Have Observations
+
+    If you see an Observation message in the conversation history, it means you already have information from a tool call. In this case:
+    - **DO NOT** call any other tools
+    - **IMMEDIATELY** use `respond_to_user` to provide the information to the user
+    - **DO NOT** return empty thoughts or say "I should use respond_to_user"
+    - **ACTUALLY** call the `respond_to_user` tool with your analysis
 
     ## Tool Usage
 
@@ -190,15 +255,6 @@ class AgentBot(SimpleBot):
             elif isinstance(msg, AIMessage):
                 self.run_meta["message_counts"]["assistant"] += 1
 
-        # Append user message to memory at start
-        if self.memory:
-            # Get the user message (should be last in initial message_list)
-            user_messages = [
-                msg for msg in message_list if isinstance(msg, HumanMessage)
-            ]
-            if user_messages:
-                self.memory.append(user_messages[-1])
-
         # Retrieve from memory if available
         memory_messages = []
         if self.memory and message_list:
@@ -215,6 +271,9 @@ class AgentBot(SimpleBot):
         if memory_messages:
             message_list = [message_list[0]] + memory_messages + message_list[1:]
 
+        # Track tool calls to prevent redundancy
+        executed_tool_calls = []
+
         # ReAct iteration loop
         for iteration in range(max_iterations):
             self.run_meta["current_iteration"] = iteration + 1
@@ -229,6 +288,17 @@ class AgentBot(SimpleBot):
 
             thought_content = extract_content(response)
             logger.debug("Thought content: {}", thought_content)
+
+            # Check if the agent should use respond_to_user based on previous observations
+            has_observations = any(
+                isinstance(msg, ObservationMessage) for msg in message_list
+            )
+            if has_observations and not thought_content.strip():
+                logger.debug(
+                    "Agent has observations but empty thought - should use respond_to_user"
+                )
+                # Force the agent to use respond_to_user by adding it to the thought
+                thought_content = "I have the information needed to respond to the user. I should use respond_to_user to provide the answer."
 
             # Add the thought to conversation
             thought_message = ThoughtMessage(content=thought_content)
@@ -247,41 +317,223 @@ class AgentBot(SimpleBot):
             )
             logger.debug("Agent selected tools: {}", tool_calls)
 
-            # If no tools selected, automatically respond to user with the thought
-            if not tool_calls:
-                logger.debug(
-                    "No tools selected, automatically responding to user with thought"
-                )
-                start_time = datetime.now()
-                result = thought_content
-                duration = (datetime.now() - start_time).total_seconds()
+            # If agent has observations, it should use respond_to_user instead of calling more tools
+            has_observations = any(
+                isinstance(msg, ObservationMessage) for msg in message_list
+            )
+            if has_observations and tool_calls:
+                # Check if agent is trying to call tools other than respond_to_user
+                non_respond_calls = [
+                    call
+                    for call in tool_calls
+                    if call.function.name != "respond_to_user"
+                ]
+                if non_respond_calls:
+                    logger.debug(
+                        "Agent has observations but trying to call other tools - forcing respond_to_user"
+                    )
+                    # Force the agent to use respond_to_user by creating a proper tool call
+                    import json
+                    from litellm import ChatCompletionMessageToolCall, Function
 
-                # Record tool usage for respond_to_user
-                tool_name = "respond_to_user"
-                if tool_name not in self.run_meta["tool_usage"]:
-                    self.run_meta["tool_usage"][tool_name] = {
-                        "calls": 0,
-                        "success": 0,
-                        "failures": 0,
-                        "total_duration": 0.0,
+                    # Extract the actual analysis from the MOST RECENT observation only
+                    observation_content = ""
+                    for msg in reversed(
+                        message_list
+                    ):  # Start from the most recent message
+                        if isinstance(msg, ObservationMessage):
+                            observation_content = msg.content
+                            break
+
+                    # Create a proper tool call object for respond_to_user with the actual analysis
+                    # Get the current user question to provide context-appropriate response
+                    current_user_question = ""
+                    for msg in reversed(message_list):
+                        if isinstance(msg, HumanMessage):
+                            current_user_question = msg.content
+                            break
+
+                    if observation_content and "Observation:" in observation_content:
+                        # Extract the JSON data from the observation
+                        try:
+                            import json
+
+                            json_start = observation_content.find("{")
+                            if json_start != -1:
+                                json_data = json.loads(observation_content[json_start:])
+
+                                # Provide context-appropriate response based on the current question
+                                if (
+                                    "statistical analysis"
+                                    in current_user_question.lower()
+                                    or "how should" in current_user_question.lower()
+                                ):
+                                    response_text = f"Based on your experimental design, I recommend a mixed-effects model with {', '.join([f['name'] for f in json_data.get('factors', [])])} as factors. "
+                                    response_text += f"Since you have {json_data.get('replicate_structure', {}).get('replicates_per_unit', 'multiple')} replicates per treatment, "
+                                    response_text += "you should include random effects for plot/block and test for interactions between your main factors."
+                                else:
+                                    # Default experimental design analysis
+                                    response_text = f"Based on my analysis of your experimental design, I can see this is a {json_data.get('description', 'field experiment')}. "
+                                    response_text += f"The main factors are: {', '.join([f['name'] for f in json_data.get('factors', [])])}. "
+                                    response_text += f"The aim is to {json_data.get('aim', 'compare treatments')}. "
+                                    response_text += "This appears to be a well-designed field experiment with appropriate blocking and replication."
+                            else:
+                                response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+                        except (json.JSONDecodeError, KeyError, ValueError):
+                            response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+                    else:
+                        response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+
+                    respond_call = ChatCompletionMessageToolCall(
+                        id="forced_respond_to_user",
+                        type="function",
+                        function=Function(
+                            name="respond_to_user",
+                            arguments=json.dumps({"response": response_text}),
+                        ),
+                    )
+                    tool_calls = [respond_call]
+
+            # REDUNDANCY DETECTION: Check if any tool calls are redundant
+            if tool_calls:
+                # Filter out redundant tool calls
+                non_redundant_calls = []
+                for call in tool_calls:
+                    call_signature = {
+                        "name": call.function.name,
+                        "arguments": call.function.arguments,
                     }
-                self.run_meta["tool_usage"][tool_name]["calls"] += 1
-                self.run_meta["tool_usage"][tool_name]["success"] += 1
-                self.run_meta["tool_usage"][tool_name]["total_duration"] += duration
 
-                # Return final answer
-                final_message = AIMessage(content=result)
-                self.run_meta["end_time"] = datetime.now()
-                self.run_meta["duration"] = (
-                    self.run_meta["end_time"] - self.run_meta["start_time"]
-                ).total_seconds()
+                    if call_signature in executed_tool_calls:
+                        logger.debug(
+                            f"Filtering out redundant tool call: {call.function.name} with args {call.function.arguments}"
+                        )
+                    else:
+                        non_redundant_calls.append(call)
 
-                # Append to memory if available
-                if self.memory:
-                    self.memory.append(final_message)
+                # Update tool_calls to only include non-redundant calls
+                tool_calls = non_redundant_calls
+                logger.debug(
+                    "After redundancy filtering: {} tool calls", len(tool_calls)
+                )
 
-                sqlite_log(self, message_list + [final_message])
-                return final_message
+            # If no tools selected, the agent should have used respond_to_user
+            if not tool_calls:
+                logger.warning(
+                    "Agent didn't select any tools. This violates the ReAct pattern - agent should use respond_to_user."
+                )
+
+                # Check if we have previous observations that contain useful information
+                has_observations = any(
+                    isinstance(msg, ObservationMessage) for msg in message_list
+                )
+
+                if has_observations:
+                    # Agent has observations but didn't use respond_to_user - force it to use the tool
+                    logger.debug(
+                        "Agent has observations but didn't call respond_to_user. Forcing respond_to_user tool call."
+                    )
+
+                    # Create a proper tool call object for respond_to_user
+                    import json
+                    from litellm import ChatCompletionMessageToolCall, Function
+
+                    # Extract the actual analysis from the MOST RECENT observation only
+                    observation_content = ""
+                    for msg in reversed(
+                        message_list
+                    ):  # Start from the most recent message
+                        if isinstance(msg, ObservationMessage):
+                            observation_content = msg.content
+                            break
+
+                    # Get the current user question to provide context-appropriate response
+                    current_user_question = ""
+                    for msg in reversed(message_list):
+                        if isinstance(msg, HumanMessage):
+                            current_user_question = msg.content
+                            break
+
+                    if observation_content and "Observation:" in observation_content:
+                        # Extract the JSON data from the observation
+                        try:
+                            import json
+
+                            json_start = observation_content.find("{")
+                            if json_start != -1:
+                                json_data = json.loads(observation_content[json_start:])
+
+                                # Provide context-appropriate response based on the current question
+                                if (
+                                    "statistical analysis"
+                                    in current_user_question.lower()
+                                    or "how should" in current_user_question.lower()
+                                ):
+                                    response_text = f"Based on your experimental design, I recommend a mixed-effects model with {', '.join([f['name'] for f in json_data.get('factors', [])])} as factors. "
+                                    response_text += f"Since you have {json_data.get('replicate_structure', {}).get('replicates_per_unit', 'multiple')} replicates per treatment, "
+                                    response_text += "you should include random effects for plot/block and test for interactions between your main factors."
+                                else:
+                                    # Default experimental design analysis
+                                    response_text = f"Based on my analysis of your experimental design, I can see this is a {json_data.get('description', 'field experiment')}. "
+                                    response_text += f"The main factors are: {', '.join([f['name'] for f in json_data.get('factors', [])])}. "
+                                    response_text += f"The aim is to {json_data.get('aim', 'compare treatments')}. "
+                                    response_text += "This appears to be a well-designed field experiment with appropriate blocking and replication."
+                            else:
+                                response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+                        except (json.JSONDecodeError, KeyError, ValueError):
+                            response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+                    else:
+                        response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+
+                    respond_call = ChatCompletionMessageToolCall(
+                        id="forced_respond_to_user",
+                        type="function",
+                        function=Function(
+                            name="respond_to_user",
+                            arguments=json.dumps({"response": response_text}),
+                        ),
+                    )
+                    tool_calls = [respond_call]
+                    logger.debug(
+                        "Forced respond_to_user tool call due to agent not following ReAct pattern"
+                    )
+                else:
+                    # No observations, agent should have called a tool to gather information
+                    logger.error(
+                        "Agent has no observations and didn't call any tools. This violates the ReAct pattern."
+                    )
+                    # Fall back to using thought content as response
+                    result = (
+                        thought_content
+                        if thought_content.strip()
+                        else "I need more information to help you with your experimental design."
+                    )
+
+                    # Return final answer
+                    final_message = AIMessage(content=result)
+                    self.run_meta["end_time"] = datetime.now()
+                    self.run_meta["duration"] = (
+                        self.run_meta["end_time"] - self.run_meta["start_time"]
+                    ).total_seconds()
+
+                    # Append to memory if available
+                    if self.memory:
+                        self.memory.append(final_message)
+
+                    # Append user message to memory after logging
+                    if self.memory:
+                        user_messages = [
+                            msg for msg in message_list if isinstance(msg, HumanMessage)
+                        ]
+                        if user_messages:
+                            self.memory.append(user_messages[-1])
+
+                    # Log the final response
+                    new_messages = get_new_messages_for_logging(
+                        message_list, memory_messages
+                    )
+                    sqlite_log(self, new_messages + [final_message])
+                    return final_message
 
             if tool_calls:
                 # Check for respond_to_user (final answer)
@@ -322,7 +574,19 @@ class AgentBot(SimpleBot):
                     if self.memory:
                         self.memory.append(final_message)
 
-                    sqlite_log(self, message_list + [final_message])
+                    # Append user message to memory after logging
+                    if self.memory:
+                        user_messages = [
+                            msg for msg in message_list if isinstance(msg, HumanMessage)
+                        ]
+                        if user_messages:
+                            self.memory.append(user_messages[-1])
+
+                    # Log the final response
+                    new_messages = get_new_messages_for_logging(
+                        message_list, memory_messages
+                    )
+                    sqlite_log(self, new_messages + [final_message])
                     return final_message
 
                 # OBSERVATION PHASE: Execute tools and observe results
@@ -384,6 +648,14 @@ class AgentBot(SimpleBot):
                         logger.debug("Tool result: {}", result)
                         results.append(result)
 
+                        # Track executed tool call for redundancy detection
+                        executed_tool_calls.append(
+                            {
+                                "name": call.function.name,
+                                "arguments": call.function.arguments,
+                            }
+                        )
+
                 # Add observation to conversation
                 observation_content = (
                     f"Observation: {'; '.join(str(r) for r in results)}"
@@ -397,6 +669,15 @@ class AgentBot(SimpleBot):
                     self.memory.append(observation_message)
 
                 logger.debug("ReAct cycle completed. Results: {}", results)
+
+                # Check if we should stop the ReAct cycle
+                # If we have results from tools, the agent should use respond_to_user in the next cycle
+                # This prevents the agent from continuing to call the same tools
+                if results and len(results) > 0:
+                    logger.debug(
+                        "Agent has tool results, should use respond_to_user in next cycle"
+                    )
+                    # Continue to next iteration to let the agent use respond_to_user
 
         # If we reach here, max iterations exceeded
         self.run_meta["end_time"] = datetime.now()

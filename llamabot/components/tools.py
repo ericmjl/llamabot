@@ -233,8 +233,7 @@ def add(a: int, b: int) -> int:
 def respond_to_user(response: str) -> str:
     """Respond to the user with a message.
 
-    Use this tool when you don't think there's code to write (e.g., greetings, general questions,
-    explanations, or when the user just needs a conversational response).
+    Use this tool when you have enough information to respond to the user.
 
     :param response: The message to send to the user
     :return: The response message

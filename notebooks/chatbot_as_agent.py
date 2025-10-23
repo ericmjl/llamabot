@@ -1145,13 +1145,57 @@ def _(
 
 @app.cell
 def _(bot):
-    def model(messages, config):
-        # Each message has a `content` attribute, as well as a `role`
-        # attribute ("user", "system", "assistant");
-        response = bot(messages[-1].content)
-        return response.content
+    bot("Can you check if my experimental design makes sense?")
+    return
 
-    return (model,)
+
+@app.cell
+def _(bot):
+    bot(
+        "A three–year in–situ field experiment was conducted in Zhongjiang County, Deyang City, Sichuan Province (31.03 °N, 104.68 °E) from 2017 to 2019 maize growing seasons. Before sowing, soil samples were collected from the 0–30cm soil layer using the diagonal soil sampling method. Soil samples were air–dried and sieved to remove undecomposed plant material. The samples obtained were used for the analysis of soil organic matter, total N, Alkaline N, Available P, Available K, pH and the results were shown in Table 1. It was a fallow land in the winter of 2017–2018, and wheat was firstly planted before sowing maize in 2019, resulting in lower soil N content. The experimental materials were the pre–screened low N–tolerant maize variety ZhengHong311 (ZH311) and low N–sensitive maize variety XianYu508 (XY508) (Li et al., 2020, Wu et al., 2022). Seeds were provided by Sichuan Agricultural University Zhenghong Seed Co. and Tieling Pioneer Seed Research Co. respectively."
+    )
+    return
+
+
+@app.cell
+def _(bot):
+    bot("How should I do the statistical analysis? ")
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    # def model(messages, config):
+    #     # Each message has a `content` attribute, as well as a `role`
+    #     # attribute ("user", "system", "assistant");
+    #     response = bot(messages[-1].content)
+    #     return response.content
+    return
 
 
 @app.cell(hide_code=True)
@@ -1194,21 +1238,25 @@ def _():
         "Some of my mice died before the experiment ended. Does this ruin my design?",
         "I lost some samples during processing. What should I do?",
     ]
-    return (example_prompts,)
-
-
-@app.cell
-def _(example_prompts, mo, model):
-    chat = mo.ui.chat(model, prompts=example_prompts)
-    chat
     return
 
 
 @app.cell
 def _():
-    import marimo as mo
+    # chat = mo.ui.chat(model, prompts=example_prompts)
+    # chat
+    return
 
-    return (mo,)
+
+@app.cell
+def _():
+    # import marimo as mo
+    return
+
+
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":
