@@ -140,6 +140,7 @@ class AgentBot(SimpleBot):
                 system_prompt=toolbot_sysprompt(globals_dict={}),
                 model_name=model_name,
                 tools=all_tools,
+                chat_memory=None,  # AgentBot manages memory, not ToolBot
                 **completion_kwargs,
             )
         else:

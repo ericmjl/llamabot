@@ -392,3 +392,126 @@ def test_agentbot_memory_with_list_input():
 
             # Verify the result
             assert result.content == "I need to process this."
+
+
+@pytest.mark.asyncio
+async def test_toolbot_receives_observation_context():
+    """Test that ToolBot receives and uses observation context from AgentBot."""
+
+    bot = AgentBot(
+        system_prompt="Test prompt",
+        tools=[mock_tool],
+    )
+
+    # Mock the LLM calls
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
+    ):
+        # Mock the thought phase
+        thought_message = AIMessage(content="Thought: I need to respond to the user.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "Thought: I need to respond to the user."
+        mock_completion.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "Thought: I need to respond to the user."
+
+        mock_extract_content.side_effect = mock_extract_content_func
+
+        # Mock ToolBot's internal LLM calls
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            # Create a mock tool call response
+            tool_call = MagicMock()
+            tool_call.function.name = "respond_to_user"
+            tool_call.function.arguments = '{"response": "Done"}'
+
+            # Mock the ToolBot's LLM response
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = [tool_call]
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            result = bot("Test message")
+
+            # Verify that ToolBot was called with the full conversation context
+            # (system prompt + user message + any observations)
+            assert mock_toolbot_make_response.called
+            call_args = mock_toolbot_make_response.call_args
+            message_list = call_args[0][1]  # Second argument is message_list
+
+            # Should have system prompt + user message + thought
+            assert len(message_list) >= 3
+            assert message_list[0].role == "system"  # ToolBot's system prompt
+            assert message_list[1].role == "system"  # AgentBot's system prompt
+            assert message_list[2].role == "user"  # User message
+
+            assert result.content == "Done"
+
+
+@pytest.mark.asyncio
+async def test_agentbot_completes_in_one_cycle():
+    """Test that AgentBot completes simple queries in 1 ReAct cycle instead of 3."""
+    bot = AgentBot(
+        system_prompt="Test prompt",
+        tools=[mock_tool],
+    )
+
+    # Mock the LLM calls
+    with (
+        patch("llamabot.bot.simplebot.make_response") as mock_make_response,
+        patch("llamabot.bot.simplebot.stream_chunks") as mock_stream_chunks,
+        patch("llamabot.bot.agentbot.extract_content") as mock_extract_content,
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.agentbot.stream_chunks") as mock_agentbot_stream_chunks,
+    ):
+        # Mock the thought phase
+        thought_message = AIMessage(content="Thought: I need to respond to the user.")
+        mock_make_response.return_value = thought_message
+        mock_stream_chunks.return_value = thought_message
+        mock_extract_content.return_value = "Thought: I need to respond to the user."
+        mock_completion.return_value = thought_message
+        mock_agentbot_stream_chunks.return_value = thought_message
+
+        def mock_extract_content_func(response):
+            if hasattr(response, "content"):
+                return response.content
+            return "Thought: I need to respond to the user."
+
+        mock_extract_content.side_effect = mock_extract_content_func
+
+        # Mock ToolBot's internal LLM calls
+        with (
+            patch("llamabot.bot.toolbot.make_response") as mock_toolbot_make_response,
+            patch("llamabot.bot.toolbot.stream_chunks") as mock_toolbot_stream_chunks,
+        ):
+            # Create a mock tool call response
+            tool_call = MagicMock()
+            tool_call.function.name = "respond_to_user"
+            tool_call.function.arguments = '{"response": "Done"}'
+
+            # Mock the ToolBot's LLM response
+            mock_response = MagicMock()
+            mock_response.choices = [MagicMock()]
+            mock_response.choices[0].message = MagicMock()
+            mock_response.choices[0].message.tool_calls = [tool_call]
+            mock_toolbot_make_response.return_value = mock_response
+            mock_toolbot_stream_chunks.return_value = mock_response
+
+            result = bot("Test message")
+
+            # Verify that ToolBot was called only once (indicating 1 ReAct cycle)
+            assert mock_toolbot_make_response.call_count == 1
+            assert result.content == "Done"

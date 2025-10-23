@@ -134,12 +134,19 @@ class ToolBot(SimpleBot):
         # Convert messages to BaseMessage objects using the same utility as other bots
         user_messages = to_basemessage(processed_messages)
 
-        # Build message list: system prompt, chat memory, then user messages
-        message_list = [self.system_prompt]
-        if self.chat_memory and user_messages:
-            # Use the first message content for chat memory retrieval
-            message_list.extend(self.chat_memory.retrieve(user_messages[0].content))
-        message_list.extend(user_messages)
+        # When called with full conversation context (e.g., from AgentBot),
+        # use it directly with just our system prompt prepended
+        if len(processed_messages) > 1 or any(
+            not isinstance(msg, (str, HumanMessage)) for msg in processed_messages
+        ):
+            # Full conversation context provided - use as-is
+            message_list = [self.system_prompt] + user_messages
+        else:
+            # Single user message - use chat_memory if available
+            message_list = [self.system_prompt]
+            if self.chat_memory and user_messages:
+                message_list.extend(self.chat_memory.retrieve(user_messages[0].content))
+            message_list.extend(user_messages)
 
         # Execute the plan
         stream = self.stream_target != "none"
@@ -149,8 +156,10 @@ class ToolBot(SimpleBot):
         logger.debug("Response: {}", response)
         tool_calls = extract_tool_calls(response)
 
-        if user_messages:
-            self.chat_memory.append(user_messages[0])
-            self.chat_memory.append(AIMessage(content=str(tool_calls)))
+        # Only update chat_memory if we're using it (standalone mode)
+        if self.chat_memory and len(processed_messages) == 1:
+            if user_messages:
+                self.chat_memory.append(user_messages[0])
+                self.chat_memory.append(AIMessage(content=str(tool_calls)))
 
         return tool_calls
