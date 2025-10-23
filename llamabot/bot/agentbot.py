@@ -34,7 +34,6 @@ from llamabot.config import default_language_model
 from llamabot.experiments import metric
 from llamabot.prompt_manager import prompt
 from llamabot.recorder import sqlite_log
-from llamabot.bot.toolbot import ToolBot, toolbot_sysprompt
 
 
 def hash_result(result: Any) -> str:
@@ -66,27 +65,41 @@ def default_agentbot_system_prompt() -> str:
 
     This cycle repeats until you have enough information to provide a complete answer.
 
-    ## Output Format
+    ## CRITICAL: Avoiding Redundant Tool Calls
 
-    You MUST format your responses as follows:
+    Before calling any tool:
+    1. **Check the conversation history** for previous Observation messages
+    2. **If you see an Observation with results from the same tool and same/similar arguments**, DO NOT call that tool again
+    3. **Instead, use `respond_to_user` with the information from the existing Observation**
 
-    **Thought**: [Your reasoning about what to do next]
+    Example of what NOT to do:
+    - Thought: "I need to extract statistical info"
+    - Action: call extract_statistical_info
+    - Observation: [gets detailed statistical breakdown]
+    - Thought: "I should extract statistical info"  ← WRONG! You already did this!
+    - Action: call extract_statistical_info again  ← REDUNDANT!
 
-    [Then either call a tool or provide your final answer]
+    Example of correct behavior:
+    - Thought: "I need to extract statistical info"
+    - Action: call extract_statistical_info
+    - Observation: [gets detailed statistical breakdown]
+    - Thought: "I now have the statistical information. I should respond to the user with my analysis"
+    - Action: call respond_to_user with the analysis  ← CORRECT!
 
     ## Tool Usage
 
     - Use available tools to gather information or perform actions
-    - When you have enough information to answer the user's question, use the `respond_to_user` tool
-    - Do not use `respond_to_user` until you are confident you have all necessary information
-    - Always explain your reasoning in the "Thought" section before taking action
+    - **After successfully executing a tool**, review the Observation before deciding next action
+    - **If the Observation contains the information needed**, use `respond_to_user` immediately
+    - **NEVER call the same tool with the same arguments twice**
+    - Always explain your reasoning in your thought before taking action
 
     ## Guidelines
 
     - Be explicit about your reasoning process
-    - Use tools when you need external information or capabilities
-    - Learn from observations to improve your next actions
-    - Provide clear, helpful final answers
+    - Learn from observations - they contain valuable information
+    - After each Observation, ask yourself: "Do I have enough information to answer the user now?"
+    - If yes, use `respond_to_user` to provide your final answer
     - Never perform actions that could harm systems or violate policies
 
     ## Example
@@ -115,7 +128,6 @@ class AgentBot(SimpleBot):
         model_name=default_language_model(),
         stream_target: str = "none",
         tools: Optional[list[Callable]] = None,
-        toolbot: Optional[ToolBot] = None,
         memory: Optional[Union[ChatMemory, AbstractDocumentStore]] = None,
         **completion_kwargs,
     ):
@@ -134,17 +146,7 @@ class AgentBot(SimpleBot):
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
 
-        # Initialize ToolBot for tool selection
-        if toolbot is None:
-            self.toolbot = ToolBot(
-                system_prompt=toolbot_sysprompt(globals_dict={}),
-                model_name=model_name,
-                tools=all_tools,
-                chat_memory=None,  # AgentBot manages memory, not ToolBot
-                **completion_kwargs,
-            )
-        else:
-            self.toolbot = toolbot
+        # ToolBot removed - AgentBot handles tool selection directly
 
     def __call__(
         self,
@@ -237,10 +239,13 @@ class AgentBot(SimpleBot):
             if self.memory:
                 self.memory.append(thought_message)
 
-            # ACTION PHASE: Use ToolBot to select and execute tools
-            logger.debug("Using ToolBot for tool selection...")
-            tool_calls = self.toolbot(*message_list)
-            logger.debug("ToolBot selected: {}", tool_calls)
+            # ACTION PHASE: Execute the tool calls selected by the agent
+            tool_calls = (
+                response.choices[0].message.tool_calls
+                if response.choices[0].message.tool_calls
+                else []
+            )
+            logger.debug("Agent selected tools: {}", tool_calls)
 
             # If no tools selected, automatically respond to user with the thought
             if not tool_calls:

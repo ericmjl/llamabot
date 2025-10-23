@@ -4,8 +4,7 @@ from typing import Callable, List, Optional, Union
 from loguru import logger
 
 from llamabot.components.tools import today_date, respond_to_user
-from llamabot.components.chat_memory import ChatMemory
-from llamabot.components.messages import AIMessage, BaseMessage
+from llamabot.components.messages import BaseMessage
 from llamabot.bot.simplebot import (
     SimpleBot,
     extract_tool_calls,
@@ -22,9 +21,10 @@ def toolbot_sysprompt(globals_dict: dict = {}) -> str:
 
     Your primary responsibilities:
     1. **Analyze the user's request** to understand what they want to accomplish
-    2. **Select the most appropriate tool** from your available function toolkit
-    3. **Extract or infer the necessary arguments** for the selected function
-    4. **Return a single function call** with the proper arguments to execute
+    2. **Review conversation history** to see if tools have already been executed
+    3. **Select the most appropriate tool** from your available function toolkit
+    4. **Extract or infer the necessary arguments** for the selected function
+    5. **Return a single function call** with the proper arguments to execute
 
     ## Available Tools:
     You have access to tools through function calling. Each tool has detailed documentation in its docstring that explains:
@@ -35,13 +35,39 @@ def toolbot_sysprompt(globals_dict: dict = {}) -> str:
 
     ## Decision Process:
     When you receive a user request:
-    - Break down what the user is asking for
-    - Identify the core action or information needed
-    - Map this to one of your available tools by reading their docstrings
-    - Determine the required parameters/arguments
-    - Make the function call with appropriate arguments
+    1. **FIRST: Review the conversation history** - Look for ObservationMessages that show previous tool executions and their results
+    2. **CRITICAL: Check if the task is already complete** - If a tool has already been called successfully and provided the needed information, use `respond_to_user` instead of calling the same tool again
+    3. **Break down what the user is asking for** - Understand the core request
+    4. **Identify the core action or information needed** - What specific tool or response is required
+    5. **Map this to one of your available tools** by reading their docstrings
+    6. **Determine the required parameters/arguments** for the selected tool
+    7. **Make the function call** with appropriate arguments
 
-    Remember: You are a function selector and executor. Read the tool docstrings carefully to understand when and how to use each tool effectively.
+    **CRITICAL CHECK**: Before calling any tool, scan the conversation for ObservationMessages. If you see an ObservationMessage with a successful result from the same tool, use `respond_to_user` instead of calling the tool again.
+
+    **IMPORTANT**: Before calling any tool, ask yourself: "Has this exact tool already been called successfully in this conversation?" If yes, use `respond_to_user` instead.
+
+    ## Important Guidelines:
+    - **CRITICAL: Avoid redundant tool calls**: If you can see from ObservationMessages that a tool has already been executed successfully, DO NOT call it again unless the user is asking for something completely different
+    - **Use respond_to_user when appropriate**: If the user's request has been fulfilled by previous tool executions, use `respond_to_user` to provide a helpful response based on the available information
+    - **Consider the conversation context**: Always review what has already been done before deciding on the next action
+
+    ## Examples of Good Decision Making:
+
+    **Example 1 - DO NOT repeat tool calls:**
+    - User asks: "Extract statistical info from this text"
+    - ToolBot calls: `extract_statistical_info` → gets successful result
+    - User asks again: "Can you check if my experimental design makes sense?"
+    - **CORRECT**: Use `respond_to_user` with the existing extracted information
+    - **WRONG**: Call `extract_statistical_info` again
+
+    **Example 2 - When to repeat tool calls:**
+    - User asks: "Extract statistical info from this text"
+    - ToolBot calls: `extract_statistical_info` → gets successful result
+    - User asks: "Now extract info from this DIFFERENT text"
+    - **CORRECT**: Call `extract_statistical_info` with the new text
+
+    Remember: You are a function selector and executor. Read the tool docstrings carefully to understand when and how to use each tool effectively. Always consider the full conversation context, including previous tool executions and their results.
 
     ## Available Global Variables:
 
@@ -81,7 +107,6 @@ class ToolBot(SimpleBot):
     :param system_prompt: The system prompt to use
     :param model_name: The name of the model to use
     :param tools: Optional list of additional tools to include
-    :param chat_memory: Chat memory component for context retrieval
     :param completion_kwargs: Additional keyword arguments for completion
     """
 
@@ -90,7 +115,6 @@ class ToolBot(SimpleBot):
         system_prompt: str,
         model_name: str,
         tools: Optional[List[Callable]] = None,
-        chat_memory: Optional[ChatMemory] = None,
         **completion_kwargs,
     ):
         super().__init__(
@@ -106,7 +130,6 @@ class ToolBot(SimpleBot):
 
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
-        self.chat_memory = chat_memory or ChatMemory()
 
     def __call__(
         self,
@@ -134,32 +157,56 @@ class ToolBot(SimpleBot):
         # Convert messages to BaseMessage objects using the same utility as other bots
         user_messages = to_basemessage(processed_messages)
 
-        # When called with full conversation context (e.g., from AgentBot),
-        # use it directly with just our system prompt prepended
-        if len(processed_messages) > 1 or any(
-            not isinstance(msg, (str, HumanMessage)) for msg in processed_messages
-        ):
-            # Full conversation context provided - use as-is
-            message_list = [self.system_prompt] + user_messages
-        else:
-            # Single user message - use chat_memory if available
-            message_list = [self.system_prompt]
-            if self.chat_memory and user_messages:
-                message_list.extend(self.chat_memory.retrieve(user_messages[0].content))
-            message_list.extend(user_messages)
+        # Always use the full conversation context with our system prompt prepended
+        message_list = [self.system_prompt] + user_messages
 
         # Execute the plan
         stream = self.stream_target != "none"
         logger.debug("Message list: {}", message_list)
+
+        # Detailed logging of what ToolBot receives
+        logger.debug("=== TOOLBOT INPUT DEBUG ===")
+        logger.debug("Number of messages received: {}", len(processed_messages))
+        logger.debug(
+            "Processed messages types: {}",
+            [type(msg).__name__ for msg in processed_messages],
+        )
+        logger.debug("User messages count: {}", len(user_messages))
+        logger.debug("Final message_list length: {}", len(message_list))
+        logger.debug(
+            "Message list roles: {}",
+            [getattr(msg, "role", "no-role") for msg in message_list],
+        )
+
+        # Log each message in detail
+        for i, msg in enumerate(message_list):
+            if hasattr(msg, "role"):
+                logger.debug(
+                    "Message {}: role='{}', content='{}'",
+                    i,
+                    msg.role,
+                    (
+                        str(msg.content)[:100] + "..."
+                        if len(str(msg.content)) > 100
+                        else str(msg.content)
+                    ),
+                )
+            else:
+                logger.debug(
+                    "Message {}: type='{}', content='{}'",
+                    i,
+                    type(msg).__name__,
+                    (
+                        str(msg.content)[:100] + "..."
+                        if len(str(msg.content)) > 100
+                        else str(msg.content)
+                    ),
+                )
+
+        logger.debug("=== END TOOLBOT INPUT DEBUG ===")
         response = make_response(self, message_list, stream=stream)
         response = stream_chunks(response, target=self.stream_target)
         logger.debug("Response: {}", response)
         tool_calls = extract_tool_calls(response)
-
-        # Only update chat_memory if we're using it (standalone mode)
-        if self.chat_memory and len(processed_messages) == 1:
-            if user_messages:
-                self.chat_memory.append(user_messages[0])
-                self.chat_memory.append(AIMessage(content=str(tool_calls)))
 
         return tool_calls

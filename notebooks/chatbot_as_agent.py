@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "llamabot[all]==0.15.3",
+#     "llamabot[all]",
 # ]
 #
 # [tool.uv.sources]
@@ -480,6 +480,8 @@ def _(ExperimentDescription, lmb):
     @lmb.tool
     def extract_statistical_info(description: str) -> str:
         """Return an ExperimentDescription from the given experiment description string.
+
+        Use this tool to parse out experimental design information and identify what might be missing.
 
         :param description: A text description of the experiment.
         :return: A dictionary capturing the statistical design.
@@ -1118,10 +1120,6 @@ def _(lmb):
 
         Be a coach, ask questions if you do not have enough information to respond,
         and guide the user toward sound statistical practices.
-
-        You may be provided with experimental design description, or asked about experiment designs.
-        If so, I want you to extract the statistical design information into a structured format
-        and comprehend it first before responding to a user.
         """
 
     return (stats_agent_sysprompt,)
