@@ -10,7 +10,7 @@ import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from loguru import logger
 
@@ -128,6 +128,11 @@ class AgentBot(SimpleBot):
             **completion_kwargs,
         )
 
+        # Set tool_choice to "none" for the THOUGHT PHASE
+        # The AgentBot should generate reasoning text, not call tools directly
+        # Tools are called by the ToolBot in the ACTION PHASE
+        self.tool_choice = "none"
+
         all_tools = [today_date, respond_to_user]
         if tools is not None:
             all_tools.extend([f for f in tools])
@@ -144,6 +149,10 @@ class AgentBot(SimpleBot):
             )
         else:
             self.toolbot = toolbot
+
+        # Initialize tool call caching system
+        self.tool_call_cache: Dict[str, Any] = {}
+        self.execution_history: List[Dict] = []
 
     def __call__(
         self,
@@ -164,6 +173,9 @@ class AgentBot(SimpleBot):
             "current_iteration": 0,
             "tool_usage": {},
             "message_counts": {"user": 0, "assistant": 0, "tool": 0},
+            "tool_calls_cached": 0,
+            "tool_calls_executed": 0,
+            "validation_failures": 0,
         }
 
         # Convert messages to a list of BaseMessage objects
@@ -238,7 +250,9 @@ class AgentBot(SimpleBot):
 
             # ACTION PHASE: Use ToolBot to select and execute tools
             logger.debug("Using ToolBot for tool selection...")
-            tool_calls = self.toolbot(*message_list)
+            tool_calls = self.toolbot(
+                *message_list, execution_history=self.execution_history
+            )
             logger.debug("ToolBot selected: {}", tool_calls)
 
             # If no tools selected, automatically respond to user with the thought
@@ -269,6 +283,18 @@ class AgentBot(SimpleBot):
                 self.run_meta["duration"] = (
                     self.run_meta["end_time"] - self.run_meta["start_time"]
                 ).total_seconds()
+
+                # Calculate cache hit rate
+                total_tool_calls = (
+                    self.run_meta["tool_calls_cached"]
+                    + self.run_meta["tool_calls_executed"]
+                )
+                if total_tool_calls > 0:
+                    self.run_meta["cache_hit_rate"] = (
+                        self.run_meta["tool_calls_cached"] / total_tool_calls
+                    )
+                else:
+                    self.run_meta["cache_hit_rate"] = 0.0
 
                 # Append to memory if available
                 if self.memory:
@@ -312,6 +338,18 @@ class AgentBot(SimpleBot):
                         self.run_meta["end_time"] - self.run_meta["start_time"]
                     ).total_seconds()
 
+                    # Calculate cache hit rate
+                    total_tool_calls = (
+                        self.run_meta["tool_calls_cached"]
+                        + self.run_meta["tool_calls_executed"]
+                    )
+                    if total_tool_calls > 0:
+                        self.run_meta["cache_hit_rate"] = (
+                            self.run_meta["tool_calls_cached"] / total_tool_calls
+                        )
+                    else:
+                        self.run_meta["cache_hit_rate"] = 0.0
+
                     # Append to memory if available
                     if self.memory:
                         self.memory.append(final_message)
@@ -324,12 +362,11 @@ class AgentBot(SimpleBot):
                     "Executing tools: {}", [call.function.name for call in tool_calls]
                 )
                 results = []
+                session_tool_calls = []  # Track tools called in this session
 
                 with ThreadPoolExecutor() as executor:
                     futures = {
-                        executor.submit(
-                            execute_tool_call, call, self.name_to_tool_map
-                        ): call
+                        executor.submit(self._execute_tool_with_cache, call): call
                         for call in tool_calls
                     }
 
@@ -337,10 +374,10 @@ class AgentBot(SimpleBot):
                         call = futures[future]
                         start_time = datetime.now()
                         try:
-                            result = future.result()
+                            result, was_cached = future.result()
                             duration = (datetime.now() - start_time).total_seconds()
 
-                            # Record successful tool usage
+                            # Record tool usage
                             tool_name = call.function.name
                             if tool_name not in self.run_meta["tool_usage"]:
                                 self.run_meta["tool_usage"][tool_name] = {
@@ -348,12 +385,28 @@ class AgentBot(SimpleBot):
                                     "success": 0,
                                     "failures": 0,
                                     "total_duration": 0.0,
+                                    "cached": 0,
                                 }
                             self.run_meta["tool_usage"][tool_name]["calls"] += 1
-                            self.run_meta["tool_usage"][tool_name]["success"] += 1
+                            if was_cached:
+                                self.run_meta["tool_usage"][tool_name]["cached"] += 1
+                                self.run_meta["tool_calls_cached"] += 1
+                            else:
+                                self.run_meta["tool_usage"][tool_name]["success"] += 1
+                                self.run_meta["tool_calls_executed"] += 1
                             self.run_meta["tool_usage"][tool_name][
                                 "total_duration"
                             ] += duration
+
+                            # Track session tool calls for validation
+                            session_tool_calls.append(
+                                {
+                                    "tool_name": tool_name,
+                                    "args": json.loads(call.function.arguments),
+                                    "result": result,
+                                    "was_cached": was_cached,
+                                }
+                            )
 
                         except Exception as e:
                             duration = (datetime.now() - start_time).total_seconds()
@@ -366,6 +419,7 @@ class AgentBot(SimpleBot):
                                     "success": 0,
                                     "failures": 0,
                                     "total_duration": 0.0,
+                                    "cached": 0,
                                 }
                             self.run_meta["tool_usage"][tool_name]["calls"] += 1
                             self.run_meta["tool_usage"][tool_name]["failures"] += 1
@@ -397,7 +451,70 @@ class AgentBot(SimpleBot):
         self.run_meta["duration"] = (
             self.run_meta["end_time"] - self.run_meta["start_time"]
         ).total_seconds()
+
+        # Calculate cache hit rate
+        total_tool_calls = (
+            self.run_meta["tool_calls_cached"] + self.run_meta["tool_calls_executed"]
+        )
+        if total_tool_calls > 0:
+            self.run_meta["cache_hit_rate"] = (
+                self.run_meta["tool_calls_cached"] / total_tool_calls
+            )
+        else:
+            self.run_meta["cache_hit_rate"] = 0.0
+
         raise RuntimeError(f"Agent exceeded maximum ReAct cycles ({max_iterations})")
+
+    def _execute_tool_with_cache(self, tool_call) -> tuple[Any, bool]:
+        """Execute a tool call with caching support.
+
+        :param tool_call: The tool call to execute
+        :return: (result, was_cached) tuple
+        """
+        tool_name = tool_call.function.name
+        args = json.loads(tool_call.function.arguments)
+
+        # Create cache key
+        args_hash = hash_result(args)
+        cache_key = f"{tool_name}:{args_hash}"
+
+        # Check cache first
+        if cache_key in self.tool_call_cache:
+            logger.debug(f"Cache hit for {tool_name} with args {args_hash}")
+            result = self.tool_call_cache[cache_key]
+
+            # Add to execution history
+            self.execution_history.append(
+                {
+                    "tool_name": tool_name,
+                    "args": args,
+                    "result": result,
+                    "was_cached": True,
+                    "timestamp": datetime.now(),
+                }
+            )
+
+            return result, True
+
+        # Not in cache, execute tool
+        logger.debug(f"Cache miss for {tool_name}, executing tool")
+        result = execute_tool_call(tool_call, self.name_to_tool_map)
+
+        # Store in cache
+        self.tool_call_cache[cache_key] = result
+
+        # Add to execution history
+        self.execution_history.append(
+            {
+                "tool_name": tool_name,
+                "args": args,
+                "result": result,
+                "was_cached": False,
+                "timestamp": datetime.now(),
+            }
+        )
+
+        return result, False
 
 
 def execute_tool_call(tool_call, name_to_tool_map: dict[str, Callable]) -> Any:

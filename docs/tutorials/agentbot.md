@@ -444,7 +444,86 @@ The agent will:
 3. Use the sentiment analysis to inform its recommendations
 4. Provide a comprehensive answer based on all the gathered information
 
-## Part 6: Debugging and Optimization
+## Part 6: Advanced Features
+
+### Tool Call Caching
+
+AgentBot automatically caches tool calls to prevent redundant executions:
+
+```python
+# Create an agent with caching enabled (default behavior)
+agent = lmb.AgentBot(
+    system_prompt=lmb.system("You are a helpful assistant."),
+    tools=[your_tools],
+    model_name="gpt-4o-mini"
+)
+
+# First call - tools are executed
+response1 = agent("Analyze the data and provide insights")
+
+# Second call with similar request - cached results are used
+response2 = agent("Can you analyze the same data again?")
+
+# Check cache performance
+print(f"Cache hit rate: {agent.run_meta['cache_hit_rate']:.2%}")
+print(f"Cached calls: {agent.run_meta['tool_calls_cached']}")
+print(f"Executed calls: {agent.run_meta['tool_calls_executed']}")
+```
+
+### Response Quality Validation
+
+AgentBot validates final responses to ensure they're informative:
+
+```python
+# The agent automatically validates responses
+response = agent("What's the weather like?")
+
+# If validation fails, the agent retries with better responses
+# Check validation metrics
+if "validation_failures" in agent.run_meta:
+    print(f"Validation failures: {agent.run_meta['validation_failures']}")
+```
+
+### Execution History Tracking
+
+Monitor what tools the agent has used:
+
+```python
+# Access execution history
+for entry in agent.execution_history:
+    print(f"Tool: {entry['tool_name']}")
+    print(f"Args: {entry['args']}")
+    print(f"Result: {entry['result'][:100]}...")
+    print(f"Cached: {entry['was_cached']}")
+    print(f"Timestamp: {entry['timestamp']}")
+    print("---")
+```
+
+### Performance Metrics
+
+AgentBot provides detailed performance metrics:
+
+```python
+response = agent("Your question here")
+
+# Access comprehensive metrics
+metrics = agent.run_meta
+print(f"Execution time: {metrics['duration']:.2f} seconds")
+print(f"ReAct cycles: {metrics['current_iteration']}")
+print(f"Cache hit rate: {metrics['cache_hit_rate']:.2%}")
+print(f"Validation failures: {metrics.get('validation_failures', 0)}")
+
+# Tool-specific metrics
+for tool_name, stats in metrics['tool_usage'].items():
+    print(f"{tool_name}:")
+    print(f"  Total calls: {stats['calls']}")
+    print(f"  Successful: {stats['success']}")
+    print(f"  Cached: {stats.get('cached', 0)}")
+    print(f"  Failures: {stats['failures']}")
+    print(f"  Total duration: {stats['total_duration']:.2f}s")
+```
+
+## Part 7: Debugging and Optimization
 
 ### Understanding Agent Behavior
 
@@ -469,6 +548,21 @@ optimized_agent = lmb.AgentBot(
     temperature=0.0,  # More deterministic
     max_iterations=5  # Limit iterations for faster responses
 )
+```
+
+### Cache Management
+
+```python
+# Clear cache by creating a new agent instance
+fresh_agent = lmb.AgentBot(
+    system_prompt=agent.system_prompt,
+    tools=agent.tools,
+    model_name=agent.model_name
+)
+
+# Or access cache directly for debugging
+print(f"Cache size: {len(agent.tool_call_cache)}")
+print(f"Cache keys: {list(agent.tool_call_cache.keys())}")
 ```
 
 ### Error Handling and Recovery

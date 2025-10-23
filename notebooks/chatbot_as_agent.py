@@ -1,7 +1,8 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "llamabot[all]==0.15.3",
+#     "llamabot[all]",
+#     "pydantic==2.12.3",
 # ]
 #
 # [tool.uv.sources]
@@ -481,14 +482,21 @@ def _(ExperimentDescription, lmb):
     def extract_statistical_info(description: str) -> str:
         """Return an ExperimentDescription from the given experiment description string.
 
+        Use this tool to parse out experimental design information and identify what might be missing.
+
         :param description: A text description of the experiment.
         :return: A dictionary capturing the statistical design.
         """
-        extractor_bot = lmb.StructuredBot(
-            system_prompt="", pydantic_model=ExperimentDescription
-        )
-        result = extractor_bot(description)
-        return result.json()
+        try:
+            extractor_bot = lmb.StructuredBot(
+                system_prompt="You are an expert in experimental design. Parse the given experiment description and extract statistical design information. If any factors have insufficient levels, provide reasonable defaults or mark them as continuous variables. Always ensure categorical factors have at least 2 levels.",
+                pydantic_model=ExperimentDescription,
+            )
+            result = extractor_bot(description)
+            return result.json()
+        except Exception as e:
+            # Return a structured error response that the agent can work with
+            return f"Error parsing experimental design: {str(e)}. The experiment description may be incomplete or ambiguous. Please provide more details about the experimental factors, treatments, and design structure."
 
     return (extract_statistical_info,)
 
@@ -1113,47 +1121,102 @@ def _(lmb):
 @app.cell
 def _(lmb):
     @lmb.prompt("system")
-    def stats_agent_sysprompt():
+    def stats_agent_persona():
         """Your role is a statistical consultant. Your mission is to provide statistical advice.
 
         Be a coach, ask questions if you do not have enough information to respond,
         and guide the user toward sound statistical practices.
-
-        You may be provided with experimental design description, or asked about experiment designs.
-        If so, I want you to extract the statistical design information into a structured format
-        and comprehend it first before responding to a user.
         """
 
-    return (stats_agent_sysprompt,)
+    return
 
 
 @app.cell
-def _(
-    extract_statistical_info,
-    lmb,
-    read_r2d2m2_summary,
-    stats_agent_sysprompt,
-):
+def _(extract_statistical_info, lmb, read_r2d2m2_summary):
     bot = lmb.AgentBot(
-        system_prompt=stats_agent_sysprompt(),
+        # =stats_agent_persona(),
         memory=lmb.ChatMemory(),
         tools=[
             extract_statistical_info,
             read_r2d2m2_summary,
         ],
+        model_name="gpt-4.1",
     )
     return (bot,)
 
 
 @app.cell
 def _(bot):
-    def model(messages, config):
-        # Each message has a `content` attribute, as well as a `role`
-        # attribute ("user", "system", "assistant");
-        response = bot(messages[-1].content)
-        return response.content
+    import marimo as mo
 
-    return (model,)
+    _ = bot("Can you check if my experimental design makes sense?")
+    mo.md(_.content)
+    return (mo,)
+
+
+@app.cell
+def _(bot, mo):
+    _ = bot(
+        "A three–year in–situ field experiment was conducted in Zhongjiang County, Deyang City, Sichuan Province (31.03 °N, 104.68 °E) from 2017 to 2019 maize growing seasons. Before sowing, soil samples were collected from the 0–30cm soil layer using the diagonal soil sampling method. Soil samples were air–dried and sieved to remove undecomposed plant material. The samples obtained were used for the analysis of soil organic matter, total N, Alkaline N, Available P, Available K, pH and the results were shown in Table 1. It was a fallow land in the winter of 2017–2018, and wheat was firstly planted before sowing maize in 2019, resulting in lower soil N content. The experimental materials were the pre–screened low N–tolerant maize variety ZhengHong311 (ZH311) and low N–sensitive maize variety XianYu508 (XY508) (Li et al., 2020, Wu et al., 2022). Seeds were provided by Sichuan Agricultural University Zhenghong Seed Co. and Tieling Pioneer Seed Research Co. respectively."
+    )
+    mo.md(_.content)
+    return
+
+
+@app.cell
+def _(bot, mo):
+    _ = bot("How should I do the statistical analysis? ")
+    mo.md(_.content)
+    return
+
+
+@app.cell
+def _(bot, mo):
+    _ = bot("How would you write the R2D2 model for this experiment?")
+    mo.md(_.content)
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(bot, mo):
+    mo.mermaid(bot.memory.to_mermaid())
+    return
+
+
+@app.cell
+def _(bot):
+    print(bot.memory.to_mermaid())
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    # def model(messages, config):
+    #     # Each message has a `content` attribute, as well as a `role`
+    #     # attribute ("user", "system", "assistant");
+    #     response = bot(messages[-1].content)
+    #     return response.content
+    return
 
 
 @app.cell(hide_code=True)
@@ -1196,21 +1259,25 @@ def _():
         "Some of my mice died before the experiment ended. Does this ruin my design?",
         "I lost some samples during processing. What should I do?",
     ]
-    return (example_prompts,)
-
-
-@app.cell
-def _(example_prompts, mo, model):
-    chat = mo.ui.chat(model, prompts=example_prompts)
-    chat
     return
 
 
 @app.cell
 def _():
-    import marimo as mo
+    # chat = mo.ui.chat(model, prompts=example_prompts)
+    # chat
+    return
 
-    return (mo,)
+
+@app.cell
+def _():
+    # import marimo as mo
+    return
+
+
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":

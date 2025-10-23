@@ -382,6 +382,30 @@ def test_make_response_with_tools(mock_completion):
     assert kwargs["tool_choice"] == "auto"
 
 
+@patch("litellm.completion")
+def test_make_response_with_custom_tool_choice(mock_completion):
+    """Test that bots can specify their own tool_choice."""
+    # Set up mock
+    mock_completion.return_value = "Mock response"
+
+    # Create test data
+    bot = SimpleBot(system_prompt="Test prompt")
+    bot.tools = [{"type": "function", "function": {"name": "test_function"}}]
+    bot.tool_choice = "none"
+    messages = [
+        SystemMessage(content="Test prompt"),
+        HumanMessage(content="Test message"),
+    ]
+
+    # Call function
+    _ = make_response(bot, messages)
+
+    # Check that completion was called with the custom tool_choice
+    _, kwargs = mock_completion.call_args
+    assert kwargs["tools"] == bot.tools
+    assert kwargs["tool_choice"] == "none"
+
+
 # Tests for stream_chunks function
 def test_stream_chunks_with_model_response():
     """Test that stream_chunks returns the input unchanged if it's already a ModelResponse."""

@@ -9,7 +9,7 @@ def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:
     node_styles = []
     for node_id, node_data in graph.nodes(data=True):
         node = node_data["node"]
-        content = node.message.content.replace("\n", " ")[:60]
+        content = node.message.content.replace("\n", " ").replace('"', "'")[:60]
         if node.message.role == "human" or node.message.role == "user":
             prefix = f"H{node_id}"
             color = "#a7c7e7"  # pastel blue
