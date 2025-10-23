@@ -1,7 +1,9 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
+#     "anthropic==0.71.0",
 #     "llamabot[all]",
+#     "pydantic==2.12.3",
 # ]
 #
 # [tool.uv.sources]
@@ -486,11 +488,16 @@ def _(ExperimentDescription, lmb):
         :param description: A text description of the experiment.
         :return: A dictionary capturing the statistical design.
         """
-        extractor_bot = lmb.StructuredBot(
-            system_prompt="", pydantic_model=ExperimentDescription
-        )
-        result = extractor_bot(description)
-        return result.json()
+        try:
+            extractor_bot = lmb.StructuredBot(
+                system_prompt="You are an expert in experimental design. Parse the given experiment description and extract statistical design information. If any factors have insufficient levels, provide reasonable defaults or mark them as continuous variables. Always ensure categorical factors have at least 2 levels.",
+                pydantic_model=ExperimentDescription,
+            )
+            result = extractor_bot(description)
+            return result.json()
+        except Exception as e:
+            # Return a structured error response that the agent can work with
+            return f"Error parsing experimental design: {str(e)}. The experiment description may be incomplete or ambiguous. Please provide more details about the experimental factors, treatments, and design structure."
 
     return (extract_statistical_info,)
 
@@ -1115,30 +1122,26 @@ def _(lmb):
 @app.cell
 def _(lmb):
     @lmb.prompt("system")
-    def stats_agent_sysprompt():
+    def stats_agent_persona():
         """Your role is a statistical consultant. Your mission is to provide statistical advice.
 
         Be a coach, ask questions if you do not have enough information to respond,
         and guide the user toward sound statistical practices.
         """
 
-    return (stats_agent_sysprompt,)
+    return (stats_agent_persona,)
 
 
 @app.cell
-def _(
-    extract_statistical_info,
-    lmb,
-    read_r2d2m2_summary,
-    stats_agent_sysprompt,
-):
+def _(extract_statistical_info, lmb, read_r2d2m2_summary, stats_agent_persona):
     bot = lmb.AgentBot(
-        system_prompt=stats_agent_sysprompt(),
+        persona=stats_agent_persona(),
         memory=lmb.ChatMemory(),
         tools=[
             extract_statistical_info,
             read_r2d2m2_summary,
         ],
+        model_name="ollama_chat/qwen3:30b",
     )
     return (bot,)
 
@@ -1164,17 +1167,52 @@ def _(bot):
 
 
 @app.cell
-def _():
+def _(bot):
+    import marimo as mo
+
+    mo.mermaid(bot.memory.to_mermaid())
+    return (mo,)
+
+
+@app.cell
+def _(bot):
+    print(bot.memory.to_mermaid())
     return
 
 
 @app.cell
-def _():
-    return
+def _(mo):
+    mo.mermaid(
+        """
+    graph TD
+        1["A1: Absolutely! Please provide a description of your experimenta"]
+        2["A2: Absolutely! Please provide a description of your experimenta"]
+        3["H3: Can you check if my experimental design makes sense?"]
+        4["A4: "]
+        5["A5: Observation: {"response":"Soil nutrient content (e.g., soil "]
+        6["A6: I have the information needed to respond to the user. I shou"]
+        7["A7: Based on my analysis of your experimental design, I can see "]
+        8["H8: A three–year in–situ field experiment was conducted in Zhong"]
+        9["A9: I have the information needed to respond to the user. I shou"]
+        10["A10: Observation: {"response":"Soil N content (and other soil pro"]
+        11["A11: I have the information needed to respond to the user. I shou"]
+        12["A12: Given your experimental design—a three-year field experiment"]
+        13["H13: How should I do the statistical analysis? "]
 
-
-@app.cell
-def _():
+        1 --> 2
+        2 --> 3
+        3 --> 4
+        4 --> 5
+        5 --> 6
+        6 --> 7
+        7 --> 8
+        8 --> 9
+        9 --> 10
+        10 --> 11
+        11 --> 12
+        12 --> 13
+    """
+    )
     return
 
 

@@ -75,112 +75,135 @@ def get_new_messages_for_logging(
 
 
 @prompt("system")
+def agentbot_system_prompt() -> str:
+    """Core ReAct system prompt for AgentBot behavior.
+
+    This defines the general-purpose ReAct loop behavior that all AgentBots should follow.
+    It does not include domain-specific persona or expertise.
+
+    :return: System prompt for ReAct behavior
+    """
+    return """
+## ReAct Pattern
+
+You are a ReAct (Reasoning and Acting) agent that solves problems through explicit reasoning cycles.
+You must follow the Thought-Action-Observation pattern for every step of your reasoning.
+
+You must follow this exact cycle for each reasoning step:
+
+1. **Thought**: Analyze the current situation and plan your next action
+2. **Action**: Execute a tool or function call based on your reasoning
+3. **Observation**: Process the results and update your understanding
+
+This cycle repeats until you have enough information to provide a complete answer.
+
+## CRITICAL: Avoiding Redundant Tool Calls
+
+Before calling any tool:
+1. **Check the conversation history** for previous Observation messages
+2. **If you see an Observation with results from the same tool and same/similar arguments**, DO NOT call that tool again
+3. **Instead, use `respond_to_user` with the information from the existing Observation**
+
+Example of what NOT to do:
+- Thought: "I need to extract statistical info"
+- Action: call extract_statistical_info
+- Observation: [gets detailed statistical breakdown]
+- Thought: "I should extract statistical info"  ← WRONG! You already did this!
+- Action: call extract_statistical_info again  ← REDUNDANT!
+
+Example of correct behavior:
+- Thought: "I need to extract statistical info"
+- Action: call extract_statistical_info
+- Observation: [gets detailed statistical breakdown]
+- Thought: "I now have the statistical information. I should respond to the user with my analysis"
+- Action: call respond_to_user with the analysis  ← CORRECT!
+
+## IMPORTANT: When You Have Information
+
+If you have already gathered the information needed to answer the user's question:
+- **DO NOT** try to call the same tool again
+- **DO** use `respond_to_user` to provide your analysis and recommendations
+- **DO NOT** return empty thoughts - always provide meaningful responses
+
+## CRITICAL: After Getting Tool Results
+
+When you receive an Observation with tool results:
+1. **Immediately** use `respond_to_user` to provide the information to the user
+2. **Do NOT** try to call the same tool again
+3. **Do NOT** return empty thoughts
+
+Example:
+- User: "What's today's date?"
+- Action: call today_date
+- Observation: "2025-10-22"
+- **Next Action**: call respond_to_user with "Today's date is 2025-10-22"
+- **Do NOT**: try to call today_date again
+
+## MANDATORY: Stop After Getting Information
+
+**CRITICAL RULE**: Once you have the information needed to answer the user's question, you MUST:
+1. **STOP** the ReAct cycle
+2. **Use `respond_to_user`** to provide the answer
+3. **DO NOT** continue to another ReAct cycle
+
+**NEVER** try to call the same tool twice in a row. If you already have the information, use `respond_to_user` immediately.
+
+## CRITICAL: When You Have Observations
+
+If you see an Observation message in the conversation history, it means you already have information from a tool call. In this case:
+- **DO NOT** call any other tools
+- **IMMEDIATELY** use `respond_to_user` to provide the information to the user
+- **DO NOT** return empty thoughts or say "I should use respond_to_user"
+- **ACTUALLY** call the `respond_to_user` tool with your analysis
+
+## Tool Usage
+
+- Use available tools to gather information or perform actions
+- **After successfully executing a tool**, review the Observation before deciding next action
+- **If the Observation contains the information needed**, use `respond_to_user` immediately
+- **NEVER call the same tool with the same arguments twice**
+- Always explain your reasoning in your thought before taking action
+
+## Guidelines
+
+- Be explicit about your reasoning process
+- Learn from observations - they contain valuable information
+- After each Observation, ask yourself: "Do I have enough information to answer the user now?"
+- If yes, use `respond_to_user` to provide your final answer
+- Never perform actions that could harm systems or violate policies
+
+## Example
+
+User: "What's the weather like today?"
+
+Thought: I need to get current weather information. I should search for today's weather.
+
+[Tool call to search for weather]
+
+Observation: The search results show it's 72°F and sunny.
+
+Thought: I now have the weather information needed to answer the user's question.
+
+[Tool call to respond_to_user with the weather information]
+"""
+
+
 def default_agentbot_system_prompt() -> str:
+    """Default system prompt that combines ReAct behavior with a generic persona.
+
+    This is maintained for backward compatibility.
+
+    :return: Combined system prompt with ReAct behavior and generic persona
     """
-    ## role
+    return (
+        agentbot_system_prompt()
+        + """
 
-    You are a ReAct (Reasoning and Acting) agent that solves problems through explicit reasoning cycles.
-    You must follow the Thought-Action-Observation pattern for every step of your reasoning.
+## Role
 
-    ## ReAct Pattern
-
-    You must follow this exact cycle for each reasoning step:
-
-    1. **Thought**: Analyze the current situation and plan your next action
-    2. **Action**: Execute a tool or function call based on your reasoning
-    3. **Observation**: Process the results and update your understanding
-
-    This cycle repeats until you have enough information to provide a complete answer.
-
-    ## CRITICAL: Avoiding Redundant Tool Calls
-
-    Before calling any tool:
-    1. **Check the conversation history** for previous Observation messages
-    2. **If you see an Observation with results from the same tool and same/similar arguments**, DO NOT call that tool again
-    3. **Instead, use `respond_to_user` with the information from the existing Observation**
-
-    Example of what NOT to do:
-    - Thought: "I need to extract statistical info"
-    - Action: call extract_statistical_info
-    - Observation: [gets detailed statistical breakdown]
-    - Thought: "I should extract statistical info"  ← WRONG! You already did this!
-    - Action: call extract_statistical_info again  ← REDUNDANT!
-
-    Example of correct behavior:
-    - Thought: "I need to extract statistical info"
-    - Action: call extract_statistical_info
-    - Observation: [gets detailed statistical breakdown]
-    - Thought: "I now have the statistical information. I should respond to the user with my analysis"
-    - Action: call respond_to_user with the analysis  ← CORRECT!
-
-    ## IMPORTANT: When You Have Information
-
-    If you have already gathered the information needed to answer the user's question:
-    - **DO NOT** try to call the same tool again
-    - **DO** use `respond_to_user` to provide your analysis and recommendations
-    - **DO NOT** return empty thoughts - always provide meaningful responses
-
-    ## CRITICAL: After Getting Tool Results
-
-    When you receive an Observation with tool results:
-    1. **Immediately** use `respond_to_user` to provide the information to the user
-    2. **Do NOT** try to call the same tool again
-    3. **Do NOT** return empty thoughts
-
-    Example:
-    - User: "What's today's date?"
-    - Action: call today_date
-    - Observation: "2025-10-22"
-    - **Next Action**: call respond_to_user with "Today's date is 2025-10-22"
-    - **Do NOT**: try to call today_date again
-
-    ## MANDATORY: Stop After Getting Information
-
-    **CRITICAL RULE**: Once you have the information needed to answer the user's question, you MUST:
-    1. **STOP** the ReAct cycle
-    2. **Use `respond_to_user`** to provide the answer
-    3. **DO NOT** continue to another ReAct cycle
-
-    **NEVER** try to call the same tool twice in a row. If you already have the information, use `respond_to_user` immediately.
-
-    ## CRITICAL: When You Have Observations
-
-    If you see an Observation message in the conversation history, it means you already have information from a tool call. In this case:
-    - **DO NOT** call any other tools
-    - **IMMEDIATELY** use `respond_to_user` to provide the information to the user
-    - **DO NOT** return empty thoughts or say "I should use respond_to_user"
-    - **ACTUALLY** call the `respond_to_user` tool with your analysis
-
-    ## Tool Usage
-
-    - Use available tools to gather information or perform actions
-    - **After successfully executing a tool**, review the Observation before deciding next action
-    - **If the Observation contains the information needed**, use `respond_to_user` immediately
-    - **NEVER call the same tool with the same arguments twice**
-    - Always explain your reasoning in your thought before taking action
-
-    ## Guidelines
-
-    - Be explicit about your reasoning process
-    - Learn from observations - they contain valuable information
-    - After each Observation, ask yourself: "Do I have enough information to answer the user now?"
-    - If yes, use `respond_to_user` to provide your final answer
-    - Never perform actions that could harm systems or violate policies
-
-    ## Example
-
-    User: "What's the weather like today?"
-
-    Thought: I need to get current weather information. I should search for today's weather.
-
-    [Tool call to search for weather]
-
-    Observation: The search results show it's 72°F and sunny.
-
-    Thought: I now have the weather information needed to answer the user's question.
-
-    [Tool call to respond_to_user with the weather information]
-    """
+You are a helpful AI assistant that can use tools to solve problems and answer questions.
+"""
+    )
 
 
 class AgentBot(SimpleBot):
@@ -189,15 +212,34 @@ class AgentBot(SimpleBot):
     def __init__(
         self,
         temperature=0.0,
-        system_prompt: str = default_agentbot_system_prompt(),
+        system_prompt: Optional[str] = None,
+        persona: Optional[str] = None,
         model_name=default_language_model(),
         stream_target: str = "none",
         tools: Optional[list[Callable]] = None,
         memory: Optional[Union[ChatMemory, AbstractDocumentStore]] = None,
         **completion_kwargs,
     ):
+        # Combine system prompt and persona
+        if system_prompt is None:
+            # Use the core ReAct system prompt
+            base_system_prompt = agentbot_system_prompt()
+        else:
+            # Use the provided system prompt
+            base_system_prompt = system_prompt
+
+        # Add persona if provided
+        if persona:
+            final_system_prompt = base_system_prompt + "\n\n" + persona
+        else:
+            final_system_prompt = base_system_prompt
+
+        # Ensure we have a valid system prompt
+        if not final_system_prompt or final_system_prompt.strip() == "":
+            final_system_prompt = agentbot_system_prompt()
+
         super().__init__(
-            system_prompt=system_prompt,
+            system_prompt=final_system_prompt,
             temperature=temperature,
             model_name=model_name,
             stream_target=stream_target,
@@ -213,15 +255,71 @@ class AgentBot(SimpleBot):
 
         # ToolBot removed - AgentBot handles tool selection directly
 
+    def _generate_reasoning(self, message_list: List[BaseMessage]) -> Optional[str]:
+        """Generate reasoning content using a SimpleBot for structured thinking.
+
+        This creates a separate reasoning phase that generates structured thinking
+        before the main execution phase, using LlamaBot's SimpleBot architecture.
+
+        :param message_list: Current message list
+        :return: Generated reasoning content or None
+        """
+        try:
+            # Create a reasoning-specific system prompt
+            reasoning_prompt = """
+You are an expert reasoning assistant. Your job is to think through problems step by step.
+
+Analyze the user's request and provide a clear, structured reasoning process that includes:
+
+1. **Understanding**: What is the user asking for?
+2. **Analysis**: What information do I need to gather?
+3. **Plan**: What steps should I take to help the user?
+4. **Tools**: What tools might be useful for this task?
+
+Be thorough and detailed in your reasoning. This will help guide the subsequent execution phase.
+
+Focus on the reasoning process, not on executing tools yet.
+"""
+
+            # Create a SimpleBot for reasoning (no tools, just pure reasoning)
+            from llamabot.bot.simplebot import SimpleBot
+
+            reasoning_bot = SimpleBot(
+                system_prompt=reasoning_prompt,
+                model_name=self.model_name,
+                temperature=self.temperature,
+                stream=False,
+            )
+
+            # Generate reasoning response using SimpleBot
+            reasoning_response = reasoning_bot(
+                *message_list[1:]
+            )  # Skip the main system prompt
+            reasoning_content = reasoning_response.content
+
+            if reasoning_content and reasoning_content.strip():
+                return reasoning_content.strip()
+
+        except Exception as e:
+            logger.warning(f"Failed to generate reasoning: {e}")
+
+        return None
+
     def __call__(
         self,
         *messages: Union[str, BaseMessage, List[Union[str, BaseMessage]]],
         max_iterations: int = 10,
+        enable_reasoning: bool = True,
     ) -> AIMessage:
         """Process messages using the ReAct (Reasoning and Acting) pattern.
 
+        This implementation follows Agno's two-stage approach:
+        1. Reasoning phase: Generate structured thinking
+        2. Execution phase: Use reasoning context for final response
+
         :param messages: One or more messages to process
         :param max_iterations: Maximum number of ReAct cycles to run
+        :param enable_reasoning: Whether to use the reasoning phase (Agno-style)
         :return: The final response as an AIMessage
         :raises RuntimeError: If max iterations is reached
         """
@@ -232,9 +330,12 @@ class AgentBot(SimpleBot):
             "current_iteration": 0,
             "tool_usage": {},
             "message_counts": {"user": 0, "assistant": 0, "tool": 0},
+            "reasoning_steps": [],
         }
 
         # Convert messages to a list of BaseMessage objects
+        if self.system_prompt is None:
+            raise ValueError("System prompt is None. This should not happen.")
         message_list = [self.system_prompt]
         for msg in messages:
             if isinstance(msg, str):
@@ -271,6 +372,17 @@ class AgentBot(SimpleBot):
         if memory_messages:
             message_list = [message_list[0]] + memory_messages + message_list[1:]
 
+        # STAGE 1: REASONING PHASE (Agno-style)
+        if enable_reasoning:
+            reasoning_content = self._generate_reasoning(message_list)
+            if reasoning_content:
+                # Store reasoning content for use in forced responses
+                self.run_meta["reasoning_steps"].append(reasoning_content)
+                logger.debug(
+                    "Generated reasoning content: {}", reasoning_content[:200] + "..."
+                )
+                # Don't add reasoning to message list - it will be used in forced responses
+
         # Track tool calls to prevent redundancy
         executed_tool_calls = []
 
@@ -297,8 +409,13 @@ class AgentBot(SimpleBot):
                 logger.debug(
                     "Agent has observations but empty thought - should use respond_to_user"
                 )
-                # Force the agent to use respond_to_user by adding it to the thought
-                thought_content = "I have the information needed to respond to the user. I should use respond_to_user to provide the answer."
+                # Use reasoning content if available, otherwise force respond_to_user
+                if self.run_meta.get("reasoning_steps"):
+                    reasoning_content = self.run_meta["reasoning_steps"][-1]
+                    thought_content = reasoning_content
+                    logger.debug("Using reasoning content for empty thought")
+                else:
+                    thought_content = "I have the information needed to respond to the user. I should use respond_to_user to provide the answer."
 
             # Add the thought to conversation
             thought_message = ThoughtMessage(content=thought_content)
@@ -317,20 +434,22 @@ class AgentBot(SimpleBot):
             )
             logger.debug("Agent selected tools: {}", tool_calls)
 
-            # If agent has observations, it should use respond_to_user instead of calling more tools
-            has_observations = any(
-                isinstance(msg, ObservationMessage) for msg in message_list
-            )
-            if has_observations and tool_calls:
-                # Check if agent is trying to call tools other than respond_to_user
-                non_respond_calls = [
-                    call
-                    for call in tool_calls
-                    if call.function.name != "respond_to_user"
-                ]
-                if non_respond_calls:
+            # Check for redundancy in tool calls - only force respond_to_user if truly redundant
+            if tool_calls:
+                # Check if agent is trying to call the same tool with same arguments again
+                redundant_calls = []
+                for call in tool_calls:
+                    call_signature = {
+                        "name": call.function.name,
+                        "arguments": call.function.arguments,
+                    }
+                    if call_signature in executed_tool_calls:
+                        redundant_calls.append(call)
+
+                if redundant_calls and len(redundant_calls) == len(tool_calls):
+                    # All tool calls are redundant - force respond_to_user
                     logger.debug(
-                        "Agent has observations but trying to call other tools - forcing respond_to_user"
+                        "All tool calls are redundant - forcing respond_to_user"
                     )
                     # Force the agent to use respond_to_user by creating a proper tool call
                     import json
@@ -394,29 +513,6 @@ class AgentBot(SimpleBot):
                     )
                     tool_calls = [respond_call]
 
-            # REDUNDANCY DETECTION: Check if any tool calls are redundant
-            if tool_calls:
-                # Filter out redundant tool calls
-                non_redundant_calls = []
-                for call in tool_calls:
-                    call_signature = {
-                        "name": call.function.name,
-                        "arguments": call.function.arguments,
-                    }
-
-                    if call_signature in executed_tool_calls:
-                        logger.debug(
-                            f"Filtering out redundant tool call: {call.function.name} with args {call.function.arguments}"
-                        )
-                    else:
-                        non_redundant_calls.append(call)
-
-                # Update tool_calls to only include non-redundant calls
-                tool_calls = non_redundant_calls
-                logger.debug(
-                    "After redundancy filtering: {} tool calls", len(tool_calls)
-                )
-
             # If no tools selected, the agent should have used respond_to_user
             if not tool_calls:
                 logger.warning(
@@ -438,52 +534,20 @@ class AgentBot(SimpleBot):
                     import json
                     from litellm import ChatCompletionMessageToolCall, Function
 
-                    # Extract the actual analysis from the MOST RECENT observation only
-                    observation_content = ""
-                    for msg in reversed(
-                        message_list
-                    ):  # Start from the most recent message
-                        if isinstance(msg, ObservationMessage):
-                            observation_content = msg.content
-                            break
-
-                    # Get the current user question to provide context-appropriate response
-                    current_user_question = ""
-                    for msg in reversed(message_list):
-                        if isinstance(msg, HumanMessage):
-                            current_user_question = msg.content
-                            break
-
-                    if observation_content and "Observation:" in observation_content:
-                        # Extract the JSON data from the observation
-                        try:
-                            import json
-
-                            json_start = observation_content.find("{")
-                            if json_start != -1:
-                                json_data = json.loads(observation_content[json_start:])
-
-                                # Provide context-appropriate response based on the current question
-                                if (
-                                    "statistical analysis"
-                                    in current_user_question.lower()
-                                    or "how should" in current_user_question.lower()
-                                ):
-                                    response_text = f"Based on your experimental design, I recommend a mixed-effects model with {', '.join([f['name'] for f in json_data.get('factors', [])])} as factors. "
-                                    response_text += f"Since you have {json_data.get('replicate_structure', {}).get('replicates_per_unit', 'multiple')} replicates per treatment, "
-                                    response_text += "you should include random effects for plot/block and test for interactions between your main factors."
-                                else:
-                                    # Default experimental design analysis
-                                    response_text = f"Based on my analysis of your experimental design, I can see this is a {json_data.get('description', 'field experiment')}. "
-                                    response_text += f"The main factors are: {', '.join([f['name'] for f in json_data.get('factors', [])])}. "
-                                    response_text += f"The aim is to {json_data.get('aim', 'compare treatments')}. "
-                                    response_text += "This appears to be a well-designed field experiment with appropriate blocking and replication."
-                            else:
-                                response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
-                        except (json.JSONDecodeError, KeyError, ValueError):
-                            response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+                    # Use the rich thought content as the response instead of generic template
+                    if thought_content and thought_content.strip():
+                        # Use the actual thought content as the response
+                        response_text = thought_content.strip()
+                        logger.debug("Using rich thought content as forced response")
                     else:
-                        response_text = "I have analyzed your experimental design and can provide feedback based on the data I've extracted."
+                        # Check if we have reasoning content from the reasoning phase
+                        if self.run_meta.get("reasoning_steps"):
+                            reasoning_content = self.run_meta["reasoning_steps"][-1]
+                            response_text = reasoning_content
+                            logger.debug("Using reasoning content as forced response")
+                        else:
+                            # Fallback to generic response if no thought content
+                            response_text = "I have analyzed your request and can provide feedback based on the information available."
 
                     respond_call = ChatCompletionMessageToolCall(
                         id="forced_respond_to_user",
@@ -535,6 +599,7 @@ class AgentBot(SimpleBot):
                     sqlite_log(self, new_messages + [final_message])
                     return final_message
 
+            # If we have tool calls, execute them
             if tool_calls:
                 # Check for respond_to_user (final answer)
                 respond_to_user_calls = [
