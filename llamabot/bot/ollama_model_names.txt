@@ -1,3 +1,5 @@
+minimax-m2
+gpt-oss-safeguard
 glm-4.6
 qwen3-vl
 granite4
