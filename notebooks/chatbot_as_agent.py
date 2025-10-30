@@ -46,13 +46,6 @@ def _():
         GAMMA = "gamma"
         BETA = "beta"
 
-    class R2D2Variant(str, Enum):
-        """R2D2 framework variants."""
-
-        SHRINKAGE = "shrinkage"
-        GLM = "glm"
-        M2 = "m2"
-
     class FactorType(str, Enum):
         """Types of experimental factors."""
 
@@ -1140,7 +1133,7 @@ def _(extract_statistical_info, lmb, read_r2d2m2_summary):
             extract_statistical_info,
             read_r2d2m2_summary,
         ],
-        model_name="gpt-4.1",
+        model_name="ollama_chat/qwen3:30b",
     )
     return (bot,)
 
@@ -1165,7 +1158,7 @@ def _(bot, mo):
 
 @app.cell
 def _(bot, mo):
-    _ = bot("How should I do the statistical analysis? ")
+    _ = bot("How should I do the statistical analysis?")
     mo.md(_.content)
     return
 
