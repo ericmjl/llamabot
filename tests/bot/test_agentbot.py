@@ -128,3 +128,55 @@ def test_memory_appends_user(monkeypatch):
     first_appended = mem.append.call_args_list[0][0][0]
     assert isinstance(first_appended, HumanMessage)
     assert first_appended.content == "hi"
+
+
+def test_qwen25_simple_date(monkeypatch):
+    """Simple execution with qwen2.5:0.5b: tool then final content."""
+    bot = AgentBot(
+        system_prompt="You are a helper.", model_name="ollama_chat/qwen2.5:0.5b"
+    )
+
+    # Turn 1: tool_calls only
+    tcall = _mk_tool_call("today_date", {})
+    r1 = _mk_response(content="", tool_calls=[tcall])
+    # Turn 2: final content
+    r2 = _mk_response(content="2025-10-29", tool_calls=None)
+
+    calls = iter([r1, r2])
+    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: next(calls))
+
+    out = bot("What's today's date?")
+    assert out.content == "2025-10-29"
+
+
+@tool
+def run_shell_command(command: str) -> str:
+    """Return a fake directory listing for testing the shell tool path.
+
+    :param command: Command string (ignored in test)
+    :return: Mocked output
+    """
+    return "README.md\npyproject.toml\nllamabot/\ntests/\n"
+
+
+def test_qwen25_with_shell_tool(monkeypatch):
+    """qwen2.5:0.5b flow: tool call then final summarized content."""
+    bot = AgentBot(
+        system_prompt="You are a helper.",
+        model_name="ollama_chat/qwen2.5:0.5b",
+        tools=[run_shell_command],
+    )
+
+    # Turn 1: decide to call run_shell_command
+    tcall = _mk_tool_call("run_shell_command", {"command": "ls"})
+    r1 = _mk_response(content="", tool_calls=[tcall])
+    # Turn 2: return final text referencing files
+    final_text = "Found files: README.md, pyproject.toml, llamabot/, tests/."
+    r2 = _mk_response(content=final_text, tool_calls=None)
+
+    calls = iter([r1, r2])
+    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: next(calls))
+
+    out = bot("What files are here? Use the shell tool.")
+    assert "README.md" in out.content
+    assert "pyproject.toml" in out.content
