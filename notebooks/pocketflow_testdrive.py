@@ -225,7 +225,7 @@ def _(Node, lmb):
             if not topics:
                 return "Cannot generate questions without valid topics"
 
-            prompt = f"Given these topics: {topics}\n\nand the original text: {txt}\m\nGenerate 2 interesting questions for each topic."
+            prompt = f"Given these topics: {topics}\n\nand the original text: {txt}\n\nGenerate 2 interesting questions for each topic."
             bot = lmb.SimpleBot(
                 system_prompt="You are a helpful assistant that generates thought-provoking questions.",
                 model_name="ollama_chat/qwen3:30b",
@@ -254,12 +254,13 @@ def _(ExtractTopics, Flow, GenerateQuestions, txt):
     two_node_flow = Flow(start=extract_topics)
     result = two_node_flow.run(shared_topics)
     result
-    return (shared_topics,)
+    return shared_topics, two_node_flow
 
 
 @app.cell
-def _(shared_topics):
-    shared_topics
+def _(shared_topics, two_node_flow, flow_to_mermaid, mo):
+    # Visualize the two-node workflow
+    mo.mermaid(flow_to_mermaid(two_node_flow))
     return
 
 
@@ -273,6 +274,131 @@ def _(mo):
     """
     )
     return
+
+
+@app.cell
+def _(mo):
+    def flow_to_mermaid(flow):
+        """Convert a PocketFlow Flow object to a Mermaid diagram.
+        
+        :param flow: A PocketFlow Flow object
+        :return: Mermaid diagram string
+        """
+        lines = ["graph TD"]
+        node_styles = []
+        
+        # Start from the flow's start node
+        if not hasattr(flow, 'start') or flow.start is None:
+            return "\n".join(lines + ["A[\"Empty Flow\"]"])
+        
+        start_node = flow.start
+        node_id_map = {}
+        next_id = [1]  # Use list to allow modification in nested function
+        
+        def collect_nodes(node):
+            """Recursively collect all nodes in the graph."""
+            if node in node_id_map:
+                return
+            node_id_map[node] = f"N{next_id[0]}"
+            next_id[0] += 1
+            
+            # Check for node connections/edges
+            edges = {}
+            
+            # Try common PocketFlow edge attribute patterns
+            if hasattr(node, '_edges'):
+                edges = node._edges if isinstance(node._edges, dict) else {}
+            elif hasattr(node, 'edges'):
+                edges = node.edges if isinstance(node.edges, dict) else {}
+            elif hasattr(node, '__dict__'):
+                # Inspect node attributes to find edges
+                node_dict = node.__dict__
+                # Look for common patterns: _edges, edges, or attributes containing 'edge'
+                for attr_name in ['_edges', 'edges']:
+                    if attr_name in node_dict:
+                        val = node_dict[attr_name]
+                        if isinstance(val, dict):
+                            edges = val
+                            break
+                
+                # If not found, look for any dict-like structure that might contain edges
+                if not edges:
+                    for attr_name, attr_value in node_dict.items():
+                        if isinstance(attr_value, dict) and len(attr_value) > 0:
+                            # Check if values look like node objects
+                            sample_val = list(attr_value.values())[0]
+                            if hasattr(sample_val, '__class__') and 'Node' in str(type(sample_val)):
+                                edges = attr_value
+                                break
+            
+            # Recursively collect connected nodes
+            if isinstance(edges, dict):
+                for action, target in edges.items():
+                    if target and hasattr(target, '__class__'):
+                        collect_nodes(target)
+        
+        collect_nodes(start_node)
+        
+        # Generate node definitions
+        for node, node_id in node_id_map.items():
+            node_name = node.__class__.__name__
+            lines.append(f'{node_id}["{node_name}"]')
+            # Style nodes (light blue for visual distinction)
+            style = f"style {node_id} fill:#e1f5ff,stroke:#01579b,stroke-width:2px;"
+            node_styles.append(style)
+        
+        # Generate edges by traversing the graph
+        visited_edges = set()
+        
+        def add_edges(node):
+            """Recursively add edges to the diagram."""
+            if node not in node_id_map:
+                return
+            node_id = node_id_map[node]
+            
+            # Get edges (same logic as collect_nodes)
+            edges = {}
+            if hasattr(node, '_edges'):
+                edges = node._edges if isinstance(node._edges, dict) else {}
+            elif hasattr(node, 'edges'):
+                edges = node.edges if isinstance(node.edges, dict) else {}
+            elif hasattr(node, '__dict__'):
+                node_dict = node.__dict__
+                for attr_name in ['_edges', 'edges']:
+                    if attr_name in node_dict:
+                        val = node_dict[attr_name]
+                        if isinstance(val, dict):
+                            edges = val
+                            break
+                
+                if not edges:
+                    for attr_name, attr_value in node_dict.items():
+                        if isinstance(attr_value, dict) and len(attr_value) > 0:
+                            sample_val = list(attr_value.values())[0]
+                            if hasattr(sample_val, '__class__') and 'Node' in str(type(sample_val)):
+                                edges = attr_value
+                                break
+            
+            # Add edges to diagram
+            if isinstance(edges, dict):
+                for action, target in edges.items():
+                    if target and target in node_id_map:
+                        target_id = node_id_map[target]
+                        edge_key = (node_id, target_id, action)
+                        if edge_key not in visited_edges:
+                            visited_edges.add(edge_key)
+                            # Add action label to edge if it's not 'default'
+                            label = f'|"{action}"|' if action != 'default' and action else ''
+                            lines.append(f"{node_id} -->{label} {target_id}")
+                            # Recursively add edges from target
+                            add_edges(target)
+        
+        add_edges(start_node)
+        
+        lines.extend(node_styles)
+        return "\n".join(lines)
+    
+    return flow_to_mermaid,
 
 
 @app.cell
@@ -415,6 +541,13 @@ def _():
 def _(Flow, decide, shared):
     flow2 = Flow(start=decide)
     flow2.run(shared)
+    return (flow2,)
+
+
+@app.cell
+def _(flow2, flow_to_mermaid, mo):
+    # Visualize the agent flow
+    mo.mermaid(flow_to_mermaid(flow2))
     return
 
 
