@@ -281,60 +281,40 @@ def _(mo):
     def flow_to_mermaid(flow):
         """Convert a PocketFlow Flow object to a Mermaid diagram.
         
+        Based on PocketFlow source: nodes store connections in `successors` dict
+        and Flow uses `start_node` attribute (not `start`).
+        
         :param flow: A PocketFlow Flow object
         :return: Mermaid diagram string
         """
         lines = ["graph TD"]
         node_styles = []
         
-        # Start from the flow's start node
-        if not hasattr(flow, 'start') or flow.start is None:
+        # PocketFlow uses `start_node` attribute, not `start`
+        if not hasattr(flow, 'start_node') or flow.start_node is None:
             return "\n".join(lines + ["A[\"Empty Flow\"]"])
         
-        start_node = flow.start
+        start_node = flow.start_node
         node_id_map = {}
         next_id = [1]  # Use list to allow modification in nested function
         
         def collect_nodes(node):
-            """Recursively collect all nodes in the graph."""
+            """Recursively collect all nodes in the graph.
+            
+            PocketFlow stores edges in node.successors dict: {action: target_node}
+            """
             if node in node_id_map:
                 return
             node_id_map[node] = f"N{next_id[0]}"
             next_id[0] += 1
             
-            # Check for node connections/edges
-            edges = {}
-            
-            # Try common PocketFlow edge attribute patterns
-            if hasattr(node, '_edges'):
-                edges = node._edges if isinstance(node._edges, dict) else {}
-            elif hasattr(node, 'edges'):
-                edges = node.edges if isinstance(node.edges, dict) else {}
-            elif hasattr(node, '__dict__'):
-                # Inspect node attributes to find edges
-                node_dict = node.__dict__
-                # Look for common patterns: _edges, edges, or attributes containing 'edge'
-                for attr_name in ['_edges', 'edges']:
-                    if attr_name in node_dict:
-                        val = node_dict[attr_name]
-                        if isinstance(val, dict):
-                            edges = val
-                            break
-                
-                # If not found, look for any dict-like structure that might contain edges
-                if not edges:
-                    for attr_name, attr_value in node_dict.items():
-                        if isinstance(attr_value, dict) and len(attr_value) > 0:
-                            # Check if values look like node objects
-                            sample_val = list(attr_value.values())[0]
-                            if hasattr(sample_val, '__class__') and 'Node' in str(type(sample_val)):
-                                edges = attr_value
-                                break
+            # PocketFlow nodes store connections in `successors` attribute
+            successors = getattr(node, 'successors', {})
             
             # Recursively collect connected nodes
-            if isinstance(edges, dict):
-                for action, target in edges.items():
-                    if target and hasattr(target, '__class__'):
+            if isinstance(successors, dict):
+                for action, target in successors.items():
+                    if target:
                         collect_nodes(target)
         
         collect_nodes(start_node)
@@ -356,32 +336,12 @@ def _(mo):
                 return
             node_id = node_id_map[node]
             
-            # Get edges (same logic as collect_nodes)
-            edges = {}
-            if hasattr(node, '_edges'):
-                edges = node._edges if isinstance(node._edges, dict) else {}
-            elif hasattr(node, 'edges'):
-                edges = node.edges if isinstance(node.edges, dict) else {}
-            elif hasattr(node, '__dict__'):
-                node_dict = node.__dict__
-                for attr_name in ['_edges', 'edges']:
-                    if attr_name in node_dict:
-                        val = node_dict[attr_name]
-                        if isinstance(val, dict):
-                            edges = val
-                            break
-                
-                if not edges:
-                    for attr_name, attr_value in node_dict.items():
-                        if isinstance(attr_value, dict) and len(attr_value) > 0:
-                            sample_val = list(attr_value.values())[0]
-                            if hasattr(sample_val, '__class__') and 'Node' in str(type(sample_val)):
-                                edges = attr_value
-                                break
+            # Get successors from PocketFlow node structure
+            successors = getattr(node, 'successors', {})
             
             # Add edges to diagram
-            if isinstance(edges, dict):
-                for action, target in edges.items():
+            if isinstance(successors, dict):
+                for action, target in successors.items():
                     if target and target in node_id_map:
                         target_id = node_id_map[target]
                         edge_key = (node_id, target_id, action)
