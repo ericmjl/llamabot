@@ -279,7 +279,7 @@ def _(mo):
 @app.cell
 def _(lmb):
     from llamabot.components.pocketflow import flow_to_mermaid
-    
+
     return (flow_to_mermaid,)
 
 
