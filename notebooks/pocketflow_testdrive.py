@@ -254,11 +254,11 @@ def _(ExtractTopics, Flow, GenerateQuestions, txt):
     two_node_flow = Flow(start=extract_topics)
     result = two_node_flow.run(shared_topics)
     result
-    return shared_topics, two_node_flow
+    return (two_node_flow,)
 
 
 @app.cell
-def _(shared_topics, two_node_flow, flow_to_mermaid, mo):
+def _(mo, two_node_flow):
     # Visualize the two-node workflow
     mo.mermaid(flow_to_mermaid(two_node_flow))
     return
@@ -427,7 +427,7 @@ def _(Flow, decide, shared):
 
 
 @app.cell
-def _(flow2, flow_to_mermaid, mo):
+def _(flow2, mo):
     # Visualize the agent flow
     mo.mermaid(flow_to_mermaid(flow2))
     return
