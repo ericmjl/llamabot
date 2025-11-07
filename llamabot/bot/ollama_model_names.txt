@@ -1,3 +1,4 @@
+kimi-k2-thinking
 minimax-m2
 gpt-oss-safeguard
 glm-4.6
