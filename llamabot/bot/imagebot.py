@@ -38,8 +38,6 @@ class ImageBot:
             otherwise a pathlib.Path object pointing to the generated image.
         :raises Exception: If no image URL is found in the response.
         """
-        from IPython.display import display, Image
-
         response = self.client.images.generate(
             model=self.model,
             prompt=prompt,
@@ -53,8 +51,13 @@ class ImageBot:
 
         # Check if running in a Jupyter notebook
         if is_running_in_jupyter():
-            display(Image(url=image_url))
-            return image_url
+            try:
+                from IPython.display import display, Image
+
+                display(Image(url=image_url))
+                return image_url
+            except ImportError:
+                pass  # IPython not available, fall through to normal behavior
 
         if return_url:
             return image_url
