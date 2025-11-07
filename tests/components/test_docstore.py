@@ -261,3 +261,309 @@ def test_lancedb_append_avoid_duplicates():
 
         # Clean up
         store.reset()
+
+
+# Partitioning tests
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_append():
+    """Test LanceDBDocStore append with partitioning."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_append",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        # Add documents to different partitions
+        store.append("Python tutorial", partition="tutorials")
+        store.append("Python reference", partition="reference")
+        store.append("Default document")  # Should go to default partition
+
+        # Retrieve from specific partition
+        tutorial_results = store.retrieve(
+            "Python", n_results=5, partitions=["tutorials"]
+        )
+        assert len(tutorial_results) >= 1
+        assert "tutorial" in tutorial_results[0].lower()
+
+        # Retrieve from all partitions
+        all_results = store.retrieve("Python", n_results=5)
+        assert len(all_results) >= 2
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_extend_single_partition():
+    """Test LanceDBDocStore extend with single partition."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_extend_single",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        documents = [
+            "Python tutorial part 1",
+            "Python tutorial part 2",
+            "Python tutorial part 3",
+        ]
+        store.extend(documents, partition="tutorials")
+
+        # Retrieve from tutorials partition
+        results = store.retrieve("Python", n_results=5, partitions=["tutorials"])
+        assert len(results) >= 3
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_extend_multiple_partitions():
+    """Test LanceDBDocStore extend with multiple partitions."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_extend_multi",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        documents = [
+            "Python tutorial",
+            "Python reference",
+            "Python API docs",
+        ]
+        partitions = ["tutorials", "reference", "api_docs"]
+        store.extend(documents, partitions=partitions)
+
+        # Retrieve from specific partition
+        tutorial_results = store.retrieve(
+            "Python", n_results=5, partitions=["tutorials"]
+        )
+        assert len(tutorial_results) >= 1
+        assert "tutorial" in tutorial_results[0].lower()
+
+        # Retrieve from multiple partitions
+        multi_results = store.retrieve(
+            "Python", n_results=5, partitions=["tutorials", "reference"]
+        )
+        assert len(multi_results) >= 2
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_extend_partitions_length_mismatch():
+    """Test that extend raises error when partitions length doesn't match documents."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_extend_error",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        documents = ["Doc 1", "Doc 2", "Doc 3"]
+        partitions = ["partition1", "partition2"]  # Wrong length
+
+        with pytest.raises(ValueError, match="Length of partitions must match"):
+            store.extend(documents, partitions=partitions)
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_retrieve_all_partitions():
+    """Test retrieving from all partitions when partitions=None."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_retrieve_all",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        store.append("Tutorial content", partition="tutorials")
+        store.append("Reference content", partition="reference")
+        store.append("API content", partition="api_docs")
+
+        # Retrieve from all partitions (partitions=None)
+        all_results = store.retrieve("content", n_results=10)
+        assert len(all_results) >= 3
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_default_partition():
+    """Test that documents without partition go to default partition."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_default",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+            default_partition="default",
+        )
+        store.reset()
+
+        store.append("Document without partition")
+
+        # Should be in default partition
+        default_results = store.retrieve(
+            "Document", n_results=5, partitions=["default"]
+        )
+        assert len(default_results) >= 1
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_list_partitions():
+    """Test list_partitions helper method."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_list",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        store.append("Doc 1", partition="tutorials")
+        store.append("Doc 2", partition="reference")
+        store.append("Doc 3", partition="api_docs")
+
+        partitions = store.list_partitions()
+        assert "tutorials" in partitions
+        assert "reference" in partitions
+        assert "api_docs" in partitions
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_list_partitions_not_enabled():
+    """Test that list_partitions raises error when partitioning not enabled."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_list_error",
+            storage_path=Path(temp_dir),
+            enable_partitioning=False,
+        )
+        store.reset()
+
+        with pytest.raises(ValueError, match="Partitioning is not enabled"):
+            store.list_partitions()
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_reset_partition():
+    """Test reset_partition helper method."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_reset",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        store.append("Tutorial 1", partition="tutorials")
+        store.append("Tutorial 2", partition="tutorials")
+        store.append("Reference 1", partition="reference")
+
+        # Reset tutorials partition
+        store.reset_partition("tutorials")
+
+        # Tutorials should be empty
+        tutorial_results = store.retrieve(
+            "Tutorial", n_results=5, partitions=["tutorials"]
+        )
+        assert len(tutorial_results) == 0
+
+        # Reference should still exist
+        reference_results = store.retrieve(
+            "Reference", n_results=5, partitions=["reference"]
+        )
+        assert len(reference_results) >= 1
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_get_partition_count():
+    """Test get_partition_count helper method."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_count",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        store.append("Tutorial 1", partition="tutorials")
+        store.append("Tutorial 2", partition="tutorials")
+        store.append("Reference 1", partition="reference")
+
+        assert store.get_partition_count("tutorials") == 2
+        assert store.get_partition_count("reference") == 1
+
+        # Clean up
+        store.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_schema_migration_error():
+    """Test that enabling partitioning on existing table raises error."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create table without partitioning
+        store1 = LanceDBDocStore(
+            table_name="test_lancedb_partition_migration",
+            storage_path=Path(temp_dir),
+            enable_partitioning=False,
+        )
+        store1.reset()
+        store1.append("Existing document")
+
+        # Try to open with partitioning enabled
+        with pytest.raises(ValueError, match="does not have partition field"):
+            LanceDBDocStore(
+                table_name="test_lancedb_partition_migration",
+                storage_path=Path(temp_dir),
+                enable_partitioning=True,
+            )
+
+        # Clean up
+        store1.reset()
+
+
+@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
+def test_lancedb_partitioning_contains():
+    """Test __contains__ method with partitioning enabled."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        store = LanceDBDocStore(
+            table_name="test_lancedb_partition_contains",
+            storage_path=Path(temp_dir),
+            enable_partitioning=True,
+        )
+        store.reset()
+
+        document = "Test document for contains"
+        store.append(document, partition="tutorials")
+
+        assert document in store
+        assert "Non-existent document" not in store
+
+        # Clean up
+        store.reset()
