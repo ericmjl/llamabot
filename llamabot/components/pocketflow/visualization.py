@@ -44,7 +44,11 @@ def flow_to_mermaid(flow) -> str:
 
     # Generate node definitions
     for node, node_id in node_id_map.items():
-        node_name = node.__class__.__name__
+        # Check if node has a 'name' property (FuncNode instances)
+        if hasattr(node, "name"):
+            node_name = node.name
+        else:
+            node_name = node.__class__.__name__
         lines.append(f'{node_id}["{node_name}"]')
         # Style nodes (light blue for visual distinction)
         style = f"style {node_id} fill:#e1f5ff,stroke:#01579b,stroke-width:2px;"
