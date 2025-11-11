@@ -1,182 +1,203 @@
-"""Test suite for AgentBot using native tool_calls (no ToolBot)."""
+"""Test suite for PocketFlow-based AgentBot."""
 
+import sys
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from llamabot.bot.agentbot import AgentBot, hash_result
-from llamabot.components.tools import tool
-from llamabot.components.messages import HumanMessage
+from llamabot.bot.agentbot import AgentBot, decision_bot_system_prompt
+from llamabot.components.pocketflow import DecideNode
 
 
-@tool
-def echo_tool(text: str) -> str:
-    """Echo back the provided text (test helper tool)."""
+def echo_function(text: str) -> str:
+    """Echo back the provided text (test helper function).
+
+    :param text: Text to echo
+    :return: The echoed text
+    """
     return text
 
 
-def _mk_response(content: str | None = None, tool_calls: list | None = None):
-    """Create a MagicMock response object with optional content and tool_calls."""
-    resp = MagicMock()
-    choice = MagicMock()
-    msg = MagicMock()
-    msg.content = content
-    msg.tool_calls = tool_calls
-    choice.message = msg
-    resp.choices = [choice]
-    return resp
+def add_function(a: int, b: int) -> int:
+    """Add two numbers (test helper function).
 
-
-def _mk_tool_call(name: str, args: dict, call_id: str = "call_1"):
-    """Create a MagicMock tool_call with function name, args and id."""
-    call = MagicMock()
-    func = MagicMock()
-    func.name = name
-    func.arguments = json_dumps(args)
-    call.function = func
-    call.id = call_id
-    return call
-
-
-def json_dumps(d: dict) -> str:
-    """JSON-dump helper to keep arguments as strings in mocks."""
-    import json
-
-    return json.dumps(d)
-
-
-def test_hash_result():
-    """Hashing is stable and order-insensitive for dicts."""
-    assert hash_result("test") == hash_result("test")
-    assert len(hash_result("test")) == 8
-    assert hash_result({"a": 1, "b": 2}) == hash_result({"b": 2, "a": 1})
-
-
-def test_openai_like_tool_then_final(monkeypatch):
-    """Model first returns tool_calls then a final assistant message."""
-    bot = AgentBot(system_prompt="You are a helper.")
-
-    # Turn 1: tool_calls only
-    tcall = _mk_tool_call("today_date", {})
-    r1 = _mk_response(content="", tool_calls=[tcall])
-    # Turn 2: final content
-    r2 = _mk_response(content="2025-10-29", tool_calls=None)
-
-    calls = iter([r1, r2])
-    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: next(calls))
-
-    out = bot("What's today's date?")
-    assert out.content == "2025-10-29"
-
-
-def test_ollama_like_tool_then_final(monkeypatch):
-    """Ollama-like flow: tool_calls with empty content then final content."""
-    bot = AgentBot(system_prompt="You are a helper.")
-
-    # First return tool_calls with empty content, then final text
-    tcall = _mk_tool_call("today_date", {}, call_id="call_xyz")
-    r1 = _mk_response(content="", tool_calls=[tcall])
-    r2 = _mk_response(content="2025-10-29", tool_calls=None)
-    calls = iter([r1, r2])
-    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: next(calls))
-
-    out = bot("date?")
-    assert out.content == "2025-10-29"
-
-
-def test_no_tool_path(monkeypatch):
-    """Model responds directly without any tool_calls."""
-    bot = AgentBot(system_prompt="You are a helper.")
-
-    # Model answers directly with no tool_calls
-    r1 = _mk_response(content="hi", tool_calls=None)
-    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: r1)
-
-    out = bot("say hi")
-    assert out.content == "hi"
-
-
-def test_max_cycles(monkeypatch):
-    """Exceeding max_iterations raises a RuntimeError."""
-    bot = AgentBot(system_prompt="You are a helper.")
-    # Keep returning a tool_call to force loop until limit
-    tcall = _mk_tool_call("today_date", {})
-    r = _mk_response(content="", tool_calls=[tcall])
-
-    def _resp(**kwargs):
-        """Return the same mocked response to force repeated tool_calls."""
-        return r
-
-    monkeypatch.setattr("llamabot.bot.agentbot.completion", _resp)
-    with pytest.raises(RuntimeError):
-        bot("loop please", max_iterations=2)
-
-
-def test_memory_appends_user(monkeypatch):
-    """User message is appended to memory before model call."""
-    from llamabot.components.chat_memory import ChatMemory
-
-    mem = MagicMock(spec=ChatMemory)
-    bot = AgentBot(system_prompt="You are a helper.", memory=mem)
-
-    r1 = _mk_response(content="hello", tool_calls=None)
-    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: r1)
-
-    out = bot("hi")
-    assert out.content == "hello"
-    assert mem.append.called
-    # first append should be last user msg
-    first_appended = mem.append.call_args_list[0][0][0]
-    assert isinstance(first_appended, HumanMessage)
-    assert first_appended.content == "hi"
-
-
-def test_qwen25_simple_date(monkeypatch):
-    """Simple execution with qwen2.5:0.5b: tool then final content."""
-    bot = AgentBot(
-        system_prompt="You are a helper.", model_name="ollama_chat/qwen2.5:0.5b"
-    )
-
-    # Turn 1: tool_calls only
-    tcall = _mk_tool_call("today_date", {})
-    r1 = _mk_response(content="", tool_calls=[tcall])
-    # Turn 2: final content
-    r2 = _mk_response(content="2025-10-29", tool_calls=None)
-
-    calls = iter([r1, r2])
-    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: next(calls))
-
-    out = bot("What's today's date?")
-    assert out.content == "2025-10-29"
-
-
-@tool
-def run_shell_command(command: str) -> str:
-    """Return a fake directory listing for testing the shell tool path.
-
-    :param command: Command string (ignored in test)
-    :return: Mocked output
+    :param a: First number
+    :param b: Second number
+    :return: Sum of a and b
     """
-    return "README.md\npyproject.toml\nllamabot/\ntests/\n"
+    return a + b
 
 
-def test_qwen25_with_shell_tool(monkeypatch):
-    """qwen2.5:0.5b flow: tool call then final summarized content."""
-    bot = AgentBot(
-        system_prompt="You are a helper.",
-        model_name="ollama_chat/qwen2.5:0.5b",
-        tools=[run_shell_command],
-    )
+def test_agentbot_initialization():
+    """Test AgentBot initialization with plain callables."""
+    bot = AgentBot(tools=[echo_function])
 
-    # Turn 1: decide to call run_shell_command
-    tcall = _mk_tool_call("run_shell_command", {"command": "ls"})
-    r1 = _mk_response(content="", tool_calls=[tcall])
-    # Turn 2: return final text referencing files
-    final_text = "Found files: README.md, pyproject.toml, llamabot/, tests/."
-    r2 = _mk_response(content=final_text, tool_calls=None)
+    assert bot is not None
+    assert hasattr(bot, "tools")
+    assert hasattr(bot, "decide_node")
+    assert hasattr(bot, "flow")
+    assert hasattr(bot, "shared")
 
-    calls = iter([r1, r2])
-    monkeypatch.setattr("llamabot.bot.agentbot.completion", lambda **_: next(calls))
 
-    out = bot("What files are here? Use the shell tool.")
-    assert "README.md" in out.content
-    assert "pyproject.toml" in out.content
+def test_agentbot_wraps_tools():
+    """Test that tools are automatically wrapped with @tool and @nodeify."""
+    bot = AgentBot(tools=[echo_function])
+
+    # Check that tools are wrapped (should be FuncNode instances)
+    assert len(bot.tools) > 0
+    # Default tools + provided tools
+    assert len(bot.tools) >= 3  # today_date, respond_to_user, echo_function
+
+    # Check that wrapped tools have the expected attributes
+    for wrapped_tool in bot.tools:
+        assert hasattr(wrapped_tool, "func")
+        assert hasattr(wrapped_tool, "loopback_name")
+        assert hasattr(wrapped_tool, "name")
+
+
+def test_agentbot_includes_default_tools():
+    """Test that default tools (today_date, respond_to_user) are included."""
+    bot = AgentBot(tools=[])
+
+    # Should have at least the default tools
+    tool_names = [tool.func.__name__ for tool in bot.tools]
+    assert "today_date" in tool_names
+    assert "respond_to_user" in tool_names
+
+
+def test_respond_to_user_is_terminal():
+    """Test that respond_to_user is marked as terminal (no loopback)."""
+    bot = AgentBot(tools=[])
+
+    # Find respond_to_user tool
+    respond_tool = None
+    for wrapped_tool in bot.tools:
+        if wrapped_tool.func.__name__ == "respond_to_user":
+            respond_tool = wrapped_tool
+            break
+
+    assert respond_tool is not None
+    assert respond_tool.loopback_name is None
+
+
+def test_agentbot_custom_decide_node():
+    """Test custom decide_node parameter."""
+    custom_decide = MagicMock(spec=DecideNode)
+    bot = AgentBot(tools=[echo_function], decide_node=custom_decide)
+
+    assert bot.decide_node is custom_decide
+
+
+def test_agentbot_default_decide_node():
+    """Test that default DecideNode is created when not provided."""
+    bot = AgentBot(tools=[echo_function])
+
+    assert isinstance(bot.decide_node, DecideNode)
+    assert bot.decide_node.tools == bot.tools
+
+
+@patch("llamabot.bot.agentbot.Flow")
+def test_agentbot_call_execution(mock_flow_class):
+    """Test __call__ method execution."""
+    # Mock the flow
+    mock_flow = MagicMock()
+    mock_flow.run.return_value = "test result"
+    mock_flow_class.return_value = mock_flow
+
+    bot = AgentBot(tools=[echo_function])
+
+    # Mock the flow attribute since it's created in __init__
+    bot.flow = mock_flow
+
+    result = bot("test query")
+
+    assert result == "test result"
+    assert mock_flow.run.called
+    # Check that shared state was set up correctly
+    call_args = mock_flow.run.call_args[0][0]
+    assert "memory" in call_args
+    assert call_args["memory"] == ["test query"]
+
+
+@patch("llamabot.components.pocketflow.flow_to_mermaid")
+def test_agentbot_display_with_marimo(mock_flow_to_mermaid):
+    """Test _display_ method when marimo is available."""
+    bot = AgentBot(tools=[echo_function])
+    mock_flow_to_mermaid.return_value = "graph TD\nA[Test]"
+
+    # Mock marimo module
+    mock_mo = MagicMock()
+    mock_mo.mermaid.return_value = "mermaid_diagram"
+
+    with patch.dict("sys.modules", {"marimo": mock_mo}):
+        result = bot._display_()
+
+    assert result == "mermaid_diagram"
+    mock_flow_to_mermaid.assert_called_once_with(bot.flow)
+    mock_mo.mermaid.assert_called_once_with("graph TD\nA[Test]")
+
+
+def test_agentbot_display_without_marimo():
+    """Test _display_ method raises ImportError when marimo is not available."""
+    bot = AgentBot(tools=[echo_function])
+
+    # Remove marimo from sys.modules if it exists
+
+    marimo_backup = sys.modules.pop("marimo", None)
+
+    try:
+        # Mock import to raise ImportError for marimo
+        original_import = __import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "marimo":
+                raise ImportError("No module named 'marimo'")
+            return original_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=mock_import):
+            with pytest.raises(ImportError) as exc_info:
+                bot._display_()
+
+            assert "marimo is required" in str(exc_info.value)
+            assert "install marimo" in str(exc_info.value.lower())
+    finally:
+        # Restore marimo if it was there
+        if marimo_backup is not None:
+            sys.modules["marimo"] = marimo_backup
+
+
+def test_decision_bot_system_prompt():
+    """Test that decision_bot_system_prompt is callable."""
+    prompt_text = decision_bot_system_prompt()
+    assert isinstance(prompt_text, str)
+
+
+def test_agentbot_with_multiple_tools():
+    """Test AgentBot with multiple user-provided tools."""
+    bot = AgentBot(tools=[echo_function, add_function])
+
+    # Should have default tools + 2 user tools
+    tool_names = [tool.func.__name__ for tool in bot.tools]
+    assert "echo_function" in tool_names
+    assert "add_function" in tool_names
+    assert "today_date" in tool_names
+    assert "respond_to_user" in tool_names
+
+
+def test_agentbot_shared_state_reset():
+    """Test that shared state is reset on each call."""
+    bot = AgentBot(tools=[echo_function])
+
+    with patch.object(bot, "flow") as mock_flow:
+        mock_flow.run.return_value = "result1"
+        bot("query1")
+
+        # Check that shared state was reset
+        call_args1 = mock_flow.run.call_args[0][0]
+        assert call_args1["memory"] == ["query1"]
+
+        mock_flow.run.return_value = "result2"
+        bot("query2")
+
+        # Check that shared state was reset again
+        call_args2 = mock_flow.run.call_args[0][0]
+        assert call_args2["memory"] == ["query2"]

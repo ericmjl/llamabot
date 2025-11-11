@@ -3,7 +3,6 @@
 from typing import Callable, Dict, List, Optional, Union
 from loguru import logger
 
-from llamabot.components.tools import today_date, respond_to_user
 from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.bot.simplebot import (
@@ -99,11 +98,7 @@ class ToolBot(SimpleBot):
             **completion_kwargs,
         )
 
-        # Initialize with core tools
-        all_tools = [today_date, respond_to_user]
-        if tools is not None:
-            all_tools.extend([f for f in tools])
-
+        all_tools = tools or []
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
         self.chat_memory = chat_memory or ChatMemory()
