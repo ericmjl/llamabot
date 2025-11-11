@@ -1,3 +1,3 @@
 """Version information for llamabot."""
 
-version = "0.16.3"
+version = "0.17.0"
