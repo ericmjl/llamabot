@@ -492,6 +492,10 @@ def today_date() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 
+# Default tools that are always available in AgentBot and ToolBot
+DEFAULT_TOOLS = [today_date, respond_to_user]
+
+
 @tool
 def write_and_execute_script(
     code: str,

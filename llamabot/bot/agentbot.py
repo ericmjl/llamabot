@@ -10,24 +10,8 @@ from typing import Callable, List, Optional
 
 from pocketflow import Flow, Node
 
-from llamabot.components.pocketflow import DecideNode, nodeify
-from llamabot.components.tools import respond_to_user, today_date, tool
-from llamabot.prompt_manager import prompt
-
-
-@prompt("system")
-def decision_bot_system_prompt() -> str:
-    """System prompt for the decision-making bot.
-
-    Given the chat history, pick for me one or more tools to execute
-    in order to satisfy the user's query.
-
-    Give me just the tool name to pick.
-    Use the tools judiciously to help answer the user's query.
-    Query is always related to one of the tools.
-    Use respond_to_user if you have enough information to answer the original query.
-    """
-    return ""
+from llamabot.components.pocketflow import DECIDE_NODE_ACTION, DecideNode, nodeify
+from llamabot.components.tools import DEFAULT_TOOLS, respond_to_user, tool
 
 
 class AgentBot:
@@ -48,11 +32,8 @@ class AgentBot:
         decide_node: Optional[Node] = None,
         model_name: str = "gpt-4.1",
     ):
-        # Default tools that are always included
-        default_tools = [today_date, respond_to_user]
-
         # Combine default and user-provided tools
-        all_tools = default_tools + tools
+        all_tools = DEFAULT_TOOLS + tools
 
         # Wrap all tools with @tool and @nodeify decorators
         # respond_to_user should be terminal (no loopback)
@@ -62,7 +43,7 @@ class AgentBot:
             if tool_func is respond_to_user:
                 wrapped = nodeify(loopback_name=None)(tool(tool_func))
             else:
-                wrapped = nodeify(loopback_name="decide")(tool(tool_func))
+                wrapped = nodeify(loopback_name=DECIDE_NODE_ACTION)(tool(tool_func))
             wrapped_tools.append(wrapped)
 
         self.tools = wrapped_tools

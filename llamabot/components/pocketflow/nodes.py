@@ -7,15 +7,51 @@ from pocketflow import Node
 
 from llamabot.bot.toolbot import ToolBot
 
+# Constant for the default loopback action name
+DECIDE_NODE_ACTION = "decide"
 
-def nodeify(func=None, *, loopback_name: str = "decide"):
-    """Decorator to turn a function into a Pocket Flow Node.
 
-    Works with both regular functions and llamabot @tool decorated functions.
+def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
+    """Decorator to turn a function into a PocketFlow Node.
+
+    This decorator wraps a function (or a @tool-decorated function) in a FuncNode,
+    which is a PocketFlow Node that can execute the function and route back to
+    a decision node in the flow graph.
+
+    **Interaction with @tool decorator:**
+    The `nodeify` decorator works seamlessly with `@tool` decorated functions.
+    When wrapping a `@tool` function, the FuncNode preserves access to the tool's
+    `json_schema` attribute (via `__getattr__` proxying), allowing ToolBot to
+    discover and use the tool. The typical pattern is:
+    ```python
+    @tool
+    def my_tool(arg: str) -> str:
+        return arg
+
+    wrapped_tool = nodeify(loopback_name="decide")(my_tool)
+    # or equivalently:
+    wrapped_tool = nodeify(loopback_name="decide")(tool(my_tool))
+    ```
+
+    **Decorator usage patterns:**
+    - Without parentheses: `@nodeify` or `@nodeify(loopback_name=None)`
+    - With parentheses: `nodeify(my_function)` or `nodeify(loopback_name="decide")(my_function)`
+
+    **Loopback behavior:**
+    - If `loopback_name` is a string (default: "decide"), the node will route back
+      to the decision node after execution, allowing multi-step tool execution.
+    - If `loopback_name` is `None`, the node is terminal and execution stops after
+      this node completes (e.g., `respond_to_user`).
+
+    **PocketFlow integration:**
+    The returned FuncNode is a subclass of PocketFlow's `Node` base class, implementing
+    the required `prep`, `exec`, and `post` methods. The `exec` method calls the
+    wrapped function with arguments from the shared state's `func_call` dictionary.
 
     :param func: The function to wrap (when used without parentheses)
     :param loopback_name: The action name to use when looping back to the decide node.
-                          Set to None for terminal nodes that don't loop back.
+                          Defaults to `DECIDE_NODE_ACTION` ("decide"). Set to `None`
+                          for terminal nodes that don't loop back.
     :return: A FuncNode instance wrapping the function
     """
 
@@ -75,7 +111,7 @@ def nodeify(func=None, *, loopback_name: str = "decide"):
 
                 if self.loopback_name is None:
                     return exec_res
-                return loopback_name
+                return self.loopback_name
 
             def __getattr__(self, name):
                 """Proxy attribute access to the original function.
@@ -143,13 +179,61 @@ class DecideNode(Node):
     def exec(self, prep_res):
         """Decide which tool to use based on query.
 
-        Uses ToolBot to analyze the conversation history and select a tool.
+        Uses ToolBot to analyze the conversation history and select a tool to execute.
+        This method is the core decision-making logic of the AgentBot flow.
 
-        :param prep_res: Prepared result from prep method
-        :return: The name of the tool to execute
-        :raises ValueError: If no tool calls are returned or parsing fails
+        **Input format:**
+        The `prep_res` dictionary must contain a `"memory"` key with a list of strings
+        representing the conversation history. Typically, this includes:
+        - User queries
+        - Tool execution results
+        - Previous decision messages
+
+        Example structure:
+        ```python
+        prep_res = {
+            "memory": [
+                "What is the date today?",
+                "Chosen Tool: today_date",
+                "2024-01-15"
+            ]
+        }
+        ```
+
+        **ToolBot interaction:**
+        This method creates a ToolBot instance and passes `prep_res["memory"]` to it.
+        ToolBot analyzes the conversation history and returns a list of tool call objects.
+        Each tool call object has:
+        - `function.name`: The name of the tool to execute (string)
+        - `function.arguments`: JSON string containing the tool's arguments
+
+        **Tool selection:**
+        Only the first tool call from ToolBot's response is used. If ToolBot returns
+        multiple tool calls, subsequent calls are ignored. This is by design, as
+        AgentBot executes tools sequentially in a flow graph.
+
+        **Shared state modification:**
+        After extracting the tool name and arguments, this method:
+        1. Parses the JSON arguments string into a dictionary
+        2. Stores the parsed arguments in `prep_res["func_call"]` for the next node
+        3. Returns the function name as the routing action/path
+
+        The next node (the selected tool) will receive `prep_res["func_call"]` in its
+        `exec` method and can unpack it as `**prep_res["func_call"]` to call the tool.
+
+        **Error handling:**
+        Raises `ValueError` in two cases:
+        - If ToolBot returns no tool calls (empty list)
+        - If the tool call arguments cannot be parsed as valid JSON
+
+        :param prep_res: Prepared result from prep method. Must contain:
+            - `"memory"`: List of strings representing conversation history
+        :return: The name of the tool to execute (string), used for routing to the
+                 corresponding tool node in the flow graph
+        :raises ValueError: If no tool calls are returned from ToolBot or if JSON
+                            parsing fails
         """
-        from llamabot.bot.agentbot import decision_bot_system_prompt
+        from llamabot.prompt_library.agentbot import decision_bot_system_prompt
 
         bot = ToolBot(
             model_name=self.model_name,
