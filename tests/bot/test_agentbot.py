@@ -4,8 +4,9 @@ import sys
 import pytest
 from unittest.mock import MagicMock, patch
 
-from llamabot.bot.agentbot import AgentBot, decision_bot_system_prompt
+from llamabot.bot.agentbot import AgentBot
 from llamabot.components.pocketflow import DecideNode
+from llamabot.prompt_library.agentbot import decision_bot_system_prompt
 
 
 def echo_function(text: str) -> str:
