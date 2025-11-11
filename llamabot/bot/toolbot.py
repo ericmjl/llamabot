@@ -5,6 +5,7 @@ from loguru import logger
 
 from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.messages import AIMessage, BaseMessage
+from llamabot.components.tools import respond_to_user, today_date
 from llamabot.bot.simplebot import (
     SimpleBot,
     extract_tool_calls,
@@ -98,7 +99,11 @@ class ToolBot(SimpleBot):
             **completion_kwargs,
         )
 
-        all_tools = tools or []
+        # Default tools that are always available
+        default_tools = [today_date, respond_to_user]
+        user_tools = tools or []
+        all_tools = default_tools + user_tools
+
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
         self.chat_memory = chat_memory or ChatMemory()
