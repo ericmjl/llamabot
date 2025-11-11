@@ -158,7 +158,7 @@ def test_agentbot_display_without_marimo():
                 bot._display_()
 
             assert "marimo is required" in str(exc_info.value)
-            assert "install marimo" in str(exc_info.value.lower())
+            assert "install marimo" in str(exc_info.value).lower()
     finally:
         # Restore marimo if it was there
         if marimo_backup is not None:
@@ -166,9 +166,13 @@ def test_agentbot_display_without_marimo():
 
 
 def test_decision_bot_system_prompt():
-    """Test that decision_bot_system_prompt is callable."""
-    prompt_text = decision_bot_system_prompt()
-    assert isinstance(prompt_text, str)
+    """Test that decision_bot_system_prompt is callable and returns BaseMessage."""
+    from llamabot.components.messages import BaseMessage
+
+    prompt_message = decision_bot_system_prompt()
+    assert isinstance(prompt_message, BaseMessage)
+    assert prompt_message.role == "system"
+    assert isinstance(prompt_message.content, str)
 
 
 def test_agentbot_with_multiple_tools():
