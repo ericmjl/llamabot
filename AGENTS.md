@@ -81,7 +81,7 @@ The main bot classes follow a compositional pattern:
 - **StructuredBot** (`llamabot/bot/structuredbot.py`) - Bot with
   structured/JSON output capabilities
 - **QueryBot** (`llamabot/bot/querybot.py`) - RAG-enabled bot for document querying
-- **AgentBot** (`llamabot/bot/agentbot.py`) - Tool-using agent with function calling
+- **AgentBot** (`llamabot/bot/agentbot.py`) - Graph-based agent using PocketFlow for tool orchestration
 - **ImageBot** (`llamabot/bot/imagebot.py`) - Image generation bot
 - **KGBot** (`llamabot/bot/kgbot.py`) - Knowledge graph-aware bot
 

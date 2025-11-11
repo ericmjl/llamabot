@@ -1,28 +1,44 @@
 # AgentBot Tutorial
 
-Welcome to the AgentBot tutorial! In this tutorial, we will guide you through the process of building a ReAct (Reasoning and Acting) agent that can solve complex problems through explicit reasoning cycles. By the end of this tutorial, you will have a solid understanding of how to use the AgentBot with the ReAct pattern to create transparent, reasoning agents.
+Welcome to the AgentBot tutorial! In this tutorial, we will guide you
+through the process of building an agent that uses PocketFlow for
+graph-based tool orchestration. AgentBot automatically wraps your
+functions as tools and uses a decision node to orchestrate tool
+execution through a flow graph.
 
 ## Prerequisites
 
 Before you begin, ensure you have the following:
 
-- Basic knowledge of Python programming.
-- Familiarity with the concept of bots and automation.
-- Access to a Python environment with the necessary libraries installed.
+- Basic knowledge of Python programming
+- Familiarity with the concept of bots and automation
+- Access to a Python environment with the necessary libraries installed
 
-## What is the ReAct Pattern?
+## What is AgentBot?
 
-The ReAct (Reasoning and Acting) pattern is a powerful approach for building AI agents that explicitly show their reasoning process. Unlike traditional agents that work "behind the scenes," ReAct agents make their thinking transparent through a structured cycle:
+AgentBot is a graph-based agent that uses PocketFlow to orchestrate tool
+execution. Unlike traditional agents that use loops, AgentBot builds a
+flow graph where:
 
-1. **Thought**: The agent analyzes the current situation and plans its next action
-2. **Action**: The agent executes a tool or function based on its reasoning
-3. **Observation**: The agent processes the results and updates its understanding
+1. A **decision node** (DecideNode) analyzes the conversation and
+   selects which tool to execute
+2. **Tool nodes** execute the selected tools
+3. Tools can **loop back** to the decision node (except terminal tools
+   like `respond_to_user`)
+4. The flow continues until a terminal node is reached
 
-This cycle repeats until the agent has enough information to provide a complete answer.
+This graph-based approach provides:
 
-## Part 1: Understanding ReAct with a Simple Example
+- **Visual flow representation**: You can visualize the agent's flow
+  graph
+- **Flexible orchestration**: Tools are connected in a graph, not a
+  linear sequence
+- **Automatic tool wrapping**: You provide plain callables; AgentBot
+  handles the rest
+- **Default tools**: `today_date` and `respond_to_user` are always
+  available
 
-Let's start with a simple example to understand how the ReAct pattern works.
+## Part 1: Basic Usage
 
 ### Step 1: Setting Up the Environment
 
@@ -32,72 +48,76 @@ First, ensure you have the `llamabot` library installed:
 pip install llamabot
 ```
 
-### Step 2: Creating a Simple ReAct Agent
+### Step 2: Creating a Simple AgentBot
 
-We'll create an AgentBot that can search for information and provide answers:
+The simplest way to create an AgentBot is to provide a list of callable functions:
 
 ```python
 import llamabot as lmb
 
-# Create a ReAct agent with search capabilities
+def get_weather(city: str) -> str:
+    """Get the current weather for a city.
+
+    :param city: The name of the city
+    :return: Weather information
+    """
+    # In practice, you'd call a real weather API
+    return f"The weather in {city} is sunny, 72°F"
+
+# Create an AgentBot with your function
 agent = lmb.AgentBot(
-    system_prompt=lmb.system("You are a helpful assistant that can search for information."),
-    tools=[lmb.search_internet_and_summarize, lmb.today_date],
+    tools=[get_weather],
     model_name="gpt-4o-mini"
 )
+
+# Use the agent
+result = agent("What's the weather in New York?")
+print(result)
 ```
 
-### Step 3: Observing the ReAct Pattern
+**What happens behind the scenes:**
 
-When you ask the agent a question, you'll see the explicit reasoning process:
+1. AgentBot automatically wraps `get_weather` with `@tool` and
+   `@nodeify` decorators
+2. Default tools (`today_date` and `respond_to_user`) are added
+   automatically
+3. A `DecideNode` is created to decide which tool to use
+4. The flow graph is built connecting the decision node to all tools
+5. When you call the agent, it runs the flow with your query
+
+### Step 3: Understanding Default Tools
+
+AgentBot always includes two default tools:
+
+- **`today_date`**: Returns the current date (loops back to decide
+  node)
+- **`respond_to_user`**: Sends a response to the user (terminal node,
+  no loopback)
+
+These tools are automatically available, so you don't need to provide them:
 
 ```python
-response = agent("What's the current weather in New York?")
-print(response.content)
-```
+agent = lmb.AgentBot(tools=[])
 
-**Example Output:**
-```
-Thought: I need to search for current weather information in New York.
-
-[Agent searches the internet for weather data]
-
-Observation: Search results show that the current weather in New York is 72°F and sunny with light winds.
-
-Thought: I now have the weather information needed to answer the user's question.
-
-Answer: The weather in New York is currently 72°F and sunny with light winds.
+# The agent can still use today_date and respond_to_user
+result = agent("What's today's date?")
 ```
 
 ## Part 2: Building a Financial Analysis Agent
 
-Let's create a more sophisticated agent that can analyze financial data using multiple tools.
+Let's create a more sophisticated agent that can analyze financial data
+using multiple tools.
 
 ### Step 1: Defining Custom Tools
 
-```python
-import llamabot as lmb
-from typing import List
-import requests
+You can define tools as plain Python functions - no decorators needed:
 
-@lmb.tool
+```python
 def get_stock_price(symbol: str) -> float:
     """Get the current stock price for a given symbol.
 
-    Parameters
-    ----------
-    symbol : str
-        The stock symbol (e.g., 'AAPL', 'MSFT', 'GOOGL')
-
-    Returns
-    -------
-    float
-        The current stock price
-
-    Raises
-    ------
-    ValueError
-        If the symbol is invalid or data cannot be retrieved
+    :param symbol: The stock symbol (e.g., 'AAPL', 'MSFT', 'GOOGL')
+    :return: The current stock price
     """
     # This is a simplified example - in practice, you'd use a real API
     mock_prices = {
@@ -112,37 +132,20 @@ def get_stock_price(symbol: str) -> float:
 
     return mock_prices[symbol.upper()]
 
-@lmb.tool
 def calculate_percentage_change(old_price: float, new_price: float) -> float:
     """Calculate the percentage change between two prices.
 
-    Parameters
-    ----------
-    old_price : float
-        The original price
-    new_price : float
-        The new price
-
-    Returns
-    -------
-    float
-        The percentage change (positive for increase, negative for decrease)
+    :param old_price: The original price
+    :param new_price: The new price
+    :return: The percentage change (positive for increase, negative for decrease)
     """
     return ((new_price - old_price) / old_price) * 100
 
-@lmb.tool
-def analyze_portfolio(prices: List[float]) -> dict:
+def analyze_portfolio(prices: list[float]) -> dict:
     """Analyze a portfolio of stock prices.
 
-    Parameters
-    ----------
-    prices : List[float]
-        List of stock prices
-
-    Returns
-    -------
-    dict
-        Analysis results including average, min, max, and trend
+    :param prices: List of stock prices
+    :return: Analysis results including average, min, max, and trend
     """
     if not prices:
         return {"error": "No prices provided"}
@@ -171,7 +174,6 @@ def analyze_portfolio(prices: List[float]) -> dict:
 ```python
 # Create a financial analysis agent
 financial_agent = lmb.AgentBot(
-    system_prompt=lmb.system("You are a financial analysis assistant. Use your tools to analyze stock data and provide insights."),
     tools=[get_stock_price, calculate_percentage_change, analyze_portfolio],
     model_name="gpt-4o-mini"
 )
@@ -181,7 +183,7 @@ financial_agent = lmb.AgentBot(
 
 ```python
 # Ask the agent to analyze multiple stocks
-response = financial_agent("""
+result = financial_agent("""
 Please analyze the following stocks:
 1. Get the current price of AAPL
 2. Get the current price of MSFT
@@ -189,198 +191,171 @@ Please analyze the following stocks:
 4. Analyze the portfolio performance
 """)
 
-print(response.content)
+print(result)
 ```
 
-**Example ReAct Output:**
-```
-Thought: I need to get current prices for AAPL and MSFT, then calculate percentage changes and analyze the portfolio.
+The agent will:
 
-Action: get_stock_price(symbol="AAPL")
+1. Use the decision node to select `get_stock_price` for AAPL
+2. Loop back to decide, then select `get_stock_price` for MSFT
+3. Loop back to decide, then select `calculate_percentage_change` for
+   both stocks
+4. Loop back to decide, then select `analyze_portfolio`
+5. Finally, use `respond_to_user` (terminal) to provide the final
+   answer
 
-Observation: AAPL current price is $150.25
+## Part 3: Visualizing the Flow Graph
 
-Thought: Now I need to get MSFT price and then calculate the percentage changes.
-
-Action: get_stock_price(symbol="MSFT")
-
-Observation: MSFT current price is $300.50
-
-Thought: Now I can calculate the percentage changes from yesterday's prices.
-
-Action: calculate_percentage_change(old_price=145, new_price=150.25)
-
-Observation: AAPL increased by 3.62%
-
-Action: calculate_percentage_change(old_price=295, new_price=300.50)
-
-Observation: MSFT increased by 1.86%
-
-Thought: Now I can analyze the portfolio with both current prices.
-
-Action: analyze_portfolio(prices=[150.25, 300.50])
-
-Observation: Portfolio analysis shows average price of $225.38, minimum of $150.25, maximum of $300.50, with upward trend
-
-Answer: Based on my analysis:
-- AAPL: $150.25 (up 3.62% from yesterday's $145)
-- MSFT: $300.50 (up 1.86% from yesterday's $295)
-- Portfolio shows positive performance with an average price of $225.38 and upward trend
-```
-
-## Part 3: Advanced ReAct Features
-
-### Understanding the ReAct Cycle
-
-The ReAct pattern provides several benefits:
-
-1. **Transparency**: You can see exactly how the agent thinks
-2. **Debugging**: Easy to identify where problems occur
-3. **Learning**: You can understand the agent's reasoning process
-4. **Control**: You can intervene if the agent goes off track
-
-### Customizing the ReAct Agent
+One of the powerful features of AgentBot is the ability to visualize
+the flow graph. If you're using Marimo notebooks, you can display the
+graph:
 
 ```python
-# Create a specialized agent with custom settings
-research_agent = lmb.AgentBot(
-    system_prompt=lmb.system("""
-    You are a research assistant. Always think step by step and use your tools to gather information.
-    Be thorough in your analysis and provide detailed explanations.
-    """),
-    tools=[lmb.search_internet_and_summarize, lmb.today_date],
-    model_name="gpt-4o-mini",
-    temperature=0.1,  # Lower temperature for more focused reasoning
-    stream_target="stdout"  # Stream the reasoning process
+agent = lmb.AgentBot(tools=[get_stock_price, calculate_percentage_change])
+
+# In a Marimo notebook, this will display the flow graph
+agent
+```
+
+The graph shows:
+
+- The decision node (DecideNode)
+- All tool nodes (with their function names)
+- Edges showing how tools connect back to the decision node
+- Terminal nodes (like `respond_to_user`) that don't loop back
+
+## Part 4: Custom Decision Nodes
+
+By default, AgentBot uses `DecideNode` which uses ToolBot to decide
+which tool to execute. You can provide a custom decision node:
+
+```python
+from llamabot.components.pocketflow import DecideNode
+
+# Create a custom decision node with a specific model
+custom_decide = DecideNode(
+    tools=[],  # Will be set by AgentBot
+    model_name="gpt-4.1"
+)
+
+agent = lmb.AgentBot(
+    tools=[get_stock_price],
+    decide_node=custom_decide
 )
 ```
 
-### Monitoring Agent Performance
+## Part 5: Advanced Features
+
+### Terminal Tools
+
+By default, all tools loop back to the decision node. However,
+`respond_to_user` is a terminal tool that ends the flow. You can
+create your own terminal tools using the `nodeify` decorator:
 
 ```python
-# The agent tracks its performance automatically
-response = research_agent("Research the latest developments in AI")
+from llamabot.components.pocketflow import nodeify
+from llamabot.components.tools import tool
 
-# Access performance metrics
-metrics = research_agent.run_meta
-print(f"Execution time: {metrics['duration']:.2f} seconds")
-print(f"ReAct cycles used: {metrics['current_iteration']}")
-print(f"Tools used: {list(metrics['tool_usage'].keys())}")
+# Terminal node - no loopback
+@nodeify(loopback_name=None)
+@tool
+def final_answer(message: str) -> str:
+    """Provide the final answer to the user.
 
-# Tool usage statistics
-for tool_name, stats in metrics['tool_usage'].items():
-    print(f"{tool_name}: {stats['calls']} calls, {stats['success']} successes")
+    :param message: The final answer message
+    :return: The message
+    """
+    return message
 ```
 
-## Part 4: Best Practices for ReAct Agents
+### Using Already-Decorated Tools
 
-### 1. Write Clear Tool Documentation
+If you have functions that are already decorated with `@tool`, that's
+fine too:
 
 ```python
 @lmb.tool
+def my_tool(arg: str) -> str:
+    """My tool function."""
+    return f"Result: {arg}"
+
+# AgentBot will still wrap it with @nodeify
+agent = lmb.AgentBot(tools=[my_tool])
+```
+
+### Accessing the Flow
+
+You can access the underlying PocketFlow flow for advanced use cases:
+
+```python
+agent = lmb.AgentBot(tools=[get_stock_price])
+
+# Access the flow
+flow = agent.flow
+
+# Access individual nodes
+decide_node = agent.decide_node
+tools = agent.tools
+```
+
+## Part 6: Best Practices
+
+### 1. Write Clear Function Documentation
+
+Good docstrings help the decision node choose the right tool:
+
+```python
 def analyze_sentiment(text: str) -> dict:
     """Analyze the sentiment of text using a simple algorithm.
 
-    This tool performs basic sentiment analysis by counting positive and negative words.
-    It's useful for getting a quick understanding of text sentiment.
+    This tool performs basic sentiment analysis by counting positive and
+    negative words. It's useful for getting a quick understanding of
+    text sentiment.
 
-    Parameters
-    ----------
-    text : str
-        The text to analyze
-
-    Returns
-    -------
-    dict
-        Dictionary with 'sentiment' (positive/negative/neutral), 'score' (0-1), and 'confidence'
-
-    Examples
-    --------
-    >>> analyze_sentiment("I love this product!")
-    {'sentiment': 'positive', 'score': 0.8, 'confidence': 'high'}
+    :param text: The text to analyze
+    :return: Dictionary with 'sentiment' (positive/negative/neutral),
+        'score' (0-1), and 'confidence'
     """
-    # Simple sentiment analysis implementation
-    positive_words = ['love', 'great', 'excellent', 'amazing', 'wonderful']
-    negative_words = ['hate', 'terrible', 'awful', 'bad', 'horrible']
-
-    text_lower = text.lower()
-    pos_count = sum(1 for word in positive_words if word in text_lower)
-    neg_count = sum(1 for word in negative_words if word in text_lower)
-
-    if pos_count > neg_count:
-        return {'sentiment': 'positive', 'score': 0.8, 'confidence': 'high'}
-    elif neg_count > pos_count:
-        return {'sentiment': 'negative', 'score': 0.2, 'confidence': 'high'}
-    else:
-        return {'sentiment': 'neutral', 'score': 0.5, 'confidence': 'medium'}
+    # Implementation here
+    pass
 ```
 
 ### 2. Design Tools for Specific Use Cases
 
+Keep tools focused and single-purpose:
+
 ```python
-@lmb.tool
-def summarize_document(text: str, max_length: int = 200) -> str:
-    """Summarize a document to a specified length.
+def get_user_profile(user_id: str) -> dict:
+    """Get user profile information.
 
-    This tool creates a concise summary of longer text, useful for quick understanding
-    of documents, articles, or reports.
-
-    Parameters
-    ----------
-    text : str
-        The text to summarize
-    max_length : int, optional
-        Maximum length of the summary, by default 200
-
-    Returns
-    -------
-    str
-        The summarized text
-
-    Raises
-    ------
-    ValueError
-        If text is empty or max_length is invalid
+    :param user_id: The user's unique identifier
+    :return: User profile dictionary
     """
-    if not text.strip():
-        raise ValueError("Text cannot be empty")
+    # Implementation
+    pass
 
-    if max_length <= 0:
-        raise ValueError("Max length must be positive")
+def update_user_profile(user_id: str, updates: dict) -> dict:
+    """Update user profile information.
 
-    # Simple summarization (in practice, you'd use more sophisticated methods)
-    sentences = text.split('. ')
-    summary = '. '.join(sentences[:3])  # Take first 3 sentences
-
-    if len(summary) > max_length:
-        summary = summary[:max_length-3] + "..."
-
-    return summary
+    :param user_id: The user's unique identifier
+    :param updates: Dictionary of fields to update
+    :return: Updated user profile
+    """
+    # Implementation
+    pass
 ```
 
 ### 3. Handle Errors Gracefully
 
+Tools should handle errors and return meaningful results:
+
 ```python
-@lmb.tool
 def safe_api_call(url: str, timeout: int = 10) -> dict:
     """Safely make an API call with error handling.
 
-    Parameters
-    ----------
-    url : str
-        The URL to call
-    timeout : int, optional
-        Request timeout in seconds, by default 10
-
-    Returns
-    -------
-    dict
-        API response or error information
-
-    Raises
-    ------
-    requests.RequestException
-        If the API call fails
+    :param url: The URL to call
+    :param timeout: Request timeout in seconds, by default 10
+    :return: API response or error information
     """
     import requests
 
@@ -400,194 +375,50 @@ def safe_api_call(url: str, timeout: int = 10) -> dict:
         }
 ```
 
-## Part 5: Advanced ReAct Patterns
+## Part 7: Understanding the Flow
 
-### Multi-Step Reasoning
+### How Tools Are Wrapped
 
-```python
-# Create an agent that can handle complex multi-step tasks
-complex_agent = lmb.AgentBot(
-    system_prompt=lmb.system("""
-    You are a research analyst. Break down complex tasks into smaller steps.
-    Always think through the problem before acting, and use multiple tools as needed.
-    """),
-    tools=[
-        lmb.search_internet_and_summarize,
-        analyze_sentiment,
-        summarize_document,
-        safe_api_call
-    ],
-    model_name="gpt-4o-mini"
-)
+When you provide a function to AgentBot:
 
-# The agent will naturally break down complex tasks
-response = complex_agent("""
-Research the latest news about renewable energy, analyze the sentiment of the articles,
-and provide a comprehensive summary of the current state of the industry.
-""")
-```
+1. The function is wrapped with `@tool` to create a tool schema
+2. The tool is wrapped with `@nodeify` to create a PocketFlow node
+3. The node is connected to the decision node
+4. If not terminal, the node loops back to the decision node
 
-### Iterative Refinement
+### Flow Execution
 
-The ReAct pattern naturally supports iterative refinement:
+When you call the agent:
 
-```python
-response = complex_agent("""
-Find information about electric vehicles, then analyze the sentiment of the findings,
-and finally provide recommendations for someone considering buying an EV.
-""")
-```
+1. Your query is added to the shared state's memory
+2. The flow starts at the decision node
+3. The decision node uses ToolBot to select a tool
+4. The selected tool executes with arguments from the decision node
+5. The result is added to memory
+6. If the tool loops back, the flow returns to the decision node
+7. This continues until a terminal tool (like `respond_to_user`) is
+   reached
 
-The agent will:
-1. Search for information about electric vehicles
-2. Analyze the sentiment of the found information
-3. Use the sentiment analysis to inform its recommendations
-4. Provide a comprehensive answer based on all the gathered information
+### Shared State
 
-## Part 6: Advanced Features
+The flow uses a shared state dictionary that contains:
 
-### Tool Call Caching
-
-AgentBot automatically caches tool calls to prevent redundant executions:
-
-```python
-# Create an agent with caching enabled (default behavior)
-agent = lmb.AgentBot(
-    system_prompt=lmb.system("You are a helpful assistant."),
-    tools=[your_tools],
-    model_name="gpt-4o-mini"
-)
-
-# First call - tools are executed
-response1 = agent("Analyze the data and provide insights")
-
-# Second call with similar request - cached results are used
-response2 = agent("Can you analyze the same data again?")
-
-# Check cache performance
-print(f"Cache hit rate: {agent.run_meta['cache_hit_rate']:.2%}")
-print(f"Cached calls: {agent.run_meta['tool_calls_cached']}")
-print(f"Executed calls: {agent.run_meta['tool_calls_executed']}")
-```
-
-### Response Quality Validation
-
-AgentBot validates final responses to ensure they're informative:
-
-```python
-# The agent automatically validates responses
-response = agent("What's the weather like?")
-
-# If validation fails, the agent retries with better responses
-# Check validation metrics
-if "validation_failures" in agent.run_meta:
-    print(f"Validation failures: {agent.run_meta['validation_failures']}")
-```
-
-### Execution History Tracking
-
-Monitor what tools the agent has used:
-
-```python
-# Access execution history
-for entry in agent.execution_history:
-    print(f"Tool: {entry['tool_name']}")
-    print(f"Args: {entry['args']}")
-    print(f"Result: {entry['result'][:100]}...")
-    print(f"Cached: {entry['was_cached']}")
-    print(f"Timestamp: {entry['timestamp']}")
-    print("---")
-```
-
-### Performance Metrics
-
-AgentBot provides detailed performance metrics:
-
-```python
-response = agent("Your question here")
-
-# Access comprehensive metrics
-metrics = agent.run_meta
-print(f"Execution time: {metrics['duration']:.2f} seconds")
-print(f"ReAct cycles: {metrics['current_iteration']}")
-print(f"Cache hit rate: {metrics['cache_hit_rate']:.2%}")
-print(f"Validation failures: {metrics.get('validation_failures', 0)}")
-
-# Tool-specific metrics
-for tool_name, stats in metrics['tool_usage'].items():
-    print(f"{tool_name}:")
-    print(f"  Total calls: {stats['calls']}")
-    print(f"  Successful: {stats['success']}")
-    print(f"  Cached: {stats.get('cached', 0)}")
-    print(f"  Failures: {stats['failures']}")
-    print(f"  Total duration: {stats['total_duration']:.2f}s")
-```
-
-## Part 7: Debugging and Optimization
-
-### Understanding Agent Behavior
-
-```python
-# Monitor the agent's reasoning process
-response = agent("Complex question here")
-
-# Check the conversation history
-print("Full conversation:")
-for i, msg in enumerate(agent.conversation_history):
-    print(f"{i+1}. {msg.role}: {msg.content[:100]}...")
-```
-
-### Optimizing Performance
-
-```python
-# Create an optimized agent
-optimized_agent = lmb.AgentBot(
-    system_prompt=lmb.system("You are an efficient assistant. Be concise but thorough."),
-    tools=[your_tools],
-    model_name="gpt-4o-mini",
-    temperature=0.0,  # More deterministic
-    max_iterations=5  # Limit iterations for faster responses
-)
-```
-
-### Cache Management
-
-```python
-# Clear cache by creating a new agent instance
-fresh_agent = lmb.AgentBot(
-    system_prompt=agent.system_prompt,
-    tools=agent.tools,
-    model_name=agent.model_name
-)
-
-# Or access cache directly for debugging
-print(f"Cache size: {len(agent.tool_call_cache)}")
-print(f"Cache keys: {list(agent.tool_call_cache.keys())}")
-```
-
-### Error Handling and Recovery
-
-```python
-try:
-    response = agent("Your question here")
-except RuntimeError as e:
-    if "exceeded maximum ReAct cycles" in str(e):
-        print("Agent couldn't complete the task within the iteration limit")
-        print("Try simplifying your request or increasing max_iterations")
-    else:
-        print(f"Unexpected error: {e}")
-```
+- `memory`: List of conversation messages and tool results
+- `func_call`: Dictionary of function arguments (set by decision node)
+- `result`: Tool execution results
 
 ## Conclusion
 
-Congratulations! You now understand how to use AgentBot with the ReAct pattern to create transparent, reasoning agents. The ReAct pattern provides:
+Congratulations! You now understand how to use AgentBot with PocketFlow
+for graph-based tool orchestration. AgentBot provides:
 
-- **Explicit reasoning**: You can see how the agent thinks
-- **Transparent decision-making**: Every step is visible
-- **Easy debugging**: Problems are easy to identify
-- **Flexible tool usage**: Agents can use multiple tools in sequence
-- **Iterative refinement**: Agents can build on previous results
+- **Automatic tool wrapping**: Just provide plain callables
+- **Graph-based orchestration**: Visual flow representation
+- **Default tools**: `today_date` and `respond_to_user` always
+  available
+- **Flexible decision making**: Custom decision nodes supported
+- **Terminal nodes**: Control flow termination with terminal tools
 
-The ReAct pattern makes AI agents more trustworthy and understandable, which is crucial for applications where transparency and explainability are important.
-
-You can now build sophisticated agents that can handle complex, multi-step tasks while maintaining full transparency in their reasoning process. Happy coding!
+The graph-based approach makes it easy to visualize and understand how
+your agent works, while the automatic wrapping makes it simple to add
+new tools. Happy coding!
