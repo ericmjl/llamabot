@@ -73,7 +73,6 @@ class AgentBot:
         :return: The result from running the flow
         """
         # Reset shared state for this call
-        self.shared = dict(memory=[])
         self.shared["memory"].append(query)
 
         # Run the flow
