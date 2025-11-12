@@ -26,6 +26,7 @@ from loguru import logger
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import user
+from llamabot.components.pocketflow import DECIDE_NODE_ACTION, nodeify
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.prompt_manager import prompt
 
@@ -229,6 +230,7 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
+@nodeify(loopback_name=None)
 @tool
 def respond_to_user(response: str) -> str:
     """Respond to the user with a message.
@@ -483,6 +485,7 @@ def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[st
         raise
 
 
+@nodeify(loopback_name=DECIDE_NODE_ACTION)
 @tool
 def today_date() -> str:
     """Get the current date.

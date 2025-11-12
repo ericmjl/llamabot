@@ -158,15 +158,22 @@ class DecideNode(Node):
 
     :param tools: List of tool functions (already wrapped with @tool and @nodeify)
     :param model_name: The name of the model to use for decision making
+    :param completion_kwargs: Additional keyword arguments to pass to the
+        completion function of `litellm` (e.g., `api_base`, `api_key`).
     """
 
     def __init__(
-        self, tools: List[Callable], model_name: str = "gpt-4.1", *args, **kwargs
+        self,
+        tools: List[Callable],
+        model_name: str = "gpt-4.1",
+        *args,
+        **completion_kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args)
 
         self.tools = tools
         self.model_name = model_name
+        self.completion_kwargs = completion_kwargs
 
     def prep(self, shared):
         """Prepare the node for execution.
@@ -239,6 +246,7 @@ class DecideNode(Node):
             model_name=self.model_name,
             tools=self.tools,
             system_prompt=decision_bot_system_prompt(),
+            **self.completion_kwargs,
         )
 
         # Get tool calls from ToolBot
