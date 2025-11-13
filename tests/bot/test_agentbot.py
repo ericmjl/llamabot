@@ -5,10 +5,13 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from llamabot.bot.agentbot import AgentBot
-from llamabot.components.pocketflow import DecideNode
+from llamabot.components.pocketflow import DECIDE_NODE_ACTION, DecideNode, nodeify
+from llamabot.components.tools import tool
 from llamabot.prompt_library.agentbot import decision_bot_system_prompt
 
 
+@nodeify(loopback_name=DECIDE_NODE_ACTION)
+@tool
 def echo_function(text: str) -> str:
     """Echo back the provided text (test helper function).
 
@@ -18,6 +21,8 @@ def echo_function(text: str) -> str:
     return text
 
 
+@nodeify(loopback_name=DECIDE_NODE_ACTION)
+@tool
 def add_function(a: int, b: int) -> int:
     """Add two numbers (test helper function).
 
@@ -29,7 +34,7 @@ def add_function(a: int, b: int) -> int:
 
 
 def test_agentbot_initialization():
-    """Test AgentBot initialization with plain callables."""
+    """Test AgentBot initialization with properly decorated tools."""
     bot = AgentBot(tools=[echo_function])
 
     assert bot is not None
@@ -39,8 +44,8 @@ def test_agentbot_initialization():
     assert hasattr(bot, "shared")
 
 
-def test_agentbot_wraps_tools():
-    """Test that tools are automatically wrapped with @tool and @nodeify."""
+def test_agentbot_requires_decorated_tools():
+    """Test that tools must be decorated with @tool and @nodeify."""
     bot = AgentBot(tools=[echo_function])
 
     # Check that tools are wrapped (should be FuncNode instances)
@@ -53,6 +58,24 @@ def test_agentbot_wraps_tools():
         assert hasattr(wrapped_tool, "func")
         assert hasattr(wrapped_tool, "loopback_name")
         assert hasattr(wrapped_tool, "name")
+
+
+def test_agentbot_rejects_unwrapped_tools():
+    """Test that AgentBot raises informative error for unwrapped tools."""
+
+    def unwrapped_function(text: str) -> str:
+        """Unwrapped test function without decorators."""
+        return text
+
+    with pytest.raises(ValueError) as exc_info:
+        AgentBot(tools=[unwrapped_function])
+
+    error_message = str(exc_info.value)
+    assert "not properly decorated" in error_message
+    assert "unwrapped_function" in error_message
+    assert "missing @tool decorator" in error_message
+    assert "missing @nodeify decorator" in error_message
+    assert "To fix this" in error_message
 
 
 def test_agentbot_includes_default_tools():
