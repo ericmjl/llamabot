@@ -5,8 +5,6 @@ from typing import Callable, List
 
 from pocketflow import Node
 
-from llamabot.bot.toolbot import ToolBot
-
 # Constant for the default loopback action name
 DECIDE_NODE_ACTION = "decide"
 
@@ -240,6 +238,7 @@ class DecideNode(Node):
         :raises ValueError: If no tool calls are returned from ToolBot or if JSON
                             parsing fails
         """
+        from llamabot.bot.toolbot import ToolBot
         from llamabot.prompt_library.agentbot import decision_bot_system_prompt
 
         bot = ToolBot(
