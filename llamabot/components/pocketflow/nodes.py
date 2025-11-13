@@ -20,16 +20,20 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
     The `nodeify` decorator works seamlessly with `@tool` decorated functions.
     When wrapping a `@tool` function, the FuncNode preserves access to the tool's
     `json_schema` attribute (via `__getattr__` proxying), allowing ToolBot to
-    discover and use the tool. The typical pattern is:
+    discover and use the tool. **Important:** `@nodeify` must be applied last
+    (outermost decorator) so it wraps the `@tool`-decorated function. The typical
+    pattern is:
     ```python
+    @nodeify(loopback_name="decide")
     @tool
     def my_tool(arg: str) -> str:
         return arg
-
-    wrapped_tool = nodeify(loopback_name="decide")(my_tool)
-    # or equivalently:
-    wrapped_tool = nodeify(loopback_name="decide")(tool(my_tool))
     ```
+
+    **Decorator Order:**
+    - `@tool` is applied first (innermost)
+    - `@nodeify` is applied last (outermost)
+    - This ensures the FuncNode can proxy to the tool-decorated function
 
     **Decorator usage patterns:**
     - Without parentheses: `@nodeify` or `@nodeify(loopback_name=None)`
