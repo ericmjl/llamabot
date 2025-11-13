@@ -232,6 +232,11 @@ class LanceDBDocStore(AbstractDocumentStore):
         self.enable_partitioning = enable_partitioning
         self.default_partition = default_partition
 
+        # Track operations for automatic optimization
+        # LanceDB recommends optimizing after 20+ operations or 100k+ records
+        self._operation_count = 0
+        self._optimize_threshold = 20
+
         # Conditionally add partition field to schema
         if enable_partitioning:
 
@@ -354,9 +359,8 @@ class LanceDBDocStore(AbstractDocumentStore):
         if document not in self.existing_records:
             self.table.add([document_to_add])
             self.existing_records.append(document)
-
-        # Ensure FTS index exists
-        self.table.optimize()
+            self._operation_count += 1
+            self._maybe_optimize()
 
     def extend(
         self,
@@ -424,8 +428,9 @@ class LanceDBDocStore(AbstractDocumentStore):
         if stuff_to_add:
             self.table.add(stuff_to_add)
             self.existing_records.extend(documents)
-            # Ensure FTS index exists
-            self.table.optimize()
+            # Count as one operation (batch insert)
+            self._operation_count += 1
+            self._maybe_optimize()
 
     def retrieve(
         self, query: str, n_results: int = 10, partitions: list[str] | None = None
@@ -504,6 +509,9 @@ class LanceDBDocStore(AbstractDocumentStore):
         self.existing_records = [
             doc for doc in self.existing_records if doc not in partition_docs
         ]
+        # Count delete as an operation
+        self._operation_count += 1
+        self._maybe_optimize()
 
     def get_partition_count(self, partition: str) -> int:
         """Get the count of documents in a specific partition.
@@ -524,11 +532,37 @@ class LanceDBDocStore(AbstractDocumentStore):
         )
         return len(list(partition_items))
 
+    def _maybe_optimize(self):
+        """Optimize the table if operation count exceeds threshold.
+
+        LanceDB recommends optimizing after 20+ operations or 100k+ records
+        to maintain optimal performance.
+        """
+        if self._operation_count >= self._optimize_threshold:
+            try:
+                self.table.optimize()
+                self._operation_count = 0  # Reset counter after optimization
+            except Exception:
+                # Silently fail if optimization errors occur
+                # (e.g., FTS index not ready yet)
+                pass
+
+    def optimize(self):
+        """Manually optimize the table for better performance.
+
+        This method performs compaction, pruning, and index optimization.
+        LanceDB recommends calling this periodically, especially after
+        adding or modifying many records (e.g., after 20+ operations or 100k+ records).
+        """
+        self.table.optimize()
+        self._operation_count = 0  # Reset counter after manual optimization
+
     def reset(self):
         """Reset the document store."""
         self.db.drop_table(self.table_name)
         self.table = self.db.create_table(self.table_name, schema=self.schema)
         self.existing_records = []
+        self._operation_count = 0
 
 
 class BM25DocStore(AbstractDocumentStore):

@@ -264,7 +264,6 @@ def test_lancedb_append_avoid_duplicates():
 
 
 # Partitioning tests
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_append():
     """Test LanceDBDocStore append with partitioning."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -295,7 +294,6 @@ def test_lancedb_partitioning_append():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_extend_single_partition():
     """Test LanceDBDocStore extend with single partition."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -321,7 +319,6 @@ def test_lancedb_partitioning_extend_single_partition():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_extend_multiple_partitions():
     """Test LanceDBDocStore extend with multiple partitions."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -357,7 +354,6 @@ def test_lancedb_partitioning_extend_multiple_partitions():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_extend_partitions_length_mismatch():
     """Test that extend raises error when partitions length doesn't match documents."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -378,7 +374,6 @@ def test_lancedb_partitioning_extend_partitions_length_mismatch():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_retrieve_all_partitions():
     """Test retrieving from all partitions when partitions=None."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -401,7 +396,6 @@ def test_lancedb_partitioning_retrieve_all_partitions():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_default_partition():
     """Test that documents without partition go to default partition."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -425,7 +419,6 @@ def test_lancedb_partitioning_default_partition():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_list_partitions():
     """Test list_partitions helper method."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -449,7 +442,6 @@ def test_lancedb_partitioning_list_partitions():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_list_partitions_not_enabled():
     """Test that list_partitions raises error when partitioning not enabled."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -467,7 +459,6 @@ def test_lancedb_partitioning_list_partitions_not_enabled():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_reset_partition():
     """Test reset_partition helper method."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -501,7 +492,6 @@ def test_lancedb_partitioning_reset_partition():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_get_partition_count():
     """Test get_partition_count helper method."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -523,7 +513,6 @@ def test_lancedb_partitioning_get_partition_count():
         store.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_schema_migration_error():
     """Test that enabling partitioning on existing table raises error."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -548,7 +537,6 @@ def test_lancedb_partitioning_schema_migration_error():
         store1.reset()
 
 
-@pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
 def test_lancedb_partitioning_contains():
     """Test __contains__ method with partitioning enabled."""
     with tempfile.TemporaryDirectory() as temp_dir:
