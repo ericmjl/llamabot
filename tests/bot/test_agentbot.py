@@ -368,7 +368,7 @@ def test_decide_node_passes_globals_dict():
         }
 
         with patch(
-            "llamabot.components.pocketflow.nodes.decision_bot_system_prompt"
+            "llamabot.prompt_library.agentbot.decision_bot_system_prompt"
         ) as mock_prompt:
             mock_prompt.return_value = MagicMock()
             try:

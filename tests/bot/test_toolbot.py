@@ -8,7 +8,7 @@ from llamabot.components.tools import write_and_execute_code
 
 
 def test_write_and_execute_code_syntax_error():
-    """Test that write_and_execute_code raises SyntaxError for invalid syntax."""
+    """Test that write_and_execute_code returns error for invalid syntax."""
     # Test with invalid Python syntax
     invalid_code = "def test_function():\n    print('hello'\n    return 42"  # Missing closing parenthesis
 
@@ -16,13 +16,15 @@ def test_write_and_execute_code_syntax_error():
     globals_dict = {}
     wrapper = write_and_execute_code(globals_dict)
 
-    # Should raise SyntaxError
-    with pytest.raises(SyntaxError):
-        wrapper(invalid_code, {})
+    # Should return error dictionary, not raise exception
+    result = wrapper(invalid_code, {})
+    assert "error" in result
+    assert "Syntax error" in result["error"] or "SyntaxError" in result["error"]
+    assert result["result"] is None
 
 
 def test_write_and_execute_code_no_function_found():
-    """Test that write_and_execute_code raises ValueError for missing function definitions."""
+    """Test that write_and_execute_code returns error for missing function definitions."""
     # Test with code that has no function definition
     code_without_function = "print('hello world')\nx = 42"
 
@@ -30,9 +32,11 @@ def test_write_and_execute_code_no_function_found():
     globals_dict = {}
     wrapper = write_and_execute_code(globals_dict)
 
-    # Should raise ValueError
-    with pytest.raises(ValueError, match="No function definition found"):
-        wrapper(code_without_function, {})
+    # Should return error dictionary, not raise exception
+    result = wrapper(code_without_function, {})
+    assert "error" in result
+    assert "No function definition found" in result["error"]
+    assert result["result"] is None
 
 
 def test_write_and_execute_code_successful_execution():
