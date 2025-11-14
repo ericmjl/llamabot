@@ -234,13 +234,22 @@ def _(bot):
 
 @app.cell
 def _(bot):
-    bot.shared["memory"]
+    response = bot("groupby compound ID", globals())
+    response
     return
 
 
 @app.cell
 def _(bot):
-    bot("groupby compound ID", globals())
+    bot("after grouping by compound ID, rank order by mean IC50.")
+    return
+
+
+@app.cell
+def _(bot):
+    bot(
+        "with this ic50 dataset, what are we missing from an experiment design perspective?"
+    )
     return
 
 

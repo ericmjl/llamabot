@@ -118,7 +118,38 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
                 :param exec_res: Execution result
                 :return: Loopback name or None for terminal nodes
                 """
-                shared["memory"].append(exec_res)
+                # Format error dicts nicely for the LLM to see in memory
+                if isinstance(exec_res, dict) and "error" in exec_res:
+                    # Format error message clearly for self-healing
+                    error_msg = f"Error from {self.func.__name__}:\n{exec_res.get('error', 'Unknown error')}"
+                    if "code" in exec_res:
+                        error_msg += f"\n\nFailed code:\n{exec_res['code']}"
+                    shared["memory"].append(error_msg)
+                elif isinstance(exec_res, dict) and "created_variables" in exec_res:
+                    # Code execution was successful - format success message with created variables
+                    created_vars = exec_res.get("created_variables", [])
+                    function_name = exec_res.get("function_name", "")
+                    result = exec_res.get("result")
+
+                    # Store the result in globals_dict so it can be returned to the user
+                    # Use a predictable name based on the function name
+                    if function_name and result is not None:
+                        result_var_name = f"{function_name}_result"
+                        # Update shared state's globals_dict so it persists
+                        if "globals_dict" not in shared:
+                            shared["globals_dict"] = {}
+                        shared["globals_dict"][result_var_name] = result
+                        success_msg = f"Code executed successfully. Function '{function_name}' was created and executed.\nThe result is stored in variable '{result_var_name}' and should be returned to the user using return_object_to_user."
+                    else:
+                        success_msg = f"Code executed successfully. Created variables: {', '.join(created_vars)}"
+                        if function_name:
+                            success_msg += f"\nFunction '{function_name}' was created and is now available in globals."
+                        if result is not None:
+                            success_msg += f"\nResult: {result}"
+
+                    shared["memory"].append(success_msg)
+                else:
+                    shared["memory"].append(exec_res)
 
                 if self.loopback_name is None:
                     # For terminal nodes, store result in shared state and return None

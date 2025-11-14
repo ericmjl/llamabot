@@ -720,8 +720,19 @@ The generated code will have access to:
         :param keyword_args: The keyword arguments to pass to the function.
         :return: Dictionary with 'code' and 'result' keys.
         """
+        import traceback
+
         # Parse the code to extract the function name
-        tree = ast.parse(placeholder_function)
+        try:
+            tree = ast.parse(placeholder_function)
+        except SyntaxError as e:
+            error_traceback = traceback.format_exc()
+            return {
+                "code": placeholder_function,
+                "result": None,
+                "error": f"Syntax error in provided code: {e}\nCode:\n{placeholder_function}\n\nTraceback:\n{error_traceback}",
+            }
+
         function_name = None
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
@@ -729,14 +740,60 @@ The generated code will have access to:
                 break
 
         if function_name is None:
-            raise ValueError("No function definition found in the provided code.")
+            return {
+                "code": placeholder_function,
+                "result": None,
+                "error": "No function definition found in the provided code.",
+            }
 
-        ns = globals_dict
-        compiled = compile(placeholder_function, "<llm>", "exec")
-        exec(compiled, globals_dict, ns)
+        # Store original state to detect new variables
+        original_globals_keys = set(globals_dict.keys())
+        ns = globals_dict.copy()
+        try:
+            compiled = compile(placeholder_function, "<llm>", "exec")
+            exec(compiled, globals_dict, ns)
+        except Exception as e:
+            error_traceback = traceback.format_exc()
+            return {
+                "code": placeholder_function,
+                "result": None,
+                "error": f"Error compiling code: {type(e).__name__}: {e}\nCode:\n{placeholder_function}\n\nTraceback:\n{error_traceback}",
+            }
 
-        result = ns[function_name](**keyword_args)
-        return {"code": placeholder_function, "result": result}
+        # Execute the function with error handling
+        try:
+            result = ns[function_name](**keyword_args)
+
+            # Detect new variables created during execution
+            # Check both globals_dict (for functions defined at module level) and ns (for local variables)
+            new_variables = {}
+
+            # Check globals_dict for new variables (functions defined at module level)
+            for key, value in globals_dict.items():
+                if key not in original_globals_keys:
+                    new_variables[key] = value
+
+            # Check ns for new variables (local variables created during execution)
+            for key, value in ns.items():
+                if key not in globals_dict:
+                    new_variables[key] = value
+                    # Also add to globals_dict so it's available for future use
+                    globals_dict[key] = value
+
+            # Return result with information about created variables
+            return {
+                "code": placeholder_function,
+                "result": result,
+                "created_variables": list(new_variables.keys()),
+                "function_name": function_name,  # The function that was created
+            }
+        except Exception as e:
+            error_traceback = traceback.format_exc()
+            return {
+                "code": placeholder_function,
+                "result": None,
+                "error": f"Error executing code: {type(e).__name__}: {e}\nCode:\n{placeholder_function}\nKeyword args: {keyword_args}\n\nTraceback:\n{error_traceback}",
+            }
 
     # Set the docstring after function definition
     write_and_execute_code_wrapper.__doc__ = docstring
