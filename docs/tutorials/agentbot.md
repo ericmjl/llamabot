@@ -35,7 +35,7 @@ This graph-based approach provides:
   linear sequence
 - **Automatic tool wrapping**: You provide plain callables; AgentBot
   handles the rest
-- **Default tools**: `today_date` and `respond_to_user` are always
+- **Default tools**: `today_date`, `respond_to_user`, and `return_object_to_user` are always
   available
 
 ## Part 1: Basic Usage
@@ -79,7 +79,7 @@ print(result)
 
 1. AgentBot automatically wraps `get_weather` with `@tool` and
    `@nodeify` decorators
-2. Default tools (`today_date` and `respond_to_user`) are added
+2. Default tools (`today_date`, `respond_to_user`, and `return_object_to_user`) are added
    automatically
 3. A `DecideNode` is created to decide which tool to use
 4. The flow graph is built connecting the decision node to all tools
@@ -87,21 +87,51 @@ print(result)
 
 ### Step 3: Understanding Default Tools
 
-AgentBot always includes two default tools:
+AgentBot always includes three default tools:
 
 - **`today_date`**: Returns the current date (loops back to decide
   node)
-- **`respond_to_user`**: Sends a response to the user (terminal node,
+- **`respond_to_user`**: Sends a text response to the user (terminal node,
   no loopback)
+- **`return_object_to_user`**: Returns an object from the calling context's globals
+  (terminal node, no loopback). Use this when you want to return actual Python
+  objects like DataFrames, lists, or dictionaries.
 
 These tools are automatically available, so you don't need to provide them:
 
 ```python
 agent = lmb.AgentBot(tools=[])
 
-# The agent can still use today_date and respond_to_user
+# The agent can still use today_date, respond_to_user, and return_object_to_user
 result = agent("What's today's date?")
 ```
+
+**When to use `respond_to_user` vs `return_object_to_user`:**
+- Use `respond_to_user` for text responses, explanations, or conversational replies
+- Use `return_object_to_user` when you want to return actual Python objects (DataFrames,
+  lists, dicts, etc.) from your notebook's or script's globals
+
+**Using `return_object_to_user` with globals:**
+
+To enable `return_object_to_user` to access variables from your calling context, pass
+`globals_dict` when calling the agent:
+
+```python
+import pandas as pd
+
+# Create some data in your notebook/script
+df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+
+agent = lmb.AgentBot(tools=[])
+
+# Pass globals() so the agent can access 'df'
+result = agent("Return the dataframe", globals_dict=globals())
+
+# result will be the DataFrame object
+print(result)
+```
+
+The agent can now use `return_object_to_user` to return objects from your globals dictionary.
 
 ## Part 2: Building a Financial Analysis Agent
 
@@ -414,7 +444,7 @@ for graph-based tool orchestration. AgentBot provides:
 
 - **Automatic tool wrapping**: Just provide plain callables
 - **Graph-based orchestration**: Visual flow representation
-- **Default tools**: `today_date` and `respond_to_user` always
+- **Default tools**: `today_date`, `respond_to_user`, and `return_object_to_user` always
   available
 - **Flexible decision making**: Custom decision nodes supported
 - **Terminal nodes**: Control flow termination with terminal tools

@@ -14,6 +14,56 @@ from llamabot.components.pocketflow import DecideNode
 from llamabot.components.tools import DEFAULT_TOOLS
 
 
+def _validate_tools(tools: List[Callable]) -> None:
+    """Validate that all tools are properly decorated with @tool and @nodeify.
+
+    :param tools: List of tool functions to validate
+    :raises ValueError: If any tool is not properly decorated
+    """
+    invalid_tools = []
+    for tool_func in tools:
+        issues = []
+
+        # Check for @tool decorator (has json_schema attribute)
+        if not hasattr(tool_func, "json_schema"):
+            issues.append("missing @tool decorator")
+
+        # Check for @nodeify decorator (has func attribute)
+        if not hasattr(tool_func, "func"):
+            issues.append("missing @nodeify decorator")
+
+        # Check for loopback_name attribute (from nodeify)
+        if not hasattr(tool_func, "loopback_name"):
+            issues.append("missing loopback_name attribute (from @nodeify)")
+
+        if issues:
+            tool_name = getattr(tool_func, "__name__", str(tool_func))
+            invalid_tools.append((tool_name, issues))
+
+    if invalid_tools:
+        error_parts = ["The following tools are not properly decorated:"]
+        for tool_name, issues in invalid_tools:
+            error_parts.append(f"\n  - {tool_name}:")
+            for issue in issues:
+                error_parts.append(f"    • {issue}")
+
+        error_parts.append("\nTo fix this, decorate your tools like this:")
+        error_parts.append("\n  from llamabot.components.tools import tool")
+        error_parts.append(
+            "  from llamabot.components.pocketflow import nodeify, DECIDE_NODE_ACTION"
+        )
+        error_parts.append("\n  @nodeify(loopback_name=DECIDE_NODE_ACTION)")
+        error_parts.append("  @tool")
+        error_parts.append("  def your_tool(arg: str) -> str:")
+        error_parts.append("      return arg")
+        error_parts.append("\n  bot = AgentBot(tools=[your_tool])")
+        error_parts.append(
+            "\n  Note: @nodeify must be applied last (outermost decorator)"
+        )
+
+        raise ValueError("\n".join(error_parts))
+
+
 class AgentBot:
     """An AgentBot that uses PocketFlow for tool orchestration.
 
@@ -61,48 +111,7 @@ class AgentBot:
         **completion_kwargs,
     ):
         # Validate that all user-provided tools are properly decorated
-        invalid_tools = []
-        for tool_func in tools:
-            issues = []
-
-            # Check for @tool decorator (has json_schema attribute)
-            if not hasattr(tool_func, "json_schema"):
-                issues.append("missing @tool decorator")
-
-            # Check for @nodeify decorator (has func attribute)
-            if not hasattr(tool_func, "func"):
-                issues.append("missing @nodeify decorator")
-
-            # Check for loopback_name attribute (from nodeify)
-            if not hasattr(tool_func, "loopback_name"):
-                issues.append("missing loopback_name attribute (from @nodeify)")
-
-            if issues:
-                tool_name = getattr(tool_func, "__name__", str(tool_func))
-                invalid_tools.append((tool_name, issues))
-
-        if invalid_tools:
-            error_parts = ["The following tools are not properly decorated:"]
-            for tool_name, issues in invalid_tools:
-                error_parts.append(f"\n  - {tool_name}:")
-                for issue in issues:
-                    error_parts.append(f"    • {issue}")
-
-            error_parts.append("\nTo fix this, decorate your tools like this:")
-            error_parts.append("\n  from llamabot.components.tools import tool")
-            error_parts.append(
-                "  from llamabot.components.pocketflow import nodeify, DECIDE_NODE_ACTION"
-            )
-            error_parts.append("\n  @nodeify(loopback_name=DECIDE_NODE_ACTION)")
-            error_parts.append("  @tool")
-            error_parts.append("  def your_tool(arg: str) -> str:")
-            error_parts.append("      return arg")
-            error_parts.append("\n  bot = AgentBot(tools=[your_tool])")
-            error_parts.append(
-                "\n  Note: @nodeify must be applied last (outermost decorator)"
-            )
-
-            raise ValueError("\n".join(error_parts))
+        _validate_tools(tools)
 
         # Combine default and user-provided tools
         # Default tools are already nodeified
@@ -141,19 +150,23 @@ class AgentBot:
         # Initialize shared state
         self.shared = dict(memory=[])
 
-    def __call__(self, query: str):
+    def __call__(self, query: str, globals_dict: Optional[dict] = None):
         """Execute the agent with a query.
 
         :param query: The user's query string
+        :param globals_dict: Optional dictionary of global variables from the calling context.
+            This allows tools like `return_object_to_user` to access variables from the
+            calling scope (e.g., from a notebook's globals()). If None, defaults to empty dict.
         :return: The result from running the flow
         """
         # Reset shared state for this call
-        self.shared = dict(memory=[query])
+        self.shared = dict(memory=[query], globals_dict=globals_dict or {})
 
         # Run the flow
-        result = self.flow.run(self.shared)
+        self.flow.run(self.shared)
 
-        return result
+        # Retrieve result from shared state (set by terminal nodes)
+        return self.shared.get("result")
 
     def _display_(self):
         """Display the agent's flow graph as a Mermaid diagram.

@@ -73,7 +73,8 @@ ToolBot comes with several built-in tools:
 ### Core Tools
 
 - `today_date()`: Returns the current date in YYYY-MM-DD format
-- `respond_to_user(response: str)`: Responds to the user with a message
+- `respond_to_user(response: str)`: Responds to the user with a text message
+- `return_object_to_user(variable_name: str)`: Returns an object from the calling context's globals dictionary. Use this to return actual Python objects (DataFrames, lists, dicts, etc.) instead of text responses.
 
 ### Code Execution Tools
 

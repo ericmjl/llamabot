@@ -51,7 +51,9 @@ def test_agentbot_requires_decorated_tools():
     # Check that tools are wrapped (should be FuncNode instances)
     assert len(bot.tools) > 0
     # Default tools + provided tools
-    assert len(bot.tools) >= 3  # today_date, respond_to_user, echo_function
+    assert (
+        len(bot.tools) >= 4
+    )  # today_date, respond_to_user, return_object_to_user, echo_function
 
     # Check that wrapped tools have the expected attributes
     for wrapped_tool in bot.tools:
@@ -79,13 +81,14 @@ def test_agentbot_rejects_unwrapped_tools():
 
 
 def test_agentbot_includes_default_tools():
-    """Test that default tools (today_date, respond_to_user) are included."""
+    """Test that default tools (today_date, respond_to_user, return_object_to_user) are included."""
     bot = AgentBot(tools=[])
 
     # Should have at least the default tools
     tool_names = [tool.func.__name__ for tool in bot.tools]
     assert "today_date" in tool_names
     assert "respond_to_user" in tool_names
+    assert "return_object_to_user" in tool_names
 
 
 def test_respond_to_user_is_terminal():
@@ -101,6 +104,59 @@ def test_respond_to_user_is_terminal():
 
     assert respond_tool is not None
     assert respond_tool.loopback_name is None
+
+
+def test_return_object_to_user_is_terminal():
+    """Test that return_object_to_user is marked as terminal (no loopback)."""
+    bot = AgentBot(tools=[])
+
+    # Find return_object_to_user tool
+    return_tool = None
+    for wrapped_tool in bot.tools:
+        if wrapped_tool.func.__name__ == "return_object_to_user":
+            return_tool = wrapped_tool
+            break
+
+    assert return_tool is not None
+    assert return_tool.loopback_name is None
+
+
+def test_return_object_to_user_returns_object():
+    """Test that return_object_to_user can return objects from globals_dict."""
+    from llamabot.components.tools import return_object_to_user
+
+    test_data = {"key": "value", "number": 42}
+    result = return_object_to_user("key", _globals_dict=test_data)
+    assert result == "value"
+
+    result = return_object_to_user("number", _globals_dict=test_data)
+    assert result == 42
+
+
+def test_return_object_to_user_raises_error_when_not_found():
+    """Test that return_object_to_user raises ValueError when variable not found."""
+    from llamabot.components.tools import return_object_to_user
+
+    test_data = {"key": "value"}
+    with pytest.raises(ValueError) as exc_info:
+        return_object_to_user("nonexistent", _globals_dict=test_data)
+
+    error_message = str(exc_info.value)
+    assert "nonexistent" in error_message
+    assert "not found" in error_message.lower()
+    assert "key" in error_message  # Should list available variables
+
+
+def test_return_object_to_user_with_empty_globals():
+    """Test that return_object_to_user handles empty globals_dict gracefully."""
+    from llamabot.components.tools import return_object_to_user
+
+    with pytest.raises(ValueError) as exc_info:
+        return_object_to_user("any_var", _globals_dict={})
+
+    error_message = str(exc_info.value)
+    assert "not found" in error_message.lower()
+    assert "none" in error_message.lower() or "Available variables" in error_message
 
 
 def test_agentbot_custom_decide_node():
@@ -124,7 +180,12 @@ def test_agentbot_call_execution(mock_flow_class):
     """Test __call__ method execution."""
     # Mock the flow
     mock_flow = MagicMock()
-    mock_flow.run.return_value = "test result"
+
+    # flow.run() modifies shared state in place, so we need to set up the shared dict
+    def mock_run(shared):
+        shared["result"] = "test result"
+
+    mock_flow.run.side_effect = mock_run
     mock_flow_class.return_value = mock_flow
 
     bot = AgentBot(tools=[echo_function])
@@ -140,6 +201,39 @@ def test_agentbot_call_execution(mock_flow_class):
     call_args = mock_flow.run.call_args[0][0]
     assert "memory" in call_args
     assert call_args["memory"] == ["test query"]
+    assert "globals_dict" in call_args
+    assert call_args["globals_dict"] == {}
+
+
+@patch("llamabot.bot.agentbot.Flow")
+def test_agentbot_call_with_globals_dict(mock_flow_class):
+    """Test __call__ method with globals_dict parameter."""
+    # Mock the flow
+    mock_flow = MagicMock()
+
+    # flow.run() modifies shared state in place, so we need to set up the shared dict
+    def mock_run(shared):
+        shared["result"] = "test result"
+
+    mock_flow.run.side_effect = mock_run
+    mock_flow_class.return_value = mock_flow
+
+    bot = AgentBot(tools=[echo_function])
+
+    # Mock the flow attribute since it's created in __init__
+    bot.flow = mock_flow
+
+    test_globals = {"my_var": "test_value", "my_number": 42}
+    result = bot("test query", globals_dict=test_globals)
+
+    assert result == "test result"
+    assert mock_flow.run.called
+    # Check that shared state includes globals_dict
+    call_args = mock_flow.run.call_args[0][0]
+    assert "memory" in call_args
+    assert call_args["memory"] == ["test query"]
+    assert "globals_dict" in call_args
+    assert call_args["globals_dict"] == test_globals
 
 
 @patch("llamabot.components.pocketflow.flow_to_mermaid")
@@ -209,6 +303,7 @@ def test_agentbot_with_multiple_tools():
     assert "add_function" in tool_names
     assert "today_date" in tool_names
     assert "respond_to_user" in tool_names
+    assert "return_object_to_user" in tool_names
 
 
 def test_agentbot_shared_state_reset():
@@ -216,16 +311,25 @@ def test_agentbot_shared_state_reset():
     bot = AgentBot(tools=[echo_function])
 
     with patch.object(bot, "flow") as mock_flow:
-        mock_flow.run.return_value = "result1"
+
+        def mock_run1(shared):
+            shared["result"] = "result1"
+
+        mock_flow.run.side_effect = mock_run1
         bot("query1")
 
         # Check that shared state was reset
         call_args1 = mock_flow.run.call_args[0][0]
         assert call_args1["memory"] == ["query1"]
+        assert call_args1["globals_dict"] == {}
 
-        mock_flow.run.return_value = "result2"
-        bot("query2")
+        def mock_run2(shared):
+            shared["result"] = "result2"
+
+        mock_flow.run.side_effect = mock_run2
+        bot("query2", globals_dict={"var": "value"})
 
         # Check that shared state was reset again
         call_args2 = mock_flow.run.call_args[0][0]
         assert call_args2["memory"] == ["query2"]
+        assert call_args2["globals_dict"] == {"var": "value"}
