@@ -96,7 +96,15 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
                 :return: The result of calling the function
                 """
                 # Extract function call arguments from shared
-                func_call = prep_result.get("func_call", {})
+                func_call = prep_result.get("func_call", {}).copy()
+
+                # Inject globals_dict if available and function accepts it
+                globals_dict = prep_result.get("globals_dict", {})
+                import inspect
+
+                sig = inspect.signature(self.func)
+                if "_globals_dict" in sig.parameters:
+                    func_call["_globals_dict"] = globals_dict
 
                 # Call the function with the arguments
                 return self.func(**func_call)
@@ -107,12 +115,16 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
                 :param shared: Shared state dictionary
                 :param prep_result: Prepared result from prep method
                 :param exec_res: Execution result
-                :return: Loopback name or execution result for terminal nodes
+                :return: Loopback name or None for terminal nodes
                 """
                 shared["memory"].append(exec_res)
 
                 if self.loopback_name is None:
-                    return exec_res
+                    # For terminal nodes, store result in shared state and return None
+                    # to signal termination to PocketFlow. This prevents PocketFlow from
+                    # trying to use the result (e.g., a DataFrame) as a routing action.
+                    shared["result"] = exec_res
+                    return None
                 return self.loopback_name
 
             def __getattr__(self, name):

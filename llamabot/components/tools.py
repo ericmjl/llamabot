@@ -128,6 +128,10 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
     param_info = inspect.signature(input_function).parameters
 
     for param_name, param in param_info.items():
+        # Skip internal parameters (those starting with _)
+        if param_name.startswith("_"):
+            continue
+
         # Require type hints for all parameters
         if param.annotation == inspect.Parameter.empty:
             raise ValueError(
@@ -242,6 +246,36 @@ def respond_to_user(response: str) -> str:
     :return: The response message
     """
     return response
+
+
+@nodeify(loopback_name=None)
+@tool
+def return_object_to_user(variable_name: str, _globals_dict: dict = None) -> Any:
+    """Return an object from the calling context's globals to the user.
+
+    Use this tool when you want to return a specific object (e.g., DataFrame, list, dict, etc.)
+    from the calling context's globals() dictionary. This is useful when the agent has created
+    or modified variables that the user wants to access directly.
+
+    Use `respond_to_user` for text responses, and `return_object_to_user` for returning
+    actual Python objects.
+
+    :param variable_name: The name of the variable in globals() to return
+    :param _globals_dict: Internal parameter - automatically injected by AgentBot
+    :return: The object from globals() with the given name
+    :raises ValueError: If the variable is not found in globals_dict
+    """
+    if _globals_dict is None:
+        _globals_dict = {}
+
+    if variable_name not in _globals_dict:
+        available_vars = list(_globals_dict.keys())
+        raise ValueError(
+            f"Variable '{variable_name}' not found in globals(). "
+            f"Available variables: {available_vars if available_vars else 'none'}"
+        )
+
+    return _globals_dict[variable_name]
 
 
 def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
@@ -496,7 +530,7 @@ def today_date() -> str:
 
 
 # Default tools that are always available in AgentBot and ToolBot
-DEFAULT_TOOLS = [today_date, respond_to_user]
+DEFAULT_TOOLS = [today_date, respond_to_user, return_object_to_user]
 
 
 @tool
