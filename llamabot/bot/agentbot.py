@@ -148,7 +148,7 @@ class AgentBot:
         self.flow = Flow(start=self.decide_node)
 
         # Initialize shared state
-        self.shared = dict(memory=[])
+        self.shared = dict(memory=[], globals_dict={})
 
     def __call__(self, query: str, globals_dict: Optional[dict] = None):
         """Execute the agent with a query.
@@ -156,11 +156,26 @@ class AgentBot:
         :param query: The user's query string
         :param globals_dict: Optional dictionary of global variables from the calling context.
             This allows tools like `return_object_to_user` to access variables from the
-            calling scope (e.g., from a notebook's globals()). If None, defaults to empty dict.
+            calling scope (e.g., from a notebook's globals()). If provided, updates the
+            globals_dict in shared state. If None, preserves existing globals_dict.
         :return: The result from running the flow
         """
-        # Reset shared state for this call
-        self.shared = dict(memory=[query], globals_dict=globals_dict or {})
+        # Initialize shared state if it doesn't exist
+        if not hasattr(self, "shared") or self.shared is None:
+            self.shared = dict(memory=[], globals_dict={})
+
+        # Preserve memory and append the new query
+        if "memory" not in self.shared:
+            self.shared["memory"] = []
+        self.shared["memory"].append(query)
+
+        # Update globals_dict if provided, otherwise preserve existing
+        if globals_dict is not None:
+            self.shared["globals_dict"] = globals_dict
+
+        # Ensure globals_dict exists
+        if "globals_dict" not in self.shared:
+            self.shared["globals_dict"] = {}
 
         # Run the flow
         self.flow.run(self.shared)

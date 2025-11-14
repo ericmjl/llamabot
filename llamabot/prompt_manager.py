@@ -146,6 +146,18 @@ class prompt:
             signature = inspect.signature(func)
             kwargs = signature.bind(*args, **kwargs).arguments
 
+            # Pre-process categorized_vars if needed (for prompts that use globals_dict)
+            if (
+                "categorized_vars" in kwargs
+                and kwargs["categorized_vars"] is None
+                and "globals_dict" in kwargs
+            ):
+                from llamabot.utils import categorize_globals
+
+                kwargs["categorized_vars"] = categorize_globals(
+                    kwargs.get("globals_dict", {})
+                )
+
             env = jinja2.Environment()
             parsed_content = env.parse(docstring)
             variables = meta.find_undeclared_variables(parsed_content)

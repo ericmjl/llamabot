@@ -130,9 +130,18 @@ def _(mo):
     return
 
 
+@app.cell
+def _():
+    from llamabot.components.tools import write_and_execute_code
+
+    return (write_and_execute_code,)
+
+
 @app.cell(hide_code=True)
-def _(critique_experiment_design, lmb):
-    bot = lmb.AgentBot(tools=[critique_experiment_design])
+def _(critique_experiment_design, lmb, write_and_execute_code):
+    bot = lmb.AgentBot(
+        tools=[critique_experiment_design, write_and_execute_code(globals())]
+    )
     return (bot,)
 
 
@@ -219,7 +228,24 @@ def _(bot):
 
 @app.cell
 def _(bot):
-    bot("show  me ic50_data_with_confounders", globals())
+    bot("show me the file I just uploaded, ic50", globals())
+    return
+
+
+@app.cell
+def _(bot):
+    bot.shared["memory"]
+    return
+
+
+@app.cell
+def _(bot):
+    bot("groupby compound ID", globals())
+    return
+
+
+@app.cell
+def _():
     return
 
 

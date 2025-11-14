@@ -1,7 +1,7 @@
 """Utility functions."""
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, List, Tuple
 
 from pyprojroot import here
 
@@ -17,6 +17,67 @@ def get_object_name(obj):
         if value is obj:
             return name
     return None
+
+
+def categorize_globals(globals_dict: Dict) -> Dict[str, List[Tuple[str, str]]]:
+    """Safely categorize variables from globals_dict.
+
+    This function safely categorizes variables without triggering __getitem__
+    on objects like Polars DataFrames that override attribute access.
+
+    :param globals_dict: Dictionary of global variables
+    :return: Dictionary with keys 'dataframes', 'callables', 'other' containing
+        lists of (name, class_name) tuples
+    """
+    dataframes = []
+    callables = []
+    other = []
+
+    for name, value in globals_dict.items():
+        if value is None:
+            continue
+
+        # Safely get class name without triggering __getitem__
+        try:
+            class_name = type(value).__name__
+        except Exception:
+            class_name = "unknown"
+
+        # Check if it's a DataFrame (pandas or polars)
+        # Use hasattr to avoid triggering __getitem__
+        is_dataframe = False
+        try:
+            # Check for pandas DataFrame
+            if (
+                class_name == "DataFrame"
+                and hasattr(value, "shape")
+                and hasattr(value, "columns")
+            ):
+                is_dataframe = True
+            # Check for polars DataFrame
+            elif (
+                class_name == "DataFrame"
+                and hasattr(value, "shape")
+                and hasattr(value, "schema")
+            ):
+                is_dataframe = True
+        except Exception:
+            pass
+
+        if is_dataframe:
+            dataframes.append((name, class_name))
+        # Check if callable using Python's callable() function
+        # This avoids accessing __call__ attribute directly
+        elif callable(value):
+            callables.append((name, class_name))
+        else:
+            other.append((name, class_name))
+
+    return {
+        "dataframes": dataframes,
+        "callables": callables,
+        "other": other,
+    }
 
 
 def find_or_set_db_path(db_path: Optional[Path] = None) -> Path:

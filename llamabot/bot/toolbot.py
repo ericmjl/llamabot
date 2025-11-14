@@ -16,7 +16,7 @@ from llamabot.prompt_manager import prompt
 
 
 @prompt("system")
-def toolbot_sysprompt(globals_dict: dict = {}) -> str:
+def toolbot_sysprompt(globals_dict: dict = {}, categorized_vars: dict = None) -> str:
     """
     You are a ToolBot, an intelligent agent designed to analyze user requests and determine the most appropriate tool or function to execute.
 
@@ -47,26 +47,20 @@ def toolbot_sysprompt(globals_dict: dict = {}) -> str:
 
     The available dataframes are:
 
-    {% for k, v in globals_dict.items() %}
-        {% if v is defined and v is not none and v.__class__.__name__ == 'DataFrame' %}
-    - {{ k }}: DataFrame with shape {{ v.shape }} and columns {{ v.columns | list }}
-        {% endif %}
+    {% for name, class_name in categorized_vars.dataframes %}
+    - {{ name }}: {{ class_name }}
     {% endfor %}
 
     The available callables are:
 
-    {% for k, v in globals_dict.items() %}
-        {% if v is defined and v is not none and v.__call__ is not none %}
-    - {{ k }}: {{ v.__class__.__name__ }}
-        {% endif %}
+    {% for name, class_name in categorized_vars.callables %}
+    - {{ name }}: {{ class_name }}
     {% endfor %}
 
     The available other variables are:
 
-    {% for k, v in globals_dict.items() %}
-        {% if v is defined and v is not none and v.__call__ is none and v.__class__.__name__ != 'DataFrame' %}
-    - {{ k }}: {{ v.__class__.__name__ }}
-        {% endif %}
+    {% for name, class_name in categorized_vars.other %}
+    - {{ name }}: {{ class_name }}
     {% endfor %}
     """
 

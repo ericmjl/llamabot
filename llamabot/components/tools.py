@@ -12,6 +12,7 @@ The design of a tool is as follows:
 import ast
 import os
 import random
+import types
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import wraps
@@ -582,6 +583,22 @@ def write_and_execute_script(
     }
 
 
+def _detect_imported_modules(globals_dict: dict) -> list[str]:
+    """Detect imported modules from globals_dict.
+
+    :param globals_dict: Dictionary of global variables (typically globals())
+    :return: Sorted list of module names that are already imported
+    """
+    imported_modules = []
+    for name, value in globals_dict.items():
+        if isinstance(value, types.ModuleType):
+            # Get the module name, handling both direct imports and aliases
+            module_name = getattr(value, "__name__", None)
+            if module_name:
+                imported_modules.append(module_name)
+    return sorted(set(imported_modules))
+
+
 def write_and_execute_code(globals_dict: dict):
     """Write and execute code in a secure sandbox.
 
@@ -591,90 +608,118 @@ def write_and_execute_code(globals_dict: dict):
     :param globals_dictionary: The dictionary of global variables to use in the sandbox.
     :return: A function that can be used to execute code in the sandbox.
     """
+    # Detect imported modules from globals_dict
+    available_modules = _detect_imported_modules(globals_dict)
 
+    # Generate text for available libraries section
+    if available_modules:
+        module_list = ", ".join(available_modules)
+        available_libraries_text = f"The following libraries are already imported and available: {module_list}\n\nYou can use these libraries directly without importing them again. For example, if 'pandas' is listed, you can use 'pd.DataFrame()' if it was imported as 'import pandas as pd', or use the library name directly if imported without an alias."
+    else:
+        available_libraries_text = "No libraries are currently imported. You should import any libraries you need within your function."
+
+    # Build the docstring with available libraries information
+    docstring_template = """Write and execute `placeholder_function` with the passed in `keyword_args`.
+
+Use this tool for any task that requires custom Python code generation and execution.
+This tool has access to ALL globals in the current runtime environment (variables, dataframes, functions, etc.).
+Perfect for: data analysis, calculations, transformations, visualizations, custom algorithms.
+
+## Code Generation Guidelines:
+
+1. **Write self-contained Python functions** with ALL imports inside the function body
+2. **Place all imports at the beginning of the function**: import statements must be the first lines inside the function
+3. **Use already-imported libraries when available** (see Available Imported Libraries below), otherwise import everything the function needs
+4. **Leverage existing global variables**: Can reference variables that exist in the runtime
+5. **Include proper error handling** and docstrings
+6. **Provide keyword arguments** when the function requires parameters
+7. **Make functions reusable** - they will be stored globally for future use
+8. **ALWAYS RETURN A VALUE**: Every function must explicitly return something - never just print, display, or show results without returning them. Even for plotting functions, return the figure/axes object.
+
+## Available Imported Libraries:
+
+{available_libraries_text}
+
+## Function Arguments Handling:
+
+**CRITICAL**: You MUST always pass in keyword_args, which is a dictionary that can be empty, and match the function signature with the keyword_args:
+
+- **If your function takes NO parameters** (e.g., `def analyze_data():`), then pass keyword_args as an **empty dictionary**: `{{}}`
+- **If your function takes parameters** (e.g., `def filter_data(min_age, department):`), then pass keyword_args as a dictionary: `{{"min_age": 30, "department": "Engineering"}}`
+- **Never pass keyword_args that don't match the function signature** - this will cause execution errors
+
+## Code Structure Example:
+
+```python
+# Function with NO parameters - use empty dict {{}}
+def analyze_departments():
+    '''Analyze department performance.'''
+    import pandas as pd
+    import numpy as np
+    result = fake_df.groupby('department')['salary'].mean()
+    return result
+# Function WITH parameters - pass matching keyword_args
+def filter_employees(min_age, department):
+    '''Filter employees by criteria.'''
+    import pandas as pd
+    filtered = fake_df[(fake_df['age'] >= min_age) & (fake_df['department'] == department)]
+    return filtered
+```
+
+## Return Value Requirements:
+
+- **Data analysis functions**: Return the computed results (numbers, DataFrames, lists, dictionaries)
+- **Plotting functions**: Return the figure or axes object (e.g., `return fig` or `return plt.gca()`)
+- **Filter/transformation functions**: Return the processed data
+- **Calculation functions**: Return the calculated values
+- **Utility functions**: Return relevant output (status, processed data, etc.)
+- **Never return None implicitly** - always have an explicit return statement
+
+## Output Format:
+
+This tool returns a dictionary with two keys:
+- `"code"`: The generated Python function code as a string
+- `"result"`: The execution result of the function
+
+Example access pattern:
+```python
+output = write_and_execute_code_wrapper(function_code, keyword_args)
+print("Generated code:", output["code"])
+print("Execution result:", output["result"])
+```
+
+## Code Access Capabilities:
+
+The generated code will have access to:
+
+- All global variables and dataframes in the current session
+- Any previously defined functions
+- The ability to import any standard Python libraries within the function
+- The ability to create new reusable functions that will be stored globally
+
+:param placeholder_function: The function to execute (complete Python function as string).
+:param keyword_args: The keyword arguments to pass to the function (dictionary matching function parameters).
+:return: The result of the function execution.
+        """
+
+    docstring = docstring_template.format(
+        available_libraries_text=available_libraries_text
+    )
+
+    @nodeify
     @tool
     def write_and_execute_code_wrapper(
         placeholder_function: str, keyword_args: dict = dict()
     ):
-        """Write and execute `placeholder_function` with the passed in `keyword_args`.
+        """Write and execute a Python function with access to globals.
 
-        Use this tool for any task that requires custom Python code generation and execution.
-        This tool has access to ALL globals in the current runtime environment (variables, dataframes, functions, etc.).
-        Perfect for: data analysis, calculations, transformations, visualizations, custom algorithms.
-
-        ## Code Generation Guidelines:
-
-        1. **Write self-contained Python functions** with ALL imports inside the function body
-        2. **Place all imports at the beginning of the function**: import statements must be the first lines inside the function
-        3. **Include all required libraries**: pandas, numpy, matplotlib, etc. - import everything the function needs
-        4. **Leverage existing global variables**: Can reference variables that exist in the runtime
-        5. **Include proper error handling** and docstrings
-        6. **Provide keyword arguments** when the function requires parameters
-        7. **Make functions reusable** - they will be stored globally for future use
-        8. **ALWAYS RETURN A VALUE**: Every function must explicitly return something - never just print, display, or show results without returning them. Even for plotting functions, return the figure/axes object.
-
-        ## Function Arguments Handling:
-
-        **CRITICAL**: You MUST always pass in keyword_args, which is a dictionary that can be empty, and match the function signature with the keyword_args:
-
-        - **If your function takes NO parameters** (e.g., `def analyze_data():`), then pass keyword_args as an **empty dictionary**: `{}`
-        - **If your function takes parameters** (e.g., `def filter_data(min_age, department):`), then pass keyword_args as a dictionary: `{"min_age": 30, "department": "Engineering"}`
-        - **Never pass keyword_args that don't match the function signature** - this will cause execution errors
-
-        ## Code Structure Example:
-
-        ```python
-        # Function with NO parameters - use empty dict {}
-        def analyze_departments():
-            '''Analyze department performance.'''
-            import pandas as pd
-            import numpy as np
-            result = fake_df.groupby('department')['salary'].mean()
-            return result
-        # Function WITH parameters - pass matching keyword_args
-        def filter_employees(min_age, department):
-            '''Filter employees by criteria.'''
-            import pandas as pd
-            filtered = fake_df[(fake_df['age'] >= min_age) & (fake_df['department'] == department)]
-            return filtered
-        ```
-
-        ## Return Value Requirements:
-
-        - **Data analysis functions**: Return the computed results (numbers, DataFrames, lists, dictionaries)
-        - **Plotting functions**: Return the figure or axes object (e.g., `return fig` or `return plt.gca()`)
-        - **Filter/transformation functions**: Return the processed data
-        - **Calculation functions**: Return the calculated values
-        - **Utility functions**: Return relevant output (status, processed data, etc.)
-        - **Never return None implicitly** - always have an explicit return statement
-
-        ## Output Format:
-
-        This tool returns a dictionary with two keys:
-        - `"code"`: The generated Python function code as a string
-        - `"result"`: The execution result of the function
-
-        Example access pattern:
-        ```python
-        output = write_and_execute_code_wrapper(function_code, keyword_args)
-        print("Generated code:", output["code"])
-        print("Execution result:", output["result"])
-        ```
-
-        ## Code Access Capabilities:
-
-        The generated code will have access to:
-
-        - All global variables and dataframes in the current session
-        - Any previously defined functions
-        - The ability to import any standard Python libraries within the function
-        - The ability to create new reusable functions that will be stored globally
+        This function's docstring is dynamically generated based on available modules.
+        See the docstring set after function definition for full documentation.
 
         :param placeholder_function: The function to execute (complete Python function as string).
-        :param keyword_args: The keyword arguments to pass to the function (dictionary matching function parameters).
-        :return: The result of the function execution.
+        :param keyword_args: The keyword arguments to pass to the function.
+        :return: Dictionary with 'code' and 'result' keys.
         """
-
         # Parse the code to extract the function name
         tree = ast.parse(placeholder_function)
         function_name = None
@@ -692,5 +737,15 @@ def write_and_execute_code(globals_dict: dict):
 
         result = ns[function_name](**keyword_args)
         return {"code": placeholder_function, "result": result}
+
+    # Set the docstring after function definition
+    write_and_execute_code_wrapper.__doc__ = docstring
+
+    # Regenerate the JSON schema now that we have the docstring
+    function_dict = function_to_dict(write_and_execute_code_wrapper)
+    write_and_execute_code_wrapper.json_schema = {
+        "type": "function",
+        "function": function_dict,
+    }
 
     return write_and_execute_code_wrapper

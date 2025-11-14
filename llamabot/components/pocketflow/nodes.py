@@ -3,6 +3,7 @@
 import json
 from typing import Callable, List
 
+from loguru import logger
 from pocketflow import Node
 
 # Constant for the default loopback action name
@@ -256,11 +257,20 @@ class DecideNode(Node):
         """
         from llamabot.bot.toolbot import ToolBot
         from llamabot.prompt_library.agentbot import decision_bot_system_prompt
+        from llamabot.utils import categorize_globals
+
+        # Extract globals_dict from shared state to make ToolBot aware of available variables
+        globals_dict = prep_res.get("globals_dict", {})
+
+        # Pre-process globals_dict to categorize variables safely (avoids triggering __getitem__)
+        categorized_vars = categorize_globals(globals_dict)
 
         bot = ToolBot(
             model_name=self.model_name,
             tools=self.tools,
-            system_prompt=decision_bot_system_prompt(),
+            system_prompt=decision_bot_system_prompt(
+                globals_dict=globals_dict, categorized_vars=categorized_vars
+            ),
             **self.completion_kwargs,
         )
 
@@ -277,6 +287,9 @@ class DecideNode(Node):
         # Extract function name and arguments
         func_name = tool_call.function.name
         func_args_json = tool_call.function.arguments
+
+        # Log the chosen tool
+        logger.info(f"DecideNode chose tool: {func_name}")
 
         # Parse JSON arguments string to dict
         try:
