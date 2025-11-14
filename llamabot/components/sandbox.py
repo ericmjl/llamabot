@@ -180,14 +180,19 @@ CMD ["uv", "run", "--system-site-packages=false"]
             }
 
             # Run container with security constraints
+            # Create cache directory and run script in a single command
+            # Note: tmpfs mounts are writable by default, so we just need to ensure the directory exists
             container = self.docker_client.containers.run(
                 "agent-runner",
-                ["uv", "run", f"/app/scripts/{script_path.name}"],
+                [
+                    "sh",
+                    "-c",
+                    f"mkdir -p /tmp/uv-cache && uv run /app/scripts/{script_path.name}",
+                ],
                 volumes=volumes,
                 environment=env,
                 tmpfs={
-                    "/tmp": "size=2g,exec",  # General tmp space
-                    "/tmp/uv-cache": "size=2g,exec",  # Dedicated space for UV cache
+                    "/tmp": "size=2g,exec",  # General tmp space (includes uv-cache subdirectory)
                 },
                 read_only=True,
                 mem_limit="2048m",
