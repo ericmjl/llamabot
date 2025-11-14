@@ -144,7 +144,9 @@ class prompt:
 
             # Rest of the wrapper function remains the same
             signature = inspect.signature(func)
-            kwargs = signature.bind(*args, **kwargs).arguments
+            bound_args = signature.bind(*args, **kwargs)
+            bound_args.apply_defaults()  # Apply default values from function signature
+            kwargs = bound_args.arguments
 
             # Pre-process categorized_vars if needed (for prompts that use globals_dict)
             if (
@@ -167,6 +169,16 @@ class prompt:
                     raise ValueError(
                         f"Variable '{var}' was not passed into the function"
                     )
+                # Handle None values for optional template variables
+                # If a variable is None and used in a conditional, provide empty dict/list
+                if kwargs[var] is None:
+                    # Check if variable is used in template conditionals or iterations
+                    # Provide sensible defaults for common patterns
+                    if "categorized_vars" in var.lower() or "vars" in var.lower():
+                        kwargs[var] = {"dataframes": [], "callables": [], "other": []}
+                    elif isinstance(kwargs.get(var), type(None)):
+                        # For other None values that might be iterated, provide empty dict
+                        kwargs[var] = {}
 
             template = jinja2.Template(docstring)
             string = template.render(**kwargs)
