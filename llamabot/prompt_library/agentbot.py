@@ -76,6 +76,7 @@ def decision_bot_system_prompt(
 
     ## Available Global Variables:
 
+    {% if categorized_vars %}
     The available dataframes are:
 
     {% for name, class_name in categorized_vars.dataframes %}
@@ -93,5 +94,8 @@ def decision_bot_system_prompt(
     {% for name, class_name in categorized_vars.other %}
     - {{ name }}: {{ class_name }}
     {% endfor %}
+    {% else %}
+    No global variables are currently available.
+    {% endif %}
     """
     return ""

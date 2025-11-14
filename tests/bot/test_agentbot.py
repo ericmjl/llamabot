@@ -296,7 +296,11 @@ def test_decision_bot_system_prompt():
 def test_decision_bot_system_prompt_with_globals_dict():
     """Test that decision_bot_system_prompt accepts globals_dict and includes variable info."""
     from llamabot.components.messages import BaseMessage
-    import pandas as pd
+
+    try:
+        import pandas as pd
+    except ImportError:
+        pytest.skip("pandas not installed")
 
     test_globals = {
         "my_df": pd.DataFrame({"x": [1, 2, 3]}),
@@ -345,7 +349,7 @@ def test_decide_node_passes_globals_dict():
 
     test_globals = {"my_var": "test_value"}
 
-    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
         mock_toolbot = MagicMock()
         mock_toolbot.return_value = [
             MagicMock(
