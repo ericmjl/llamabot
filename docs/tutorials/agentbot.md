@@ -133,6 +133,26 @@ print(result)
 
 The agent can now use `return_object_to_user` to return objects from your globals dictionary.
 
+**Fuzzy Variable Name Matching:**
+
+The agent can intelligently match partial variable names. For example, if you have a variable
+named `ic50_data_with_confounders` in your globals, you can ask for it using a shorter name:
+
+```python
+# Variable in globals
+ic50_data_with_confounders = pd.read_csv("data.csv")
+
+agent = lmb.AgentBot(tools=[])
+
+# You can use a partial name - the agent will match it intelligently
+result = agent("show me ic50", globals_dict=globals())
+
+# The agent will match "ic50" to "ic50_data_with_confounders" and return it
+```
+
+The agent sees all available variables in globals and can match partial names based on context
+and similarity, making it easier to access your data without typing full variable names.
+
 ## Part 2: Building a Financial Analysis Agent
 
 Let's create a more sophisticated agent that can analyze financial data

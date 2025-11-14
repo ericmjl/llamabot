@@ -293,6 +293,95 @@ def test_decision_bot_system_prompt():
     assert isinstance(prompt_message.content, str)
 
 
+def test_decision_bot_system_prompt_with_globals_dict():
+    """Test that decision_bot_system_prompt accepts globals_dict and includes variable info."""
+    from llamabot.components.messages import BaseMessage
+    import pandas as pd
+
+    test_globals = {
+        "my_df": pd.DataFrame({"x": [1, 2, 3]}),
+        "my_func": lambda x: x,
+        "my_var": "test",
+    }
+
+    prompt_message = decision_bot_system_prompt(globals_dict=test_globals)
+    assert isinstance(prompt_message, BaseMessage)
+    assert prompt_message.role == "system"
+    content = prompt_message.content
+    assert isinstance(content, str)
+    # Check that variable information is included
+    assert "my_df" in content or "DataFrame" in content
+    assert "Variable Name Matching" in content or "return_object_to_user" in content
+
+
+def test_decision_bot_system_prompt_with_polars_dataframe():
+    """Test that decision_bot_system_prompt works with Polars DataFrames without triggering __getitem__."""
+    from llamabot.components.messages import BaseMessage
+
+    try:
+        import polars as pl
+    except ImportError:
+        pytest.skip("polars not installed")
+
+    test_globals = {
+        "my_polars_df": pl.DataFrame({"x": [1, 2, 3]}),
+        "my_var": "test",
+    }
+
+    # This should not raise ColumnNotFoundError
+    prompt_message = decision_bot_system_prompt(globals_dict=test_globals)
+    assert isinstance(prompt_message, BaseMessage)
+    assert prompt_message.role == "system"
+    content = prompt_message.content
+    assert isinstance(content, str)
+    # Check that variable information is included
+    assert "my_polars_df" in content or "DataFrame" in content
+
+
+def test_decide_node_passes_globals_dict():
+    """Test that DecideNode passes globals_dict to decision_bot_system_prompt."""
+    from llamabot.components.pocketflow.nodes import DecideNode
+    from unittest.mock import patch, MagicMock
+
+    test_globals = {"my_var": "test_value"}
+
+    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_toolbot.return_value = [
+            MagicMock(
+                function=MagicMock(
+                    name="respond_to_user", arguments='{"response": "test"}'
+                )
+            )
+        ]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        decide_node = DecideNode(tools=[], model_name="gpt-4.1")
+
+        prep_res = {
+            "memory": ["test query"],
+            "globals_dict": test_globals,
+        }
+
+        with patch(
+            "llamabot.components.pocketflow.nodes.decision_bot_system_prompt"
+        ) as mock_prompt:
+            mock_prompt.return_value = MagicMock()
+            try:
+                decide_node.exec(prep_res)
+            except (ValueError, AttributeError):
+                # We expect this to fail, we just want to verify the prompt was called with globals_dict
+                pass
+
+            # Verify that decision_bot_system_prompt was called with globals_dict
+            mock_prompt.assert_called_once()
+            call_args = mock_prompt.call_args
+            assert "globals_dict" in call_args.kwargs
+            assert call_args.kwargs["globals_dict"] == test_globals
+            # categorized_vars should be computed automatically by the prompt manager
+            assert "categorized_vars" in call_args.kwargs
+
+
 def test_agentbot_with_multiple_tools():
     """Test AgentBot with multiple user-provided tools."""
     bot = AgentBot(tools=[echo_function, add_function])
@@ -306,8 +395,8 @@ def test_agentbot_with_multiple_tools():
     assert "return_object_to_user" in tool_names
 
 
-def test_agentbot_shared_state_reset():
-    """Test that shared state is reset on each call."""
+def test_agentbot_memory_preserved():
+    """Test that memory is preserved across calls."""
     bot = AgentBot(tools=[echo_function])
 
     with patch.object(bot, "flow") as mock_flow:
@@ -318,7 +407,7 @@ def test_agentbot_shared_state_reset():
         mock_flow.run.side_effect = mock_run1
         bot("query1")
 
-        # Check that shared state was reset
+        # Check that memory contains the first query
         call_args1 = mock_flow.run.call_args[0][0]
         assert call_args1["memory"] == ["query1"]
         assert call_args1["globals_dict"] == {}
@@ -329,7 +418,34 @@ def test_agentbot_shared_state_reset():
         mock_flow.run.side_effect = mock_run2
         bot("query2", globals_dict={"var": "value"})
 
-        # Check that shared state was reset again
+        # Check that memory is preserved and contains both queries
         call_args2 = mock_flow.run.call_args[0][0]
-        assert call_args2["memory"] == ["query2"]
+        assert call_args2["memory"] == ["query1", "query2"]
         assert call_args2["globals_dict"] == {"var": "value"}
+
+
+def test_agentbot_globals_dict_preserved():
+    """Test that globals_dict is preserved if not provided."""
+    bot = AgentBot(tools=[echo_function])
+
+    with patch.object(bot, "flow") as mock_flow:
+
+        def mock_run1(shared):
+            shared["result"] = "result1"
+
+        mock_flow.run.side_effect = mock_run1
+        bot("query1", globals_dict={"var1": "value1"})
+
+        # Check initial globals_dict
+        call_args1 = mock_flow.run.call_args[0][0]
+        assert call_args1["globals_dict"] == {"var1": "value1"}
+
+        def mock_run2(shared):
+            shared["result"] = "result2"
+
+        mock_flow.run.side_effect = mock_run2
+        bot("query2")  # No globals_dict provided
+
+        # Check that globals_dict is preserved
+        call_args2 = mock_flow.run.call_args[0][0]
+        assert call_args2["globals_dict"] == {"var1": "value1"}

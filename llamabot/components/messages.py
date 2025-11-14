@@ -209,8 +209,23 @@ def to_basemessage(
                 process_message(m)
         elif isinstance(msg, str):
             processed_messages.append(HumanMessage(content=msg))
+        elif isinstance(msg, BaseMessage):
+            # Ensure content is stringified before creating BaseMessage
+            content = msg.content
+            if not isinstance(content, str):
+                content = str(content)
+            # Create a new message with stringified content
+            processed_messages.append(
+                msg.__class__(
+                    content=content,
+                    role=msg.role,
+                    prompt_hash=msg.prompt_hash,
+                    tool_calls=msg.tool_calls,
+                )
+            )
         else:
-            processed_messages.append(msg)
+            # For any other type, convert to string and create HumanMessage
+            processed_messages.append(HumanMessage(content=str(msg)))
 
     for msg in messages:
         process_message(msg)
