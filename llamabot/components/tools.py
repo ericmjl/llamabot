@@ -534,6 +534,7 @@ def today_date() -> str:
 DEFAULT_TOOLS = [today_date, respond_to_user, return_object_to_user]
 
 
+@nodeify(loopback_name=DECIDE_NODE_ACTION)
 @tool
 def write_and_execute_script(
     code: str,
