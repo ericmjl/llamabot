@@ -176,7 +176,7 @@ class prompt:
                     # Provide sensible defaults for common patterns
                     if "categorized_vars" in var.lower() or "vars" in var.lower():
                         kwargs[var] = {"dataframes": [], "callables": [], "other": []}
-                    elif isinstance(kwargs.get(var), type(None)):
+                    else:
                         # For other None values that might be iterated, provide empty dict
                         kwargs[var] = {}
 
