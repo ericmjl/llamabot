@@ -274,6 +274,31 @@ The graph shows:
 - Edges showing how tools connect back to the decision node
 - Terminal nodes (like `respond_to_user`) that don't loop back
 
+### Visualization Features
+
+The flow visualization includes several automatic features:
+
+**Automatic Graph Direction**: The visualization automatically determines
+whether to use a top-down (`graph TD`) or left-right (`graph LR`) layout
+based on the graph structure. If the graph is wider than it is deep, it
+uses a left-right layout; otherwise, it uses a top-down layout.
+
+**Terminal Node Coloring**: Terminal nodes (nodes with no successors) are
+automatically colored green to distinguish them from regular nodes, which
+are colored blue. This makes it easy to identify where the flow ends.
+
+You can also manually generate the Mermaid diagram string:
+
+```python
+from llamabot.components.pocketflow import flow_to_mermaid
+
+agent = lmb.AgentBot(tools=[get_stock_price, calculate_percentage_change])
+
+# Get the Mermaid diagram string
+mermaid_diagram = flow_to_mermaid(agent.flow)
+print(mermaid_diagram)
+```
+
 ## Part 4: Custom Decision Nodes
 
 By default, AgentBot uses `DecideNode` which uses ToolBot to decide

@@ -123,6 +123,10 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
   linting errors during development)
 - **File Editing**: When possible, only edit the requested file; avoid
   unnecessary changes to other files
+- **No "Private" Functions**: Do not create functions prefixed with underscores
+  (e.g., `_helper_function`). Python doesn't need this convention - if a function
+  is only used internally, it can simply be a regular function without the
+  underscore prefix.
 
 ### Bot Development
 
