@@ -98,7 +98,7 @@ def test_prompt_with_missing_kwargs():
 
     @prompt(role="system")
     def test_func(a=1, b=2):
-        """This function takes two arguments: {{a}} and {{b}}. # noqa: DAR101"""
+        """This function takes two arguments: {{a}}, {{b}}, and {{c}}. # noqa: DAR101"""
 
     with pytest.raises(ValueError):
         test_func(a=3)
