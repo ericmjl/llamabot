@@ -62,6 +62,8 @@ def categorize_globals(globals_dict: Dict) -> Dict[str, List[Tuple[str, str]]]:
             ):
                 is_dataframe = True
         except Exception:
+            # Intentionally ignore exceptions to avoid issues with objects
+            # that override attribute access (e.g., custom DataFrames).
             pass
 
         if is_dataframe:
