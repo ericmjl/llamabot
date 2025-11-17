@@ -176,7 +176,11 @@ def make_response(
     from litellm import completion
 
     messages_dumped: list[dict] = [
-        {k: v for k, v in m.model_dump().items() if k in ("role", "content")}
+        {
+            k: v
+            for k, v in m.model_dump(model_name=bot.model_name).items()
+            if k in ("role", "content")
+        }
         for m in messages
     ]
     completion_kwargs = dict(

@@ -44,6 +44,18 @@ class BaseMessage(BaseModel):
         if isinstance(other, str):
             return self.__class__(content=self.content + other, role=self.role)
 
+    def model_dump(self, model_name: str = None, **kwargs):
+        """Override Pydantic's model_dump to accept model_name parameter.
+
+        This allows ImageMessage to use model_name for provider-specific formatting,
+        while other message types ignore it and use the default Pydantic behavior.
+
+        :param model_name: Optional model name (used by ImageMessage for format detection).
+        :param **kwargs: Additional arguments passed to Pydantic's model_dump().
+        """
+        # For non-ImageMessage types, ignore model_name and call parent's model_dump
+        return super().model_dump(**kwargs)
+
 
 class SystemMessage(BaseMessage):
     """A message from the system.
@@ -114,18 +126,39 @@ class ImageMessage(BaseMessage):
     content: str
     role: str = "user"
 
-    def __init__(self, content: Union[str, Path], role: str = "user"):
+    def __init__(
+        self,
+        content: Union[str, Path],
+        role: str = "user",
+        prompt_hash: str | None = None,
+        tool_calls: list = None,
+    ):
         if isinstance(content, Path):
             path = content
-        elif content.startswith(("http://", "https://")):
+        elif isinstance(content, str) and content.startswith(("http://", "https://")):
             # Download image from URL to temporary bytes
 
             response = httpx.get(content)
             image_bytes = response.content
             mime_type = response.headers["content-type"]
             encoded = base64.b64encode(image_bytes).decode("utf-8")
-            super().__init__(content=encoded, role=role)
+            super().__init__(
+                content=encoded,
+                role=role,
+                prompt_hash=prompt_hash,
+                tool_calls=tool_calls or [],
+            )
             self._mime_type = mime_type
+            return
+        elif isinstance(content, str) and len(content) > 1000:
+            # Assume it's already base64 encoded content
+            super().__init__(
+                content=content,
+                role=role,
+                prompt_hash=prompt_hash,
+                tool_calls=tool_calls or [],
+            )
+            self._mime_type = "image/png"  # Default mime type for encoded content
             return
         else:
             path = Path(content)
@@ -141,11 +174,30 @@ class ImageMessage(BaseMessage):
         with open(path, "rb") as image_file:
             encoded = base64.b64encode(image_file.read()).decode("utf-8")
 
-        super().__init__(content=encoded, role=role)
+        super().__init__(
+            content=encoded,
+            role=role,
+            prompt_hash=prompt_hash,
+            tool_calls=tool_calls or [],
+        )
         self._mime_type = mime_type
 
-    def model_dump(self):
-        """Convert message to format expected by LiteLLM and OpenAI."""
+    def model_dump(self, model_name: str = None):
+        """Convert message to format expected by LiteLLM and OpenAI.
+
+        :param model_name: Optional model name to determine output format.
+            If model_name contains 'ollama', returns raw base64 for Ollama.
+            Otherwise returns OpenAI format.
+        """
+        # For Ollama, return raw base64 string directly
+        # Ollama expects: {"role": "user", "content": "<raw_base64_string>"}
+        if model_name and "ollama" in model_name.lower():
+            return {
+                "role": self.role,
+                "content": self.content,  # Raw base64, no data URL prefix
+            }
+
+        # For OpenAI and other providers, use the standard format
         return {
             "role": self.role,
             "content": [

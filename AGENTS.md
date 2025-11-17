@@ -57,7 +57,19 @@ it using `pixi global install markdownlint`.
 **Notebooks**: All notebooks in this repository are Marimo notebooks. When
 agents create or edit notebooks, they must run `uvx marimo check
 <path/to/notebook.py>` to validate the notebook and fix any issues raised by
-the check command.
+the check command. Always run `uvx marimo check` on notebooks before considering
+them complete - this catches critical errors like duplicate variable definitions
+and other Marimo-specific issues. **CRITICAL**: Fix ALL issues found by marimo check,
+including warnings. Do not leave any warnings unfixed.
+
+**Launching Marimo Notebooks**: When launching marimo notebooks for editing,
+always use the `--watch` flag: `uvx marimo edit --watch /path/to/notebook.py`.
+The `--watch` flag ensures that edits to the notebook file are automatically
+reflected in the marimo editor interface.
+
+**Marimo Mermaid Diagrams**: Mermaid diagrams in marimo notebooks must be in their
+own cell using `mo.mermaid(...)` function, not embedded in markdown code blocks.
+Create a separate cell for each mermaid diagram.
 
 **No Jupyter Notebooks**: This project does not use `.ipynb` files anymore.
 All examples and notebooks should be created as Marimo notebooks (`.py` files).

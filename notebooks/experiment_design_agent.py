@@ -6,6 +6,7 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #     "llamabot[all]>=0.17.1",
+#     "matplotlib==3.10.7",
 #     "polars==1.35.2",
 # ]
 #
@@ -227,26 +228,30 @@ def _(bot):
 
 
 @app.cell
-def _(bot):
+def _(bot, mo):
+    mo.stop(True)
     bot("show me the file I just uploaded, ic50", globals())
     return
 
 
 @app.cell
-def _(bot):
+def _(bot, mo):
+    mo.stop(True)
     response = bot("groupby compound ID", globals())
     response
     return
 
 
 @app.cell
-def _(bot):
+def _(bot, mo):
+    mo.stop(True)
     bot("after grouping by compound ID, rank order by mean IC50.")
     return
 
 
 @app.cell
-def _(bot):
+def _(bot, mo):
+    mo.stop(True)
     bot(
         "with this ic50 dataset, what are we missing from an experiment design perspective?"
     )
