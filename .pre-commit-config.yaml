@@ -9,6 +9,7 @@ repos:
     rev: 25.1.0
     hooks:
       - id: black
+        exclude: ^tutorials/.*\.py$
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.1
     hooks:
@@ -18,13 +19,14 @@ repos:
     hooks:
       - id: interrogate
         args: [-c, pyproject.toml]
-        exclude: ^talks/|^talks/.+|talks/.*$|^notebooks/.*\.py$|^docs/examples/.*\.py$
+        exclude: ^talks/|^talks/.+|talks/.*$|^notebooks/.*\.py$|^docs/examples/.*\.py$|^tutorials/.*\.py$
   - repo: https://github.com/jsh9/pydoclint
     rev: 0.6.6
     hooks:
       - id: pydoclint
         args:
           - "--config=pyproject.toml"
+        exclude: ^tutorials/.*\.py$
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.11.10
@@ -32,7 +34,7 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         types_or: [python]
-        exclude: ^notebooks/.*\.py$
+        exclude: ^notebooks/.*\.py$|^tutorials/.*\.py$
   - repo: https://github.com/ericmjl/webp-pre-commit
     rev: v0.0.9
     hooks:
