@@ -88,8 +88,8 @@ def test_toolbot_initialization():
     assert bot.system_prompt.content == system_prompt
     assert bot.model_name == "gpt-4.1"
     assert (
-        len(bot.tools) == 4
-    )  # today_date, respond_to_user, return_object_to_user, write_and_execute_code_wrapper
+        len(bot.tools) == 5
+    )  # today_date, respond_to_user, return_object_to_user, inspect_globals, write_and_execute_code_wrapper
     assert "write_and_execute_code_wrapper" in bot.name_to_tool_map
     assert bot.chat_memory is not None
 
