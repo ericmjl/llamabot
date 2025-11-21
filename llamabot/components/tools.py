@@ -530,8 +530,61 @@ def today_date() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 
+@nodeify(loopback_name=DECIDE_NODE_ACTION)
+@tool
+def inspect_globals(_globals_dict: dict = None) -> str:
+    """Inspect and return a summary of available objects in the globals dictionary.
+
+    Use this tool to understand what variables, dataframes, functions, and other objects
+    are currently available in the calling context's globals.
+
+    **When to use `inspect_globals`:**
+    - When starting a new conversation or receiving a new request, especially if you're unsure what resources are available
+    - When the user's request is vague or you need to understand the context before proceeding
+    - When you need to check what variables, dataframes, or functions are available before selecting other tools
+    - Examples: "What files do I have?", "What data is available?", or when the user makes a request that might require checking available resources first
+    - Use this tool proactively at the start of conversations to understand the available context
+
+    The tool categorizes objects into:
+    - DataFrames (pandas or polars)
+    - Callables (functions, methods, classes)
+    - Other variables (lists, dicts, strings, numbers, etc.)
+
+    :param _globals_dict: Internal parameter - automatically injected by AgentBot
+    :return: A formatted string describing all available objects in globals, categorized by type
+    """
+    if _globals_dict is None:
+        _globals_dict = {}
+
+    from llamabot.utils import categorize_globals
+
+    categorized = categorize_globals(_globals_dict)
+
+    parts = ["Available objects in globals():\n"]
+
+    if categorized["dataframes"]:
+        parts.append("\n**DataFrames:**")
+        for name, class_name in categorized["dataframes"]:
+            parts.append(f"  - {name}: {class_name}")
+
+    if categorized["callables"]:
+        parts.append("\n**Callables (functions, methods, classes):**")
+        for name, class_name in categorized["callables"]:
+            parts.append(f"  - {name}: {class_name}")
+
+    if categorized["other"]:
+        parts.append("\n**Other variables:**")
+        for name, class_name in categorized["other"]:
+            parts.append(f"  - {name}: {class_name}")
+
+    if not any(categorized.values()):
+        parts.append("\nNo objects found in globals().")
+
+    return "\n".join(parts)
+
+
 # Default tools that are always available in AgentBot and ToolBot
-DEFAULT_TOOLS = [today_date, respond_to_user, return_object_to_user]
+DEFAULT_TOOLS = [today_date, respond_to_user, return_object_to_user, inspect_globals]
 
 
 @nodeify(loopback_name=DECIDE_NODE_ACTION)

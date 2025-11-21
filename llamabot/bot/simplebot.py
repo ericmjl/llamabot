@@ -1,6 +1,7 @@
 """Class definition for SimpleBot."""
 
 import contextvars
+import json
 from types import NoneType
 from typing import Generator, List, Optional, Union
 from datetime import datetime
@@ -22,6 +23,7 @@ from pydantic import BaseModel
 from litellm import (
     ChatCompletionMessageToolCall,
     CustomStreamWrapper,
+    Function,
     ModelResponse,
     stream_chunk_builder,
 )
@@ -269,18 +271,93 @@ def stream_chunks(
     return stream_chunk_builder(chunks)
 
 
+def serialize_tool_arguments(args: Union[dict, str, None]) -> str:
+    """Safely serialize tool arguments to JSON string.
+
+    Handles cases where arguments might already be a JSON string,
+    a dict, or None.
+
+    :param args: Arguments that may be a dict, JSON string, or None
+    :return: JSON string representation of arguments
+    """
+    if args is None:
+        return "{}"
+    if isinstance(args, str):
+        # If it's already a string, validate it's valid JSON
+        try:
+            json.loads(args)  # Validate it's valid JSON
+            return args  # Return as-is if valid
+        except json.JSONDecodeError:
+            # If not valid JSON, treat as a string argument value
+            return json.dumps(args)
+    # If it's a dict or other object, serialize it
+    return json.dumps(args)
+
+
 def extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToolCall]:
     """Extract the tool calls from the response.
+
+    Handles both structured tool_calls (OpenAI-style) and JSON in content field
+    (Ollama-style models that return tool calls as JSON strings).
 
     :param response: The response from a `completion` call.
     :return: A list of tool calls.
     """
-    tool_calls: List[ChatCompletionMessageToolCall] | NoneType = response.choices[
-        0
-    ].message.tool_calls
-    if tool_calls is None:
-        return []
-    return tool_calls
+    message = response.choices[0].message
+    tool_calls: List[ChatCompletionMessageToolCall] | NoneType = message.tool_calls
+
+    # If structured tool_calls exist, return them
+    if tool_calls is not None:
+        return tool_calls
+
+    # Fallback: Check if content contains JSON tool call
+    # Some models (e.g., Ollama) return tool calls as JSON in content field
+    if message.content:
+        try:
+            # Try to parse JSON from content
+            content_json = json.loads(message.content.strip())
+
+            # Check if it's a single tool call object
+            if isinstance(content_json, dict) and "name" in content_json:
+                # Single tool call: {"name": "tool_name", "arguments": {...}}
+                tool_name = content_json.get("name", "unknown")
+                function = Function(
+                    name=tool_name,
+                    arguments=serialize_tool_arguments(content_json.get("arguments")),
+                )
+                tool_call = ChatCompletionMessageToolCall(
+                    function=function, id=f"call_{tool_name}", type="function"
+                )
+                return [tool_call]
+
+            # Check if it's a list of tool calls
+            elif isinstance(content_json, list) and len(content_json) > 0:
+                parsed_tool_calls = []
+                for idx, tc in enumerate(content_json):
+                    if isinstance(tc, dict) and "name" in tc:
+                        tool_name = tc.get("name", "unknown")
+                        function = Function(
+                            name=tool_name,
+                            arguments=serialize_tool_arguments(tc.get("arguments")),
+                        )
+                        tool_call = ChatCompletionMessageToolCall(
+                            function=function,
+                            id=f"call_{tool_name}_{idx}",
+                            type="function",
+                        )
+                        parsed_tool_calls.append(tool_call)
+                if parsed_tool_calls:
+                    return parsed_tool_calls
+
+        except json.JSONDecodeError:
+            # Content is not valid JSON - silently return empty list
+            pass
+        except (KeyError, TypeError):
+            # Unexpected structure in JSON - log and return empty list
+            # This handles cases where JSON structure doesn't match expected format
+            pass
+
+    return []
 
 
 def extract_content(response: ModelResponse) -> str:

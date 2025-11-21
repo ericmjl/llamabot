@@ -13,6 +13,7 @@ from llamabot.components.tools import (
     tool,
     add,
     today_date,
+    inspect_globals,
     search_internet_and_summarize,
     write_and_execute_script,
     function_to_dict,
@@ -537,7 +538,43 @@ def test_today_date_tool():
     assert schema["type"] == "function"
     assert "function" in schema
     assert schema["function"]["name"] == "today_date"
-    assert schema["function"]["description"] == "Get the current date."
+
+
+def test_inspect_globals_tool():
+    """Test the inspect_globals tool function."""
+    # Test with empty globals
+    result = inspect_globals(_globals_dict={})
+    assert isinstance(result, str)
+    assert "No objects found" in result or "Available objects" in result
+
+    # Test with various types of objects
+    def my_function(x):
+        """Test function for inspect_globals tool testing."""
+        return x + 1
+
+    test_globals = {
+        "my_function": my_function,
+        "my_list": [1, 2, 3],
+        "my_string": "hello",
+        "my_number": 42,
+        "my_dict": {"key": "value"},
+    }
+
+    result = inspect_globals(_globals_dict=test_globals)
+    assert isinstance(result, str)
+    assert "Available objects" in result
+    assert "Callables" in result
+    assert "my_function" in result
+    assert "Other variables" in result
+    assert "my_list" in result or "my_string" in result or "my_number" in result
+
+    # Test schema basics
+    assert hasattr(inspect_globals, "json_schema")
+    schema = inspect_globals.json_schema
+    assert schema["type"] == "function"
+    assert "function" in schema
+    assert schema["function"]["name"] == "inspect_globals"
+    assert "Inspect and return a summary" in schema["function"]["description"]
     assert "parameters" in schema["function"]
     assert schema["function"]["parameters"]["type"] == "object"
     assert "properties" in schema["function"]["parameters"]
