@@ -203,6 +203,7 @@ def _(mo):
 @app.cell
 def _():
     from pydantic import BaseModel
+
     return (BaseModel,)
 
 
@@ -216,12 +217,14 @@ def _(BaseModel):
         amount: float
         category: str
         description: str
+
     return (ReceiptData,)
 
 
 @app.cell
 def _():
     import llamabot as lmb
+
     return (lmb,)
 
 
@@ -240,18 +243,21 @@ def _(lmb):
         If any field is unclear or missing, use your best judgment based on the context.
         For dates, convert any format to YYYY-MM-DD. For amounts, extract only the numerical value.
         """
+
     return (receipt_extraction_sysprompt,)
 
 
 @app.cell
 def _():
     from pdf2image import convert_from_path
+
     return (convert_from_path,)
 
 
 @app.cell
 def _():
     import tempfile
+
     return (tempfile,)
 
 
@@ -275,12 +281,14 @@ def _(Path, convert_from_path, tempfile):
             return [file_path]
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
+
     return (convert_pdf_to_images,)
 
 
 @app.cell
 def _():
     from llamabot.components.messages import ImageMessage, user
+
     return (user,)
 
 
@@ -346,7 +354,9 @@ def _(convert_pdf_to_images, ocr_bot, receipt_structuring_bot, user):
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
         else:
-            prompt_text = f"Extract all text from this {len(image_paths)}-page receipt document."
+            prompt_text = (
+                f"Extract all text from this {len(image_paths)}-page receipt document."
+            )
 
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results
@@ -361,6 +371,7 @@ def _(convert_pdf_to_images, ocr_bot, receipt_structuring_bot, user):
         # Step 2: Structure the extracted text according to ReceiptData schema
         result = receipt_structuring_bot(combined_ocr_text)
         return result
+
     return (extract_receipt_data,)
 
 
@@ -368,36 +379,8 @@ def _(convert_pdf_to_images, ocr_bot, receipt_structuring_bot, user):
 def _():
     from llamabot.components.tools import tool
     from llamabot.components.pocketflow import nodeify
+
     return nodeify, tool
-
-
-@app.cell
-def _(nodeify, tool):
-    @nodeify(loopback_name="decide")
-    @tool
-    def list_available_files(_globals_dict: dict = None) -> str:
-        """List all available file paths in the globals dictionary.
-
-        Use this to check what files have been uploaded before processing receipts.
-
-        :param _globals_dict: Internal parameter - automatically injected by AgentBot
-        :return: A formatted string listing all available file paths
-        """
-        if _globals_dict is None:
-            return "No files available. Please upload a file first."
-
-        from pathlib import Path
-
-        available_files = []
-        for key, value in _globals_dict.items():
-            if isinstance(value, str) and Path(value).exists():
-                available_files.append(f"- {key}: {value}")
-
-        if not available_files:
-            return "No files available. Please upload a file first."
-
-        return "Available files:\n" + "\n".join(available_files)
-    return (list_available_files,)
 
 
 @app.cell
@@ -451,6 +434,7 @@ def _(Path, extract_receipt_data, nodeify, tool):
 
         receipt_data = extract_receipt_data(file_path)
         return receipt_data.model_dump_json()
+
     return (process_receipt,)
 
 
@@ -509,6 +493,7 @@ def _(BaseModel):
         project_description: str
         amount: float
         notes: str = ""
+
     return (InvoiceData,)
 
 
@@ -520,6 +505,7 @@ def _(lmb):
         Fill out invoice forms with structured data provided.
         Ensure all fields are professional and business-appropriate.
         """
+
     return (invoice_generation_sysprompt,)
 
 
@@ -552,6 +538,7 @@ def _(InvoiceData, invoice_writer_bot):
 
         invoice = invoice_writer_bot(prompt)
         return invoice
+
     return (generate_invoice,)
 
 
@@ -596,6 +583,7 @@ def _(InvoiceData):
         </html>
         """
         return html
+
     return (render_invoice_html,)
 
 
@@ -629,7 +617,12 @@ def _(generate_invoice, nodeify, render_invoice_html, tool):
         if _globals_dict is not None:
             _globals_dict["invoice_html"] = html
 
-        return "Invoice generated successfully. Use return_object_to_user('invoice_html') to return it to the user."
+        return (
+            "Invoice generated successfully. "
+            "**YOU MUST NOW**: Call return_object_to_user('invoice_html') immediately to return it to the user, "
+            "then call respond_to_user() to confirm completion."
+        )
+
     return (write_invoice,)
 
 
@@ -684,6 +677,11 @@ def _(lmb):
         **CRITICAL**: You MUST always select a tool. Never return empty tool calls.
         Every user query requires a tool to be executed.
 
+        **CRITICAL**: After ANY tool executes, you MUST immediately call another tool (or respond_to_user if truly done).
+        Tool results are instructions to continue, NOT completion signals.
+        If a tool result says "Use X()" or "Call X()", you MUST call X() immediately - do not stop.
+        If a tool stores data in globals, you MUST call another tool to return it - do not stop.
+
         **CRITICAL**: Most user requests require MULTIPLE tool calls to complete.
         Do NOT stop after a single tool call - continue calling tools until the request is fully satisfied.
         Only use `respond_to_user()` after you have completed ALL necessary tool calls.
@@ -709,7 +707,7 @@ def _(lmb):
         - After a single tool fully satisfies a simple request (rare)
 
         **Examples of multi-step workflows:**
-        - "Process this receipt" → list_available_files() → process_receipt() → respond_to_user()
+        - "Process this receipt" → inspect_globals() → process_receipt() → respond_to_user()
         - "Create an invoice" → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
         - "What's in the database?" → query_complaints() → respond_to_user() (with formatted results)
 
@@ -720,10 +718,10 @@ def _(lmb):
 
         1. **Receipt Processing** (MULTI-STEP REQUIRED):
            - When user asks to "process this receipt" or similar:
-             STEP 1: Call list_available_files() to check what files are available
+             STEP 1: Call inspect_globals() to check what files are available
              STEP 2: IMMEDIATELY call process_receipt() to process the file (use most recent if multiple exist)
              STEP 3: After processing completes, use respond_to_user() to summarize the extracted data
-           - Do NOT stop after list_available_files() - you MUST continue to process_receipt()
+           - Do NOT stop after inspect_globals() - you MUST continue to process_receipt()
            - If no files are found, use respond_to_user() to ask the user to upload a file first
            - You can call process_receipt() without a file_path argument - it will use the most recent file automatically
 
@@ -741,10 +739,58 @@ def _(lmb):
              STEP 2: IMMEDIATELY call return_object_to_user('invoice_html') to return the HTML to the user
            - Do NOT stop after write_invoice() - you MUST also return the invoice HTML
 
-        3. **Internal Concerns**:
-           - Anonymize first using anonymize_complaint
-           - Show the anonymized version for review
-           - Only store after user confirms using confirm_store_complaint
+        3. **Internal Concerns** (CONVERSATIONAL MULTI-STEP WORKFLOW):
+           - **Act as a listening partner**: Your goal is to help the user express their concern fully
+             so that when anonymized, it will be useful and actionable for someone reading it.
+
+           - **When user first shares a concern**:
+             STEP 1: Assess if the concern has enough actionable information:
+               * Does it identify WHAT the issue is? (e.g., "deployment process", "communication breakdown")
+               * Does it identify WHY it's a problem? (e.g., "team lead hasn't responded", "causing delays")
+               * Does it identify IMPACT? (e.g., "blocking my work", "affecting team morale")
+
+             STEP 2A: If information is INSUFFICIENT (vague, too brief, missing context):
+               * Use respond_to_user() to ask empathetic, open-ended questions to draw out more details
+               * Examples of good questions:
+                 - "I hear you're concerned about [topic]. Can you help me understand what specifically is happening?"
+                 - "What impact is this having on your work or the team?"
+                 - "Is there a particular situation or example that illustrates this concern?"
+                 - "What would help resolve this, or what would you like to see happen?"
+               * Wait for user's response, then reassess
+
+             STEP 2B: If information is SUFFICIENT (clear issue, context, and impact):
+               * Construct the full conversation history as a formatted string by combining:
+                 - The user's initial concern (from the conversation memory)
+                 - Your clarifying questions (what you asked via respond_to_user calls)
+                 - The user's responses to your questions (from subsequent conversation turns)
+                 - Any additional context they shared
+               * Format it naturally as a dialogue, e.g.:
+                 "User: I'm worried about our deployment process.
+                 Agent: Can you help me understand what specifically is happening?
+                 User: The team lead hasn't responded to my questions about the new workflow.
+                 Agent: What impact is this having on your work?
+                 User: It's blocking my progress and causing delays."
+               * IMPORTANT: Include the full conversation, not just the initial concern.
+                 The anonymization will be more useful if it includes the context from your questions.
+               * Call anonymize_complaint() with this formatted conversation history string
+               * IMMEDIATELY call respond_to_user() to show the anonymized version for review
+
+             - **After showing structured version**:
+               * Use respond_to_user() to ask: "Does this structured version capture your concern accurately?
+                 It includes the issue, details, impact, and recommended actions. If yes, I can store it.
+                 If you'd like to add anything or clarify any section, please let me know."
+               * Wait for user confirmation
+
+           - **After user confirms storage** (e.g., "yes", "store it", "that looks good"):
+             STEP 1: Call confirm_store_complaint() to store the anonymized complaint
+             STEP 2: IMMEDIATELY call respond_to_user() to confirm storage and thank them
+
+           - **Key principles for handling concerns**:
+             * Be empathetic and supportive - you're helping them express something important
+             * Ask ONE question at a time - don't overwhelm with multiple questions
+             * Focus on drawing out WHAT, WHY, and IMPACT - these make concerns actionable
+             * Don't rush to anonymize - take time to understand the full picture
+             * Once anonymized, always show it for review before storing
 
         4. **Querying Complaints** (MULTI-STEP REQUIRED):
            - When user asks to "show stored complaints" or "what's in the database":
@@ -762,25 +808,21 @@ def _(lmb):
 
         Remember: It's better to ask for clarification than to assume and generate incorrect information.
         """
+
     return (coordinator_sysprompt,)
 
 
 @app.cell
 def _():
     from llamabot import AgentBot
+
     return (AgentBot,)
 
 
 @app.cell
-def _(
-    AgentBot,
-    coordinator_sysprompt,
-    list_available_files,
-    process_receipt,
-    write_invoice,
-):
+def _(AgentBot, coordinator_sysprompt, process_receipt, write_invoice):
     coordinator_bot = AgentBot(
-        tools=[list_available_files, process_receipt, write_invoice],
+        tools=[process_receipt, write_invoice],
         system_prompt=coordinator_sysprompt(),
         model_name="ollama_chat/gemma3n:latest",
         # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
@@ -823,9 +865,7 @@ def _(Path, files, tempfile):
                 temp_file_path = temp_file.name
 
             # Make file available in globals
-            variable_name = (
-                Path(file.name).stem.replace(" ", "_").replace("-", "_")
-            )
+            variable_name = Path(file.name).stem.replace(" ", "_").replace("-", "_")
             globals()[variable_name] = temp_file_path
             print(f"File available as: {variable_name}")
     return
@@ -837,6 +877,7 @@ def _(coordinator_bot):
         user_message = messages[-1].content
         result = coordinator_bot(user_message, globals())
         return result
+
     return (chat_turn,)
 
 
@@ -927,6 +968,7 @@ def _(mo):
 @app.cell
 def _():
     from llamabot.components.docstore import LanceDBDocStore
+
     return (LanceDBDocStore,)
 
 
@@ -934,11 +976,48 @@ def _():
 def _(lmb):
     @lmb.prompt("system")
     def anonymization_sysprompt():
-        """You are an expert at anonymizing internal company concerns.
-        Remove all personally identifiable information (names, emails, phone numbers, specific departments).
-        Replace with generic placeholders like [EMPLOYEE], [DEPARTMENT], etc.
-        Preserve the core concern content and sentiment.
+        """You are an expert at anonymizing and structuring internal company concerns.
+
+        Your task is to transform a conversation about a concern into a clear, structured format
+        that emphasizes the issue and actionable items. Do NOT preserve the verbatim conversation format.
+
+        **Anonymization Requirements:**
+        - Remove all personally identifiable information (names, emails, phone numbers, specific departments)
+        - Replace with generic placeholders like [EMPLOYEE], [DEPARTMENT], [TEAM], etc.
+        - Preserve the core concern content and sentiment
+
+        **Output Format:**
+        Structure the anonymized concern using this format:
+
+        **Issue:** [Brief, clear statement of the core problem or concern]
+
+        **Details:** [Specific context about what's happening, root causes, or contributing factors.
+        Synthesize information from the conversation into a coherent narrative, not verbatim quotes.]
+
+        **Impact:** [How this issue is affecting work, team, productivity, deadlines, or morale.
+        Be specific about consequences.]
+
+        **Recommended Actions:** [Actionable steps that could address this concern. Focus on what
+        management, processes, or systems could do to help. Be concrete and practical.]
+
+        **Example:**
+        **Issue:** Deployment process delays due to slow runner spin-up times
+
+        **Details:** The deployment infrastructure experiences significant latency during runner initialization,
+        causing confusion and delays. The issue appears to be infrastructure-related rather than user-triggered,
+        with runners taking an unusually long time to spin up.
+
+        **Impact:** These delays are blocking progress, causing missed deadlines, and reducing overall team productivity.
+        The uncertainty around runner spin-up times creates confusion and makes it difficult to plan deployments effectively.
+
+        **Recommended Actions:**
+        - Investigate infrastructure performance and identify bottlenecks in runner spin-up process
+        - Review and optimize CI/CD pipeline configuration for runner initialization
+        - Provide clearer visibility into runner status and expected spin-up times
+        - Consider alternative deployment strategies or infrastructure improvements to reduce latency
+        - Establish service level expectations for runner spin-up times and monitor against them
         """
+
     return (anonymization_sysprompt,)
 
 
@@ -964,6 +1043,7 @@ def _(LanceDBDocStore):
 @app.cell
 def _():
     from datetime import datetime
+
     return (datetime,)
 
 
@@ -976,10 +1056,30 @@ def _(anonymization_bot, datetime, nodeify, tool):
     ) -> str:
         """Anonymize internal company concern from chat history.
 
+        This tool should be called AFTER you've had a conversation with the user to draw out
+        sufficient actionable information (what the issue is, why it's a problem, and what impact it has).
+
+        IMPORTANT: Pass the FULL conversation history as a formatted string, including:
+        - The user's initial concern
+        - Your clarifying questions (from respond_to_user calls)
+        - The user's responses to your questions
+        - Any additional context they've shared
+
+        Pass the full conversation history as a natural dialogue string. The anonymization bot will
+        transform it into a structured format with Issue, Details, Impact, and Recommended Actions sections.
+        Example conversation to pass:
+        "User: I'm worried about our deployment process.
+        Agent: Can you help me understand what specifically is happening?
+        User: The team lead hasn't responded to my questions about the new workflow.
+        Agent: What impact is this having on your work?
+        User: It's blocking my progress and causing delays."
+
+        This ensures the anonymized version will be useful and actionable for someone reading it.
+
         Shows the anonymized version for review before storing.
         Use confirm_store_complaint to actually store it.
 
-        :param chat_history: The chat conversation to anonymize
+        :param chat_history: The FULL chat conversation formatted as a string, including all questions and answers
         :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :param globals_dict: Optional explicit globals dict (for testing/direct calls)
         :return: The anonymized complaint text for review
@@ -987,9 +1087,9 @@ def _(anonymization_bot, datetime, nodeify, tool):
         # Use explicit globals_dict if provided, otherwise use _globals_dict
         gdict = globals_dict if globals_dict is not None else _globals_dict
 
-        # Anonymize
+        # Anonymize and structure the concern
         anonymized = anonymization_bot(
-            f"Anonymize this internal company concern conversation:\n\n{chat_history}"
+            f"Transform this internal company concern conversation into a structured format:\n\n{chat_history}"
         )
 
         # Store in globals for review and potential storage
@@ -997,7 +1097,12 @@ def _(anonymization_bot, datetime, nodeify, tool):
             gdict["anonymized_complaint"] = anonymized.content
             gdict["complaint_date"] = datetime.now().strftime("%Y-%m-%d")
 
-        return f"Anonymized complaint:\n\n{anonymized.content}\n\nUse confirm_store_complaint() to store this in the database."
+        return (
+            f"Here is the anonymized and structured version of your concern:\n\n{anonymized.content}\n\n"
+            f"**YOU MUST NOW**: Call respond_to_user() immediately to show this structured version to the user for review. "
+            f"After the user confirms, call confirm_store_complaint() to store it in the database."
+        )
+
     return (anonymize_complaint,)
 
 
@@ -1040,6 +1145,7 @@ def _(complaints_db, datetime, nodeify, tool):
         complaints_db.append(anonymized, partition=complaint_date)
 
         return f"Complaint stored successfully. Date partition: {complaint_date}"
+
     return (confirm_store_complaint,)
 
 
@@ -1059,6 +1165,7 @@ def _(lmb):
 
         Provide clear summaries and identify patterns.
         """
+
     return (summarization_sysprompt,)
 
 
@@ -1102,19 +1209,24 @@ def _(complaints_db, nodeify, tool):
         """
         # Query vector database
         partitions = [date_partition] if date_partition else None
-        results = complaints_db.retrieve(
-            query, n_results=10, partitions=partitions
-        )
+        results = complaints_db.retrieve(query, n_results=10, partitions=partitions)
 
         if not results:
-            return f"No concerns found matching query: {query}. Use respond_to_user() to inform the user."
+            return (
+                f"No concerns found matching query: {query}. "
+                f"**YOU MUST NOW**: Call respond_to_user() immediately to inform the user."
+            )
 
         # Store results in globals
         if _globals_dict is not None:
             _globals_dict["complaint_query_results"] = results
             _globals_dict["complaint_query"] = query
 
-        return f"Found {len(results)} concerns matching '{query}'. Results stored in 'complaint_query_results'. Use respond_to_user() to present the results to the user."
+        return (
+            f"Found {len(results)} concerns matching '{query}'. Results stored in 'complaint_query_results'. "
+            f"**YOU MUST NOW**: Call respond_to_user() immediately to present the results to the user."
+        )
+
     return (query_complaints,)
 
 
@@ -1162,7 +1274,6 @@ def _(
     anonymize_complaint,
     confirm_store_complaint,
     coordinator_sysprompt,
-    list_available_files,
     process_receipt,
     query_complaints,
     write_invoice,
@@ -1170,7 +1281,6 @@ def _(
     # Add complaint tools to coordinator
     coordinator_with_complaints = AgentBot(
         tools=[
-            list_available_files,
             process_receipt,
             write_invoice,
             anonymize_complaint,
@@ -1178,7 +1288,12 @@ def _(
             query_complaints,
         ],
         system_prompt=coordinator_sysprompt(),
-        model_name="ollama_chat/gemma3n:latest",
+        model_name="gpt-4.1",
+        # model_name="ollama_chat/qwen3:30b",  # works!
+        # model_name="ollama/deepseek-r1:14b", # failed on being unhelpful!
+        # model_name="ollama_chat/deepseek-r1:14b", # failed on being stuck in a loop!
+        # model_name="ollama_chat/qwen3-vl:latest", # doesn't work!
+        # model_name="ollama_chat/phi4:latest", # doesn't work!
         # api_base="https://<your-modal-endpoint>.modal.run",
     )
     return (coordinator_with_complaints,)
@@ -1196,6 +1311,7 @@ def _(coordinator_with_complaints):
         user_message = messages[-1].content
         result = coordinator_with_complaints(user_message, globals())
         return result
+
     return (chat_turn_with_complaints,)
 
 
@@ -1219,7 +1335,7 @@ def _(chat_turn_with_complaints, mo):
 
 @app.cell
 def _(chat_with_complaints, mo):
-    mo.vstack(
+    v = mo.vstack(
         [
             mo.md("# Back-Office Coordinator (with Complaints)"),
             mo.md(
@@ -1229,6 +1345,7 @@ def _(chat_with_complaints, mo):
             chat_with_complaints,
         ]
     )
+    v
     return
 
 

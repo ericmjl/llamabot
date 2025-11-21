@@ -305,7 +305,12 @@ class DecideNode(Node):
 
         # Handle case where no tool calls are returned
         if not tool_calls:
-            raise ValueError("No tool calls returned from ToolBot")
+            raise ValueError(
+                f"No tool calls returned from ToolBot. "
+                f"Model: {self.model_name}. "
+                f"This may indicate the model doesn't support tool_choice='required'. "
+                f"Check the system prompt and ensure it explicitly requires tool calls."
+            )
 
         # Get the first tool call (ToolBot typically returns one)
         tool_call = tool_calls[0]

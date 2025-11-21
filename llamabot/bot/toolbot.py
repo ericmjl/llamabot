@@ -174,7 +174,26 @@ class ToolBot(SimpleBot):
         response = make_response(self, message_list, stream=stream)
         response = stream_chunks(response, target=self.stream_target)
         logger.debug("Response: {}", response)
+
+        # Log detailed response structure for debugging tool call issues
+        if hasattr(response, "choices") and len(response.choices) > 0:
+            message = response.choices[0].message
+            tool_calls_attr = getattr(message, "tool_calls", None)
+            content_attr = getattr(message, "content", None)
+            logger.debug("Response message.tool_calls: {}", tool_calls_attr)
+            logger.debug("Response message.content: {}", content_attr)
+
         tool_calls = extract_tool_calls(response)
+
+        # Log if we parsed tool calls from JSON content (for debugging)
+        if tool_calls and hasattr(response, "choices") and len(response.choices) > 0:
+            message = response.choices[0].message
+            if message.tool_calls is None and message.content:
+                logger.debug(
+                    "Parsed tool calls from JSON content for model {}: {}",
+                    self.model_name,
+                    [tc.function.name for tc in tool_calls],
+                )
 
         if user_messages:
             self.chat_memory.append(user_messages[0])

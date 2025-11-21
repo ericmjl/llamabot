@@ -81,7 +81,7 @@ def test_agentbot_rejects_unwrapped_tools():
 
 
 def test_agentbot_includes_default_tools():
-    """Test that default tools (today_date, respond_to_user, return_object_to_user) are included."""
+    """Test that default tools (today_date, respond_to_user, return_object_to_user, inspect_globals) are included."""
     bot = AgentBot(tools=[])
 
     # Should have at least the default tools
@@ -89,6 +89,7 @@ def test_agentbot_includes_default_tools():
     assert "today_date" in tool_names
     assert "respond_to_user" in tool_names
     assert "return_object_to_user" in tool_names
+    assert "inspect_globals" in tool_names
 
 
 def test_respond_to_user_is_terminal():

@@ -102,10 +102,13 @@ def test_toolbot_without_tools():
         model_name="gpt-4.1",
     )
 
-    assert len(bot.tools) == 3  # today_date, respond_to_user, return_object_to_user
+    assert (
+        len(bot.tools) == 4
+    )  # today_date, respond_to_user, return_object_to_user, inspect_globals
     assert "today_date" in bot.name_to_tool_map
     assert "respond_to_user" in bot.name_to_tool_map
     assert "return_object_to_user" in bot.name_to_tool_map
+    assert "inspect_globals" in bot.name_to_tool_map
 
 
 def test_toolbot_with_custom_chat_memory():
