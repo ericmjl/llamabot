@@ -185,19 +185,13 @@ class ImageMessage(BaseMessage):
     def model_dump(self, model_name: str = None):
         """Convert message to format expected by LiteLLM and OpenAI.
 
-        :param model_name: Optional model name to determine output format.
-            If model_name contains 'ollama', returns raw base64 for Ollama.
-            Otherwise returns OpenAI format.
-        """
-        # For Ollama, return raw base64 string directly
-        # Ollama expects: {"role": "user", "content": "<raw_base64_string>"}
-        if model_name and "ollama" in model_name.lower():
-            return {
-                "role": self.role,
-                "content": self.content,  # Raw base64, no data URL prefix
-            }
+        Always uses the standard vision format with image_url.
+        LiteLLM handles provider-specific conversions automatically.
 
-        # For OpenAI and other providers, use the standard format
+        :param model_name: Optional model name (used by LiteLLM for provider detection).
+        """
+        # Always use the standard vision format
+        # LiteLLM will handle conversion to provider-specific formats (e.g., Ollama's images array)
         return {
             "role": self.role,
             "content": [

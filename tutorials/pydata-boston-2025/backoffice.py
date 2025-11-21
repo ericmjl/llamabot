@@ -2,9 +2,10 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #     "llamabot[all]",
-#     "marimo",
+#     "marimo>=0.17.0",
 #     "pydantic",
 #     "pdf2image",
+#     "pyzmq",
 # ]
 #
 # [tool.uv.sources]
@@ -13,7 +14,7 @@
 
 import marimo
 
-__generated_with = "0.17.8"
+__generated_with = "0.18.0"
 app = marimo.App(width="medium")
 
 
@@ -34,8 +35,7 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     # Building LLM Agents: Workflow-First Approach
 
     Learn to build practical LLM agents using LlamaBot and Marimo notebooks.
@@ -48,56 +48,49 @@ def _(mo):
 
     This demonstrates the fundamental pattern: map your boring workflows first,
     build focused agents for specific tasks, then compose them.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Setup Verification
 
     This tutorial uses a modal-hosted Ollama endpoint.
     Make sure you have access to the endpoint URL.
 
     For local development, you can use `gpt-4.1` or another vision-capable model.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Marimo Notebooks
 
     Marimo uses reactive execution:
+
     - Cells execute automatically when dependencies change
     - Variables cannot be redeclared across cells
     - The notebook forms a directed acyclic graph (DAG)
     - Last expression in a cell is automatically displayed
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ---
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Part 1: Workflow Mapping
 
     Back-office workflow:
@@ -108,18 +101,15 @@ def _(mo):
     - What type of document? (receipt, invoice, etc.)
     - What data to extract? (vendor, date, amount, etc.)
     - What format for output? (structured data, formatted invoice)
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Workflow Diagram
-    """
-    )
+    """)
     return
 
 
@@ -139,22 +129,19 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Agent Breakdown
 
     1. **Receipt Processor**: PDF → structured data (for expense tracking)
     2. **Invoice Writer**: natural language → formatted invoice (for billing clients)
     3. **Coordinator**: orchestrates both agents
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Prerequisites (Critical!)
 
     Before building agents, you must have:
@@ -164,37 +151,58 @@ def _(mo):
     3. **Template/form definition**: Invoice generation requires a template/form structure that AI fills out
 
     **Workflow-first means requirements-first.**
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ---
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Part 2: Receipt Processor Agent
 
     Extract structured data from receipt PDFs using vision models.
-    """
-    )
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Two-Step Process: OCR + Structuring
+
+    **Why two steps?** Vision models like DeepSeek-OCR are excellent at OCR (extracting text from images),
+    but they don't support structured outputs (JSON mode with Pydantic schemas).
+
+    **The solution:** Use a two-step process:
+
+    1. **OCR Step** (`SimpleBot` + `ollama/deepseek-ocr`):
+       - Extracts all text from receipt images
+       - Returns unstructured text
+       - Works with vision models that don't support structured outputs
+
+    2. **Structuring Step** (`StructuredBot` + `ollama_chat/gemma3n:latest`):
+       - Takes the extracted text
+       - Structures it according to the `ReceiptData` schema
+       - Returns validated Pydantic model
+       - Requires a model that supports structured outputs
+
+    This pattern lets you use specialized OCR models (like DeepSeek-OCR) while still getting
+    structured, validated output.
+    """)
     return
 
 
 @app.cell
 def _():
     from pydantic import BaseModel
-
     return (BaseModel,)
 
 
@@ -208,14 +216,12 @@ def _(BaseModel):
         amount: float
         category: str
         description: str
-
     return (ReceiptData,)
 
 
 @app.cell
 def _():
     import llamabot as lmb
-
     return (lmb,)
 
 
@@ -234,21 +240,18 @@ def _(lmb):
         If any field is unclear or missing, use your best judgment based on the context.
         For dates, convert any format to YYYY-MM-DD. For amounts, extract only the numerical value.
         """
-
     return (receipt_extraction_sysprompt,)
 
 
 @app.cell
 def _():
     from pdf2image import convert_from_path
-
     return (convert_from_path,)
 
 
 @app.cell
 def _():
     import tempfile
-
     return (tempfile,)
 
 
@@ -272,52 +275,92 @@ def _(Path, convert_from_path, tempfile):
             return [file_path]
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
-
     return (convert_pdf_to_images,)
 
 
 @app.cell
 def _():
     from llamabot.components.messages import ImageMessage, user
+    return (user,)
 
-    return ImageMessage, user
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### Implementation: Two Bots
+
+    We create two separate bots for the two-step process:
+    """)
+    return
+
+
+@app.cell
+def _(lmb):
+    # Step 1: OCR extraction with DeepSeek-OCR (SimpleBot)
+    # DeepSeek-OCR doesn't support structured outputs, so we use SimpleBot
+    ocr_bot = lmb.SimpleBot(
+        system_prompt="Extract all text from receipts accurately. "
+        "Preserve the structure and include all numbers, dates, and vendor names.",
+        model_name="ollama/deepseek-ocr",  # Fixed: ollama/deepseek-ocr
+        # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
+    )
+    return (ocr_bot,)
 
 
 @app.cell
 def _(ReceiptData, lmb, receipt_extraction_sysprompt):
-    receipt_processor_bot = lmb.StructuredBot(
+    # Step 2: Structure the data (using a model that supports structured outputs)
+    # This bot takes the OCR text and structures it according to ReceiptData schema
+    receipt_structuring_bot = lmb.StructuredBot(
         system_prompt=receipt_extraction_sysprompt(),
         pydantic_model=ReceiptData,
-        model_name="gpt-4.1",
-        # model_name="ollama_chat/gemma3n:latest" ## doesn't work!
-        # model_name="ollama_chat/phi4:latest",  ## doesn't work!
-        # model_name="ollama_chat/llama3.2-vision:11b",  ## doesn't work!
+        model_name="ollama_chat/gemma3n:latest",  # Or use "gpt-4.1" if available
         # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
     )
-    return (receipt_processor_bot,)
+    return (receipt_structuring_bot,)
 
 
 @app.cell
-def _(ImageMessage, convert_pdf_to_images, receipt_processor_bot, user):
+def _(mo):
+    mo.md("""
+    ### Putting It Together: The Extraction Function
+
+    The `extract_receipt_data` function orchestrates the two-step process:
+    - Converts PDFs to images (if needed)
+    - Runs OCR on each image using `ocr_bot`
+    - Combines OCR results
+    - Structures the combined text using `receipt_structuring_bot`
+    """)
+    return
+
+
+@app.cell
+def _(convert_pdf_to_images, ocr_bot, receipt_structuring_bot, user):
     def extract_receipt_data(file_path: str):
-        """Extract receipt data from PDF or image file."""
+        """Extract receipt data from PDF or image file using two-step process:
+        1. OCR extraction with DeepSeek-OCR (SimpleBot)
+        2. Structure the data with StructuredBot
+        """
         image_paths = convert_pdf_to_images(file_path)
 
         if len(image_paths) == 1:
-            prompt_text = "Extract receipt information from this image."
+            prompt_text = "Extract all text from this receipt image."
         else:
-            prompt_text = f"Extract receipt information from this {len(image_paths)}-page document."
+            prompt_text = f"Extract all text from this {len(image_paths)}-page receipt document."
 
-        # Create messages: text prompt + images
-        # Use ImageMessage directly to avoid prompt_hash issues
-        messages = [user(prompt_text)]
+        # Step 1: OCR extraction - extract text from images
+        # Process each image and combine the results
+        ocr_texts = []
         for image_path in image_paths:
-            image_msg = ImageMessage(content=image_path)
-            messages.append(image_msg)
+            ocr_response = ocr_bot(user(prompt_text, image_path))
+            ocr_texts.append(ocr_response.content)
 
-        result = receipt_processor_bot(messages)
+        # Combine OCR results from all pages
+        combined_ocr_text = "\n\n--- Page Break ---\n\n".join(ocr_texts)
+
+        # Step 2: Structure the extracted text according to ReceiptData schema
+        result = receipt_structuring_bot(combined_ocr_text)
         return result
-
     return (extract_receipt_data,)
 
 
@@ -325,7 +368,6 @@ def _(ImageMessage, convert_pdf_to_images, receipt_processor_bot, user):
 def _():
     from llamabot.components.tools import tool
     from llamabot.components.pocketflow import nodeify
-
     return nodeify, tool
 
 
@@ -361,19 +403,16 @@ def _(Path, extract_receipt_data, nodeify, tool):
 
         receipt_data = extract_receipt_data(file_path)
         return receipt_data.model_dump_json()
-
     return (process_receipt,)
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Test: Receipt Processor
 
     Upload a receipt PDF or image above, then test the receipt processor:
-    """
-    )
+    """)
     return
 
 
@@ -384,7 +423,7 @@ def _(extract_receipt_data):
     # mo.stop(True)
     # Uncomment and modify to test:
     test_receipt_data = extract_receipt_data(
-        "/Users/ericmjl/github/llamabot/notebooks/Receipt from Triangle Coffee Bar - 2025-11-14 lunch.pdf"
+        "/Users/ericmjl/github/llamabot/tutorials/pydata-boston-2025/receipt_coffee_1.pdf"
     )
     test_receipt_data
     return
@@ -392,24 +431,20 @@ def _(extract_receipt_data):
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ---
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Part 3: Invoice Writer Agent
 
     Generate formatted invoices from structured data.
     Invoice generation is like filling out a form - you need the form structure first.
-    """
-    )
+    """)
     return
 
 
@@ -426,7 +461,6 @@ def _(BaseModel):
         project_description: str
         amount: float
         notes: str = ""
-
     return (InvoiceData,)
 
 
@@ -438,7 +472,6 @@ def _(lmb):
         Fill out invoice forms with structured data provided.
         Ensure all fields are professional and business-appropriate.
         """
-
     return (invoice_generation_sysprompt,)
 
 
@@ -447,7 +480,7 @@ def _(InvoiceData, invoice_generation_sysprompt, lmb):
     invoice_writer_bot = lmb.StructuredBot(
         system_prompt=invoice_generation_sysprompt(),
         pydantic_model=InvoiceData,
-        model_name="gpt-4.1",
+        model_name="ollama_chat/gemma3n:latest",
         # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
     )
     return (invoice_writer_bot,)
@@ -471,7 +504,6 @@ def _(InvoiceData, invoice_writer_bot):
 
         invoice = invoice_writer_bot(prompt)
         return invoice
-
     return (generate_invoice,)
 
 
@@ -516,7 +548,6 @@ def _(InvoiceData):
         </html>
         """
         return html
-
     return (render_invoice_html,)
 
 
@@ -540,19 +571,16 @@ def _(generate_invoice, nodeify, render_invoice_html, tool):
             _globals_dict["invoice_html"] = html
 
         return "Invoice generated successfully. Use return_object_to_user('invoice_html') to return it to the user."
-
     return (write_invoice,)
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Test: Invoice Writer
 
     Test invoice generation from natural language:
-    """
-    )
+    """)
     return
 
 
@@ -570,24 +598,20 @@ def _(generate_invoice, mo, render_invoice_html):
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ---
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Part 4: Back-Office Coordinator Agent
 
     Compose agents by making them tools for other agents.
     The coordinator decides when to call each specialized agent.
-    """
-    )
+    """)
     return
 
 
@@ -606,14 +630,12 @@ def _(lmb):
 
         Always explain what you're doing and why.
         """
-
     return
 
 
 @app.cell
 def _():
     from llamabot import AgentBot
-
     return (AgentBot,)
 
 
@@ -641,7 +663,10 @@ def _(files):
 
 @app.cell
 def _(files):
-    files.value[0]
+    display_file = None
+    if files.value:
+        display_file = files.value[0]
+    display_file
     return
 
 
@@ -659,7 +684,9 @@ def _(Path, files, tempfile):
                 temp_file_path = temp_file.name
 
             # Make file available in globals
-            variable_name = Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            variable_name = (
+                Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            )
             globals()[variable_name] = temp_file_path
             print(f"File available as: {variable_name}")
     return
@@ -671,7 +698,6 @@ def _(coordinator_bot):
         user_message = messages[-1].content
         result = coordinator_bot(user_message, globals())
         return result
-
     return (chat_turn,)
 
 
@@ -702,13 +728,11 @@ def _(chat, mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Test: Coordinator Agent
 
     Test the coordinator with a sample query:
-    """
-    )
+    """)
     return
 
 
@@ -724,8 +748,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### How the Coordinator Works
 
     The coordinator uses AgentBot which:
@@ -736,25 +759,21 @@ def _(mo):
     5. Continues until task is complete
 
     This is the agent-as-tool pattern: agents use other agents as tools.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ---
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Part 5: Bonus - Internal Complaints Agent
 
     Pre-built agent for handling internal company concerns:
@@ -762,15 +781,13 @@ def _(mo):
     - Shows anonymized version for review
     - Stores in vector database with date partition (after confirmation)
     - Queries and summarizes complaints by category
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _():
     from llamabot.components.docstore import LanceDBDocStore
-
     return (LanceDBDocStore,)
 
 
@@ -783,7 +800,6 @@ def _(lmb):
         Replace with generic placeholders like [EMPLOYEE], [DEPARTMENT], etc.
         Preserve the core concern content and sentiment.
         """
-
     return (anonymization_sysprompt,)
 
 
@@ -791,7 +807,7 @@ def _(lmb):
 def _(anonymization_sysprompt, lmb):
     anonymization_bot = lmb.SimpleBot(
         system_prompt=anonymization_sysprompt(),
-        model_name="gpt-4.1",
+        model_name="ollama_chat/gemma3n:latest",
         # api_base="https://<your-modal-endpoint>.modal.run",
     )
     return (anonymization_bot,)
@@ -809,7 +825,6 @@ def _(LanceDBDocStore):
 @app.cell
 def _():
     from datetime import datetime
-
     return (datetime,)
 
 
@@ -844,7 +859,6 @@ def _(anonymization_bot, datetime, nodeify, tool):
             gdict["complaint_date"] = datetime.now().strftime("%Y-%m-%d")
 
         return f"Anonymized complaint:\n\n{anonymized}\n\nUse confirm_store_complaint() to store this in the database."
-
     return (anonymize_complaint,)
 
 
@@ -887,7 +901,6 @@ def _(complaints_db, datetime, nodeify, tool):
         complaints_db.append(anonymized, partition=complaint_date)
 
         return f"Complaint stored successfully. Date partition: {complaint_date}"
-
     return (confirm_store_complaint,)
 
 
@@ -907,7 +920,6 @@ def _(lmb):
 
         Provide clear summaries and identify patterns.
         """
-
     return (summarization_sysprompt,)
 
 
@@ -915,7 +927,7 @@ def _(lmb):
 def _(lmb, summarization_sysprompt):
     summarization_bot = lmb.SimpleBot(
         system_prompt=summarization_sysprompt(),
-        model_name="gpt-4.1",
+        model_name="ollama_chat/gemma3n:latest",
         # api_base="https://<your-modal-endpoint>.modal.run",
     )
     return (summarization_bot,)
@@ -925,7 +937,9 @@ def _(lmb, summarization_sysprompt):
 def _(complaints_db, nodeify, summarization_bot, tool):
     @nodeify(loopback_name="decide")
     @tool
-    def query_and_summarize_complaints(query: str, date_partition: str = None) -> str:
+    def query_and_summarize_complaints(
+        query: str, date_partition: str = None
+    ) -> str:
         """Query anonymized internal concerns and summarize by category.
 
         :param query: Search query for concerns (e.g., "process issues", "communication problems")
@@ -934,7 +948,9 @@ def _(complaints_db, nodeify, summarization_bot, tool):
         """
         # Query vector database
         partitions = [date_partition] if date_partition else None
-        results = complaints_db.retrieve(query, n_results=10, partitions=partitions)
+        results = complaints_db.retrieve(
+            query, n_results=10, partitions=partitions
+        )
 
         if not results:
             return f"No concerns found matching query: {query}"
@@ -945,19 +961,16 @@ def _(complaints_db, nodeify, summarization_bot, tool):
         )
 
         return summary
-
     return (query_and_summarize_complaints,)
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Test: Internal Complaints Agent
 
     Test anonymization, confirmation, and summarization:
-    """
-    )
+    """)
     return
 
 
@@ -1021,7 +1034,6 @@ def _(coordinator_with_complaints):
         user_message = messages[-1].content
         result = coordinator_with_complaints(user_message, globals())
         return result
-
     return (chat_turn_with_complaints,)
 
 
@@ -1060,18 +1072,15 @@ def _(chat_with_complaints, mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ---
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ## Part 6: Discussion & Next Steps
 
     ### Moving from Notebook to Production
@@ -1081,15 +1090,13 @@ def _(mo):
     - **Storage**: Connect to real databases (Notion, PostgreSQL, etc.)
     - **Templates**: Store invoice templates in files or databases
     - **Monitoring**: Add logging and observability
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Best Practices
 
     1. **Workflow-first**: Always map workflows before coding
@@ -1097,15 +1104,13 @@ def _(mo):
     3. **Template-first**: Design forms/templates before generation
     4. **Compose agents**: Build focused agents, then compose them
     5. **Test incrementally**: Test each agent before composing
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     ### Q&A
 
     Common questions:
@@ -1113,8 +1118,7 @@ def _(mo):
     - How do I debug agent decisions? → Check AgentBot's decision logs
     - How do I handle errors? → Wrap tools in try/except, return error messages
     - How do I scale? → Use modal endpoints, batch processing, async operations
-    """
-    )
+    """)
     return
 
 
