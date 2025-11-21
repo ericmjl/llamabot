@@ -93,9 +93,22 @@ class ToolBot(SimpleBot):
             **completion_kwargs,
         )
 
-        # Combine default and user-provided tools
-        user_tools = tools or []
-        all_tools = DEFAULT_TOOLS + user_tools
+        # Use tools as-is if provided (they already include DEFAULT_TOOLS from AgentBot)
+        # Only add DEFAULT_TOOLS if no tools are provided or if DEFAULT_TOOLS aren't already present
+        if tools is None or len(tools) == 0:
+            all_tools = DEFAULT_TOOLS
+        else:
+            # Check if DEFAULT_TOOLS are already in the provided tools list
+            # (AgentBot includes them, but direct ToolBot calls might not)
+            default_tool_names = {tool.__name__ for tool in DEFAULT_TOOLS}
+            provided_tool_names = {tool.__name__ for tool in tools}
+
+            if default_tool_names.issubset(provided_tool_names):
+                # DEFAULT_TOOLS already included (from AgentBot), use as-is
+                all_tools = tools
+            else:
+                # DEFAULT_TOOLS not included (direct ToolBot call), add them
+                all_tools = DEFAULT_TOOLS + tools
 
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
