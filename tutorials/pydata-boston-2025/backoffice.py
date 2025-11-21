@@ -372,28 +372,76 @@ def _():
 
 
 @app.cell
+def _(nodeify, tool):
+    @nodeify(loopback_name="decide")
+    @tool
+    def list_available_files(_globals_dict: dict = None) -> str:
+        """List all available file paths in the globals dictionary.
+
+        Use this to check what files have been uploaded before processing receipts.
+
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot
+        :return: A formatted string listing all available file paths
+        """
+        if _globals_dict is None:
+            return "No files available. Please upload a file first."
+
+        from pathlib import Path
+
+        available_files = []
+        for key, value in _globals_dict.items():
+            if isinstance(value, str) and Path(value).exists():
+                available_files.append(f"- {key}: {value}")
+
+        if not available_files:
+            return "No files available. Please upload a file first."
+
+        return "Available files:\n" + "\n".join(available_files)
+    return (list_available_files,)
+
+
+@app.cell
 def _(Path, extract_receipt_data, nodeify, tool):
     @nodeify(loopback_name="decide")
     @tool
-    def process_receipt(file_path: str, _globals_dict: dict = None) -> str:
+    def process_receipt(file_path: str = None, _globals_dict: dict = None) -> str:
         """Process a receipt PDF or image and extract structured data.
 
-        :param file_path: Path to the receipt file (PDF, PNG, JPG, or JPEG) or variable name in globals
+        :param file_path: Optional path to the receipt file (PDF, PNG, JPG, or JPEG) or variable name in globals.
+            If None, will try to find the most recently uploaded file.
         :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :return: JSON string of extracted receipt data
         """
-        # If file_path is a variable name in globals, get its value
-        if _globals_dict is not None and file_path in _globals_dict:
-            actual_path = _globals_dict[file_path]
-            # If it's a string that looks like a path, use it
-            if isinstance(actual_path, str):
-                file_path = actual_path
+        if _globals_dict is None:
+            raise ValueError("No globals_dict available. Cannot process receipt.")
+
+        # If no file_path provided, try to find the most recent file
+        if file_path is None:
+            available_files = [
+                (k, v)
+                for k, v in _globals_dict.items()
+                if isinstance(v, str) and Path(v).exists()
+            ]
+            if not available_files:
+                raise FileNotFoundError(
+                    "No receipt file specified and no files found. "
+                    "Please upload a file first or specify which file to process."
+                )
+            # Use the most recent file (last in dict, assuming insertion order)
+            file_path = available_files[-1][1]
+        else:
+            # If file_path is a variable name in globals, get its value
+            if file_path in _globals_dict:
+                actual_path = _globals_dict[file_path]
+                # If it's a string that looks like a path, use it
+                if isinstance(actual_path, str):
+                    file_path = actual_path
 
         # Verify the file exists
         if not Path(file_path).exists():
             available_files = [
                 k
-                for k, v in (_globals_dict or {}).items()
+                for k, v in _globals_dict.items()
                 if isinstance(v, str) and Path(v).exists()
             ]
             raise FileNotFoundError(
@@ -417,13 +465,13 @@ def _(mo):
 
 
 @app.cell
-def _(extract_receipt_data):
+def _(extract_receipt_data, mo):
     # Test receipt processor with uploaded file
     # Replace 'your_receipt_file' with the variable name from uploaded files
-    # mo.stop(True)
+    mo.stop(True)
     # Uncomment and modify to test:
     test_receipt_data = extract_receipt_data(
-        "/Users/ericmjl/github/llamabot/tutorials/pydata-boston-2025/receipt_coffee_1.pdf"
+        "/Users/ericmjl/github/llamabot/tutorials/pydata-boston-2025/receipt_lunch.pdf"
     )
     test_receipt_data
     return
@@ -558,8 +606,19 @@ def _(generate_invoice, nodeify, render_invoice_html, tool):
     def write_invoice(invoice_description: str, _globals_dict: dict = None) -> str:
         """Generate and render an invoice from natural language description.
 
+        IMPORTANT: Only call this tool when you have sufficient information from the user.
+        The invoice_description should include:
+        - Client name and address
+        - Project description
+        - Amount
+        - Due date (optional, defaults to 30 days from today)
+
+        If the user's request is vague (e.g., "create an invoice"), ask for clarification first
+        before calling this tool.
+
         :param invoice_description: Natural language description of the invoice to generate.
-            Example: "Invoice for Acme Corp, web development project, $5000, due in 30 days"
+            Must include client name, project description, and amount at minimum.
+            Example: "Invoice for Acme Corp at 123 Main St, Boston MA 02101, web development project, $5000, due in 30 days"
         :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :return: Confirmation message indicating invoice was generated
         """
@@ -621,16 +680,89 @@ def _(lmb):
     def coordinator_sysprompt():
         """You are a back-office coordinator agent.
         You help process receipts, generate invoices for clients, and handle internal concerns.
-        Use the available tools to:
-        1. Process receipts to extract structured data
-        2. Generate invoices to clients from natural language descriptions
-        3. After generating an invoice, use return_object_to_user('invoice_html') to return it to the user
-        4. For internal concerns: anonymize first, show the anonymized version, then confirm storage
-        5. Handle user requests efficiently
 
-        Always explain what you're doing and why.
+        **CRITICAL**: You MUST always select a tool. Never return empty tool calls.
+        Every user query requires a tool to be executed.
+
+        **CRITICAL**: Most user requests require MULTIPLE tool calls to complete.
+        Do NOT stop after a single tool call - continue calling tools until the request is fully satisfied.
+        Only use `respond_to_user()` after you have completed ALL necessary tool calls.
+
+        ## Multi-Step Tool Execution:
+
+        **When to call multiple tools sequentially:**
+        - Most requests require 2-3+ tool calls to complete (e.g., check files → process → respond)
+        - When you need to gather information before acting (e.g., list files → process receipt → respond)
+        - When you need to perform an action then return results (e.g., query database → format results → respond)
+        - When a tool stores data in globals that needs to be returned (e.g., generate invoice → return HTML)
+
+        **When NOT to use `respond_to_user()` immediately:**
+        - If you just called a tool that stores results in globals → Call another tool to return those results
+        - If you need to check resources first → Call checking tool, then action tool, then respond
+        - If the user's request has multiple parts → Complete ALL parts before responding
+        - If a tool tells you to call another tool → Do it immediately, don't respond yet
+
+        **When to use `respond_to_user()`:**
+        - After completing ALL steps in a multi-step workflow
+        - After a tool stores data in globals and you've returned it to the user
+        - When you need to ask the user for clarification (but only after checking what's available first)
+        - After a single tool fully satisfies a simple request (rare)
+
+        **Examples of multi-step workflows:**
+        - "Process this receipt" → list_available_files() → process_receipt() → respond_to_user()
+        - "Create an invoice" → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
+        - "What's in the database?" → query_complaints() → respond_to_user() (with formatted results)
+
+        CRITICAL: Use as many tool calls as needed to support the user's request excellently.
+        Do NOT assume information - always check what's available first, then ask for clarification if needed.
+
+        Workflow Guidelines:
+
+        1. **Receipt Processing** (MULTI-STEP REQUIRED):
+           - When user asks to "process this receipt" or similar:
+             STEP 1: Call list_available_files() to check what files are available
+             STEP 2: IMMEDIATELY call process_receipt() to process the file (use most recent if multiple exist)
+             STEP 3: After processing completes, use respond_to_user() to summarize the extracted data
+           - Do NOT stop after list_available_files() - you MUST continue to process_receipt()
+           - If no files are found, use respond_to_user() to ask the user to upload a file first
+           - You can call process_receipt() without a file_path argument - it will use the most recent file automatically
+
+        2. **Invoice Generation** (MULTI-STEP REQUIRED):
+           - Do NOT generate invoices with assumed/made-up data
+           - If the user asks to "create an invoice" without sufficient details:
+             STEP 1: Use respond_to_user() to ask for missing information:
+               * Client name and address
+               * Project description
+               * Amount
+               * Due date (optional, defaults to 30 days)
+             STEP 2: Wait for user's next message with the details
+           - If the user provides sufficient details:
+             STEP 1: Call write_invoice() with the invoice description
+             STEP 2: IMMEDIATELY call return_object_to_user('invoice_html') to return the HTML to the user
+           - Do NOT stop after write_invoice() - you MUST also return the invoice HTML
+
+        3. **Internal Concerns**:
+           - Anonymize first using anonymize_complaint
+           - Show the anonymized version for review
+           - Only store after user confirms using confirm_store_complaint
+
+        4. **Querying Complaints** (MULTI-STEP REQUIRED):
+           - When user asks to "show stored complaints" or "what's in the database":
+             STEP 1: Call query_complaints() with an appropriate query (or empty query to get all)
+             STEP 2: IMMEDIATELY call respond_to_user() to present the results from 'complaint_query_results' in globals
+           - Do NOT stop after query_complaints() - you MUST use respond_to_user() to return the results
+           - Format the results nicely for the user (you can summarize, categorize, or list them)
+
+        5. **General Principles**:
+           - Break complex requests into multiple tool calls
+           - Check available resources before assuming
+           - Ask clarifying questions when information is missing
+           - Explain what you're doing at each step
+           - Use return_object_to_user() to return generated content (like invoice_html)
+
+        Remember: It's better to ask for clarification than to assume and generate incorrect information.
         """
-    return
+    return (coordinator_sysprompt,)
 
 
 @app.cell
@@ -640,10 +772,17 @@ def _():
 
 
 @app.cell
-def _(AgentBot, process_receipt, write_invoice):
+def _(
+    AgentBot,
+    coordinator_sysprompt,
+    list_available_files,
+    process_receipt,
+    write_invoice,
+):
     coordinator_bot = AgentBot(
-        tools=[process_receipt, write_invoice],
-        model_name="gpt-4.1",
+        tools=[list_available_files, process_receipt, write_invoice],
+        system_prompt=coordinator_sysprompt(),
+        model_name="ollama_chat/gemma3n:latest",
         # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
     )
     return (coordinator_bot,)
@@ -858,7 +997,7 @@ def _(anonymization_bot, datetime, nodeify, tool):
             gdict["anonymized_complaint"] = anonymized.content
             gdict["complaint_date"] = datetime.now().strftime("%Y-%m-%d")
 
-        return f"Anonymized complaint:\n\n{anonymized}\n\nUse confirm_store_complaint() to store this in the database."
+        return f"Anonymized complaint:\n\n{anonymized.content}\n\nUse confirm_store_complaint() to store this in the database."
     return (anonymize_complaint,)
 
 
@@ -930,21 +1069,36 @@ def _(lmb, summarization_sysprompt):
         model_name="ollama_chat/gemma3n:latest",
         # api_base="https://<your-modal-endpoint>.modal.run",
     )
-    return (summarization_bot,)
+    return
 
 
 @app.cell
-def _(complaints_db, nodeify, summarization_bot, tool):
+def _(complaints_db, nodeify, tool):
+    # Design Principle: Separation of Concerns
+    # This tool only queries the database and stores results in globals.
+    # It does NOT format or summarize the results - that's the agent's job via respond_to_user().
+    # This separation prevents infinite loops and makes the tool's responsibility clear:
+    # - Tool: Query data and store it
+    # - Agent: Format and present data to the user
     @nodeify(loopback_name="decide")
     @tool
-    def query_and_summarize_complaints(
-        query: str, date_partition: str = None
+    def query_complaints(
+        query: str, date_partition: str = None, _globals_dict: dict = None
     ) -> str:
-        """Query anonymized internal concerns and summarize by category.
+        """Query anonymized internal concerns from the database.
+
+        This tool queries the database and stores the results in globals.
+        After calling this tool, use respond_to_user() to present the results to the user.
+
+        Design Principle: Separation of Concerns
+        - This tool only queries and stores data (data access layer)
+        - The agent handles formatting/presentation via respond_to_user() (presentation layer)
+        - This prevents infinite loops and makes responsibilities clear
 
         :param query: Search query for concerns (e.g., "process issues", "communication problems")
         :param date_partition: Optional date partition to search (YYYY-MM-DD format). If None, searches all partitions.
-        :return: Summary of concerns categorized by issue type
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot
+        :return: Confirmation message indicating results are stored and ready to be returned
         """
         # Query vector database
         partitions = [date_partition] if date_partition else None
@@ -953,15 +1107,15 @@ def _(complaints_db, nodeify, summarization_bot, tool):
         )
 
         if not results:
-            return f"No concerns found matching query: {query}"
+            return f"No concerns found matching query: {query}. Use respond_to_user() to inform the user."
 
-        # Summarize and categorize
-        summary = summarization_bot(
-            f"Analyze these internal concerns and provide a summary categorized by issue type:\n\n{chr(10).join(results)}"
-        )
+        # Store results in globals
+        if _globals_dict is not None:
+            _globals_dict["complaint_query_results"] = results
+            _globals_dict["complaint_query"] = query
 
-        return summary
-    return (query_and_summarize_complaints,)
+        return f"Found {len(results)} concerns matching '{query}'. Results stored in 'complaint_query_results'. Use respond_to_user() to present the results to the user."
+    return (query_complaints,)
 
 
 @app.cell
@@ -975,11 +1129,7 @@ def _(mo):
 
 
 @app.cell
-def _(
-    anonymize_complaint,
-    confirm_store_complaint,
-    query_and_summarize_complaints,
-):
+def _(anonymize_complaint, confirm_store_complaint, query_complaints):
     # Test internal complaints agent
     # mo.stop(True)
     # Uncomment to test:
@@ -998,9 +1148,11 @@ def _(
     result2 = confirm_store_complaint(_globals_dict=globals())
     print(result2)
 
-    # Test query and summarize
-    result3 = query_and_summarize_complaints("process issues")
+    # Test query complaints
+    result3 = query_complaints("process issues", _globals_dict=globals())
     print(result3)
+    if "complaint_query_results" in globals():
+        print("\nQuery results:", globals()["complaint_query_results"])
     return
 
 
@@ -1009,23 +1161,33 @@ def _(
     AgentBot,
     anonymize_complaint,
     confirm_store_complaint,
+    coordinator_sysprompt,
+    list_available_files,
     process_receipt,
-    query_and_summarize_complaints,
+    query_complaints,
     write_invoice,
 ):
     # Add complaint tools to coordinator
     coordinator_with_complaints = AgentBot(
         tools=[
+            list_available_files,
             process_receipt,
             write_invoice,
             anonymize_complaint,
             confirm_store_complaint,
-            query_and_summarize_complaints,
+            query_complaints,
         ],
-        model_name="gpt-4.1",
+        system_prompt=coordinator_sysprompt(),
+        model_name="ollama_chat/gemma3n:latest",
         # api_base="https://<your-modal-endpoint>.modal.run",
     )
     return (coordinator_with_complaints,)
+
+
+@app.cell
+def _(coordinator_with_complaints):
+    coordinator_with_complaints.shared
+    return
 
 
 @app.cell

@@ -342,12 +342,12 @@ def test_decision_bot_system_prompt_with_polars_dataframe():
     assert "my_polars_df" in content or "DataFrame" in content
 
 
-def test_decide_node_passes_globals_dict():
-    """Test that DecideNode passes globals_dict to decision_bot_system_prompt."""
+def test_decide_node_uses_system_prompt():
+    """Test that DecideNode uses the provided system prompt string."""
     from llamabot.components.pocketflow.nodes import DecideNode
     from unittest.mock import patch, MagicMock
 
-    test_globals = {"my_var": "test_value"}
+    custom_prompt = "You are a helpful assistant."
 
     with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
         mock_toolbot = MagicMock()
@@ -360,30 +360,25 @@ def test_decide_node_passes_globals_dict():
         ]
         mock_toolbot_class.return_value = mock_toolbot
 
-        decide_node = DecideNode(tools=[], model_name="gpt-4.1")
+        decide_node = DecideNode(
+            tools=[], system_prompt=custom_prompt, model_name="gpt-4.1"
+        )
 
         prep_res = {
             "memory": ["test query"],
-            "globals_dict": test_globals,
+            "globals_dict": {},
         }
 
-        with patch(
-            "llamabot.prompt_library.agentbot.decision_bot_system_prompt"
-        ) as mock_prompt:
-            mock_prompt.return_value = MagicMock()
-            try:
-                decide_node.exec(prep_res)
-            except (ValueError, AttributeError):
-                # We expect this to fail, we just want to verify the prompt was called with globals_dict
-                pass
+        try:
+            decide_node.exec(prep_res)
+        except (ValueError, AttributeError):
+            # We expect this to fail, we just want to verify the prompt was used
+            pass
 
-            # Verify that decision_bot_system_prompt was called with globals_dict
-            mock_prompt.assert_called_once()
-            call_args = mock_prompt.call_args
-            assert "globals_dict" in call_args.kwargs
-            assert call_args.kwargs["globals_dict"] == test_globals
-            # categorized_vars should be computed automatically by the prompt manager
-            assert "categorized_vars" in call_args.kwargs
+        # Verify that ToolBot was called with the custom prompt
+        mock_toolbot_class.assert_called_once()
+        call_args = mock_toolbot_class.call_args
+        assert call_args.kwargs["system_prompt"] == custom_prompt
 
 
 def test_agentbot_with_multiple_tools():

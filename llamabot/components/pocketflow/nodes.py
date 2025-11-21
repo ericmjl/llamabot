@@ -204,6 +204,7 @@ class DecideNode(Node):
 
     :param tools: List of tool functions (already wrapped with @tool and @nodeify)
     :param model_name: The name of the model to use for decision making
+    :param system_prompt: System prompt string to use for decision-making
     :param completion_kwargs: Additional keyword arguments to pass to the
         completion function of `litellm` (e.g., `api_base`, `api_key`).
     """
@@ -211,6 +212,7 @@ class DecideNode(Node):
     def __init__(
         self,
         tools: List[Callable],
+        system_prompt: str,
         model_name: str = "gpt-4.1",
         *args,
         **completion_kwargs,
@@ -219,6 +221,7 @@ class DecideNode(Node):
 
         self.tools = tools
         self.model_name = model_name
+        self.system_prompt = system_prompt
         self.completion_kwargs = completion_kwargs
 
     def prep(self, shared):
@@ -287,23 +290,15 @@ class DecideNode(Node):
                             parsing fails
         """
         from llamabot.bot.toolbot import ToolBot
-        from llamabot.prompt_library.agentbot import decision_bot_system_prompt
-        from llamabot.utils import categorize_globals
-
-        # Extract globals_dict from shared state to make ToolBot aware of available variables
-        globals_dict = prep_res.get("globals_dict", {})
-
-        # Pre-process globals_dict to categorize variables safely (avoids triggering __getitem__)
-        categorized_vars = categorize_globals(globals_dict)
 
         bot = ToolBot(
             model_name=self.model_name,
             tools=self.tools,
-            system_prompt=decision_bot_system_prompt(
-                globals_dict=globals_dict, categorized_vars=categorized_vars
-            ),
+            system_prompt=self.system_prompt,
             **self.completion_kwargs,
         )
+        # Force tool calls - the model must always select a tool
+        bot.tool_choice = "required"
 
         # Get tool calls from ToolBot
         tool_calls = bot(prep_res["memory"])
