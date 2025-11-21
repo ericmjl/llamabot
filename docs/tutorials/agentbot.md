@@ -299,17 +299,80 @@ mermaid_diagram = flow_to_mermaid(agent.flow)
 print(mermaid_diagram)
 ```
 
-## Part 4: Custom Decision Nodes
+## Part 4: Configuring the Decision Node
 
 By default, AgentBot uses `DecideNode` which uses ToolBot to decide
-which tool to execute. You can provide a custom decision node:
+which tool to execute. You can configure the decision node through
+AgentBot's interface:
 
 ```python
-from llamabot.components.pocketflow import DecideNode
+# Configure system prompt and model directly
+agent = lmb.AgentBot(
+    tools=[get_stock_price],
+    system_prompt="Your custom system prompt here",
+    model_name="gpt-4.1",
+    # Additional completion kwargs (e.g., api_base, api_key)
+    api_base="https://your-endpoint.com"
+)
+```
 
-# Create a custom decision node with a specific model
-custom_decide = DecideNode(
-    tools=[],  # Will be set by AgentBot
+For advanced cases where you need custom decision logic beyond what
+`DecideNode` provides, you can implement your own PocketFlow `Node`
+class and pass it via the `decide_node` parameter:
+
+```python
+import json
+from pocketflow import Node
+
+class CustomDecisionNode(Node):
+    """Custom decision node with specialized logic."""
+
+    def __init__(self, tools, model_name="gpt-4.1", **kwargs):
+        super().__init__()
+        self.tools = tools
+        self.model_name = model_name
+        self.kwargs = kwargs
+
+    def prep(self, shared):
+        """Prepare the node for execution."""
+        return shared
+
+    def exec(self, prep_res):
+        """Execute custom decision logic."""
+        # Your custom decision logic here
+        # Must return a tool name (string) to route to
+        from llamabot.bot.toolbot import ToolBot
+
+        bot = ToolBot(
+            tools=self.tools,
+            system_prompt="Your custom system prompt",
+            model_name=self.model_name,
+            **self.kwargs
+        )
+        bot.tool_choice = "required"
+
+        tool_calls = bot(prep_res["memory"])
+        if not tool_calls:
+            raise ValueError("No tool calls returned")
+
+        # Extract tool name and arguments
+        tool_name = tool_calls[0].function.name
+        func_args = json.loads(tool_calls[0].function.arguments)
+
+        # Store arguments for the next node
+        prep_res["func_call"] = func_args
+
+        return tool_name
+
+    def post(self, shared, prep_res, exec_res):
+        """Post-process the execution result."""
+        shared["memory"].append(f"Chosen Tool: {exec_res}")
+        return exec_res
+
+# Use the custom decision node
+# AgentBot will automatically set the tools on your custom decide node
+custom_decide = CustomDecisionNode(
+    tools=[],  # Will be set by AgentBot to include DEFAULT_TOOLS + your tools
     model_name="gpt-4.1"
 )
 

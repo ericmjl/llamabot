@@ -8,6 +8,7 @@
 #     "llamabot[all]>=0.17.1",
 #     "matplotlib==3.10.7",
 #     "polars==1.35.2",
+#     "statsmodels==0.14.5",
 # ]
 #
 # [tool.uv.sources]
@@ -16,22 +17,73 @@
 
 import marimo
 
-__generated_with = "0.17.0"
+__generated_with = "0.18.0"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
+    import marimo as mo
     import llamabot as lmb
+    import polars as pl
+    import io
+    from pathlib import Path
+    from caseconverter import snakecase
+    from llamabot.components.tools import write_and_execute_code
+    from llamabot.components.tools import tool
+    from llamabot.components.pocketflow import nodeify
 
-    return (lmb,)
+    return (
+        Path,
+        io,
+        lmb,
+        mo,
+        nodeify,
+        pl,
+        snakecase,
+        tool,
+        write_and_execute_code,
+    )
 
 
 @app.cell
-def _():
-    import polars as pl
+def _(mo):
+    mo.md(
+        """
+    # Experiment Design Agent
 
-    return (pl,)
+    Chat with a statistics agent for a first-pass critique of your experiment designs
+    before bringing it to a human statistician. Paste in your experiment design written
+    up as a methods paragraph in a paper or grant proposal, and the bot will help
+    identify potential flaws, biases, or weaknesses in the design.
+
+    The agent can also analyze uploaded CSV data files to identify experiment design issues.
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ---
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ## Tool 1: Critique Experiment Design
+
+    This tool critiques experiment designs by identifying potential flaws, biases, or weaknesses.
+    It uses an expert statistician persona to provide constructive feedback on proposed designs.
+    """
+    )
+    return
 
 
 @app.cell
@@ -52,18 +104,785 @@ def _(lmb):
 
 @app.cell
 def _(experiment_design_critique_sysprompt, lmb):
-    @lmb.nodeify(loopback_name="decide")
-    @lmb.tool
+    critique_bot = lmb.SimpleBot(
+        system_prompt=experiment_design_critique_sysprompt(),
+        model_name="ollama_chat/gemma3n:latest",
+    )
+    return (critique_bot,)
+
+
+@app.cell
+def _(critique_bot, nodeify, tool):
+    @nodeify(loopback_name="decide")
+    @tool
     def critique_experiment_design(design: str) -> str:
         """Critique an experiment design and identify potential flaws, biases, or weaknesses.
 
         :param design: Description of the proposed experiment design
         :return: Critique of the experiment design with identified issues and questions, as well as suggestions for improvement.
         """
-        bot = lmb.SimpleBot(system_prompt=experiment_design_critique_sysprompt())
-        return bot(design)
+        result = critique_bot(design)
+        return result.content
 
     return (critique_experiment_design,)
+
+
+@app.cell
+def _(mo):
+    critique_test_button = mo.ui.run_button(label="Run Critique Test")
+    return (critique_test_button,)
+
+
+@app.cell(hide_code=True)
+def _(critique_test_button, mo):
+    mo.vstack(
+        [
+            mo.md(
+                """
+    ### Test: Critique Experiment Design Tool
+
+    Test the critique tool with a sample experiment design:
+    """
+            ),
+            critique_test_button,
+        ]
+    )
+    return
+
+
+@app.cell
+def _(critique_experiment_design, critique_test_button, mo):
+    display_critique_test_result = None
+    if critique_test_button.value:
+        test_design = """MCF-7 breast cancer cells were grown in RPMI-1640 medium with 10% FBS and maintained at 37°C with 5% CO2. Cells were seeded at 2 × 10^5 cells per well in 6-well plates and allowed to attach overnight. Three treatment groups were established: control (vehicle only), treatment A (1 μM tamoxifen), and treatment B (5 μM tamoxifen). After 48 hours of treatment, cells were washed twice with ice-cold PBS and lysed in RIPA buffer. All control samples (n=4) were processed on day 1, followed by all treatment A samples (n=4) on day 2, and all treatment B samples (n=4) on day 3."""
+        critique_test_result = critique_experiment_design(test_design)
+        display_critique_test_result = mo.md(critique_test_result)
+
+    display_critique_test_result
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ---
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        """
+    ## Tool 2: Load CSV
+
+    This tool loads CSV files and makes them available in the notebook.
+    It handles file paths or variable names, loads data into Polars DataFrames,
+    and stores them in globals with a variable name derived from the filename.
+    """
+    )
+    return
+
+
+@app.cell
+def _(Path, nodeify, pl, snakecase, tool):
+    @nodeify(loopback_name="decide")
+    @tool
+    def load_csv(file_path: str, _globals_dict: dict = None) -> str:
+        """Load a CSV file into a Polars DataFrame and store it in globals.
+
+        The file will be loaded into a Polars DataFrame and stored in globals
+        with a variable name derived from the filename.
+
+        :param file_path: Path to CSV file or variable name in globals
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot
+        :return: Confirmation message with variable name and basic info
+        """
+        # If file_path is a variable name in globals, get its value
+        if _globals_dict is not None and file_path in _globals_dict:
+            actual_path = _globals_dict[file_path]
+            # If it's a string that looks like a path, use it
+            if isinstance(actual_path, str):
+                file_path = actual_path
+
+        # Verify the file exists
+        if not Path(file_path).exists():
+            available_files = [
+                k
+                for k, v in (_globals_dict or {}).items()
+                if isinstance(v, str) and Path(v).exists()
+            ]
+            raise FileNotFoundError(
+                f"CSV file not found: {file_path}. "
+                f"Available file variables in globals: {available_files}"
+            )
+
+        df = pl.read_csv(file_path)
+
+        # Generate variable name from filename
+        variable_name = snakecase(Path(file_path).stem)
+
+        # Store in globals
+        if _globals_dict is not None:
+            _globals_dict[variable_name] = df
+
+        # Generate confirmation message
+        summary = f"""CSV file loaded successfully as '{variable_name}'.
+
+    Shape: {df.shape[0]} rows × {df.shape[1]} columns
+    Columns: {", ".join(df.columns)}
+
+    Use `summarize_dataframe` to generate a detailed summary of this data."""
+        return summary
+
+    return (load_csv,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        """
+    ## Tool 3: Summarize DataFrame
+
+    This tool generates comprehensive summaries of dataframes that are already loaded in globals.
+    It performs exploratory data analysis including statistics, data types, missing values,
+    and basic insights about the data.
+    """
+    )
+    return
+
+
+@app.cell
+def _(pl):
+    def generate_dataframe_summary(df: pl.DataFrame) -> str:
+        """Generate a comprehensive summary of a Polars DataFrame.
+
+        :param df: Polars DataFrame to summarize
+        :return: Multi-line string summary
+        """
+        summary_parts = []
+
+        # Basic info
+        summary_parts.append(f"## DataFrame Summary")
+        summary_parts.append(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns\n")
+
+        # Column info
+        summary_parts.append("## Columns and Data Types")
+        for col in df.columns:
+            dtype = df[col].dtype
+            summary_parts.append(f"- {col}: {dtype}")
+        summary_parts.append("")
+
+        # Missing values
+        summary_parts.append("## Missing Values")
+        null_counts = df.null_count()
+        has_nulls = null_counts.sum_horizontal().item() > 0
+        if has_nulls:
+            for col in df.columns:
+                null_count = null_counts[col].item()
+                if null_count > 0:
+                    pct = (null_count / df.shape[0]) * 100
+                    summary_parts.append(f"- {col}: {null_count} ({pct:.1f}%)")
+        else:
+            summary_parts.append("- No missing values")
+        summary_parts.append("")
+
+        # Numeric columns summary statistics
+        numeric_cols = [
+            col
+            for col in df.columns
+            if df[col].dtype in [pl.Int64, pl.Int32, pl.Float64, pl.Float32]
+        ]
+        if numeric_cols:
+            summary_parts.append("## Numeric Columns Summary Statistics")
+            numeric_df = df.select(numeric_cols)
+            stats = numeric_df.describe()
+            summary_parts.append(str(stats))
+            summary_parts.append("")
+
+        # Categorical columns value counts (top 10)
+        categorical_cols = [
+            col
+            for col in df.columns
+            if df[col].dtype == pl.Utf8 and col not in numeric_cols
+        ]
+        if categorical_cols:
+            summary_parts.append("## Categorical Columns Value Counts")
+            for col in categorical_cols[:5]:  # Limit to first 5 categorical cols
+                value_counts = df[col].value_counts().head(10)
+                summary_parts.append(f"\n### {col}")
+                summary_parts.append(str(value_counts))
+            summary_parts.append("")
+
+        # Sample data
+        summary_parts.append("## Sample Data (First 5 Rows)")
+        summary_parts.append(str(df.head(5)))
+        summary_parts.append("")
+
+        return "\n".join(summary_parts)
+
+    return (generate_dataframe_summary,)
+
+
+@app.cell
+def _(generate_dataframe_summary, nodeify, pl, tool):
+    @nodeify(loopback_name="decide")
+    @tool
+    def summarize_dataframe(dataframe_name: str, _globals_dict: dict = None) -> str:
+        """Generate a comprehensive summary of a dataframe that exists in globals.
+
+        Use this tool when the user asks to "understand", "tell me about", "what's in",
+        or "summarize" their data. This tool performs exploratory data analysis on the
+        specified dataframe, including statistics, data types, missing values, and basic insights.
+
+        If the dataframe name is not specified, you can use partial matching or check
+        available dataframes in globals. If multiple dataframes exist, use the most
+        recently loaded one or ask the user to clarify.
+
+        :param dataframe_name: Name of the dataframe variable in globals (e.g., "ic50_data_with_confounders").
+            Supports partial matching (e.g., "ic50" will match "ic50_data_with_confounders")
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot
+        :return: Comprehensive summary string of the dataframe
+        """
+        if _globals_dict is None:
+            raise ValueError(
+                "No globals_dict available. "
+                "When calling directly, pass _globals_dict=globals() explicitly."
+            )
+
+        # Try to find the dataframe in globals
+        # Support partial matching (e.g., "ic50" matches "ic50_data_with_confounders")
+        df = None
+        matched_name = None
+
+        # First try exact match
+        if dataframe_name in _globals_dict:
+            value = _globals_dict[dataframe_name]
+            if isinstance(value, pl.DataFrame):
+                df = value
+                matched_name = dataframe_name
+
+        # If not found, try partial matching
+        if df is None:
+            for key, value in _globals_dict.items():
+                if (
+                    isinstance(value, pl.DataFrame)
+                    and dataframe_name.lower() in key.lower()
+                ):
+                    df = value
+                    matched_name = key
+                    break
+
+        if df is None:
+            # List available dataframes
+            available_dfs = [
+                k for k, v in _globals_dict.items() if isinstance(v, pl.DataFrame)
+            ]
+            raise ValueError(
+                f"Dataframe '{dataframe_name}' not found in globals. "
+                f"Available dataframes: {available_dfs}"
+            )
+
+        # Generate summary
+        summary = generate_dataframe_summary(df)
+
+        # Add header with matched name
+        result = f"""## Summary for '{matched_name}'
+
+    {summary}
+
+    Use `write_and_execute_code_wrapper` for more detailed analysis, visualizations, or custom operations."""
+        return result
+
+    return (summarize_dataframe,)
+
+
+@app.cell
+def _(mo):
+    load_csv_test_button = mo.ui.run_button(label="Run Load CSV Test")
+    return (load_csv_test_button,)
+
+
+@app.cell(hide_code=True)
+def _(load_csv_test_button, mo):
+    mo.vstack(
+        [
+            mo.md(
+                """
+    ### Test: Load CSV Tool
+
+    Test CSV loading with uploaded files (see file upload section below):
+    """
+            ),
+            load_csv_test_button,
+        ]
+    )
+    return
+
+
+@app.cell
+def _(load_csv, load_csv_test_button):
+    load_csv_test_result = None
+    if load_csv_test_button.value:
+        # Test with a sample file path - update this to match your test file
+        load_csv_test_result = load_csv(
+            "ic50_data_with_confounders.csv", _globals_dict=globals()
+        )
+    load_csv_test_result
+    return
+
+
+@app.cell
+def _(mo, summarize_dataframe_test_button):
+    mo.vstack(
+        [
+            mo.md(
+                """
+    ### Test: Summarize DataFrame Tool
+
+    Test dataframe summarization with loaded dataframes:
+    """
+            ),
+            summarize_dataframe_test_button,
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    summarize_dataframe_test_button = mo.ui.run_button(
+        label="Run Summarize DataFrame Test"
+    )
+    return (summarize_dataframe_test_button,)
+
+
+@app.cell
+def _(summarize_dataframe, summarize_dataframe_test_button):
+    summarize_dataframe_test_result = None
+    if summarize_dataframe_test_button.value:
+        # Test with a loaded dataframe - update this to match your dataframe name
+        summarize_dataframe_test_result = summarize_dataframe(
+            "ic50_data_with_confounders", _globals_dict=globals()
+        )
+    summarize_dataframe_test_result
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        """
+    ---
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ## Tool 4: Fit GLM Model
+
+    This tool fits a Generalized Linear Model (GLM) using statsmodels.
+    It requires explicit specification of the dataframe, response variable, and predictor variables.
+    The fitted model results are stored in globals for later interpretation.
+    """
+    )
+    return
+
+
+@app.cell
+def _(lmb):
+    @lmb.prompt("system")
+    def glm_interpretation_sysprompt():
+        """You are an expert statistician that interprets GLM model results.
+
+        You will be provided with GLM model results from statsmodels.
+        Your task is to:
+        1. Summarize the model fit quality (R-squared, AIC, BIC, etc.)
+        2. Identify significant effects (based on p-values)
+        3. Explain the direction and magnitude of effects
+        4. Compare effects across groups/categories
+        5. Provide practical interpretation in natural language
+
+        Be clear, concise, and focus on what matters for understanding the data.
+        """
+
+    return (glm_interpretation_sysprompt,)
+
+
+@app.cell
+def _(glm_interpretation_sysprompt, lmb):
+    glm_interpretation_bot = lmb.SimpleBot(system_prompt=glm_interpretation_sysprompt())
+    return (glm_interpretation_bot,)
+
+
+@app.cell
+def _(nodeify, pl, tool, write_and_execute_code):
+    @nodeify(loopback_name="decide")
+    @tool
+    def fit_glm(
+        dataframe_name: str,
+        response_variable: str,
+        predictor_variables: str,
+        family: str = "gaussian",
+        _globals_dict: dict = None,
+    ) -> str:
+        """Fit a Generalized Linear Model (GLM) using statsmodels.
+
+        **IMPORTANT**: This tool requires explicit specification of:
+        - dataframe_name: Name of the dataframe in globals
+        - response_variable: Name of the response/dependent variable
+        - predictor_variables: Comma-separated list of predictor/independent variables
+
+        If you don't have this information, ask the user first before fitting the model.
+
+        :param dataframe_name: Name of the dataframe variable in globals
+        :param response_variable: Name of the response/dependent variable column
+        :param predictor_variables: Comma-separated list of predictor variable names (e.g., "var1,var2,var3")
+        :param family: GLM family type (default: "gaussian"). Options: "gaussian", "binomial", "poisson", "gamma", "inverse_gaussian"
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot
+        :return: Confirmation message with variable name where GLM results are stored
+        """
+        if _globals_dict is None:
+            raise ValueError(
+                "No globals_dict available. "
+                "When calling directly, pass _globals_dict=globals() explicitly."
+            )
+
+        # Find dataframe in globals (support partial matching)
+        df = None
+        matched_name = None
+
+        # Try exact match first
+        if dataframe_name in _globals_dict:
+            value = _globals_dict[dataframe_name]
+            if isinstance(value, pl.DataFrame):
+                df = value
+                matched_name = dataframe_name
+
+        # Try partial matching
+        if df is None:
+            for key, value in _globals_dict.items():
+                if (
+                    isinstance(value, pl.DataFrame)
+                    and dataframe_name.lower() in key.lower()
+                ):
+                    df = value
+                    matched_name = key
+                    break
+
+        if df is None:
+            available_dfs = [
+                k for k, v in _globals_dict.items() if isinstance(v, pl.DataFrame)
+            ]
+            raise ValueError(
+                f"Dataframe '{dataframe_name}' not found in globals. "
+                f"Available dataframes: {available_dfs}"
+            )
+
+        # Parse predictor variables
+        predictor_list = [p.strip() for p in predictor_variables.split(",")]
+
+        # Verify columns exist
+        missing_cols = []
+        if response_variable not in df.columns:
+            missing_cols.append(response_variable)
+        for pred in predictor_list:
+            if pred not in df.columns:
+                missing_cols.append(pred)
+
+        if missing_cols:
+            raise ValueError(
+                f"Columns not found in dataframe: {missing_cols}. "
+                f"Available columns: {list(df.columns)}"
+            )
+
+        # Generate variable name for results
+        results_var_name = f"glm_results_{matched_name}_{response_variable}"
+
+        # Use write_and_execute_code to fit the GLM
+        code_executor = write_and_execute_code(_globals_dict)
+
+        # Generate code to fit GLM
+        predictor_list_repr = repr(predictor_list)
+        function_code = f'''def fit_glm_model():
+    """Fit GLM model using statsmodels."""
+    import statsmodels.api as sm
+
+    # Get dataframe from globals
+    df = _globals_dict["{matched_name}"]
+
+    # Prepare data
+    y = df["{response_variable}"].to_numpy()
+    predictor_cols = {predictor_list_repr}
+    X = df[predictor_cols].to_numpy()
+
+    # Add intercept
+    X = sm.add_constant(X)
+
+    # Select family
+    family_map = {{
+        "gaussian": sm.families.Gaussian(),
+        "binomial": sm.families.Binomial(),
+        "poisson": sm.families.Poisson(),
+        "gamma": sm.families.Gamma(),
+        "inverse_gaussian": sm.families.InverseGaussian()
+    }}
+    family_obj = family_map.get("{family}", sm.families.Gaussian())
+
+    # Fit model
+    model = sm.GLM(y, X, family=family_obj)
+    results = model.fit()
+
+    # Store results in globals
+    _globals_dict["{results_var_name}"] = results
+
+    return results
+    '''
+
+        # Execute the code
+        try:
+            output = code_executor(function_code, {})
+            result = output.get("result", None)
+
+            if result is None:
+                raise ValueError("GLM fitting failed - no result returned")
+
+            return f"""GLM model fitted successfully.
+
+    Model details:
+    - Dataframe: {matched_name}
+    - Response variable: {response_variable}
+    - Predictor variables: {", ".join(predictor_list)}
+    - Family: {family}
+    - Results stored in: {results_var_name}
+
+    Use `interpret_glm_results` with glm_results_variable='{results_var_name}' to get a natural language interpretation."""
+        except Exception as e:
+            return f"Error fitting GLM: {str(e)}"
+
+    return (fit_glm,)
+
+
+@app.cell
+def _(glm_interpretation_bot, nodeify, tool):
+    @nodeify(loopback_name="decide")
+    @tool
+    def interpret_glm_results(
+        glm_results_variable: str, _globals_dict: dict = None
+    ) -> str:
+        """Interpret GLM model results and provide a natural language summary.
+
+        This tool takes GLM results from statsmodels and generates a comprehensive
+        interpretation including model fit, significant effects, and group comparisons.
+
+        :param glm_results_variable: Name of the GLM results variable in globals (e.g., "glm_results_ic50_data_IC50")
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot
+        :return: Natural language interpretation of the GLM results
+        """
+        if _globals_dict is None:
+            raise ValueError(
+                "No globals_dict available. "
+                "When calling directly, pass _globals_dict=globals() explicitly."
+            )
+
+        # Find GLM results in globals
+        glm_results = None
+        matched_name = None
+
+        # Try exact match first
+        if glm_results_variable in _globals_dict:
+            value = _globals_dict[glm_results_variable]
+            # Check if it's a statsmodels GLM results object
+            if hasattr(value, "summary"):
+                glm_results = value
+                matched_name = glm_results_variable
+
+        # Try partial matching
+        if glm_results is None:
+            for key, value in _globals_dict.items():
+                if (
+                    hasattr(value, "summary")
+                    and glm_results_variable.lower() in key.lower()
+                ):
+                    glm_results = value
+                    matched_name = key
+                    break
+
+        if glm_results is None:
+            available_results = [
+                k for k, v in _globals_dict.items() if hasattr(v, "summary")
+            ]
+            raise ValueError(
+                f"GLM results '{glm_results_variable}' not found in globals. "
+                f"Available GLM results: {available_results}"
+            )
+
+        # Extract key information from GLM results
+        summary_text = str(glm_results.summary())
+
+        # Get additional details
+        try:
+            aic = glm_results.aic
+            bic = glm_results.bic
+            llf = glm_results.llf
+            deviance = glm_results.deviance
+        except:
+            aic = None
+            bic = None
+            llf = None
+            deviance = None
+
+        # Create interpretation prompt
+        interpretation_prompt = f"""Please interpret these GLM model results:
+
+    {summary_text}
+
+    Additional model statistics:
+    - AIC: {aic}
+    - BIC: {bic}
+    - Log-likelihood: {llf}
+    - Deviance: {deviance}
+
+    Provide a clear, concise interpretation focusing on:
+    1. Model fit quality
+    2. Significant effects and their practical meaning
+    3. Effect sizes and directions
+    4. Group comparisons if applicable"""
+
+        # Generate interpretation
+        interpretation = glm_interpretation_bot(interpretation_prompt)
+        return interpretation.content
+
+    return (interpret_glm_results,)
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ### Test: Fit GLM Tool
+
+    Test GLM fitting with a loaded dataframe:
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    fit_glm_test_button = mo.ui.run_button(label="Run Fit GLM Test")
+    return (fit_glm_test_button,)
+
+
+@app.cell
+def _(fit_glm_test_button, mo):
+    mo.vstack(
+        [
+            mo.md(
+                """
+    ### Test: Fit GLM Tool
+
+    Test GLM fitting with a loaded dataframe:
+    """
+            ),
+            fit_glm_test_button,
+        ]
+    )
+    return
+
+
+@app.cell
+def _(fit_glm, fit_glm_test_button):
+    fit_glm_test_result = None
+    if fit_glm_test_button.value:
+        # Test with a loaded dataframe - update parameters to match your data
+        fit_glm_test_result = fit_glm(
+            dataframe_name="ic50_data_with_confounders",
+            response_variable="IC50",
+            predictor_variables="Instrument,Operator,Temperature,pH,Passage_Number",
+            family="gaussian",
+            _globals_dict=globals(),
+        )
+    fit_glm_test_result
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ### Test: Interpret GLM Results Tool
+
+    Test GLM results interpretation:
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    interpret_glm_results_test_button = mo.ui.run_button(
+        label="Run Interpret GLM Results Test"
+    )
+    return (interpret_glm_results_test_button,)
+
+
+@app.cell
+def _(interpret_glm_results_test_button, mo):
+    mo.vstack(
+        [
+            mo.md(
+                """
+    ### Test: Interpret GLM Results Tool
+
+    Test GLM results interpretation:
+    """
+            ),
+            interpret_glm_results_test_button,
+        ]
+    )
+    return
+
+
+@app.cell
+def _(interpret_glm_results, interpret_glm_results_test_button):
+    interpret_glm_results_test_result = None
+    if interpret_glm_results_test_button.value:
+        # Test with GLM results - update variable name to match your results
+        interpret_glm_results_test_result = interpret_glm_results(
+            glm_results_variable="ic50_data_with_confounders_IC50",
+            _globals_dict=globals(),
+        )
+    interpret_glm_results_test_result
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        """
+    ---
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ## File Upload Interface
+
+    Upload CSV files for analysis. Files will be automatically loaded into the notebook.
+    """
+    )
+    return
 
 
 @app.cell
@@ -79,27 +898,6 @@ def _(files):
 
 
 @app.cell(hide_code=True)
-def _():
-    import io
-
-    return (io,)
-
-
-@app.cell(hide_code=True)
-def _():
-    from caseconverter import snakecase
-
-    return (snakecase,)
-
-
-@app.cell(hide_code=True)
-def _():
-    from pathlib import Path
-
-    return (Path,)
-
-
-@app.cell(hide_code=True)
 def _(Path, files, io, mo, pl, snakecase):
     if files.value:
         for file in files.value:
@@ -111,81 +909,382 @@ def _(Path, files, io, mo, pl, snakecase):
             variable_name = snakecase(Path(file.name).stem)
             globals()[variable_name] = df
 
-            print(variable_name)
+            print(f"File loaded as variable: {variable_name}")
     return
 
 
 @app.cell
-def _(files, ic50_data_with_confounders):
+def _(Path, files, snakecase):
     display_df = None
     if files.value:
-        display_df = ic50_data_with_confounders
+        # Show the first uploaded file's data
+        first_file_name = files.value[0].name
+        _variable_name = snakecase(Path(first_file_name).stem)
+        if _variable_name in globals():
+            display_df = globals()[_variable_name]
 
     display_df
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(mo):
-    mo.md("""---""")
+    mo.md(
+        """
+    ---
+    """
+    )
     return
 
 
-@app.cell
-def _():
-    from llamabot.components.tools import write_and_execute_code
-
-    return (write_and_execute_code,)
-
-
 @app.cell(hide_code=True)
-def _(critique_experiment_design, lmb, write_and_execute_code):
-    bot = lmb.AgentBot(
-        tools=[critique_experiment_design, write_and_execute_code(globals())]
+def _(mo):
+    mo.md(
+        """
+    ## AgentBot Integration
+
+    Create the AgentBot with all tools integrated, using a custom system prompt
+    tailored for experiment design analysis.
+    """
     )
-    return (bot,)
+    return
 
 
 @app.cell(hide_code=True)
 def _():
-    import marimo as mo
+    from llamabot import AgentBot
 
-    return (mo,)
+    return (AgentBot,)
+
+
+@app.cell(hide_code=True)
+def _(lmb):
+    @lmb.prompt("system")
+    def experiment_design_decision_sysprompt(
+        globals_dict: dict = {}, categorized_vars: dict = None
+    ) -> str:
+        """Custom system prompt for experiment design agent decision-making.
+
+        Given the chat history, pick for me one or more tools to execute
+        in order to satisfy the user's query.
+
+        **CRITICAL**: You MUST always select a tool. Never return empty tool calls.
+        Every user query requires a tool to be executed.
+
+        **CRITICAL**: After a tool executes successfully and returns results, you MUST use `respond_to_user`
+        to return those results to the user. Tool execution is incomplete until you respond to the user.
+
+        Give me just the tool name to pick.
+        Use the tools judiciously to help answer the user's query.
+        Query is always related to one of the tools.
+
+        ## Error Handling and Self-Healing:
+
+        **CRITICAL**: When you encounter an error, you MUST automatically try again with a different strategy.
+        Do NOT just explain what you would do - actually execute the fix immediately. Be proactive and self-healing.
+
+        If you see an error message in the conversation history (from `write_and_execute_code_wrapper` or any tool),
+        it means the previous execution failed. You MUST:
+        1. Analyze the error message carefully
+        2. Identify what went wrong (e.g., wrong method name, missing import, incorrect syntax, data preprocessing needed)
+        3. **IMMEDIATELY** generate corrected code using `write_and_execute_code_wrapper` again with the fixes
+        4. **DO NOT** wait for user confirmation - execute the fix right away
+        5. Pay special attention to library-specific differences (e.g., Polars uses `group_by` not `groupby`)
+
+        **Common error patterns and fixes:**
+        - AttributeError with "Did you mean": Use the suggested method name instead
+        - Polars vs Pandas: Polars uses `group_by`, `select`, `with_columns` instead of pandas equivalents
+        - NameError: Missing imports or undefined variables - add the necessary imports
+        - SyntaxError: Fix the syntax issue in the code
+        - TypeError: Check function arguments and their types
+        - ValueError about categorical variables: Encode categorical variables as dummy/indicator variables before modeling
+        - Model fitting errors: Preprocess data appropriately (encode categories, handle missing values, scale if needed)
+        - Data type mismatches: Convert data types appropriately before operations
+
+        **Trying alternative strategies:**
+        - If one approach fails, try a different approach (e.g., different encoding method, different library, different algorithm)
+        - If data preprocessing is needed, do it automatically - don't ask the user
+        - If a tool fails, analyze why and try again with corrections
+        - Build on previous attempts - use information from errors to inform your next attempt
+
+        **Example error recovery flow:**
+        1. Error occurs: "ValueError: categorical variables need encoding"
+        2. **IMMEDIATELY** call `write_and_execute_code_wrapper` with code that encodes categorical variables
+        3. Then retry the original operation (e.g., fit GLM) with the preprocessed data
+        4. Do NOT explain what you would do - just do it
+
+        **Remember**: The user expects you to solve problems automatically. When something fails, fix it and try again without asking for permission.
+
+        ## Post-Execution Variable Return:
+
+        **Understanding `write_and_execute_code_wrapper` return values:**
+        When `write_and_execute_code_wrapper` executes successfully, it returns a dictionary with:
+        - `"code"`: The function code that was executed
+        - `"result"`: The return value from the function (this may be a simple value, DataFrame, dict, etc.)
+        - `"created_variables"`: List of variable names that were created during execution
+        - `"function_name"`: The name of the function that was created
+
+        **What gets stored in globals:**
+        - The function itself (e.g., `analyze_data`) is stored in globals and can be reused
+        - Any variables created during execution are stored in globals
+        - The result is automatically stored as `{function_name}_result` in globals
+
+        **After code execution:**
+        If you see "Code executed successfully" in the conversation history, it means code was just executed. You MUST:
+        1. Extract the `"result"` field from the returned dictionary (don't return the raw dictionary)
+        2. If the result is a dictionary with keys like `"summary"` and `"plot_png"`, format the summary text and mention the plot
+        3. Use `respond_to_user` to present the formatted information to the user in a clear, helpful way
+        4. If the user explicitly asked for an object to be returned, you can use `return_object_to_user` with `variable_name="{function_name}_result"`
+
+        **Important**: The result variable contains the actual output of the data operation (e.g., grouped dataframe, analysis results), not the function itself. The function itself is also stored in globals and can be reused.
+
+        Example: If you see "The result is stored in variable 'groupby_compound_id_result'",
+        and the user asked for the result, use `return_object_to_user` with `variable_name="groupby_compound_id_result"`
+        to return the actual grouped dataframe to the user. Otherwise, use `respond_to_user` to present the results.
+
+        ## After Tool Execution:
+
+        **When to use `respond_to_user`:**
+        - **After gathering sufficient context**: Once you have called all necessary tools to gather information and context, use `respond_to_user` to provide a comprehensive answer
+        - **After a single tool completes a simple request**: If a single tool execution fully satisfies the user's query, use `respond_to_user` immediately
+        - **After the final step in a multi-step process**: Complete all necessary tool calls first, then respond with a comprehensive answer
+
+        **When NOT to use `respond_to_user` immediately:**
+        - If you need more information → Continue calling tools to gather context first
+        - If the user's query requires multiple steps → Complete all steps before responding
+        - If you're gathering context for a complex query → Finish gathering all needed information first
+
+        Examples:
+        - After `summarize_dataframe` returns a summary → If this fully answers the query, use `respond_to_user`. If you need to do more analysis first, continue with additional tools.
+        - After `critique_experiment_design` returns a critique → Use `respond_to_user` to present the critique to the user
+        - After `interpret_glm_results` returns an interpretation → Use `respond_to_user` to present the interpretation to the user
+        - After `load_csv` confirms loading → If the user asked to "load and analyze", continue with analysis tools before responding. If they only asked to load, use `respond_to_user` to confirm.
+
+        **CRITICAL**: The conversation is NOT complete until you respond to the user, but you may need to call multiple tools sequentially to gather sufficient context before responding.
+
+        ## Multi-Step Requests and Context Gathering:
+
+        **Sequential Tool Execution for Context:**
+        You can call multiple tools sequentially to gather information and context before responding to the user.
+        This is especially useful when:
+        - You need to understand data structure before performing operations (e.g., `summarize_dataframe` before `fit_glm`)
+        - You need to load data before analyzing it (e.g., `load_csv` then `summarize_dataframe`)
+        - You need to gather multiple pieces of information to answer a complex query
+        - You need to check what data/variables are available before deciding what to do
+
+        **When to gather context first:**
+        - If you don't know which dataframe to use → Use `summarize_dataframe` to see available dataframes
+        - If you need to understand data structure before modeling → Use `summarize_dataframe` before `fit_glm`
+        - If you need to load data before analysis → Use `load_csv` first, then analysis tools
+        - If the user's query requires information you don't have → Use appropriate tools to gather that information first
+
+        **After gathering context:**
+        Once you have gathered sufficient context through one or more tool calls, THEN use `respond_to_user`
+        to provide a comprehensive answer that incorporates all the information you've gathered.
+
+        **Compound Requests:**
+        If the user makes a compound request (e.g., "load and analyze", "tell me about the CSV"),
+        break it down into steps:
+        1. Execute the first step (e.g., load the CSV)
+        2. After the first step completes, continue with subsequent steps (e.g., summarize the data)
+        3. Do NOT stop after the first step - complete ALL parts of the user's request
+        4. Only use `respond_to_user` after you have completed all necessary steps and gathered all needed information
+
+        ## Tool Selection Guidelines:
+
+        **When to use `load_csv`:**
+        - The user asks to load a CSV file or mentions uploading a file
+        - The user says "load the CSV" or "load the file"
+        - Use this to load CSV files into the notebook environment
+        - After loading, you can use `summarize_dataframe` to understand the data
+
+        **When to use `summarize_dataframe`:**
+        - The user asks to "understand" data, "tell me about" data, "what's in" data, "summarize" data
+        - The user asks "Can you help me understand what's in my data?" → USE `summarize_dataframe`
+        - The user asks "Tell me about the CSV file I just uploaded" → First use `load_csv`, then `summarize_dataframe`
+        - The user wants an overview or summary of a dataframe
+        - Use this BEFORE fitting models to understand the data structure
+        - This tool provides comprehensive summaries including columns, types, missing values, statistics
+        - **If you don't know which dataframe**: Check available dataframes in globals, or use the most recently loaded one
+        - Examples: "tell me about my data", "what's in the CSV", "summarize the dataframe", "help me understand my data", "can you help me understand what's in my data"
+
+        **When to use `fit_glm`:**
+        - The user explicitly asks to fit a GLM, linear model, or regression model
+        - The user asks to analyze relationships between variables using statistical modeling
+        - **CRITICAL**: Before using `fit_glm`, you MUST have explicit information about:
+          * The dataframe name
+          * The response/dependent variable
+          * The predictor/independent variables
+        - **If you don't have this information**: Use `summarize_dataframe` first to understand the data structure,
+          then ask the user to clarify which variable is the response and which are predictors.
+          DO NOT guess or infer - always ask for explicit specification.
+        - After fitting, use `interpret_glm_results` to provide natural language interpretation
+
+        **When to use `interpret_glm_results`:**
+        - After `fit_glm` has been executed and results are stored in globals
+        - The user asks to interpret, explain, or summarize GLM model results
+        - Use this to convert statistical results into natural language explanations
+
+        **When to use `write_and_execute_code_wrapper`:**
+        - The user asks to perform data operations: groupby, filter, aggregate, transform, calculate, plot, visualize, etc.
+        - The user asks to manipulate, analyze, or process data
+        - The user asks to create new data or perform computations
+        - **CRITICAL**: If the user asks to "analyze" data (e.g., "analyze the CSV", "analyze the data", "analyze it"),
+          this ALWAYS means doing exploratory data analysis with code - use `write_and_execute_code_wrapper` to:
+          * Explore the dataframe structure (shape, columns, dtypes, missing values)
+          * Generate summary statistics
+          * Create visualizations (plots, charts, distributions)
+          * Identify patterns, correlations, or anomalies
+          * Perform statistical analysis (but use `fit_glm` for GLM modeling)
+        - **After loading data**: If a user asks to "analyze" data that was just loaded (e.g., "load and analyze it"),
+          the loading step is separate from analysis. After `load_csv` completes, you can use
+          `summarize_dataframe` to get an overview, then `write_and_execute_code_wrapper` for detailed analysis.
+        - Examples: "groupby compound ID", "filter by age", "calculate mean", "plot the data", "create a summary",
+          "analyze the data", "analyze it", "explore the dataset"
+
+        **How `write_and_execute_code_wrapper` stores objects in globals:**
+        When you execute code using `write_and_execute_code_wrapper`, the following objects are automatically stored in globals():
+        - **The function itself**: The function you define is stored in globals and can be reused in future code execution
+        - **Variables created during execution**: Any variables created inside the function (if they're assigned to globals_dict) or at module level are stored in globals
+        - **The execution result**: The return value is automatically stored as `{function_name}_result` in globals (e.g., if function is `analyze_data()`, result is stored as `analyze_data_result`)
+
+        **Persistence and Reusability:**
+        - All stored functions and variables persist across tool calls and are available for future use
+        - You can reference previously created functions in subsequent code execution
+        - You can access previously created variables in new code
+        - This allows you to build up a library of reusable functions and data across multiple tool calls
+
+        **Example workflow:**
+        1. Execute code that creates `def analyze_correlations(): ...` → Function stored in globals
+        2. Execute code that creates `correlation_matrix` variable → Variable stored in globals
+        3. Later, execute code that calls `analyze_correlations()` or uses `correlation_matrix` → Can reference previous objects
+        4. The result from step 1 is stored as `analyze_correlations_result` in globals
+
+        **When to use `critique_experiment_design`:**
+        - The user asks to critique, review, or evaluate an experiment design
+        - The user provides a description of an experiment and wants feedback
+        - Use this to identify potential flaws, biases, or weaknesses in experimental designs
+
+        **When to use `return_object_to_user`:**
+        - The user explicitly asks to "return", "show", "get", or "give me" a specific variable by name
+        - The user asks to access an existing variable without performing operations
+        - Examples: "show me the dataframe", "return ic50_data", "get the results variable"
+
+        **When to use `respond_to_user`:**
+        - **CRITICAL**: After a tool successfully executes and returns information (e.g., `summarize_dataframe`, `critique_experiment_design`, `interpret_glm_results`), you MUST use `respond_to_user` to return that information to the user. The tool execution is not complete until you respond to the user with the results.
+        - You have enough information to answer the query with text AND no data operations are needed
+        - The user asks a question that can be answered without executing code or returning objects
+        - **After tool execution**: When you see a tool result in the conversation history (e.g., a summary from `summarize_dataframe`, critique from `critique_experiment_design`, interpretation from `interpret_glm_results`), use `respond_to_user` to present that result to the user in a clear, helpful way.
+        - **IMPORTANT**: Do NOT use `respond_to_user` if the user asks to:
+          * "analyze" data - use `write_and_execute_code_wrapper` instead
+          * "understand" or "tell me about" data - use `summarize_dataframe` instead (but then use `respond_to_user` to return the summary)
+          * "load" a file - use `load_csv` instead
+
+        ## Variable Name Matching:
+        When using `return_object_to_user`, you can match partial variable names intelligently.
+        For example, if the user says "ic50" and "ic50_data_with_confounders" exists in globals,
+        use the full variable name "ic50_data_with_confounders". Match variable names based on
+        context and similarity to help users access their data more easily.
+
+        **IMPORTANT**: Do NOT use `return_object_to_user` when the user asks to perform operations
+        (groupby, filter, calculate, etc.). Use `write_and_execute_code_wrapper` instead.
+
+        ## Available Global Variables:
+
+        {% if categorized_vars %}
+        The available dataframes are:
+
+        {% for name, class_name in categorized_vars.dataframes %}
+        - {{ name }}: {{ class_name }}
+        {% endfor %}
+
+        The available callables are:
+
+        {% for name, class_name in categorized_vars.callables %}
+        - {{ name }}: {{ class_name }}
+        {% endfor %}
+
+        The available other variables are:
+
+        {% for name, class_name in categorized_vars.other %}
+        - {{ name }}: {{ class_name }}
+        {% endfor %}
+        {% else %}
+        No global variables are currently available.
+        {% endif %}
+        """
+
+    return (experiment_design_decision_sysprompt,)
+
+
+@app.cell
+def _(
+    AgentBot,
+    critique_experiment_design,
+    experiment_design_decision_sysprompt,
+    fit_glm,
+    interpret_glm_results,
+    load_csv,
+    summarize_dataframe,
+    write_and_execute_code,
+):
+    # Create AgentBot with custom system prompt
+    experiment_design_agent = AgentBot(
+        tools=[
+            critique_experiment_design,
+            load_csv,
+            summarize_dataframe,
+            fit_glm,
+            interpret_glm_results,
+            write_and_execute_code(globals()),
+        ],
+        system_prompt=experiment_design_decision_sysprompt(),
+    )
+    return (experiment_design_agent,)
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ---
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        """
+    ## Chat Interface
+
+    Chat with the experiment design critique agent.
+    """
+    )
+    return
 
 
 @app.cell(hide_code=True)
 def _():
     example_prompts = [
-        """For workflow optimization experiments, the peptide solution was aliquoted accordingly (12.5 to 200 μg peptides), frozen at −80 °C, and dried by vacuum centrifugation. Peptides were reconstituted in 50 mM HEPES (pH 8.5) and TMTzero reagent or a mix of TMT10-plex reagents (ThermoFisher) was added from stocks dissolved in 100% anhydrous ACN. The peptide–TMT mixture was incubated for 1 h at 25 °C and 400 rpm, and the labeling reaction was stopped by addition of either 5% hydroxylamine to a final concentration of 0.4% or 8 μl of 1 M Tris, pH 8, and incubation for 15 min at 25 °C and 400 rpm. Moreover, 17 samples were labeled in three experiments as singlicates, applying different TMT (40 to 400 μg) and peptide (40 or 200 μg) quantities and concentrations to explore the impact of these parameters on labeling performance and to examine the adaptability of optimized protocol parameters to lower peptide quantities. To assess interlaboratory robustness, four labeling experiments, in which the TMT quantity was titrated (50 to 400 μg) against a constant peptide amount (100 μg), were carried out as seven replicates of which two or three were performed in three independent laboratories.""",
-        """Yeast lysate was spiked into human lysate to 10% of total protein concentration (1× group), 5% (2× group), and 3.3% (3× group) for a total of 11 samples so that the ratio between the first group and second was a 2-fold change, and between the first and third group was a 3-fold change. Samples for TMT were labeled with unique isobaric tags per sample, mixed, and fractionated by basic pH reversed phase HPLC (RP-HPLC). Eleven samples from LFQ and 11 fractions of the TMT set were analyzed on the same Orbitrap Fusion Lumos mass spectrometer with online RP-nHPLC separation with 3 h gradients.""",
-        """The TMT-LC/LC-MS/MS method includes (in order) protein extraction from cells and tissues, protein digestion, peptide desalting, PTM enrichment, 16-plex TMT labeling, basic pH reverse-phase (RP) LC fractionation, and acidic pH RPLC-MS/MS. The protocol described here introduces a detailed, optimized method for TMT16, including protein extraction and digestion, TMT16 labeling, sample pooling and quality control, two-dimensional reverse-phase liquid chromatography fractionation, tandem mass spectrometry analysis, and post-MS data processing.""",
-        """Add 800 μg TMT16 reagent to the di-GG peptides that are enriched from 4 mg peptides and incubate at room temperature for 30 min. As global ubiquitinome varies dramatically under different stress conditions such as heat shock, proteasome inhibition, etc., the normalization of sample loading bias cannot be performed the same as for the whole proteome analysis. Here we only adjust the mixing amount for the replicates in the 16-plex samples to reduce experimental variations that occur in sample preparation steps for the ubiquitinome samples.""",
-        """For efficient labeling of low concentration protein samples, we designed and optimized a double labeling technique using various initial protein concentrations (2 μg/μL, 1.5 μg/μL, 1.0 μg/μL, and 0.5 μg/μL). Briefly, TMT labeling was conducted twice before quenching; 200 μg of TMT in 10 μL ACN was incubated with the protein solutions in 100 mM TEAB buffer (pH 8.5) for 1 hour followed by a second addition of TMT reagent and incubation for an additional hour. TMT-to-protein ratio remained constant and the final reactant concentrations were varied from 10.8 to 33.8 mM (TMT) and 0.5 to 1.4 μg/μL (protein).""",
-        """Healthy and diseased cells were lysed in CHAPS buffer, prepared as detailed in our TMT labeling method, and submitted to the University of Florida Interdisciplinary Center for Biotechnology Research (UF-ICBR) Proteomics Core for Liquid Chromatography with tandem mass spectrometry. Following data acquisition and delivery from the core, the dataset was opened in vendor-supplied software and the following cutoff filters were applied: ≥2 unique peptides, reporter ions for each protein sample present in all channels, and include only significantly altered proteins (p ≤ 0.05). Table 1 summarizes the data: 39,653 total peptides, of which 7,211 have equal or greater than two unique peptides, and 3,829 include reporter ions for all channels.""",
-        """We implemented a revised protocol with 500 mM HEPES (pH 8.5) in place of 50 mM HEPES (pH 8.5) to resuspend peptide samples derived from cryopulverized rat kidney and lung tissue before relabeling. We used this revised protocol to label 209 samples (19 TMT-11 sets). The LE of each set was above 99.3%, indicating that the new protocol successfully safeguards the samples against poor labeling reactions. Because calculating the LE for the entire TMT experimental set does not effectively identify individual channels that might be poorly labeled, we explored several methods to assess LE at the individual channel level for each TMT set.""",
-        """Mix 50 μg of protein sample produced (concentration ≥1 μg/μL) with 200 μg TMT reagent in 10 μL ACN. Incubate the sample at room temperature for 1 h, then quench the reaction by addition of 5% hydroxylamine to a final concentration of >0.3% (final pH > 9.1) for 15 min at room temperature. If the protein concentration is lower than 1 μg/μL, double labeling can be applied. After the first 1 h reaction, add the same amount of TMT reagent (200 μg in 10 μL) to the solution and incubate for 1 additional hour, then quench the reaction using hydroxylamine to a final concentration of >0.3%.""",
-        """Combined trypsin-digested lysates of HeLa cells and E. coli cells were extensively separated via isoelectric focusing into 24 fractions and analyzed via LC-MS/MS in three replicates. This was repeated with the same quantity of HeLa, but admixed with a 3-fold increased amount of E. coli lysate. In the resulting six samples all human proteins therefore should have had one-to-one ratios and all E. coli proteins should have had a ratio of three to one between replicate groups. Raw data were processed with MaxQuant and its built-in Andromeda search engine for feature extraction, peptide identification, and protein inference. Transferring identifications to other LC-MS runs by matching them to unidentified features based on their masses and recalibrated retention times increased the number of quantifiable isotope patterns more than 2-fold ("match-between-runs").""",
-        """We introduce an experimental and data analysis scheme based on a block design with common references within each block for enabling large-scale label-free quantification. In this scheme, a large number of samples (e.g., >100 samples) are analyzed in smaller and more manageable blocks, minimizing instrument drift and variability within individual blocks. Each designated block also contains common reference samples (e.g., controls) for normalization across all blocks. We applied this strategy to profile the biological response of human THP-1-derived macrophages to a panel of 11 engineered nanomaterials (ENMs) at two different doses. By assigning a total of 116 ENM-treated samples to six blocks (controls as common references included in each block), we were able to generate highly reproducible data.""",
-        """We subjected two identical samples to the Fast-quan workflow, which allowed us to systematically evaluate different parameters that impact the sensitivity and accuracy of the workflow. Using the statistics of significant test, we unraveled the existence of substantial falsely quantified differential proteins and estimated correlation of false quantification rate and parameters that are applied in label-free quantification. We optimized the setting of parameters that may substantially minimize the rate of falsely quantified differential proteins, and further applied them on a real biological process.""",
-        """Label-free bottom-up shotgun MS-based proteomics is an extremely powerful and simple tool to provide high quality quantitative analyses of the yeast proteome with only microgram amounts of total protein. The elaboration of this robust workflow for data acquisition, processing, and analysis provides unprecedented insight into the dynamics of the yeast proteome. Key factors include the choice of an appropriate method for the preparation of protein extracts, careful evaluation of the instrument design and available analytical capabilities, the choice of the quantification method (intensity-based vs. spectral count), and the proper manipulation of the selected quantification algorithm.""",
-        """HeLa cells were cultured in DMEM medium supplemented with 10% fetal bovine serum at 37°C in a 5% CO2 atmosphere. For SILAC labeling, cells were passaged five times in either light medium (normal L-arginine and L-lysine) or heavy medium (13C6-arginine and 2H4-lysine, Cambridge Isotope Laboratories) to achieve complete incorporation. Control cells were maintained in light medium throughout the experiment, while treated cells were switched to heavy medium 48 hours prior to treatment. After 24 hours of treatment with 10 μM compound X, cells were harvested by trypsinization, counted, and equal numbers of cells (5 × 10^6 cells per condition) were mixed. Mixed cells were pelleted, washed with PBS, and lysed in 8 M urea, 50 mM Tris-HCl pH 8.0 buffer containing protease inhibitors. Protein concentration was determined using BCA assay, and 100 μg of protein per sample was reduced with 10 mM DTT at 56°C for 30 minutes, alkylated with 20 mM iodoacetamide at room temperature for 20 minutes in the dark, and digested with trypsin (1:50 enzyme-to-protein ratio) at 37°C overnight. Peptides were desalted using C18 StageTips and analyzed by LC-MS/MS on an Orbitrap Fusion Lumos mass spectrometer with a 120-minute gradient. Protein ratios were calculated from light-to-heavy peptide intensity ratios using MaxQuant, with proteins showing greater than 1.5-fold change and p-value < 0.05 considered significantly altered.""",
-        """MCF-7 breast cancer cells were grown in RPMI-1640 medium with 10% FBS and maintained at 37°C with 5% CO2. Cells were seeded at 2 × 10^5 cells per well in 6-well plates and allowed to attach overnight. Three treatment groups were established: control (vehicle only), treatment A (1 μM tamoxifen), and treatment B (5 μM tamoxifen). After 48 hours of treatment, cells were washed twice with ice-cold PBS and lysed in RIPA buffer (50 mM Tris-HCl pH 7.4, 150 mM NaCl, 1% NP-40, 0.5% sodium deoxycholate, 0.1% SDS) containing protease and phosphatase inhibitors. Protein concentration was quantified using BCA assay, and 50 μg of protein per sample was digested with trypsin after reduction and alkylation. All control samples (n=4) were processed on day 1, followed by all treatment A samples (n=4) on day 2, and all treatment B samples (n=4) on day 3. Peptides were analyzed using data-independent acquisition (DIA) on a Q Exactive HF mass spectrometer with a 60-minute LC gradient. DIA windows were set to 20 m/z with 1 m/z overlap, covering the mass range 400-1000 m/z. Data were processed using Spectronaut version 14 with default settings and a human spectral library. Proteins with p-value < 0.05 and fold change > 1.5 compared to control were considered significant.""",
-        """HEK293T cells were cultured in DMEM/F12 medium with 10% FBS and transfected with either empty vector or a plasmid encoding the protein of interest using Lipofectamine 3000 according to manufacturer's instructions. After 24 hours, cells were serum-starved for 4 hours, then stimulated with 100 ng/mL EGF for 0, 5, 15, or 30 minutes. Cells were washed with ice-cold PBS and lysed in 8 M urea, 50 mM Tris-HCl pH 8.0 buffer. Protein concentration was determined, and 2 mg of protein per sample was digested with trypsin. Phosphopeptides were enriched using TiO2 beads (GL Sciences) at a ratio of 1:4 (beads:peptides) in loading buffer (80% acetonitrile, 5% TFA, 1 M glycolic acid). Control samples (0 min time point, n=3) were processed on day 1, and all treated samples (5, 15, 30 min time points, n=3 each) were processed on day 2. After enrichment, samples were labeled with TMT10-plex reagents (Thermo Fisher Scientific), with controls receiving TMT126-128 and treated samples receiving TMT129-131, 132-134, and 135-137 for the three time points respectively. Labeled peptides were pooled, desalted, and fractionated by high-pH reverse-phase chromatography into 12 fractions using an Agilent 1260 Infinity system. Each fraction was analyzed by LC-MS/MS on an Orbitrap Fusion Lumos with a 90-minute gradient. Phosphosite quantification was performed using TMT reporter ion intensities, and sites with >2-fold change and p-value < 0.01 were considered significantly regulated.""",
-        """Mouse embryonic stem cells (mESCs) were maintained on gelatin-coated plates in mESC medium containing LIF. For differentiation experiments, cells were seeded at 1 × 10^5 cells per well in 6-well plates and induced to differentiate by removing LIF and adding 1 μM retinoic acid. Cells were harvested at 0, 6, 12, 24, and 48 hours after induction, with 2 biological replicates per time point. At each time point, cells were washed with PBS, trypsinized, counted, and 1 × 10^6 cells were pelleted and snap-frozen in liquid nitrogen. All samples were stored at -80°C until processing. Protein extraction was performed by resuspending cell pellets in 8 M urea, 50 mM ammonium bicarbonate buffer and sonicating for 3 cycles of 30 seconds each. After BCA quantification, 50 μg of protein per sample was reduced, alkylated, and digested with trypsin. Peptides were desalted using C18 columns and analyzed by label-free LC-MS/MS. Samples were run in chronological order: 0h replicate 1, 0h replicate 2, 6h replicate 1, 6h replicate 2, 12h replicate 1, 12h replicate 2, 24h replicate 1, 24h replicate 2, 48h replicate 1, 48h replicate 2. LC-MS/MS analysis was performed on an Orbitrap Exploris 480 with a 90-minute gradient (5-35% acetonitrile in 0.1% formic acid). MaxQuant version 1.6.14 was used for protein identification and quantification with match-between-runs enabled, and proteins identified in at least 70% of samples were retained for analysis.""",
-        """Human liver tissue samples were obtained from the tissue bank at University Hospital, with 8 samples from patients with hepatocellular carcinoma (HCC) and 8 samples from adjacent normal tissue from the same patients. Tissue samples were flash-frozen in liquid nitrogen within 30 minutes of resection and stored at -80°C. For protein extraction, approximately 50 mg of frozen tissue was pulverized using a mortar and pestle under liquid nitrogen, then homogenized in RIPA buffer using a Dounce homogenizer. Protein concentration was determined using BCA assay, and 100 μg of protein per sample was processed. All normal tissue samples were processed first (samples 1-8), followed by all HCC samples (samples 9-16) to ensure consistent handling. Proteins were reduced with 10 mM DTT, alkylated with 55 mM iodoacetamide, and digested with trypsin (Promega, sequencing grade) at 37°C for 16 hours. Each biological sample was analyzed in triplicate (3 technical replicates), resulting in 24 LC-MS/MS runs for normal tissue and 24 runs for HCC tissue. Data acquisition was performed using data-dependent acquisition (DDA) mode on an Orbitrap Fusion mass spectrometer, selecting the top 20 most intense ions for fragmentation. Protein identification was performed using Sequest against the human UniProt database (downloaded March 2020), and quantification was based on spectral counting. Proteins with at least 2 unique peptides and spectral count fold change > 2.0 between groups were considered differentially expressed.""",
-        """A549 lung adenocarcinoma cells were cultured in F-12K medium with 10% FBS. For SILAC triple-labeling, cells were passaged six times in either light medium (normal arginine and lysine), medium medium (13C6-lysine), or heavy medium (13C6-15N4-arginine and 13C6-15N2-lysine, all from Cambridge Isotope Laboratories). Condition A cells (control) were maintained in light medium, condition B cells (low dose treatment) were switched to medium medium 72 hours before treatment, and condition C cells (high dose treatment) were switched to heavy medium 72 hours before treatment. After 24 hours of treatment with 0.1 μM or 1.0 μM cisplatin, cells were harvested, counted, and equal numbers of cells (4 × 10^6 per condition) were combined. Mixed cells were lysed in 8 M urea buffer, and 150 μg of total protein was processed. Proteins were reduced with 5 mM TCEP at 37°C for 30 minutes, alkylated with 10 mM iodoacetamide at room temperature for 20 minutes, and digested with trypsin (1:25 ratio) overnight at 37°C. Peptides were desalted and analyzed by LC-MS/MS on an Orbitrap Eclipse mass spectrometer with a 120-minute gradient. Protein ratios were calculated relative to the light-labeled condition using MaxQuant, and proteins showing consistent directional changes in both medium/light and heavy/light ratios with p-value < 0.05 were considered validated.""",
-        """Plasma samples were collected from 50 patients diagnosed with type 2 diabetes and 50 age- and sex-matched healthy controls at the Clinical Research Center. Blood was drawn into EDTA tubes after an overnight fast, centrifuged at 2000 × g for 15 minutes at 4°C, and plasma aliquots were stored at -80°C. All patient samples were processed in batch 1 (samples 1-50), and all control samples were processed in batch 2 (samples 51-100) to maintain consistency within groups. For protein depletion, 50 μL of plasma was incubated with a Human 14 Multiple Affinity Removal System column (Agilent) according to manufacturer's protocol to remove the 14 most abundant proteins. Depleted plasma was concentrated using 3 kDa molecular weight cutoff filters, and protein concentration was determined using BCA assay. A total of 50 μg of depleted protein per sample was reduced, alkylated, and digested with trypsin. Each sample was analyzed once by label-free LC-MS/MS on an Orbitrap Exploris 480 with a 120-minute gradient. To account for batch effects, protein intensities were normalized separately within each batch using quantile normalization before statistical comparison between groups. Data were processed using MaxQuant, and proteins with fold change > 2.0, p-value < 0.01, and present in at least 80% of samples within each group were considered potential biomarkers.""",
-        """Jurkat T cells were cultured in RPMI-1640 medium with 10% FBS and treated with 10 ng/mL PMA and 500 ng/mL ionomycin to induce activation. Cells were harvested at 0, 2, 6, 12, and 24 hours after activation, with 2 biological replicates per time point. Due to limited cell numbers, we were able to process only one complete TMT11-plex set containing all time points, without technical replicates. At each time point, 5 × 10^6 cells were pelleted, washed with PBS, and lysed in 8 M urea buffer. After protein quantification, 50 μg of protein per sample was processed. Proteins were reduced with 10 mM DTT, alkylated with 20 mM iodoacetamide, and digested with trypsin. Peptides were labeled with TMT11-plex reagents such that time point 0 received TMT126-127, time point 2h received TMT128N-129N, time point 6h received TMT130N-131, time point 12h received TMT132N-133, and time point 24h received TMT134-135. Labeled peptides were pooled in equal amounts, desalted, and fractionated into 10 fractions using high-pH reverse-phase chromatography. Each fraction was analyzed by LC-MS/MS on an Orbitrap Fusion Lumos with a 90-minute gradient. Protein quantification was based on TMT reporter ion intensities measured in MS2 spectra. Missing values, which occurred in 15% of protein measurements, were imputed using the minimum value observed for each protein across all channels, and proteins with >1.5-fold change between any two time points were considered temporally regulated.""",
+        "Tell me about the CSV file I just uploaded",
+        "Can you help me understand what's in my data?",
+        "What problems do you see with my experiment design?",
+        "I'm planning an experiment - can you review it and tell me what might go wrong?",
+        "Does my data look okay? What should I be worried about?",
+        "Can you analyze my data and tell me what factors are important?",
+        "Help me figure out if my experiment is set up correctly",
+        "What are the main issues I should fix before running my experiment?",
     ]
     return (example_prompts,)
 
 
 @app.cell(hide_code=True)
-def _(bot):
+def _(experiment_design_agent):
     def chat_turn(messages, config):
         user_message = messages[-1].content
-        print(user_message)
-        result = bot(user_message, globals())
+        result = experiment_design_agent(user_message, globals())
         return result
 
     return (chat_turn,)
@@ -197,69 +1296,18 @@ def _(chat_turn, example_prompts, mo):
     return (chat,)
 
 
-@app.cell(hide_code=True)
-def _(mo):
+@app.cell
+def _(chat, mo):
     mo.vstack(
         [
-            mo.md("# Statistics Agent"),
+            mo.md("# Experiment Design Critique Agent"),
             mo.md(
-                "Chat with a statistics agent for a first-pass critique of your experiment designs before bringing it to a human statistician. Paste in your experiment design written up as a methods paragraph in a paper or grant proposal, and the bot will help identify potential flaws, biases, or weaknesses in the design."
+                "Chat with a statistics agent for a first-pass critique of your experiment designs. "
+                "Upload CSV files above, then ask the agent to analyze them or critique experiment designs."
             ),
-        ]
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(chat, mo):
-    ui = mo.vstack(
-        [
             chat,
         ]
     )
-    ui
-    return
-
-
-@app.cell
-def _(bot):
-    bot
-    return
-
-
-@app.cell
-def _(bot, mo):
-    mo.stop(True)
-    bot("show me the file I just uploaded, ic50", globals())
-    return
-
-
-@app.cell
-def _(bot, mo):
-    mo.stop(True)
-    response = bot("groupby compound ID", globals())
-    response
-    return
-
-
-@app.cell
-def _(bot, mo):
-    mo.stop(True)
-    bot("after grouping by compound ID, rank order by mean IC50.")
-    return
-
-
-@app.cell
-def _(bot, mo):
-    mo.stop(True)
-    bot(
-        "with this ic50 dataset, what are we missing from an experiment design perspective?"
-    )
-    return
-
-
-@app.cell
-def _():
     return
 
 

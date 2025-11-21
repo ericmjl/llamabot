@@ -96,7 +96,11 @@ class AgentBot:
     For terminal tools (like `respond_to_user`), use `@nodeify(loopback_name=None)`.
 
     :param tools: List of tools that must be decorated with both @tool and @nodeify
-    :param decide_node: Optional custom decision node (defaults to DecideNode)
+    :param decide_node: Optional custom decision node (defaults to DecideNode).
+        If provided, overrides `system_prompt` parameter.
+    :param system_prompt: System prompt string for decision-making.
+        If None, uses the default `decision_bot_system_prompt` from `llamabot.prompt_library.agentbot`.
+        Only used if `decide_node` is None.
     :param model_name: The name of the model to use for decision making
     :param completion_kwargs: Additional keyword arguments to pass to the
         completion function of `litellm` (e.g., `api_base`, `api_key`).
@@ -107,6 +111,7 @@ class AgentBot:
         self,
         tools: List[Callable],
         decide_node: Optional[Node] = None,
+        system_prompt: Optional[str] = None,
         model_name: str = "gpt-4.1",
         **completion_kwargs,
     ):
@@ -121,11 +126,30 @@ class AgentBot:
 
         # Create decide node if not provided
         if decide_node is None:
+            # Generate default system prompt if not provided
+            if system_prompt is None:
+                from llamabot.prompt_library.agentbot import decision_bot_system_prompt
+                from llamabot.components.messages import BaseMessage
+
+                prompt_result = decision_bot_system_prompt()
+                if isinstance(prompt_result, BaseMessage):
+                    system_prompt = prompt_result.content
+                else:
+                    system_prompt = prompt_result
+
             decide_node = DecideNode(
-                tools=all_tools, model_name=model_name, **completion_kwargs
+                tools=all_tools,
+                system_prompt=system_prompt,
+                model_name=model_name,
+                **completion_kwargs,
             )
 
         self.decide_node = decide_node
+
+        # Always ensure decide_node has the correct tools
+        # This ensures consistency even when a custom decide_node is provided
+        if hasattr(decide_node, "tools"):
+            decide_node.tools = all_tools
 
         # Build PocketFlow graph: connect tools to decide node
         for tool_node in all_tools:
@@ -171,7 +195,11 @@ class AgentBot:
 
         # Update globals_dict if provided, otherwise preserve existing
         if globals_dict is not None:
-            self.shared["globals_dict"] = globals_dict
+            # Merge with existing globals_dict to preserve any variables created during execution
+            if "globals_dict" not in self.shared:
+                self.shared["globals_dict"] = {}
+            # Update with new globals_dict (this will add new keys and update existing ones)
+            self.shared["globals_dict"].update(globals_dict)
 
         # Ensure globals_dict exists
         if "globals_dict" not in self.shared:
