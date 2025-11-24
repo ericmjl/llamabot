@@ -16,7 +16,7 @@ jobs:
       has-code-changes: ${{ steps.changes.outputs.has-code-changes }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -59,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Update apt and install curl
         run: |
