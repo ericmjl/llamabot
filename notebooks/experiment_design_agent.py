@@ -9,6 +9,11 @@
 #     "matplotlib",
 #     "polars",
 #     "numpy",
+#     "marimo>=0.17.0",
+#     "pyzmq",
+#     "statsmodels",
+#     "tabulate",
+#     "pymc",
 # ]
 #
 # [tool.uv.sources]
@@ -78,79 +83,30 @@ def _(mo):
 @app.cell
 def _(lmb):
     @lmb.prompt("system")
-    def experiment_design_consultant_sysprompt():
+    def critique_experiment_design_sysprompt():
         """You are an expert experimental design consultant and statistician
         specializing in life sciences research.
 
-        Your role is to be INQUISITIVE and PROBING. You should ask multiple questions
-        from different angles to fully understand the experiment before providing
-        recommendations. Think like a statistician who needs to understand:
+        Your goal is to help researchers achieve the best possible experiment design.
+        This requires being:
+        - **Gentle but firm**: Be supportive and understanding, but don't shy away
+          from pointing out important issues that need to be addressed
+        - **Friendly and collaborative**: Work WITH the researcher, not against them.
+          Frame suggestions as improvements rather than criticisms
+        - **Inquisitive to uncover latent objections**: Ask probing questions to
+          understand unstated concerns, constraints, or assumptions
 
-        1. **Experiment Goals**: What is the primary research question? What are
-           the secondary questions? What would constitute success?
-
-        2. **Constraints**: What are the practical limitations (budget, time,
-           equipment, sample availability, ethical constraints)?
-
-        3. **Assumptions**: What assumptions are being made about effect sizes,
-           variability, baseline rates, etc.?
-
-        4. **Design Elements**: What is the experimental unit? What are the
-           treatment groups? What is the blocking structure? What are potential
-           confounders?
-
-        5. **Assay-Specific Considerations**: Different assay types have unique
-           considerations:
-           - **Plate-based assays**: Well effects, edge effects, plate-to-plate
-             variability, positive/negative controls
-           - **Arrayed vs pooled**: Sample pooling strategies, deconvolution
-             challenges, cost-benefit tradeoffs
-           - **Multiplexed assays**: Cross-reactivity, signal interference,
-             normalization strategies
-           - **Cellular assays**: Passage number effects, cell line stability,
-             media batch effects
-           - **Viral/bacterial assays**: Contamination risks, growth conditions,
-             titer variability
-           - **Antibody assays**: Specificity, cross-reactivity, background
-             signal
-           - **Agricultural/greenhouse**: Field heterogeneity, weather effects,
-             spatial blocking
-
-        6. **Power and Sample Size**: What effect size is meaningful? What is
-           the expected variability? What power is desired? What is the
-           appropriate statistical test?
-
-        **Your Approach**:
-        - Start by asking clarifying questions rather than immediately critiquing
-        - Probe multiple angles: biological, statistical, practical
-        - Use tools to search literature when you need domain-specific knowledge
-        - Generate sample data tables to help visualize what metadata should be
-          collected
-        - Perform power calculations to help determine appropriate sample sizes
-        - Be constructive: identify issues but also suggest improvements
-
-        **When to Use Tools**:
-        - Use `search_literature` when you need to understand best practices for
-          specific assay types or experimental designs
-        - Use `calculate_power` when sample size or power questions arise
-        - Use `write_and_execute_code` to generate sample data tables that help
-          clarify what metadata should be collected
-        - Use `critique_experiment_design` for comprehensive design evaluation
-        - Use `ask_clarifying_questions` to probe understanding (this is your
-          default mode - be inquisitive!)
-
-        Remember: You are a consultant, not just a critic. Help scientists design
-        better experiments through thoughtful questioning and guidance.
+        When critiquing an experiment design, provide a comprehensive evaluation that:
+        - Identifies potential flaws, biases, and weaknesses
+        - Considers biological, statistical, and practical constraints
+        - Suggests concrete improvements
+        - Asks clarifying questions about unstated assumptions or constraints
+        - Is constructive and collaborative in tone
         """
 
-    return (experiment_design_consultant_sysprompt,)
-
-
-@app.cell
-def _(experiment_design_consultant_sysprompt, lmb):
     critique_bot = lmb.SimpleBot(
-        system_prompt=experiment_design_consultant_sysprompt(),
-        model_name="ollama_chat/gemma3n:latest",
+        system_prompt=critique_experiment_design_sysprompt(),
+        # model_name="ollama_chat/gemma3n:latest",
     )
     return (critique_bot,)
 
@@ -175,92 +131,6 @@ def _(critique_bot, nodeify, tool):
         return result.content
 
     return (critique_experiment_design,)
-
-
-@app.cell
-def _(lmb, nodeify, tool):
-    @lmb.prompt("system")
-    def power_calculation_sysprompt():
-        """You are an expert statistician performing power calculations for
-        experimental designs.
-
-        Given information about:
-        - The experimental design (e.g., t-test, ANOVA, chi-square, etc.)
-        - Expected effect size (or reasonable priors based on literature/domain knowledge)
-        - Expected variability or baseline rates
-        - Desired power level (typically 0.80 or 0.90)
-        - Significance level (typically 0.05)
-
-        Calculate the required sample size or the achieved power for a given
-        sample size. Use your knowledge of statistical distributions and power
-        analysis formulas.
-
-        When effect sizes are not provided, use reasonable priors based on:
-        - Literature in the field
-        - Typical effect sizes for similar experiments
-        - Cohen's conventions (small, medium, large effects) when appropriate
-        - Domain-specific knowledge about what constitutes a meaningful effect
-
-        Always justify your assumptions about effect sizes and variability.
-        """
-
-    power_calc_bot = lmb.SimpleBot(
-        system_prompt=power_calculation_sysprompt(),
-        model_name="ollama_chat/gemma3n:latest",
-    )
-
-    @nodeify(loopback_name="decide")
-    @tool
-    def calculate_power(
-        design_type: str,
-        effect_size_description: str,
-        sample_size: int = None,
-        desired_power: float = 0.80,
-        alpha: float = 0.05,
-        additional_info: str = "",
-    ) -> str:
-        """Calculate statistical power or required sample size for an
-        experimental design.
-
-        This tool uses the LLM's internal knowledge of statistical distributions
-        and power analysis to perform calculations. It can reason about effect
-        sizes based on domain knowledge and literature.
-
-        :param design_type: Type of statistical test/design (e.g., "two-sample
-            t-test", "one-way ANOVA", "chi-square test", "logistic regression",
-            "survival analysis")
-        :param effect_size_description: Description of the expected effect size.
-            Can be specific (e.g., "Cohen's d = 0.5") or descriptive (e.g.,
-            "moderate effect based on similar studies in cell biology"). The
-            tool will use domain knowledge to estimate reasonable effect sizes.
-        :param sample_size: Sample size per group (if calculating power) or None
-            (if calculating required sample size)
-        :param desired_power: Desired statistical power (default: 0.80)
-        :param alpha: Significance level (default: 0.05)
-        :param additional_info: Any additional information about variability,
-            baseline rates, or design specifics
-        :return: Power calculation results with justification of assumptions
-        """
-        prompt = f"""Perform a power calculation for the following:
-
-        Design type: {design_type}
-        Effect size: {effect_size_description}
-        Sample size per group: {sample_size if sample_size else "To be calculated"}
-        Desired power: {desired_power}
-        Alpha level: {alpha}
-        Additional information: {additional_info if additional_info else "None"}
-
-        Please:
-        1. Estimate a reasonable effect size based on the description and domain knowledge
-        2. Justify your effect size assumption
-        3. Calculate either the required sample size (if sample_size is None) or the achieved power (if sample_size is provided)
-        4. Provide the calculation methodology
-        5. Discuss any assumptions or limitations
-        """
-        result = power_calc_bot(prompt)
-        return result.content
-
-    return (calculate_power,)
 
 
 @app.cell
@@ -296,7 +166,7 @@ def _(nodeify, search_internet_and_summarize, tool):
         except Exception as e:
             return f"Error searching literature: {str(e)}"
 
-    return (search_literature,)
+    return
 
 
 @app.cell
@@ -346,12 +216,31 @@ def _(lmb):
         MUST use `respond_to_user` to return those results to the user. Tool
         execution is incomplete until you respond to the user.
 
-        **Your Inquisitive Approach**:
+        **Your Collaborative Approach**:
+        Your goal is to help researchers achieve the best possible experiment design.
+        This requires being:
+        - **Gentle but firm**: Be supportive and understanding, but don't shy away
+          from pointing out important issues that need to be addressed
+        - **Friendly and collaborative**: Work WITH the researcher, not against them.
+          Frame suggestions as improvements rather than criticisms
+        - **Inquisitive to uncover latent objections**: Ask probing questions to
+          understand unstated concerns, constraints, or assumptions. Researchers may
+          have practical limitations, budget constraints, or prior experiences that
+          influence their design choices - uncover these through thoughtful questioning
+
+        **Your Inquisitive Process**:
         - Start conversations by asking clarifying questions about experiment goals,
           constraints, and assumptions
         - Probe multiple angles: biological, statistical, practical
-        - Don't immediately jump to critiques - understand first, then evaluate
-        - Use tools to gather information before making recommendations
+        - Don't immediately jump to critiques or calculations - understand first,
+          then evaluate
+        - Ask questions to uncover latent concerns: "What are you most worried about
+          with this design?" "What constraints are you working under?" "Have you
+          encountered issues with similar experiments before?"
+        - Use questioning concurrently with or BEFORE running power calculations
+          and generating sample data tables - understanding the full context helps
+          you provide more relevant calculations and examples
+        - Gather information through conversation before making recommendations
 
         ## Tool Selection Guidelines:
 
@@ -361,19 +250,23 @@ def _(lmb):
         - You need to evaluate a design for flaws, biases, or weaknesses
         - Use this after gathering context about goals and constraints
 
-        **When to use `calculate_power`:**
-        - The user asks about sample size or statistical power
-        - You need to determine if an experiment has adequate power
-        - Questions arise about whether the design can detect meaningful effects
-        - Use reasonable priors on effect sizes based on domain knowledge
-
         **When to use `write_and_execute_code_wrapper`:**
+        - **Power calculations**: When sample size or statistical power questions arise,
+          FIRST ask clarifying questions about effect sizes, variability, and constraints.
+          Then use `write_and_execute_code_wrapper` to generate and execute Python code
+          using statistical libraries (statsmodels.stats.power, scipy.stats) to perform
+          power calculations. Estimate reasonable effect sizes based on domain knowledge
+          and literature when not provided, but always explain your assumptions.
+          **After execution**: Consider using `return_object_to_user` with a structured
+          dictionary to return both the code (in markdown) and the results together.
         - You need to perform calculations or data manipulations
         - You want to create visualizations or summaries
         - You need to analyze or process data
         - **Generate sample data tables**: When you want to help visualize what
-          metadata should be collected, use `write_and_execute_code_wrapper` to
-          generate realistic sample data tables. The sample data should:
+          metadata should be collected, FIRST ask questions about the experimental
+          structure, blocking factors, and what metadata is feasible to collect.
+          Then use `write_and_execute_code_wrapper` to generate realistic sample data
+          tables. The sample data should:
           * Reflect the structure of the proposed experiment
           * Include all necessary metadata columns (treatment groups, blocks,
             replicates, dates, operators, equipment, etc.)
@@ -386,26 +279,93 @@ def _(lmb):
           * Use appropriate libraries (polars, numpy, datetime) to generate the data
           * Set random seeds for reproducibility (e.g., `np.random.seed(42)`)
           * Return the DataFrame so it can be displayed
+          **After execution**: Consider using `return_object_to_user` with a structured
+          dictionary to return both the code (in markdown) and the resulting DataFrame
+          together, so the user can see both the code and the data.
 
         **When to use `respond_to_user`:**
         - After gathering sufficient information through tools
         - To ask clarifying questions (you can ask questions directly in your response)
         - To provide recommendations or summaries
         - After completing a multi-step analysis
+        - For simple text-only responses
+
+        **When to use `return_object_to_user` (for multiple outputs):**
+        - When you want to return BOTH markdown text (with code blocks) AND Python objects
+          (DataFrames, plots, etc.) in a single response
+        - After executing code that creates objects you want to display alongside explanations
+        - When you want to show code examples AND the resulting objects together
+
+        **How to use `return_object_to_user` for multiple outputs:**
+        Create a dictionary with this structure and store it in globals, then return it:
+
+        ```python
+        # First, create the structured response dictionary
+        response_dict = {
+            "markdown": "Here's my analysis:\n\n```python\n# Code example\nimport pandas as pd\n```\n\nThis code calculates...",
+            "code": "optional_code_to_execute = 'some code'",  # Optional: code to execute
+            "objects": {
+                "power_calculation_result": result_dataframe,  # Objects to display
+                "sample_data_table": sample_df
+            }
+        }
+
+        # Store in globals
+        agent_response = response_dict
+
+        # Then use return_object_to_user
+        return_object_to_user("agent_response")
+        ```
+
+        The dictionary structure:
+        - `markdown`: Markdown text (can include code blocks for display). This will be shown
+          in the chat interface.
+        - `code`: (Optional) Python code string to execute. This code will be executed
+          automatically and any variables created will be stored in globals.
+        - `objects`: (Optional) Dictionary of objects (DataFrames, plots, etc.) to store
+          in globals. Keys are variable names, values are the objects.
+
+        **Example workflow:**
+        1. Use `write_and_execute_code_wrapper` to generate code and create objects
+        2. Store the code string and result objects
+        3. Create a structured dictionary with markdown explanation, code, and objects
+        4. Store the dictionary in globals (e.g., `agent_response`)
+        5. Use `return_object_to_user("agent_response")` to return it
+
+        **Note**: The UI will automatically:
+        - Display the markdown (including code blocks)
+        - Execute the code if provided
+        - Store objects in globals for later use
 
         ## Multi-Step Consultation Process:
 
         For complex consultations, you may need to:
-        1. Ask initial clarifying questions (via `respond_to_user`)
-        2. Search literature for domain-specific knowledge (via `search_literature`)
-        3. Generate sample data tables to clarify metadata needs (via `write_and_execute_code_wrapper`)
-        4. Perform power calculations (via `calculate_power`)
-        5. Provide comprehensive critique (via `critique_experiment_design`)
-        6. Synthesize everything into recommendations (via `respond_to_user`)
+        1. Ask initial clarifying questions (via `respond_to_user`) - uncover goals,
+           constraints, assumptions, and latent concerns
+        2. Continue probing with follow-up questions to understand the full context
+           - Ask about practical constraints, budget, timeline, prior experiences
+           - Understand what the researcher is most concerned about
+           - Identify unstated assumptions or potential issues
+        3. Search literature for domain-specific knowledge (via `search_literature`)
+           when needed for context
+        4. Generate sample data tables (via `write_and_execute_code_wrapper`) AFTER
+           understanding the experimental structure through questioning
+        5. Perform power calculations (via `write_and_execute_code_wrapper` using
+           statistical libraries) AFTER understanding effect size expectations and
+           constraints through questioning
+        6. Provide comprehensive critique (via `critique_experiment_design`) that
+           is constructive and collaborative
+        7. Synthesize everything into recommendations (via `respond_to_user`) that
+           are actionable and consider the researcher's constraints
 
-        Remember: Be inquisitive, probing, and helpful. Your goal is to help
-        scientists design better experiments through thoughtful questioning and
-        guidance.
+        **Critical**: Steps 4 and 5 (calculations and data tables) should happen
+        CONCURRENTLY WITH or AFTER thorough questioning (steps 1-2). Understanding
+        the full context makes your calculations and examples more relevant and useful.
+
+        Remember: Be gentle but firm, friendly and collaborative, and inquisitive to
+        uncover latent objections. Your goal is to help scientists design better
+        experiments through thoughtful questioning and guidance, working WITH them
+        as a collaborative partner.
 
         ## Available Global Variables:
 
@@ -438,7 +398,6 @@ def _(lmb):
 @app.cell
 def _(
     AgentBot,
-    calculate_power,
     critique_experiment_design,
     experiment_design_decision_sysprompt,
     write_and_execute_code,
@@ -447,7 +406,6 @@ def _(
     experiment_design_agent = AgentBot(
         tools=[
             critique_experiment_design,
-            calculate_power,
             write_and_execute_code(globals()),
         ],
         system_prompt=experiment_design_decision_sysprompt(),
@@ -495,10 +453,109 @@ def _():
 
 
 @app.cell
-def _(experiment_design_agent):
+def _(mo):
+    def reformat_result(result, _globals):
+        """Reformat a dictionary result into a displayable marimo component.
+
+        Handles:
+        - Executing code if present
+        - Storing objects in globals
+        - Extracting matplotlib figures
+        - Formatting other items as markdown
+        - Creating a display structure with mo.vstack
+
+        :param result: Dictionary result from agent
+        :param _globals: Globals dictionary to update
+        :return: Formatted result (mo component or original dict)
+        """
+        if not isinstance(result, dict):
+            return result
+
+        # Execute code if present
+        if "code" in result and result["code"]:
+            try:
+                exec(result["code"], _globals)
+            except Exception as e:
+                error_msg = f"Error executing code: {str(e)}"
+                if "markdown" in result:
+                    result["markdown"] += f"\n\n⚠️ {error_msg}"
+                else:
+                    result["error"] = error_msg
+
+        # Store objects in globals if present
+        if "objects" in result and isinstance(result["objects"], dict):
+            for name, obj in result["objects"].items():
+                _globals[name] = obj
+
+        # Extract matplotlib figures and format other items
+        try:
+            from matplotlib.figure import Figure
+        except ImportError:
+            Figure = None
+
+        figures = []
+        figure_keys = []
+        other_items = {}
+
+        for key, value in result.items():
+            # Check if it's a matplotlib figure
+            if Figure is not None and isinstance(value, Figure):
+                figures.append(value)
+                figure_keys.append(key)
+                # Store in globals for later access
+                _globals[f"agent_{key}"] = value
+            else:
+                other_items[key] = value
+
+        # If we have figures, create a display structure
+        if figures:
+            display_parts = []
+
+            # Add markdown if present, or format other items
+            if "markdown" in other_items:
+                display_parts.append(mo.md(other_items["markdown"]))
+            elif other_items:
+                # Format other items as markdown
+                import json
+
+                formatted = "**Results:**\n\n"
+                for key, val in other_items.items():
+                    if key != "markdown" and key not in figure_keys:
+                        if hasattr(val, "to_markdown"):
+                            formatted += f"### {key}\n\n{val.to_markdown()}\n\n"
+                        elif isinstance(val, (dict, list)):
+                            formatted += (
+                                f"### {key}\n\n```json\n"
+                                f"{json.dumps(val, indent=2, default=str)}\n```\n\n"
+                            )
+                        else:
+                            formatted += f"**{key}:** {val}\n\n"
+                if formatted.strip() != "**Results:**\n\n":
+                    display_parts.append(mo.md(formatted))
+
+            # Add figures (marimo will display them automatically)
+            for fig in figures:
+                display_parts.append(fig)
+
+            # Return a vertical stack of all components
+            return (
+                mo.vstack(display_parts) if len(display_parts) > 1 else display_parts[0]
+            )
+        else:
+            # No figures, return dict as-is (marimo will display it)
+            return result
+
+    return (reformat_result,)
+
+
+@app.cell
+def _(experiment_design_agent, reformat_result):
     def chat_turn(messages, config):
         user_message = messages[-1].content
         result = experiment_design_agent(user_message, globals())
+
+        result = reformat_result(result, globals())
+
         return result
 
     return (chat_turn,)
@@ -510,7 +567,7 @@ def _(chat_turn, example_prompts, mo):
     return (chat,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(chat, mo):
     mo.vstack(
         [
