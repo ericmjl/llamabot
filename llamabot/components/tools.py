@@ -261,9 +261,16 @@ def return_object_to_user(variable_name: str, _globals_dict: dict = None) -> Any
     Use `respond_to_user` for text responses, and `return_object_to_user` for returning
     actual Python objects.
 
+    **Formatter Support:**
+    If a formatter function is provided in `_globals_dict` under the key `_return_object_formatter`,
+    it will be used to format the returned object. The formatter should accept two arguments:
+    - `result`: The object to format
+    - `globals_dict`: The globals dictionary (for storing objects, executing code, etc.)
+    The formatter should return a formatted version of the object suitable for display.
+
     :param variable_name: The name of the variable in globals() to return
     :param _globals_dict: Internal parameter - automatically injected by AgentBot
-    :return: The object from globals() with the given name
+    :return: The object from globals() with the given name (optionally formatted)
     :raises ValueError: If the variable is not found in globals_dict
     """
     if _globals_dict is None:
@@ -276,7 +283,18 @@ def return_object_to_user(variable_name: str, _globals_dict: dict = None) -> Any
             f"Available variables: {available_vars if available_vars else 'none'}"
         )
 
-    return _globals_dict[variable_name]
+    result = _globals_dict[variable_name]
+
+    # Check if a formatter is provided in globals_dict
+    formatter = _globals_dict.get("_return_object_formatter")
+    if formatter is not None and callable(formatter):
+        try:
+            return formatter(result, _globals_dict)
+        except Exception:
+            # If formatting fails, return the original result
+            return result
+
+    return result
 
 
 def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
@@ -763,7 +781,9 @@ The generated code will have access to:
     @nodeify
     @tool
     def write_and_execute_code_wrapper(
-        placeholder_function: str, keyword_args: dict = dict()
+        placeholder_function: str,
+        keyword_args: dict = dict(),
+        _globals_dict: dict = None,
     ):
         """Write and execute a Python function with access to globals.
 
@@ -772,9 +792,14 @@ The generated code will have access to:
 
         :param placeholder_function: The function to execute (complete Python function as string).
         :param keyword_args: The keyword arguments to pass to the function.
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot.
+            If provided, uses this instead of the closure's globals_dict.
         :return: Dictionary with 'code' and 'result' keys.
         """
         import traceback
+
+        # Use _globals_dict if provided (from AgentBot's shared state), otherwise use closure's globals_dict
+        execution_globals = _globals_dict if _globals_dict is not None else globals_dict
 
         # Parse the code to extract the function name
         try:
@@ -801,11 +826,11 @@ The generated code will have access to:
             }
 
         # Store original state to detect new variables
-        original_globals_keys = set(globals_dict.keys())
-        ns = globals_dict.copy()
+        original_globals_keys = set(execution_globals.keys())
+        ns = execution_globals.copy()
         try:
             compiled = compile(placeholder_function, "<llm>", "exec")
-            exec(compiled, globals_dict, ns)
+            exec(compiled, execution_globals, ns)
         except Exception as e:
             error_traceback = traceback.format_exc()
             return {
@@ -819,20 +844,20 @@ The generated code will have access to:
             result = ns[function_name](**keyword_args)
 
             # Detect new variables created during execution
-            # Check both globals_dict (for functions defined at module level) and ns (for local variables)
+            # Check both execution_globals (for functions defined at module level) and ns (for local variables)
             new_variables = {}
 
-            # Check globals_dict for new variables (functions defined at module level)
-            for key, value in globals_dict.items():
+            # Check execution_globals for new variables (functions defined at module level)
+            for key, value in execution_globals.items():
                 if key not in original_globals_keys:
                     new_variables[key] = value
 
             # Check ns for new variables (local variables created during execution)
             for key, value in ns.items():
-                if key not in globals_dict:
+                if key not in execution_globals:
                     new_variables[key] = value
-                    # Also add to globals_dict so it's available for future use
-                    globals_dict[key] = value
+                    # Also add to execution_globals so it's available for future use
+                    execution_globals[key] = value
 
             # Return result with information about created variables
             return {
