@@ -72,6 +72,34 @@ def test_function():
     assert result["code"] == code_with_global
 
 
+def test_write_and_execute_code_uses_injected_globals_dict():
+    """Test that write_and_execute_code uses _globals_dict when provided."""
+    # Create code that accesses a variable from globals
+    code_with_variable = """
+def test_function():
+    return my_variable
+"""
+
+    # Create closure globals (empty)
+    closure_globals = {}
+    wrapper = write_and_execute_code(closure_globals)
+
+    # Create injected globals with a variable
+    injected_globals = {"my_variable": 42}
+
+    # Call with _globals_dict - should use injected_globals, not closure_globals
+    result = wrapper(code_with_variable, {}, _globals_dict=injected_globals)
+
+    assert result["result"] == 42
+    assert "error" not in result
+
+    # Verify that the variable was NOT added to closure_globals
+    assert "my_variable" not in closure_globals
+
+    # Verify that the variable IS in injected_globals (execution adds it)
+    assert "test_function" in injected_globals
+
+
 def test_toolbot_initialization():
     """Test that ToolBot initializes correctly."""
     system_prompt = "You are a helpful assistant."

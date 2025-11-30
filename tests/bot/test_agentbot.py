@@ -1,8 +1,9 @@
 """Test suite for PocketFlow-based AgentBot."""
 
 import sys
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from llamabot.bot.agentbot import AgentBot
 from llamabot.components.pocketflow import DECIDE_NODE_ACTION, DecideNode, nodeify
@@ -158,6 +159,95 @@ def test_return_object_to_user_with_empty_globals():
     error_message = str(exc_info.value)
     assert "not found" in error_message.lower()
     assert "none" in error_message.lower() or "Available variables" in error_message
+
+
+def test_return_object_to_user_with_formatter():
+    """Test that return_object_to_user uses formatter callback when provided."""
+    from llamabot.components.tools import return_object_to_user
+
+    # Test data
+    test_data = {"my_var": {"key": "value", "number": 42}}
+
+    # Formatter that doubles the number
+    def formatter(result, globals_dict):
+        """Test formatter that doubles the number in result dict."""
+        if isinstance(result, dict) and "number" in result:
+            result["number"] *= 2
+        return result
+
+    # Add formatter to globals_dict
+    test_data["_return_object_formatter"] = formatter
+
+    result = return_object_to_user("my_var", _globals_dict=test_data)
+    assert result["number"] == 84  # Should be doubled by formatter
+    assert result["key"] == "value"  # Other values unchanged
+
+
+def test_return_object_to_user_formatter_receives_correct_args():
+    """Test that formatter receives correct arguments (result and globals_dict)."""
+    from llamabot.components.tools import return_object_to_user
+
+    test_data = {"my_var": "test_value"}
+    received_args = []
+
+    def formatter(result, globals_dict):
+        """Test formatter that records arguments and formats result."""
+        received_args.append((result, globals_dict))
+        return f"formatted_{result}"
+
+    test_data["_return_object_formatter"] = formatter
+
+    result = return_object_to_user("my_var", _globals_dict=test_data)
+
+    assert len(received_args) == 1
+    assert received_args[0][0] == "test_value"
+    assert received_args[0][1] is test_data
+    assert result == "formatted_test_value"
+
+
+def test_return_object_to_user_formatter_fallback_on_error():
+    """Test that return_object_to_user falls back to original result if formatter fails."""
+    from llamabot.components.tools import return_object_to_user
+
+    original_value = {"key": "value"}
+    test_data = {"my_var": original_value}
+
+    # Formatter that raises an exception
+    def failing_formatter(result, globals_dict):
+        """Test formatter that raises an exception to test error handling."""
+        raise ValueError("Formatter error")
+
+    test_data["_return_object_formatter"] = failing_formatter
+
+    # Should return original value, not raise
+    result = return_object_to_user("my_var", _globals_dict=test_data)
+    assert result == original_value
+
+
+def test_return_object_to_user_formatter_not_callable():
+    """Test that return_object_to_user ignores non-callable formatter."""
+    from llamabot.components.tools import return_object_to_user
+
+    original_value = "test"
+    test_data = {"my_var": original_value, "_return_object_formatter": "not a function"}
+
+    # Should return original value, ignoring non-callable formatter
+    result = return_object_to_user("my_var", _globals_dict=test_data)
+    assert result == original_value
+
+
+def test_return_object_to_user_no_formatter_backward_compatible():
+    """Test that return_object_to_user works without formatter (backward compatibility)."""
+    from llamabot.components.tools import return_object_to_user
+
+    test_data = {"key": "value", "number": 42}
+
+    # No formatter in globals_dict
+    result = return_object_to_user("key", _globals_dict=test_data)
+    assert result == "value"
+
+    result = return_object_to_user("number", _globals_dict=test_data)
+    assert result == 42
 
 
 def test_agentbot_custom_decide_node():
@@ -345,8 +435,9 @@ def test_decision_bot_system_prompt_with_polars_dataframe():
 
 def test_decide_node_uses_system_prompt():
     """Test that DecideNode uses the provided system prompt string."""
+    from unittest.mock import MagicMock, patch
+
     from llamabot.components.pocketflow.nodes import DecideNode
-    from unittest.mock import patch, MagicMock
 
     custom_prompt = "You are a helpful assistant."
 
