@@ -33,7 +33,6 @@ def _():
     import llamabot as lmb
     from llamabot.components.pocketflow import nodeify
     from llamabot.components.tools import (
-        search_internet_and_summarize,
         tool,
         write_and_execute_code,
     )
@@ -42,7 +41,6 @@ def _():
         lmb,
         mo,
         nodeify,
-        search_internet_and_summarize,
         tool,
         write_and_execute_code,
     )
@@ -131,42 +129,6 @@ def _(critique_bot, nodeify, tool):
         return result.content
 
     return (critique_experiment_design,)
-
-
-@app.cell
-def _(nodeify, search_internet_and_summarize, tool):
-    @nodeify(loopback_name="decide")
-    @tool
-    def search_literature(search_query: str, max_results: int = 5) -> str:
-        """Search the scientific literature and web for information about
-        experimental design best practices, assay-specific considerations, or
-        domain-specific knowledge.
-
-        Use this tool when you need to:
-        - Understand best practices for specific assay types
-        - Find information about typical effect sizes in a field
-        - Learn about special considerations for particular experimental designs
-        - Get domain-specific knowledge about experimental constraints
-
-        :param search_query: Search query describing what to look for (e.g.,
-            "plate-based assay edge effects", "power analysis for RNA-seq
-            experiments", "blocking strategies for agricultural field trials")
-        :param max_results: Maximum number of search results to return (default: 5)
-        :return: Summarized search results with relevant information
-        """
-        try:
-            summaries = search_internet_and_summarize(search_query, max_results)
-            if not summaries:
-                return f"No results found for query: {search_query}"
-
-            result_parts = [f"## Search Results for: {search_query}\n"]
-            for url, summary in summaries.items():
-                result_parts.append(f"### {url}\n{summary}\n")
-            return "\n".join(result_parts)
-        except Exception as e:
-            return f"Error searching literature: {str(e)}"
-
-    return
 
 
 @app.cell
@@ -407,6 +369,104 @@ def _(lmb):
           - Do NOT write: `def analyze(mtt_power_analysis_result):` and pass `{"mtt_power_analysis_result": "mtt_power_analysis_result"}`
           - That passes the STRING `"mtt_power_analysis_result"`, not the dictionary object!
           - Only use function parameters when passing actual values (numbers, strings, lists, etc.), NOT variable names
+
+        - **Generate plate map visualizations**: When users ask for plate layouts, plate maps, or visualizations
+          of where samples/treatments are located on a plate, you MUST create a matplotlib figure that shows
+          the plate layout. **CRITICAL - Plate map visualization requirements:**
+
+          A plate map visualization is a grid-based matplotlib figure that represents a multi-well plate
+          (typically 96-well, 384-well, or 1536-well format). Here's what it MUST include:
+
+          **Visual Structure:**
+          - A grid where each cell represents one well on the plate
+          - Rows labeled with letters (A, B, C, D, E, F, G, H for 96-well; more for larger plates)
+          - Columns labeled with numbers (1, 2, 3, ..., 12 for 96-well; more for larger plates)
+          - Each well/cell should be colored according to its treatment group or condition
+          - Different treatments should have distinctly different colors (use a color palette like
+            'Set1', 'Set2', 'Set3', or 'tab10' from matplotlib)
+          - A legend showing which color corresponds to which treatment/condition
+
+          **Code Pattern:**
+          ```python
+          import matplotlib.pyplot as plt
+          import numpy as np
+          import pandas as pd
+
+          def create_plate_map():
+              # Create a grid representing the plate (e.g., 8 rows x 12 columns for 96-well)
+              plate_rows = 8  # A-H
+              plate_cols = 12  # 1-12
+
+              # Create a DataFrame or array mapping each well to its treatment
+              # This should come from the experimental design data
+              plate_map = np.zeros((plate_rows, plate_cols), dtype=int)
+
+              # Fill in treatment assignments (example: 0=Control, 1=Treatment A, 2=Treatment B)
+              # ... assign treatments based on experimental design ...
+
+              # Create the figure
+              fig, ax = plt.subplots(figsize=(12, 8))
+
+              # Create a heatmap-style visualization
+              im = ax.imshow(plate_map, cmap='Set1', aspect='auto')
+
+              # Set row and column labels
+              ax.set_xticks(np.arange(plate_cols))
+              ax.set_xticklabels([str(i+1) for i in range(plate_cols)])
+              ax.set_yticks(np.arange(plate_rows))
+              ax.set_yticklabels([chr(65+i) for i in range(plate_rows)])  # A, B, C, ...
+
+              # Add labels
+              ax.set_xlabel('Column', fontsize=12)
+              ax.set_ylabel('Row', fontsize=12)
+              ax.set_title('96-well Plate Map: Treatment Layout', fontsize=14, fontweight='bold')
+
+              # Add a colorbar or legend
+              # Option 1: Colorbar with treatment labels
+              cbar = plt.colorbar(im, ax=ax)
+              cbar.set_label('Treatment Group', rotation=270, labelpad=20)
+
+              # Option 2: Custom legend (better for discrete treatments)
+              from matplotlib.patches import Patch
+              unique_treatments = np.unique(plate_map)
+              legend_elements = [Patch(facecolor=plt.cm.Set1(i), label=f'Treatment {i}')
+                                for i in unique_treatments]
+              ax.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(1.15, 1))
+
+              # Optionally, add text labels in each well showing treatment codes
+              for i in range(plate_rows):
+                  for j in range(plate_cols):
+                      treatment = plate_map[i, j]
+                      ax.text(j, i, f'{treatment}', ha='center', va='center',
+                             color='white' if treatment > len(unique_treatments)/2 else 'black',
+                             fontweight='bold')
+
+              plt.tight_layout()
+              return fig
+          ```
+
+          **Key Requirements:**
+          - MUST use matplotlib to create the figure
+          - MUST show a grid with row letters (A-H) and column numbers (1-12 for 96-well)
+          - MUST color-code wells by treatment/condition
+          - MUST include a legend or colorbar explaining the colors
+          - MUST have clear axis labels and a descriptive title
+          - MUST return the figure object (not just display it)
+          - The figure should be readable and publication-ready
+
+          **Common Plate Formats:**
+          - 96-well: 8 rows (A-H) x 12 columns (1-12)
+          - 384-well: 16 rows (A-P) x 24 columns (1-24)
+          - 1536-well: 32 rows (A-Z, AA-AF) x 48 columns (1-48)
+
+          **When users ask for:**
+          - "plate map", "plate layout", "plate visualization"
+          - "show me where the samples are", "visualize the plate layout"
+          - "make a figure for the plate layout"
+          - "where are the controls vs treatments on the plate"
+
+          You should generate a plate map visualization following the pattern above. Always ask clarifying
+          questions first if the plate format or treatment structure isn't clear!
 
         - **General use cases**: Use `write_and_execute_code_wrapper` when:
         - You need to perform calculations or data manipulations
