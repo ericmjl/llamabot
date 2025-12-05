@@ -102,6 +102,8 @@ class AgentBot:
         If None, uses the default `decision_bot_system_prompt` from `llamabot.prompt_library.agentbot`.
         Only used if `decide_node` is None.
     :param model_name: The name of the model to use for decision making
+    :param max_iterations: Maximum number of tool calls before forcing termination.
+        If None, no limit is enforced. Defaults to None.
     :param completion_kwargs: Additional keyword arguments to pass to the
         completion function of `litellm` (e.g., `api_base`, `api_key`).
     :raises ValueError: If any tool is not properly decorated with @tool and @nodeify
@@ -113,6 +115,7 @@ class AgentBot:
         decide_node: Optional[Node] = None,
         system_prompt: Optional[str] = None,
         model_name: str = "gpt-4.1",
+        max_iterations: Optional[int] = None,
         **completion_kwargs,
     ):
         # Validate that all user-provided tools are properly decorated
@@ -128,8 +131,8 @@ class AgentBot:
         if decide_node is None:
             # Generate default system prompt if not provided
             if system_prompt is None:
-                from llamabot.prompt_library.agentbot import decision_bot_system_prompt
                 from llamabot.components.messages import BaseMessage
+                from llamabot.prompt_library.agentbot import decision_bot_system_prompt
 
                 prompt_result = decision_bot_system_prompt()
                 if isinstance(prompt_result, BaseMessage):
@@ -141,10 +144,12 @@ class AgentBot:
                 tools=all_tools,
                 system_prompt=system_prompt,
                 model_name=model_name,
+                max_iterations=max_iterations,
                 **completion_kwargs,
             )
 
         self.decide_node = decide_node
+        self.max_iterations = max_iterations
 
         # Always ensure decide_node has the correct tools
         # This ensures consistency even when a custom decide_node is provided
@@ -204,6 +209,10 @@ class AgentBot:
         # Ensure globals_dict exists
         if "globals_dict" not in self.shared:
             self.shared["globals_dict"] = {}
+
+        # Initialize iteration tracking for loop detection
+        if "iteration_count" not in self.shared:
+            self.shared["iteration_count"] = 0
 
         # Run the flow
         self.flow.run(self.shared)
