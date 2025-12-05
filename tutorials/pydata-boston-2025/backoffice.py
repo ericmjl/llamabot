@@ -20,9 +20,10 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    import marimo as mo
     import sys
     from pathlib import Path
+
+    import marimo as mo
 
     # Ensure we're using the local editable llamabot installation
     # Add the repository root to sys.path so local changes are picked up
@@ -287,7 +288,7 @@ def _(Path, convert_from_path, tempfile):
 
 @app.cell
 def _():
-    from llamabot.components.messages import ImageMessage, user
+    from llamabot.components.messages import user
 
     return (user,)
 
@@ -377,8 +378,8 @@ def _(convert_pdf_to_images, ocr_bot, receipt_structuring_bot, user):
 
 @app.cell
 def _():
-    from llamabot.components.tools import tool
     from llamabot.components.pocketflow import nodeify
+    from llamabot.components.tools import tool
 
     return nodeify, tool
 

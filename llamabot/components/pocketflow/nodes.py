@@ -1,7 +1,7 @@
 """PocketFlow node components for LlamaBot."""
 
 import json
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from loguru import logger
 from pocketflow import Node
@@ -155,8 +155,17 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
                     # For terminal nodes, store result in shared state and return None
                     # to signal termination to PocketFlow. This prevents PocketFlow from
                     # trying to use the result (e.g., a DataFrame) as a routing action.
+                    logger.info(
+                        f"Terminal node reached: {self.func.__name__}. "
+                        f"Storing result and terminating flow execution."
+                    )
                     shared["result"] = exec_res
                     return None
+
+                logger.debug(
+                    f"Non-terminal node: {self.func.__name__}. "
+                    f"Looping back to: {self.loopback_name}"
+                )
                 return self.loopback_name
 
             def __getattr__(self, name):
@@ -205,6 +214,8 @@ class DecideNode(Node):
     :param tools: List of tool functions (already wrapped with @tool and @nodeify)
     :param model_name: The name of the model to use for decision making
     :param system_prompt: System prompt string to use for decision-making
+    :param max_iterations: Maximum number of tool calls before forcing termination.
+        If None, no limit is enforced. Defaults to None.
     :param completion_kwargs: Additional keyword arguments to pass to the
         completion function of `litellm` (e.g., `api_base`, `api_key`).
     """
@@ -214,6 +225,7 @@ class DecideNode(Node):
         tools: List[Callable],
         system_prompt: str,
         model_name: str = "gpt-4.1",
+        max_iterations: Optional[int] = None,
         *args,
         **completion_kwargs,
     ):
@@ -222,14 +234,45 @@ class DecideNode(Node):
         self.tools = tools
         self.model_name = model_name
         self.system_prompt = system_prompt
+        self.max_iterations = max_iterations
         self.completion_kwargs = completion_kwargs
 
     def prep(self, shared):
         """Prepare the node for execution.
 
+        Increments iteration count and checks if max_iterations has been exceeded.
+        If exceeded, sets a flag to force termination via respond_to_user.
+
         :param shared: Shared state dictionary
         :return: The shared state
         """
+        # Initialize iteration_count if not present
+        if "iteration_count" not in shared:
+            shared["iteration_count"] = 0
+            logger.debug("Initialized iteration_count in shared state")
+
+        # Increment iteration count (this tracks how many times we've been to DecideNode)
+        shared["iteration_count"] += 1
+        current_iteration = shared["iteration_count"]
+
+        logger.debug(
+            f"DecideNode prep: iteration_count={current_iteration}, "
+            f"max_iterations={self.max_iterations}"
+        )
+
+        # Check if we've exceeded max_iterations
+        if (
+            self.max_iterations is not None
+            and shared["iteration_count"] > self.max_iterations
+        ):
+            # Set flag to force termination
+            shared["_force_terminate"] = True
+            logger.warning(
+                f"Max iterations ({self.max_iterations}) exceeded "
+                f"(current: {current_iteration}). "
+                f"Forcing termination via respond_to_user."
+            )
+
         return shared
 
     def exec(self, prep_res):
@@ -300,6 +343,46 @@ class DecideNode(Node):
         # Force tool calls - the model must always select a tool
         bot.tool_choice = "required"
 
+        # Check if we need to force termination due to max_iterations
+        if prep_res.get("_force_terminate", False):
+            logger.info(
+                f"Force termination flag detected. "
+                f"Max iterations ({self.max_iterations}) exceeded. "
+                f"Current iteration: {prep_res.get('iteration_count', 'unknown')}"
+            )
+
+            # Find respond_to_user tool to force termination
+            respond_to_user_tool = None
+            for tool in self.tools:
+                tool_name = getattr(tool, "func", tool).__name__
+                if tool_name == "respond_to_user":
+                    respond_to_user_tool = tool
+                    break
+
+            if respond_to_user_tool is None:
+                # If respond_to_user not found, raise an error
+                logger.error(
+                    f"Max iterations ({self.max_iterations}) exceeded but "
+                    f"respond_to_user tool not found. Cannot force termination."
+                )
+                raise RuntimeError(
+                    f"Max iterations ({self.max_iterations}) exceeded and "
+                    f"respond_to_user tool not found. Cannot force termination."
+                )
+
+            # Force respond_to_user with a termination message
+            prep_res["func_call"] = {
+                "message": (
+                    f"Maximum iteration limit ({self.max_iterations}) reached. "
+                    f"Terminating execution to prevent infinite loop."
+                )
+            }
+            logger.warning(
+                f"Forcing respond_to_user due to max_iterations limit ({self.max_iterations}). "
+                f"Termination message prepared."
+            )
+            return "respond_to_user"
+
         # Get tool calls from ToolBot
         tool_calls = bot(prep_res["memory"])
 
@@ -320,7 +403,11 @@ class DecideNode(Node):
         func_args_json = tool_call.function.arguments
 
         # Log the chosen tool
-        logger.info(f"DecideNode chose tool: {func_name}")
+        iteration_count = prep_res.get("iteration_count", "unknown")
+        logger.info(
+            f"DecideNode chose tool: {func_name} "
+            f"(iteration: {iteration_count}/{self.max_iterations if self.max_iterations else 'unlimited'})"
+        )
 
         # Parse JSON arguments string to dict
         try:

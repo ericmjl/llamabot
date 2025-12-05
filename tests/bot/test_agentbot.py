@@ -540,3 +540,206 @@ def test_agentbot_globals_dict_preserved():
         # Check that globals_dict is preserved
         call_args2 = mock_flow.run.call_args[0][0]
         assert call_args2["globals_dict"] == {"var1": "value1"}
+
+
+def test_agentbot_max_iterations_terminates():
+    """Test that AgentBot terminates after max_iterations is exceeded."""
+    from unittest.mock import MagicMock, patch
+
+    # Create a tool that always loops back (non-terminal)
+    @nodeify(loopback_name=DECIDE_NODE_ACTION)
+    @tool
+    def looping_tool(message: str) -> str:
+        """A tool that always loops back to decide node."""
+        return f"Tool executed: {message}"
+
+    bot = AgentBot(tools=[looping_tool], max_iterations=3)
+
+    # Mock ToolBot to always return looping_tool
+    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_tool_call = MagicMock()
+        mock_tool_call.function.name = "looping_tool"
+        mock_tool_call.function.arguments = '{"message": "test"}'
+        mock_toolbot.return_value = [mock_tool_call]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        # Mock respond_to_user to capture when it's called
+        respond_called = False
+
+        def mock_respond(message: str) -> str:
+            nonlocal respond_called
+            respond_called = True
+            return message
+
+        # Find and replace respond_to_user in tools
+        for i, tool_node in enumerate(bot.tools):
+            if tool_node.func.__name__ == "respond_to_user":
+                # Create a mock tool that replaces respond_to_user
+                mock_respond_tool = MagicMock()
+                mock_respond_tool.func.__name__ = "respond_to_user"
+                mock_respond_tool.func = mock_respond
+                mock_respond_tool.loopback_name = None
+                mock_respond_tool.name = "respond_to_user"
+                bot.tools[i] = mock_respond_tool
+                break
+
+        # Execute the bot
+        bot("test query")
+
+        # Verify that respond_to_user was eventually called
+        assert (
+            respond_called
+        ), "respond_to_user should be called when max_iterations is exceeded"
+        # Verify that iteration_count was tracked
+        assert bot.shared.get("iteration_count", 0) > 3
+
+
+def test_agentbot_max_iterations_tracks_count():
+    """Test that AgentBot correctly tracks iteration_count."""
+    from unittest.mock import MagicMock, patch
+
+    @nodeify(loopback_name=DECIDE_NODE_ACTION)
+    @tool
+    def test_tool(message: str) -> str:
+        """A test tool."""
+        return f"Result: {message}"
+
+    bot = AgentBot(tools=[test_tool], max_iterations=5)
+
+    # Mock ToolBot to return test_tool
+    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_tool_call = MagicMock()
+        mock_tool_call.function.name = "test_tool"
+        mock_tool_call.function.arguments = '{"message": "test"}'
+        mock_toolbot.return_value = [mock_tool_call]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        # Mock respond_to_user
+        def mock_respond(message: str) -> str:
+            return message
+
+        # Replace respond_to_user in tools
+        for i, tool_node in enumerate(bot.tools):
+            if tool_node.func.__name__ == "respond_to_user":
+                mock_respond_tool = MagicMock()
+                mock_respond_tool.func.__name__ = "respond_to_user"
+                mock_respond_tool.func = mock_respond
+                mock_respond_tool.loopback_name = None
+                mock_respond_tool.name = "respond_to_user"
+                bot.tools[i] = mock_respond_tool
+                break
+
+        # Execute the bot
+        bot("test query")
+
+        # Verify iteration_count is tracked
+        assert "iteration_count" in bot.shared
+        # Should be at least 4 (1 initial + 3 tool calls before termination)
+        assert bot.shared["iteration_count"] >= 4
+
+
+def test_agentbot_max_iterations_none_no_limit():
+    """Test that AgentBot with max_iterations=None has no limit."""
+
+    @nodeify(loopback_name=DECIDE_NODE_ACTION)
+    @tool
+    def looping_tool(message: str) -> str:
+        """A tool that always loops back."""
+        return f"Tool: {message}"
+
+    bot = AgentBot(tools=[looping_tool], max_iterations=None)
+
+    # Verify max_iterations is None
+    assert bot.max_iterations is None
+    assert bot.decide_node.max_iterations is None
+
+
+def test_agentbot_max_iterations_initializes_count():
+    """Test that iteration_count is initialized in shared state."""
+    from unittest.mock import MagicMock, patch
+
+    @nodeify(loopback_name=DECIDE_NODE_ACTION)
+    @tool
+    def test_tool(message: str) -> str:
+        """A test tool."""
+        return f"Result: {message}"
+
+    bot = AgentBot(tools=[test_tool], max_iterations=3)
+
+    # Before calling, iteration_count should not exist
+    assert "iteration_count" not in bot.shared
+
+    # Mock ToolBot and respond_to_user
+    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_tool_call = MagicMock()
+        mock_tool_call.function.name = "test_tool"
+        mock_tool_call.function.arguments = '{"message": "test"}'
+        mock_toolbot.return_value = [mock_tool_call]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        def mock_respond(message: str) -> str:
+            return message
+
+        for i, tool_node in enumerate(bot.tools):
+            if tool_node.func.__name__ == "respond_to_user":
+                mock_respond_tool = MagicMock()
+                mock_respond_tool.func.__name__ = "respond_to_user"
+                mock_respond_tool.func = mock_respond
+                mock_respond_tool.loopback_name = None
+                mock_respond_tool.name = "respond_to_user"
+                bot.tools[i] = mock_respond_tool
+                break
+
+        # After calling, iteration_count should be initialized
+        bot("test query")
+        assert "iteration_count" in bot.shared
+        assert isinstance(bot.shared["iteration_count"], int)
+        assert bot.shared["iteration_count"] > 0
+
+
+def test_agentbot_max_iterations_force_terminate_flag():
+    """Test that _force_terminate flag is set when max_iterations is exceeded."""
+    from unittest.mock import MagicMock, patch
+
+    @nodeify(loopback_name=DECIDE_NODE_ACTION)
+    @tool
+    def looping_tool(message: str) -> str:
+        """A tool that always loops back."""
+        return f"Tool: {message}"
+
+    bot = AgentBot(tools=[looping_tool], max_iterations=2)
+
+    # Mock ToolBot
+    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_tool_call = MagicMock()
+        mock_tool_call.function.name = "looping_tool"
+        mock_tool_call.function.arguments = '{"message": "test"}'
+        mock_toolbot.return_value = [mock_tool_call]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        def mock_respond(message: str) -> str:
+            return message
+
+        # Replace respond_to_user
+        for i, tool_node in enumerate(bot.tools):
+            if tool_node.func.__name__ == "respond_to_user":
+                mock_respond_tool = MagicMock()
+                mock_respond_tool.func.__name__ = "respond_to_user"
+                mock_respond_tool.func = mock_respond
+                mock_respond_tool.loopback_name = None
+                mock_respond_tool.name = "respond_to_user"
+                bot.tools[i] = mock_respond_tool
+                break
+
+        # Execute the bot
+        bot("test query")
+
+        # Verify that iteration_count exceeded max_iterations
+        assert bot.shared.get("iteration_count", 0) > bot.max_iterations
+        # Verify that _force_terminate flag was set in shared state
+        # The flag is set in DecideNode.prep() when max_iterations is exceeded
+        assert bot.shared.get("_force_terminate", False) is True
