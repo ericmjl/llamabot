@@ -22,7 +22,7 @@
 
 import marimo
 
-__generated_with = "0.18.1"
+__generated_with = "0.18.2"
 app = marimo.App(width="medium")
 
 
@@ -37,13 +37,7 @@ def _():
         write_and_execute_code,
     )
 
-    return (
-        lmb,
-        mo,
-        nodeify,
-        tool,
-        write_and_execute_code,
-    )
+    return lmb, mo, nodeify, tool, write_and_execute_code
 
 
 @app.cell
@@ -810,7 +804,7 @@ def _(chat_turn, example_prompts, mo):
     return (chat,)
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(chat, mo):
     mo.vstack(
         [
@@ -824,6 +818,90 @@ def _(chat, mo):
             ),
             chat,
         ]
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    # Complete Experiment Design for Power Calculation
+
+    ## Experiment Overview
+    **Goal**: Compare the effect of three drug treatments (Control, Treatment A, Treatment B) on cell viability in a plate-based MTT assay.
+
+    ## Experimental Design Details
+
+    ### Treatment Groups
+    - **Control**: Vehicle only (DMSO 0.1%)
+    - **Treatment A**: Drug A at 10 µM
+    - **Treatment B**: Drug B at 10 µM
+
+    ### Assay Type
+    - Plate-based MTT cell viability assay
+    - 96-well plate format
+    - Readout: Absorbance at 570 nm (OD units)
+
+    ### Design Structure
+    - **Design**: Completely randomized design (no blocking)
+    - **Replicates**: 8 biological replicates per treatment group
+    - **Total samples**: 24 wells (3 groups × 8 replicates)
+    - **Randomization**: Wells randomized across plate to avoid position effects
+
+    ### Statistical Analysis Plan
+    - **Primary analysis**: One-way ANOVA comparing all three groups
+    - **Post-hoc tests**: Tukey HSD for pairwise comparisons
+    - **Significance level**: α = 0.05 (two-tailed)
+    - **Desired power**: 80% (0.80)
+
+    ### Effect Size Expectations
+    - **Expected effect**: Treatment A and B are expected to reduce cell viability by 25-30% compared to control
+    - **Effect size (Cohen's f)**: Moderate effect size, approximately f = 0.35-0.40
+    - **Minimum detectable effect**: 20% reduction in viability (clinically meaningful threshold)
+
+    ### Variability Assumptions
+    - **Expected control mean**: 1.2 OD units (based on pilot data)
+    - **Expected standard deviation**: 0.15 OD units (coefficient of variation ~12.5%)
+    - **Assumption**: Equal variance across all treatment groups (homoscedasticity)
+
+    ### Constraints and Assumptions
+    - **Budget constraint**: Maximum 30 wells per experiment (we have 24, so within budget)
+    - **Timeline**: Single experiment, no repeated measures
+    - **Cell line**: HeLa cells, passage 15-20
+    - **Assay conditions**: Standard 48-hour treatment, 4-hour MTT incubation
+    - **Technical replicates**: None (only biological replicates)
+    - **Blinding**: Treatments coded, analyst blinded to group assignment
+
+    ### Prior Experience
+    - Similar experiments in our lab typically show CV of 10-15% for MTT assays
+    - We've seen 20-30% reductions in viability with similar compounds
+    - No prior issues with edge effects in our plate reader setup
+
+    ## Power Calculation Request
+
+    Please perform a power calculation to determine:
+    1. Whether 8 replicates per group provides adequate power (≥80%) to detect a 25% reduction in viability
+    2. The minimum sample size needed to achieve 80% power for detecting a 20% reduction (minimum clinically meaningful effect)
+    3. Power curves showing power vs. sample size for effect sizes ranging from 15% to 30% reduction
+
+    Use the following parameters:
+    - Control mean: 1.2 OD
+    - Standard deviation: 0.15 OD
+    - Effect sizes to test: 15%, 20%, 25%, 30% reduction (corresponding to means of 1.02, 0.96, 0.90, 0.84 OD)
+    - Alpha: 0.05
+    - Test: One-way ANOVA with 3 groups
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+
+    """
     )
     return
 
