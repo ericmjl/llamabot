@@ -826,6 +826,18 @@ def _(chat, mo):
 def _(mo):
     mo.md(
         r"""
+    ---
+
+    Use the following markdown as an example "perfect prompt" from a human:
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     # Complete Experiment Design for Power Calculation
 
     ## Experiment Overview
