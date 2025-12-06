@@ -26,20 +26,21 @@ from .bot.querybot import QueryBot
 from .bot.simplebot import SimpleBot
 from .bot.structuredbot import StructuredBot
 from .bot.toolbot import ToolBot
+from .components.chat_memory import ChatMemory
+from .components.docstore import BM25DocStore, LanceDBDocStore
+from .components.messages import dev, system, user
+from .components.pocketflow import nodeify
+from .components.tools import tool
 from .experiments import Experiment, metric
 from .prompt_manager import prompt
-from .components.messages import user, system, dev
-from .components.tools import tool
-from .components.docstore import BM25DocStore, LanceDBDocStore
-from .components.chat_memory import ChatMemory
-from .components.pocketflow import nodeify
 from .recorder import (
-    span,
-    get_current_span,
-    get_spans,
-    get_span_tree,
-    enable_span_recording,
+    SpanList,
     dict_to_span,
+    enable_span_recording,
+    get_current_span,
+    get_span_tree,
+    get_spans,
+    span,
 )
 
 
@@ -94,6 +95,7 @@ __all__ = [
     "get_span_tree",
     "enable_span_recording",
     "dict_to_span",
+    "SpanList",
 ]
 
 # Ensure ~/.llamabot directory exists

@@ -3,6 +3,7 @@
 import contextvars
 import functools
 import hashlib
+import inspect as std_inspect
 import json
 import uuid
 from datetime import datetime
@@ -675,7 +676,12 @@ class Span:
 
         # Get all spans in trace to find children
         try:
-            all_trace_spans = get_spans(trace_id=self.trace_id, db_path=self._db_path)
+            all_trace_spans_objects = get_spans(
+                trace_id=self.trace_id, db_path=self._db_path
+            )
+            # Convert Span objects to dictionaries for processing
+            # get_spans() returns SpanList, which is iterable
+            all_trace_spans = [span_to_dict(s) for s in all_trace_spans_objects]
         except Exception:
             all_trace_spans = []
 
@@ -836,18 +842,53 @@ def _span_decorator(
             trace_id = get_or_create_trace_id()
             span_obj = Span(op_name, trace_id=trace_id, db_path=db_path, **attributes)
 
-            # Add function arguments as attributes (excluding sensitive ones)
-            if args:
-                span_obj["args_count"] = len(args)
-            for key, value in kwargs.items():
-                if key not in exclude_args:
-                    span_obj[f"arg_{key}"] = _serialize_value(value)
+            # Log function inputs and outputs automatically
+            try:
+                sig = std_inspect.signature(func)
+                bound_args = sig.bind(*args, **kwargs)
+                bound_args.apply_defaults()
+
+                # Log all inputs as attributes (coerce to strings)
+                for param_name, param_value in bound_args.arguments.items():
+                    if param_name not in exclude_args:
+                        try:
+                            span_obj[f"input_{param_name}"] = str(param_value)
+                        except Exception:
+                            span_obj[f"input_{param_name}"] = (
+                                f"<unable to stringify {type(param_value).__name__}>"
+                            )
+            except Exception:
+                # Fallback if signature inspection fails (built-ins, C extensions, etc.)
+                # Log positional args by index
+                if args:
+                    span_obj["args_count"] = len(args)
+                    for i, arg_value in enumerate(args):
+                        try:
+                            span_obj[f"input_arg_{i}"] = str(arg_value)
+                        except Exception:
+                            span_obj[f"input_arg_{i}"] = (
+                                f"<unable to stringify {type(arg_value).__name__}>"
+                            )
+                # Log keyword args
+                for key, value in kwargs.items():
+                    if key not in exclude_args:
+                        try:
+                            span_obj[f"input_{key}"] = str(value)
+                        except Exception:
+                            span_obj[f"input_{key}"] = (
+                                f"<unable to stringify {type(value).__name__}>"
+                            )
 
             with span_obj:
                 try:
                     result = func(*args, **kwargs)
-                    if log_return:
-                        span_obj.log("function_return", result=_serialize_value(result))
+                    # Always log output as attribute (coerce to string)
+                    try:
+                        span_obj["output"] = str(result)
+                    except Exception:
+                        span_obj["output"] = (
+                            f"<unable to stringify {type(result).__name__}>"
+                        )
                     return result
                 except Exception as e:
                     span_obj.log(
@@ -876,7 +917,7 @@ def get_spans(
     end_time: Optional[datetime] = None,
     db_path: Optional[Path] = None,
     **attribute_filters,
-) -> List[Dict[str, Any]]:
+) -> "SpanList":
     """Query spans from the database.
 
     :param trace_id: Filter by trace ID
@@ -886,7 +927,7 @@ def get_spans(
     :param end_time: Filter spans that ended before this time
     :param db_path: Database path. If None, uses find_or_set_db_path(None)
     :param attribute_filters: Additional attribute filters (e.g., model="gpt-4")
-    :return: List of span dictionaries
+    :return: SpanList containing Span objects
     """
     # Resolve database path
     if db_path is None:
@@ -951,9 +992,15 @@ def get_spans(
                         break
                 if match:
                     filtered_result.append(span_dict)
-            return filtered_result
+            result = filtered_result
 
-        return result
+        # Convert dictionaries to Span objects
+        span_objects = []
+        for span_dict in result:
+            span_obj = dict_to_span(span_dict, db_path=db_path)
+            span_objects.append(span_obj)
+
+        return SpanList(span_objects)
     finally:
         session.close()
 
@@ -968,11 +1015,15 @@ def get_span_tree(
     :param db_path: Database path. If None, uses find_or_set_db_path(None)
     :return: Nested dictionary representing span tree with root span and children
     """
-    # Get all spans for trace_id
-    spans = get_spans(trace_id=trace_id, db_path=db_path)
+    # Get all spans for trace_id (returns SpanList)
+    spans_objects = get_spans(trace_id=trace_id, db_path=db_path)
 
-    if not spans:
+    if not spans_objects:
         return {}
+
+    # Convert Span objects to dictionaries for tree building
+    # SpanList is iterable, so we can iterate over it
+    spans = [span_to_dict(s) for s in spans_objects]
 
     # Build parent-child relationships
     span_dict = {span["span_id"]: span for span in spans}
@@ -1084,6 +1135,180 @@ def dict_to_span(span_dict: Dict[str, Any], db_path: Optional[Path] = None) -> S
     span.error_message = span_dict.get("error_message")
 
     return span
+
+
+class SpanList:
+    """A list-like collection of spans with unified visualization.
+
+    Behaves like a list but displays all spans together in a single
+    visualization when used as the last expression in a marimo cell.
+
+    Supports multiple root spans from different traces, showing them
+    all in a unified timeline view.
+    """
+
+    def __init__(self, spans: List[Span]):
+        self._spans = spans
+
+    def __iter__(self):
+        """Iterate over spans."""
+        return iter(self._spans)
+
+    def __getitem__(self, index):
+        """Get span by index or slice."""
+        if isinstance(index, slice):
+            return SpanList(self._spans[index])
+        return self._spans[index]
+
+    def __len__(self):
+        """Return number of spans."""
+        return len(self._spans)
+
+    def __contains__(self, item):
+        """Check if span is in collection."""
+        return item in self._spans
+
+    def __repr__(self):
+        """String representation."""
+        return f"SpanList({len(self._spans)} spans)"
+
+    def __add__(self, other):
+        """Concatenate with another SpanList or list of spans."""
+        if isinstance(other, SpanList):
+            return SpanList(self._spans + other._spans)
+        elif isinstance(other, list):
+            return SpanList(self._spans + other)
+        return NotImplemented
+
+    def _repr_html_(self) -> str:
+        """Display all spans together in unified visualization.
+
+        Shows all spans in a single timeline view, handling multiple
+        root spans from different traces. Root spans are shown at the
+        top level, with their children nested below.
+
+        :return: Complete HTML string with embedded CSS and JavaScript
+        """
+        if not self._spans:
+            return (
+                '<div style="padding: 1rem; color: #2E3440;">No spans to display.</div>'
+            )
+
+        # Convert all spans to dictionaries
+        span_dicts = [span_to_dict(s) for s in self._spans]
+
+        # Find all root spans (spans with no parent)
+        root_spans = [s for s in span_dicts if s.get("parent_span_id") is None]
+
+        # If no root spans found, use the first span as the "current" span
+        if root_spans:
+            # Use the first root span as the current span for highlighting
+            current_span_dict = root_spans[0]
+            current_span_id = current_span_dict["span_id"]
+        else:
+            # Fallback to first span if no root spans found
+            current_span_dict = span_dicts[0]
+            current_span_id = current_span_dict["span_id"]
+
+        # Build hierarchical structure for all spans
+        # Since we may have multiple root spans, we'll build a forest
+        trace_tree = self._build_forest(span_dicts)
+
+        # Generate HTML visualization
+        return generate_span_html(
+            span_dict=current_span_dict,
+            all_spans=span_dicts,
+            trace_tree=trace_tree,
+            current_span_id=current_span_id,
+        )
+
+    def _build_forest(self, span_dicts: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Build a forest of trees from multiple root spans.
+
+        Handles the case where spans come from different traces by
+        creating a virtual root that contains all root spans as children.
+
+        :param span_dicts: List of span dictionaries
+        :return: Tree structure with all root spans
+        """
+        if not span_dicts:
+            return {}
+
+        # Build span dict keyed by span_id
+        span_dict = {span["span_id"]: span for span in span_dicts}
+
+        # Find root spans (no parent)
+        root_spans = [span for span in span_dicts if span.get("parent_span_id") is None]
+
+        def build_tree(span: Dict[str, Any]) -> Dict[str, Any]:
+            """Recursively build tree structure."""
+            children = [
+                build_tree(span_dict[child_id])
+                for child_id, child_span in span_dict.items()
+                if child_span.get("parent_span_id") == span["span_id"]
+            ]
+            result = span.copy()
+            result["children"] = children
+            return result
+
+        # If we have multiple root spans, create a virtual root
+        if len(root_spans) > 1:
+            # Create a virtual root that contains all root spans
+            virtual_root = {
+                "span_id": "__virtual_root__",
+                "trace_id": "__virtual_root__",
+                "parent_span_id": None,
+                "operation_name": f"Multiple Traces ({len(root_spans)} roots)",
+                "start_time": min(
+                    s.get("start_time", "") for s in root_spans if s.get("start_time")
+                ),
+                "end_time": max(
+                    s.get("end_time", "") for s in root_spans if s.get("end_time")
+                ),
+                "duration_ms": None,
+                "attributes": {},
+                "events": [],
+                "status": "completed",
+                "error_message": None,
+                "children": [build_tree(root) for root in root_spans],
+            }
+            return virtual_root
+        elif root_spans:
+            # Single root span
+            return build_tree(root_spans[0])
+        else:
+            # No root spans, return empty
+            return {}
+
+    def filter(self, **attribute_filters) -> "SpanList":
+        """Filter spans by attributes.
+
+        :param attribute_filters: Attribute filters (e.g., category="test")
+        :return: New SpanList with filtered spans
+        """
+        filtered = []
+        for span in self._spans:
+            match = True
+            for key, value in attribute_filters.items():
+                if span.attributes.get(key) != value:
+                    match = False
+                    break
+            if match:
+                filtered.append(span)
+        return SpanList(filtered)
+
+    def group_by_trace(self) -> Dict[str, "SpanList"]:
+        """Group spans by trace_id.
+
+        :return: Dictionary mapping trace_id to SpanList
+        """
+        grouped = {}
+        for span in self._spans:
+            trace_id = span.trace_id
+            if trace_id not in grouped:
+                grouped[trace_id] = []
+            grouped[trace_id].append(span)
+        return {trace_id: SpanList(spans) for trace_id, spans in grouped.items()}
 
 
 def escape_html(text: str) -> str:

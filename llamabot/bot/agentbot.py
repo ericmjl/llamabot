@@ -277,19 +277,28 @@ class AgentBot:
 
         :return: HTML string for displaying spans in marimo notebooks
         """
-        from llamabot.recorder import build_hierarchy, generate_span_html, get_spans
+        from llamabot.recorder import (
+            build_hierarchy,
+            generate_span_html,
+            get_spans,
+            span_to_dict,
+        )
 
         if not self._trace_ids:
             return '<div style="padding: 1rem; color: #2E3440;">No spans recorded for this bot instance yet.</div>'
 
         # Collect all spans from all trace_ids for this bot instance
-        all_spans = []
+        all_spans_objects = []
         for trace_id in self._trace_ids:
             spans = get_spans(trace_id=trace_id)
-            all_spans.extend(spans)
+            # SpanList is iterable, so we can extend with it
+            all_spans_objects.extend(spans)
 
-        if not all_spans:
+        if not all_spans_objects:
             return '<div style="padding: 1rem; color: #2E3440;">No spans found in database for this bot instance.</div>'
+
+        # Convert Span objects to dictionaries for visualization
+        all_spans = [span_to_dict(s) for s in all_spans_objects]
 
         # Find root spans (spans with no parent) to use as current span
         # Use the most recent root span (last one in the list)
