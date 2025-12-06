@@ -97,13 +97,25 @@ class ScriptExecutor:
         return script_path
 
     def build_container(self) -> None:
-        """Build the Docker container for script execution."""
+        """Build the Docker container for script execution.
+
+        Caches the image - only builds if it doesn't already exist.
+        """
         try:
             from docker.errors import DockerException
         except ImportError:
             raise ImportError(
                 "The Python package `docker` cannot be found. Please install it using `pip install llamabot[agent]`."
             )
+
+        # Check if image already exists (cache check)
+        try:
+            self.docker_client.images.get("agent-runner")
+            logger.debug("Docker image 'agent-runner' already exists, skipping build")
+            return
+        except Exception:
+            # Image doesn't exist, need to build it
+            pass
 
         dockerfile = """
 # Use a Python image with uv pre-installed
@@ -135,6 +147,9 @@ CMD ["uv", "run", "--system-site-packages=false"]
 
         # Build image
         try:
+            logger.info(
+                "Building Docker image 'agent-runner' (this may take a while on first run)"
+            )
             self.docker_client.images.build(
                 path=str(self.temp_dir),
                 tag="agent-runner",

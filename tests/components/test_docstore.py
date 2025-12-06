@@ -1,16 +1,39 @@
 """Tests for the document store."""
 
-import pytest
+import tempfile
 from pathlib import Path
+
+import pytest
+
 from llamabot.components.docstore import (
     BM25DocStore,
     LanceDBDocStore,
 )
-import tempfile
+
+
+@pytest.fixture(scope="module")
+def lancedb_store():
+    """Return a reusable LanceDBDocStore instance.
+
+    This fixture creates a single store instance that is reused across tests
+    to avoid expensive model loading. Each test should call .reset() to ensure
+    fresh state.
+    """
+    temp_dir = Path(tempfile.mkdtemp())
+    store = LanceDBDocStore(table_name="test_lancedb", storage_path=temp_dir)
+    yield store
+    # Cleanup: reset and remove temp dir
+    try:
+        store.reset()
+        import shutil
+
+        shutil.rmtree(temp_dir)
+    except Exception:
+        pass
 
 
 def lancedb():
-    """Return a LanceDBDocStore."""
+    """Return a LanceDBDocStore (legacy fixture for backward compatibility)."""
     temp_dir = Path(tempfile.mkdtemp())
     store = LanceDBDocStore(table_name="test_lancedb", storage_path=temp_dir)
     store.reset()
@@ -175,28 +198,21 @@ def bm25():
 
 
 @pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")
-def test_lancedb_append():
+def test_lancedb_append(lancedb_store):
     """Test LanceDBDocStore append method."""
-    # Setup LanceDBDocStore with tempdir
-    with tempfile.TemporaryDirectory() as temp_dir:
-        store = LanceDBDocStore(
-            table_name="test_lancedb_append", storage_path=Path(temp_dir)
-        )
-        store.reset()
+    # Reset store to ensure fresh state
+    lancedb_store.reset()
 
-        # Test document
-        document = "This is a test document for LanceDB append"
+    # Test document
+    document = "This is a test document for LanceDB append"
 
-        # Add document
-        store.append(document)
+    # Add document
+    lancedb_store.append(document)
 
-        # Retrieve document to verify it was stored
-        retrieved_docs = store.retrieve("test document", n_results=1)
-        assert len(retrieved_docs) == 1
-        assert retrieved_docs[0] == document
-
-        # Clean up
-        store.reset()
+    # Retrieve document to verify it was stored
+    retrieved_docs = lancedb_store.retrieve("test document", n_results=1)
+    assert len(retrieved_docs) == 1
+    assert retrieved_docs[0] == document
 
 
 @pytest.mark.xfail(reason="LanceDB file system issues - to be fixed later")

@@ -1,8 +1,15 @@
 """Tests for llamabot.cli."""
 
-import subprocess
+from llamabot.cli import app
 
 
 def test_cli_executes():
-    """Execution test for the CLI tool."""
-    subprocess.run(["llamabot", "--help"])
+    """Test that the CLI app initializes correctly."""
+    # Test that the app is a Typer instance
+    assert app is not None
+    assert hasattr(app, "command")
+    assert hasattr(app, "add_typer")
+
+    # Test that subcommands are registered
+    # The app should have registered commands/typers
+    assert len(app.registered_groups) > 0 or len(app.registered_commands) > 0

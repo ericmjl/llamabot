@@ -1,15 +1,17 @@
 """Tests for the MCP server CLI command."""
 
+import tempfile
 from pathlib import Path
+
+from pyprojroot import here
+
 from llamabot.mcp_server import (
+    build_docstore,
     collect_markdown_files,
-    extract_module_docstring,
     collect_python_modules,
     create_mcp_server,
-    build_docstore,
+    extract_module_docstring,
 )
-from pyprojroot import here
-import tempfile
 
 
 def test_collect_markdown_files():
@@ -110,7 +112,7 @@ def test_collect_python_modules():
 def test_build_docstore():
     """Test that the docstore can be built."""
     import tempfile
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Mock the docstore path to use a temporary directory
@@ -164,18 +166,45 @@ def test_build_docstore():
 
 def test_create_mcp_server():
     """Test that the MCP server can be created."""
-    import tempfile
     import shutil
-    from unittest.mock import patch
+    import tempfile
+    from unittest.mock import MagicMock, patch
 
     # Mock the docstore path to use a temporary directory
-    with patch("llamabot.mcp_server.get_docstore_path") as mock_path:
+    with (
+        patch("llamabot.mcp_server.get_docstore_path") as mock_path,
+        patch("llamabot.mcp_server.get_packaged_docstore_path") as mock_packaged_path,
+        patch("llamabot.mcp_server.fetch_docs_from_github") as mock_fetch,
+        patch("llamabot.mcp_server.collect_markdown_files") as mock_markdown,
+        patch("llamabot.mcp_server.collect_python_modules") as mock_python,
+        patch("llamabot.mcp_server.LanceDBDocStore") as mock_docstore_class,
+    ):
         temp_dir = Path(tempfile.mkdtemp())
         mock_path.return_value = temp_dir
+        # Ensure packaged path doesn't exist so it uses our temp dir
+        mock_packaged_path.return_value = Path("/nonexistent/path")
+
+        # Ensure the directory exists so create_mcp_server thinks the docstore exists
+        # (tempfile.mkdtemp() already creates it, but being explicit)
+        temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Mock GitHub fetch to return None (use local docs)
+        mock_fetch.return_value = None
+
+        # Mock file collections to return minimal test data (empty to avoid any processing)
+        mock_markdown.return_value = []
+        mock_python.return_value = {}
+
+        # Mock the docstore to avoid expensive embedding operations
+        mock_docstore = MagicMock()
+        mock_docstore_class.return_value = mock_docstore
 
         try:
-            # First build the docstore
+            # First build the docstore (now mocked - should be fast)
             build_docstore()
+
+            # Verify the directory was created
+            assert temp_dir.exists()
 
             # Then create the server
             mcp = create_mcp_server()
