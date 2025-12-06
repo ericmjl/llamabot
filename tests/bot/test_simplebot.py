@@ -594,9 +594,9 @@ def test_bot_tracks_multiple_trace_ids(tmp_path, monkeypatch):
         spans = get_spans(trace_id=trace_id, db_path=db_path)
         assert len(spans) > 0
         # Each call should have a simplebot_call root span
-        root_spans = [s for s in spans if s.get("parent_span_id") is None]
+        root_spans = [s for s in spans if s.parent_span_id is None]
         assert len(root_spans) == 1
-        assert root_spans[0]["operation_name"] == "simplebot_call"
+        assert root_spans[0].operation_name == "simplebot_call"
 
 
 def test_bot_display_spans_shows_all_calls(tmp_path, monkeypatch):
@@ -627,8 +627,8 @@ def test_bot_display_spans_shows_all_calls(tmp_path, monkeypatch):
         all_spans.extend(spans)
 
     # Verify HTML contains references to spans from all calls
-    for span_dict in all_spans:
-        assert span_dict["span_id"] in html or span_dict["operation_name"] in html
+    for span_obj in all_spans:
+        assert span_obj.span_id in html or span_obj.operation_name in html
 
 
 def test_bot_spans_exclude_manual_spans(tmp_path, monkeypatch):
@@ -665,8 +665,8 @@ def test_bot_spans_exclude_manual_spans(tmp_path, monkeypatch):
         all_bot_spans.extend(spans)
 
     manual_spans = get_spans(trace_id=manual_span.trace_id, db_path=db_path)
-    bot_span_ids = {s["span_id"] for s in all_bot_spans}
-    manual_span_ids = {s["span_id"] for s in manual_spans}
+    bot_span_ids = {s.span_id for s in all_bot_spans}
+    manual_span_ids = {s.span_id for s in manual_spans}
 
     # No overlap between bot spans and manual spans
     assert bot_span_ids.isdisjoint(manual_span_ids)
@@ -727,8 +727,8 @@ def test_bot_creates_new_trace_id_even_with_existing_context(tmp_path, monkeypat
     bot_spans = get_spans(trace_id=bot_trace_id, db_path=db_path)
     manual_spans = get_spans(trace_id=manual_trace_id, db_path=db_path)
 
-    bot_span_ids = {s["span_id"] for s in bot_spans}
-    manual_span_ids = {s["span_id"] for s in manual_spans}
+    bot_span_ids = {s.span_id for s in bot_spans}
+    manual_span_ids = {s.span_id for s in manual_spans}
 
     # No overlap between bot spans and manual spans
     assert bot_span_ids.isdisjoint(
@@ -787,8 +787,8 @@ def test_trace_id_cleared_after_root_span_exit(tmp_path, monkeypatch):
     # Verify spans are in separate traces (no overlap)
     bot_spans = get_spans(trace_id=bot_trace_id, db_path=db_path)
     manual_spans = get_spans(trace_id=manual_span.trace_id, db_path=db_path)
-    bot_span_ids = {s["span_id"] for s in bot_spans}
-    manual_span_ids = {s["span_id"] for s in manual_spans}
+    bot_span_ids = {s.span_id for s in bot_spans}
+    manual_span_ids = {s.span_id for s in manual_spans}
     assert bot_span_ids.isdisjoint(manual_span_ids)
 
 
@@ -810,11 +810,11 @@ def test_nested_spans_preserve_trace_id(tmp_path, monkeypatch):
     # Verify all spans from bot call share the same trace_id
     bot_spans = get_spans(trace_id=bot_trace_id, db_path=db_path)
     assert len(bot_spans) > 0
-    for span_dict in bot_spans:
-        assert span_dict["trace_id"] == bot_trace_id
+    for span_obj in bot_spans:
+        assert span_obj.trace_id == bot_trace_id
 
     # Verify nested spans (like llm_request, llm_response) are included
-    operation_names = {s["operation_name"] for s in bot_spans}
+    operation_names = {s.operation_name for s in bot_spans}
     assert "simplebot_call" in operation_names
     assert "llm_request" in operation_names
     assert "llm_response" in operation_names

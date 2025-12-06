@@ -281,6 +281,101 @@ def test_span_decorator(tmp_path):
     session.close()
 
 
+def test_span_decorator_logs_inputs_and_outputs(tmp_path):
+    """Test that span decorator automatically logs function inputs and outputs."""
+    db_path = tmp_path / "test_spans.db"
+
+    @span("explodify", db_path=db_path)
+    def explodify(s: str, i: int) -> str:
+        """Add exclamation marks around a string.
+
+        :param s: String to explodify
+        :param i: Number of exclamation marks to add
+        :return: String with exclamation marks
+        """
+        return f"{'!' * i} {s} {'!' * i}"
+
+    result = explodify("Boom!", 3)
+    assert result == "!!! Boom! !!!"
+
+    # Check span was created and saved
+    spans = get_spans(operation_name="explodify", db_path=db_path)
+    assert len(spans) == 1
+
+    span_obj = spans[0]
+
+    # Verify inputs are logged as attributes (coerced to strings)
+    assert span_obj.attributes.get("input_s") == "Boom!"
+    assert span_obj.attributes.get("input_i") == "3"  # Coerced to string
+
+    # Verify output is logged as attribute (coerced to string)
+    assert span_obj.attributes.get("output") == "!!! Boom! !!!"
+
+    # Verify no duplicate events for inputs/outputs (they should only be in attributes)
+    event_names = [event["name"] for event in span_obj.events]
+    assert "function_inputs" not in event_names
+    assert "function_output" not in event_names
+
+
+def test_span_decorator_logs_args_and_kwargs(tmp_path):
+    """Test that span decorator logs *args and **kwargs correctly."""
+    db_path = tmp_path / "test_spans.db"
+
+    @span("test_func", db_path=db_path)
+    def test_func(*args, **kwargs):
+        """Function with *args and **kwargs."""
+        return sum(args) + sum(kwargs.values())
+
+    result = test_func(5, 3, multiplier=2)
+    assert result == 10
+
+    # Check span was created
+    spans = get_spans(operation_name="test_func", db_path=db_path)
+    assert len(spans) == 1
+
+    span_obj = spans[0]
+
+    # Verify *args and **kwargs are logged as input_args and input_kwargs
+    assert span_obj.attributes.get("input_args") == "(5, 3)"
+    assert span_obj.attributes.get("input_kwargs") == "{'multiplier': 2}"
+
+    # Verify output is logged
+    assert span_obj.attributes.get("output") == "10"
+
+
+def test_span_decorator_handles_unstringifiable_objects(tmp_path):
+    """Test that span decorator handles objects that can't be stringified."""
+    db_path = tmp_path / "test_spans.db"
+
+    class Unstringifiable:
+        """Object that raises exception when stringified."""
+
+        def __str__(self):
+            """Raise ValueError when stringified."""
+            raise ValueError("Cannot stringify")
+
+    @span("test_unstringifiable", db_path=db_path)
+    def test_func(obj: Unstringifiable) -> Unstringifiable:
+        """Test function that returns the input object."""
+        return obj
+
+    obj = Unstringifiable()
+    result = test_func(obj)
+    assert result is obj
+
+    # Check span was created
+    spans = get_spans(operation_name="test_unstringifiable", db_path=db_path)
+    assert len(spans) == 1
+
+    span_obj = spans[0]
+
+    # Verify fallback message is used when stringification fails
+    assert (
+        span_obj.attributes.get("input_obj") == "<unable to stringify Unstringifiable>"
+    )
+    assert span_obj.attributes.get("output") == "<unable to stringify Unstringifiable>"
+
+
 def test_get_current_span():
     """Test get_current_span function."""
     assert get_current_span() is None
@@ -311,7 +406,7 @@ def test_get_spans(tmp_path):
     # Query by operation name
     spans = get_spans(operation_name="operation1", db_path=db_path)
     assert len(spans) == 1
-    assert spans[0]["operation_name"] == "operation1"
+    assert spans[0].operation_name == "operation1"
 
     # Query by attribute
     spans = get_spans(category="test", db_path=db_path)
@@ -527,19 +622,21 @@ def test_calculate_nesting_level(tmp_path):
             with child1.span("grandchild") as grandchild:
                 pass
 
-    # Get all spans
+    # Get all spans (returns Span objects)
     spans = get_spans(trace_id=root.trace_id, db_path=db_path)
-    span_dict = {s["span_id"]: s for s in spans}
+    # Convert to dictionaries for calculate_nesting_level
+    spans_dicts = [span_to_dict(s) for s in spans]
+    span_dict = {s["span_id"]: s for s in spans_dicts}
 
     # Check nesting levels
     root_level = calculate_nesting_level(
-        next(s for s in spans if s["span_id"] == root.span_id), span_dict
+        next(s for s in spans_dicts if s["span_id"] == root.span_id), span_dict
     )
     child_level = calculate_nesting_level(
-        next(s for s in spans if s["span_id"] == child1.span_id), span_dict
+        next(s for s in spans_dicts if s["span_id"] == child1.span_id), span_dict
     )
     grandchild_level = calculate_nesting_level(
-        next(s for s in spans if s["span_id"] == grandchild.span_id), span_dict
+        next(s for s in spans_dicts if s["span_id"] == grandchild.span_id), span_dict
     )
 
     assert root_level == 0
@@ -558,7 +655,9 @@ def test_build_hierarchy(tmp_path):
             pass
 
     spans = get_spans(trace_id=root.trace_id, db_path=db_path)
-    tree = build_hierarchy(spans)
+    # Convert Span objects to dictionaries for build_hierarchy
+    spans_dicts = [span_to_dict(s) for s in spans]
+    tree = build_hierarchy(spans_dicts)
 
     assert tree["operation_name"] == "root"
     assert len(tree["children"]) == 2

@@ -42,13 +42,12 @@ def _():
 
     from llamabot import (
         SimpleBot,
-        dict_to_span,
         enable_span_recording,
         get_spans,
         span,
     )
 
-    return SimpleBot, dict_to_span, enable_span_recording, get_spans, mo, span
+    return SimpleBot, enable_span_recording, get_spans, mo, span
 
 
 @app.cell(hide_code=True)
@@ -185,11 +184,11 @@ def _(mo):
 
 
 @app.cell
-def _(dict_to_span, get_spans):
+def _(get_spans):
+    # get_spans() returns a SpanList that displays all spans together
     all_spans = get_spans()
-    # Display the first span if available
-    first_span = dict_to_span(all_spans[0]) if all_spans else None
-    first_span
+    # Display all spans in unified visualization
+    all_spans
     return (all_spans,)
 
 
@@ -269,6 +268,7 @@ def _(mo):
 @app.cell
 def _(get_spans):
     filtered_spans = get_spans(user_id=123)
+    filtered_spans
     return (filtered_spans,)
 
 
@@ -279,6 +279,13 @@ def _(filtered_spans, mo):
     Found {len(filtered_spans)} spans with user_id=123
     """
     )
+    return
+
+
+@app.cell
+def _(get_spans):
+    gemma_spans = get_spans(model="ollama_chat/gemma3n:latest")
+    gemma_spans
     return
 
 
@@ -354,10 +361,26 @@ def _(get_spans):
 
 
 @app.cell
-def _(decorated_spans, dict_to_span):
-    # Display the first decorated span
-    decorated_span = dict_to_span(decorated_spans[0]) if decorated_spans else None
-    decorated_span
+def _(decorated_spans):
+    # Display all decorated spans together
+    decorated_spans
+    return
+
+
+@app.cell
+def _(span):
+    # This time without any arguments
+    @span
+    def explodify(s: str, i: int) -> str:
+        return f"{'!' * i} {s} {'!' * i}"
+
+    explodify("Boom!", 3)
+    return
+
+
+@app.cell
+def _(get_spans):
+    get_spans(operation_name="explodify")
     return
 
 
@@ -388,10 +411,9 @@ def _(get_spans):
 
 
 @app.cell
-def _(category_spans, dict_to_span):
-    # Display the first category span
-    category_span = dict_to_span(category_spans[0]) if category_spans else None
-    category_span
+def _(category_spans):
+    # Display all category spans together
+    category_spans
     return
 
 
