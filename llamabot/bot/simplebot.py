@@ -2,6 +2,7 @@
 
 import contextvars
 import json
+import uuid
 from datetime import datetime
 from types import NoneType
 from typing import Generator, List, Optional, Union
@@ -124,8 +125,11 @@ class SimpleBot:
                     for msg in human_messages
                 ]
             )
+            # Always create a new trace_id for bot calls to avoid inheriting from context
+            new_trace_id = str(uuid.uuid4())
             outer_span = Span(
                 "simplebot_call",
+                trace_id=new_trace_id,
                 query=query_content,
                 model=self.model_name,
                 temperature=self.temperature,

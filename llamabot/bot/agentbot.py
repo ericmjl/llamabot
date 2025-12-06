@@ -221,8 +221,13 @@ class AgentBot:
 
         # Add span support for agent execution
         if is_span_recording_enabled():
+            import uuid
+
+            # Always create a new trace_id for bot calls to avoid inheriting from context
+            new_trace_id = str(uuid.uuid4())
             agent_span = Span(
                 "agentbot_call",
+                trace_id=new_trace_id,
                 query=query,
                 max_iterations=self.max_iterations,
             )

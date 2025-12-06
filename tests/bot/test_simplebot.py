@@ -672,6 +672,70 @@ def test_bot_spans_exclude_manual_spans(tmp_path, monkeypatch):
     assert bot_span_ids.isdisjoint(manual_span_ids)
 
 
+def test_bot_creates_new_trace_id_even_with_existing_context(tmp_path, monkeypatch):
+    """Test that bot always creates a new trace_id even when manual spans exist in context.
+
+    This test guards against regression where bot spans would inherit trace_ids from
+    manual spans created before the bot call. The bot should always create its own
+    unique trace_id regardless of what's in the context.
+
+    Regression test for: bot spans showing manual spans (custom_operation, decorated_function)
+    that were created before the bot call.
+    """
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    # Clear any existing trace_id context
+    from llamabot.recorder import current_trace_id_var
+
+    current_trace_id_var.set(None)
+
+    # Create manual spans BEFORE bot call (simulating the regression scenario)
+    with span("custom_operation", db_path=db_path) as custom_span:
+        custom_span["user_id"] = 123
+        with custom_span.span("nested_operation") as nested_span:
+            nested_span["nested"] = True
+
+    # Get the manual span's trace_id
+    manual_trace_id = custom_span.trace_id
+
+    # Now create bot and make a call
+    # The bot should create its OWN trace_id, not inherit from manual spans
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+    bot("Bot call")
+
+    # Verify bot has its own trace_id(s)
+    assert len(bot._trace_ids) == 1
+    bot_trace_id = bot._trace_ids[0]
+
+    # CRITICAL: Bot's trace_id should be DIFFERENT from manual span's trace_id
+    assert (
+        bot_trace_id != manual_trace_id
+    ), "Bot should create its own trace_id, not inherit from manual spans in context"
+
+    # Verify bot's spans don't include manual spans
+    bot_html = bot.display_spans()
+    assert custom_span.span_id not in bot_html
+    assert nested_span.span_id not in bot_html
+    assert "custom_operation" not in bot_html
+    assert "nested_operation" not in bot_html
+
+    # Verify manual spans are not in bot's trace
+    bot_spans = get_spans(trace_id=bot_trace_id, db_path=db_path)
+    manual_spans = get_spans(trace_id=manual_trace_id, db_path=db_path)
+
+    bot_span_ids = {s["span_id"] for s in bot_spans}
+    manual_span_ids = {s["span_id"] for s in manual_spans}
+
+    # No overlap between bot spans and manual spans
+    assert bot_span_ids.isdisjoint(
+        manual_span_ids
+    ), "Bot spans should not include manual spans created before bot call"
+
+
 def test_trace_id_cleared_after_root_span_exit(tmp_path, monkeypatch):
     """Test that trace_id is cleared from context after root span exits.
 
