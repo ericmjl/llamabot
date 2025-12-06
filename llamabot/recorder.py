@@ -2,13 +2,14 @@
 
 import contextvars
 import functools
-import json
 import hashlib
+import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict, List, Union, Callable
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from loguru import logger
 from pyprojroot import here
 from sqlalchemy import (
     Column,
@@ -25,11 +26,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import relationship, sessionmaker
 
 from llamabot.components.messages import BaseMessage
 from llamabot.utils import find_or_set_db_path, get_object_name
-from loguru import logger
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 current_span_var = contextvars.ContextVar("current_span", default=None)
@@ -462,7 +462,21 @@ class Span:
     ):
         self.span_id = generate_span_id()
         self.operation_name = operation_name
-        self.trace_id = trace_id or get_or_create_trace_id()
+        # Get trace_id from context if not provided, but track if we created a new one
+        if trace_id is None:
+            existing_trace_id = current_trace_id_var.get(None)
+            if existing_trace_id is None:
+                # Create new trace_id but don't set it in context yet
+                self.trace_id = str(uuid.uuid4())
+                self._trace_id_was_created = True
+            else:
+                # Use existing trace_id from context
+                self.trace_id = existing_trace_id
+                self._trace_id_was_created = False
+        else:
+            # Explicit trace_id provided
+            self.trace_id = trace_id
+            self._trace_id_was_created = False
         self.parent_span_id = parent_span_id
         self.start_time = datetime.now()
         self.end_time = None
@@ -473,11 +487,13 @@ class Span:
         self.error_message = None
         self._db_path = db_path
         self._previous_span = None
+        self._previous_trace_id = None
 
     def __enter__(self):
         """Enter span context - sets as current span."""
-        # Store previous span to restore on exit
+        # Store previous span and trace_id to restore on exit
         self._previous_span = current_span_var.get(None)
+        self._previous_trace_id = current_trace_id_var.get(None)
         current_span_var.set(self)
         # Set trace ID in context
         current_trace_id_var.set(self.trace_id)
@@ -503,6 +519,22 @@ class Span:
             current_span_var.set(self._previous_span)
         else:
             current_span_var.set(None)
+
+        # Restore previous trace_id from context
+        # If we created a new trace_id AND we're a root span (no parent), clear it on exit
+        # This ensures root spans clear their trace_id, but nested spans restore it
+        # so other nested spans in the same trace can still use it
+        if self._trace_id_was_created and self.parent_span_id is None:
+            # We created a new trace_id as a root span, so clear it on exit
+            # This prevents subsequent manual spans from reusing this trace_id
+            current_trace_id_var.set(None)
+        elif self._previous_trace_id is not None:
+            # Restore the previous trace_id that was in context
+            # This allows nested spans to maintain the trace context
+            current_trace_id_var.set(self._previous_trace_id)
+        else:
+            # No previous trace_id, clear it
+            current_trace_id_var.set(None)
 
     def __getitem__(self, key: str) -> Any:
         """Get attribute value using dictionary-like syntax.
@@ -611,6 +643,78 @@ class Span:
             session.rollback()
         finally:
             session.close()
+
+    def _repr_html_(self) -> str:
+        """Return HTML string for marimo display.
+
+        When a Span object is the last expression in a marimo cell,
+        this method is automatically called to display the span visualization.
+        Shows only this span and its direct/indirect children, not all spans in the trace.
+
+        **Data Flow:**
+        1. Convert `self` (Span object) to dictionary format using `span_to_dict(self)`
+        2. Query database for spans that are children of this span (parent_span_id=self.span_id)
+           - Recursively collect all descendants
+        3. Merge spans from both sources:
+           - Database spans: Already dictionaries from `get_spans()`
+           - Current span (`self`): Converted from Span object to dict via `span_to_dict()`
+        4. Deduplicate by `span_id` (database spans take precedence if duplicate)
+        5. Always ensure `self` is included even if not yet saved to database
+        6. All spans are now in unified dictionary format for visualization
+
+        **Handles:**
+        - Incomplete spans (still in progress, end_time is None)
+        - Spans not yet saved to database (includes self even if not saved)
+        - HTML escaping for security
+        - Pagination for large traces (default 25 spans per page)
+
+        :return: Complete HTML string with embedded CSS and JavaScript
+        """
+        # Convert self Span object to dict
+        self_dict = span_to_dict(self)
+
+        # Get all spans in trace to find children
+        try:
+            all_trace_spans = get_spans(trace_id=self.trace_id, db_path=self._db_path)
+        except Exception:
+            all_trace_spans = []
+
+        # Build span dict for quick lookup
+        span_dict_lookup = {s["span_id"]: s for s in all_trace_spans}
+        span_dict_lookup[self.span_id] = self_dict  # Ensure self is included
+
+        # Recursively collect all descendants of self
+        def collect_descendants(span_id: str, collected: set) -> None:
+            """Recursively collect all descendant spans."""
+            if span_id in collected:
+                return
+            collected.add(span_id)
+            # Find all spans that have this span as parent
+            for span in all_trace_spans:
+                if span.get("parent_span_id") == span_id:
+                    collect_descendants(span["span_id"], collected)
+
+        # Collect this span and all its descendants
+        relevant_span_ids = set()
+        collect_descendants(self.span_id, relevant_span_ids)
+
+        # Filter to only relevant spans (self + descendants)
+        relevant_spans = [
+            span_dict_lookup[span_id]
+            for span_id in relevant_span_ids
+            if span_id in span_dict_lookup
+        ]
+
+        # Build hierarchical structure
+        trace_tree = build_hierarchy(relevant_spans)
+
+        # Generate HTML
+        return generate_span_html(
+            span_dict=self_dict,
+            all_spans=relevant_spans,
+            trace_tree=trace_tree,
+            current_span_id=self.span_id,
+        )
 
 
 class SpanFactory:
@@ -908,3 +1012,746 @@ def is_span_recording_enabled() -> bool:
     import llamabot.recorder as recorder_module
 
     return getattr(recorder_module, "_span_recording_enabled", False)
+
+
+def span_to_dict(span: Span) -> Dict[str, Any]:
+    """Convert Span object to dictionary format matching get_spans() output.
+
+    :param span: Span object to convert
+    :return: Dictionary with keys matching get_spans() format
+    """
+    return {
+        "span_id": span.span_id,
+        "trace_id": span.trace_id,
+        "parent_span_id": span.parent_span_id,
+        "operation_name": span.operation_name,
+        "start_time": span.start_time.isoformat() if span.start_time else None,
+        "end_time": span.end_time.isoformat() if span.end_time else None,
+        "duration_ms": span.duration_ms,
+        "attributes": span.attributes,
+        "events": span.events,
+        "status": span.status,
+        "error_message": span.error_message,
+    }
+
+
+def dict_to_span(span_dict: Dict[str, Any], db_path: Optional[Path] = None) -> Span:
+    """Convert span dictionary to Span object for visualization.
+
+    Creates a Span object from a dictionary (e.g., from get_spans()).
+    The returned Span object can be used for visualization via _repr_html_().
+
+    :param span_dict: Span dictionary from get_spans()
+    :param db_path: Database path (optional, will be inferred if None)
+    :return: Span object that can be displayed
+    """
+    # Parse ISO timestamps back to datetime objects
+    start_time = None
+    if span_dict.get("start_time"):
+        try:
+            start_time = datetime.fromisoformat(
+                span_dict["start_time"].replace("Z", "+00:00")
+            )
+        except (ValueError, AttributeError):
+            start_time = None
+
+    end_time = None
+    if span_dict.get("end_time"):
+        try:
+            end_time = datetime.fromisoformat(
+                span_dict["end_time"].replace("Z", "+00:00")
+            )
+        except (ValueError, AttributeError):
+            end_time = None
+
+    # Create a new Span object
+    span = Span(
+        operation_name=span_dict.get("operation_name", ""),
+        trace_id=span_dict.get("trace_id"),
+        parent_span_id=span_dict.get("parent_span_id"),
+        db_path=db_path,
+        **span_dict.get("attributes", {}),
+    )
+
+    # Manually set all the fields to match the dict
+    span.span_id = span_dict.get("span_id", span.span_id)
+    span.start_time = start_time or span.start_time
+    span.end_time = end_time
+    span.duration_ms = span_dict.get("duration_ms")
+    span.attributes = span_dict.get("attributes", {})
+    span.events = span_dict.get("events", [])
+    span.status = span_dict.get("status", "completed")
+    span.error_message = span_dict.get("error_message")
+
+    return span
+
+
+def escape_html(text: str) -> str:
+    """Escape HTML special characters for security.
+
+    :param text: Raw text string (may contain HTML special chars)
+    :return: HTML-escaped string
+    """
+    if text is None:
+        return ""
+    import html
+
+    return html.escape(str(text))
+
+
+def format_timestamp(timestamp_str: str) -> str:
+    """Format timestamps for display.
+
+    :param timestamp_str: ISO format timestamp string
+    :return: Human-readable timestamp string
+    """
+    if not timestamp_str:
+        return ""
+    from datetime import datetime
+
+    try:
+        dt = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+        return dt.strftime("%H:%M:%S.%f")[:-3]  # Show milliseconds
+    except (ValueError, AttributeError):
+        return str(timestamp_str)
+
+
+def format_duration(duration_ms: Optional[float], is_in_progress: bool = False) -> str:
+    """Format duration (ms, s, etc.), handle None for in-progress spans.
+
+    :param duration_ms: Duration in milliseconds (or None for in-progress spans)
+    :param is_in_progress: Whether span is still in progress
+    :return: Formatted duration string (e.g., "123ms", "1.5s", "in progress")
+    """
+    if is_in_progress or duration_ms is None:
+        return "in progress"
+    if duration_ms < 1000:
+        return f"{duration_ms:.0f}ms"
+    elif duration_ms < 60000:
+        return f"{duration_ms / 1000:.2f}s"
+    else:
+        minutes = duration_ms / 60000
+        return f"{minutes:.2f}min"
+
+
+def get_span_color(status: str) -> str:
+    """Determine color based on status (Nord colors).
+
+    :param status: Status string ("completed", "error", "started")
+    :return: Nord color hex code
+    """
+    color_map = {
+        "completed": "#A3BE8C",  # aurora green
+        "error": "#BF616A",  # aurora red
+        "started": "#5E81AC",  # frost blue
+    }
+    return color_map.get(status, "#5E81AC")
+
+
+def calculate_nesting_level(
+    span: Dict[str, Any], span_dict: Dict[str, Dict[str, Any]]
+) -> int:
+    """Calculate indentation level for a span.
+
+    :param span: Span dictionary
+    :param span_dict: Dict of all spans keyed by span_id
+    :return: Nesting level (0 for root spans, 1+ for nested)
+    """
+    level = 0
+    current_span = span
+    visited = set()
+
+    while (
+        current_span.get("parent_span_id")
+        and current_span["parent_span_id"] not in visited
+    ):
+        visited.add(current_span["span_id"])
+        parent_id = current_span["parent_span_id"]
+        if parent_id in span_dict:
+            current_span = span_dict[parent_id]
+            level += 1
+        else:
+            break
+
+    return level
+
+
+def build_hierarchy(spans: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Organize spans into tree structure.
+
+    :param spans: List of span dictionaries (from database or converted from Span objects)
+    :return: Hierarchical tree structure with parent-child relationships
+    """
+    if not spans:
+        return {}
+
+    # Build span dict keyed by span_id
+    span_dict = {span["span_id"]: span for span in spans}
+
+    # Find root spans (no parent)
+    root_spans = [span for span in spans if span.get("parent_span_id") is None]
+
+    def build_tree(span: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively build tree structure."""
+        children = [
+            build_tree(span_dict[child_id])
+            for child_id, child_span in span_dict.items()
+            if child_span.get("parent_span_id") == span["span_id"]
+        ]
+        result = span.copy()
+        result["children"] = children
+        return result
+
+    # Return first root span (or build tree for all roots)
+    if root_spans:
+        return build_tree(root_spans[0])
+    return {}
+
+
+def generate_span_html(
+    span_dict: Dict[str, Any],
+    all_spans: List[Dict[str, Any]],
+    trace_tree: Dict[str, Any],
+    current_span_id: str,
+    page: int = 1,
+    per_page: int = 25,
+) -> str:
+    """Generate complete HTML string with pagination.
+
+    :param span_dict: Current span as dictionary
+    :param all_spans: List of all span dictionaries (from database + converted objects)
+    :param trace_tree: Hierarchical tree structure
+    :param current_span_id: ID of span to highlight
+    :param page: Current page number for pagination
+    :param per_page: Number of spans per page
+    :return: Complete HTML string with embedded CSS and JavaScript
+    """
+    # Sort spans by start_time
+    sorted_spans = sorted(
+        all_spans,
+        key=lambda s: s.get("start_time") or "",
+    )
+
+    # Pagination - we'll render all spans client-side and paginate in JavaScript
+    total_spans = len(sorted_spans)
+    total_pages = (total_spans + per_page - 1) // per_page
+
+    # Build span dict for quick lookup
+    span_dict_lookup = {s["span_id"]: s for s in all_spans}
+
+    # Generate HTML for ALL span list items (will be paginated client-side)
+    span_items_html = []
+    for idx, span in enumerate(sorted_spans):
+        span_id = span["span_id"]
+        nesting_level = calculate_nesting_level(span, span_dict_lookup)
+        is_current = span_id == current_span_id
+        is_in_progress = (
+            span.get("status") == "started" and span.get("end_time") is None
+        )
+        color = get_span_color(span.get("status", "started"))
+        operation_name = escape_html(span.get("operation_name", ""))
+        timestamp = format_timestamp(span.get("start_time", ""))
+        duration = format_duration(span.get("duration_ms"), is_in_progress)
+
+        indent_px = nesting_level * 20
+        highlight_class = "current-span" if is_current else ""
+        status_class = "span-in-progress" if is_in_progress else ""
+
+        # Initially show spans on first page, hide others
+        initial_display = "block" if idx < per_page else "none"
+
+        span_items_html.append(
+            f"""
+            <div class="span-item {highlight_class} {status_class}"
+                 data-span-id="{escape_html(span_id)}"
+                 style="display: {initial_display}; margin-left: {indent_px}px; border-left: 3px solid {color};"
+                 onclick="selectSpan('{escape_html(span_id)}')">
+                <div class="span-header">
+                    <span class="span-time">{timestamp}</span>
+                    <span class="span-name">{operation_name}</span>
+                    <span class="span-duration">{duration}</span>
+                </div>
+            </div>
+            """
+        )
+
+    # Generate details panel HTML for current span
+    details_html = generate_span_details_html(span_dict)
+
+    # Generate pagination controls
+    pagination_html = generate_pagination_html(page, total_pages, total_spans, per_page)
+
+    # Complete HTML with embedded CSS and JavaScript
+    html = f"""
+    <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0;
+                padding: 0;
+            }}
+            .span-container {{
+                display: grid;
+                grid-template-columns: 13fr 7fr;
+                gap: 0.5rem;
+                background: white;
+                padding: 1rem;
+                border-radius: 8px;
+                max-width: 100%;
+                margin: 0;
+            }}
+            .span-timeline {{
+                background: #E5E9F0;
+                border-radius: 6px;
+                padding: 1rem 1rem 1rem 0.5rem;
+                overflow-y: auto;
+            }}
+            .span-list {{
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }}
+            .span-item {{
+                background: white;
+                padding: 0.75rem;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+                border-left: 3px solid #5E81AC;
+            }}
+            .span-item:hover {{
+                background: #ECEFF4;
+                transform: translateX(2px);
+            }}
+            .span-item.current-span {{
+                background: #D8DEE9;
+                font-weight: 600;
+            }}
+            .span-item.span-in-progress {{
+                border-left-style: dashed;
+            }}
+            .span-header {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 1rem;
+            }}
+            .span-time {{
+                color: #2E3440;
+                font-size: 0.85rem;
+                font-family: monospace;
+            }}
+            .span-name {{
+                color: #2E3440;
+                font-weight: 500;
+                flex: 1;
+            }}
+            .span-duration {{
+                color: #5E81AC;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }}
+            .span-details {{
+                background: #E5E9F0;
+                border-radius: 6px;
+                padding: 1rem 1.5rem 1rem 1rem;
+                overflow-y: auto;
+            }}
+            .details-section {{
+                margin-bottom: 1.5rem;
+            }}
+            .details-section h3 {{
+                color: #2E3440;
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+                border-bottom: 2px solid #D8DEE9;
+                padding-bottom: 0.25rem;
+            }}
+            .details-table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            .details-table td {{
+                padding: 0.5rem;
+                border-bottom: 1px solid #D8DEE9;
+            }}
+            .details-table td:first-child {{
+                font-weight: 600;
+                color: #2E3440;
+                width: 30%;
+            }}
+            .details-table td:last-child {{
+                color: #2E3440;
+                font-family: monospace;
+                font-size: 0.9rem;
+            }}
+            .pagination-controls {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid #D8DEE9;
+            }}
+            .pagination-info {{
+                color: #2E3440;
+                font-size: 0.9rem;
+            }}
+            .pagination-buttons {{
+                display: flex;
+                gap: 0.5rem;
+            }}
+            .pagination-btn {{
+                padding: 0.5rem 1rem;
+                background: #5E81AC;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.9rem;
+            }}
+            .pagination-btn:hover {{
+                background: #4C6A8A;
+            }}
+            .pagination-btn:disabled {{
+                background: #D8DEE9;
+                color: #2E3440;
+                cursor: not-allowed;
+            }}
+            .status-badge {{
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }}
+            .status-completed {{
+                background: #A3BE8C;
+                color: #2E3440;
+            }}
+            .status-error {{
+                background: #BF616A;
+                color: white;
+            }}
+            .status-started {{
+                background: #5E81AC;
+                color: white;
+            }}
+        </style>
+        <div class="span-container">
+            <div class="span-timeline">
+                <div class="span-list">
+                    {"".join(span_items_html)}
+                </div>
+                {pagination_html}
+            </div>
+            <div class="span-details" id="span-details-panel">
+                {details_html}
+            </div>
+        </div>
+        <script>
+            // Embed span data for JavaScript access
+            const spanData = {json.dumps(all_spans)};
+            const perPage = {per_page};
+            let currentPage = {page};
+            const totalPages = {total_pages};
+            const totalSpans = {total_spans};
+
+            function escapeHtml(text) {{
+                if (text === null || text === undefined) return "";
+                const div = document.createElement('div');
+                div.textContent = String(text);
+                return div.innerHTML;
+            }}
+
+            function formatTimestamp(timestampStr) {{
+                if (!timestampStr) return "";
+                try {{
+                    const dt = new Date(timestampStr.replace('Z', '+00:00'));
+                    return dt.toLocaleTimeString('en-US', {{ hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }});
+                }} catch (e) {{
+                    return String(timestampStr);
+                }}
+            }}
+
+            function formatDuration(durationMs, isInProgress) {{
+                if (isInProgress || durationMs === null || durationMs === undefined) {{
+                    return "in progress";
+                }}
+                if (durationMs < 1000) {{
+                    return Math.round(durationMs) + "ms";
+                }} else if (durationMs < 60000) {{
+                    return (durationMs / 1000).toFixed(2) + "s";
+                }} else {{
+                    return (durationMs / 60000).toFixed(2) + "min";
+                }}
+            }}
+
+            function generateDetailsHtml(span) {{
+                const operationName = escapeHtml(span.operation_name || "");
+                const status = span.status || "started";
+                const statusClass = `status-${{status}}`;
+                const statusBadge = `<span class="status-badge ${{statusClass}}">${{escapeHtml(status)}}</span>`;
+
+                const startTime = formatTimestamp(span.start_time || "");
+                const endTime = span.end_time ? formatTimestamp(span.end_time) : "in progress";
+                const duration = formatDuration(span.duration_ms, status === "started");
+
+                let attributesHtml = "";
+                if (span.attributes && Object.keys(span.attributes).length > 0) {{
+                    const attrsRows = Object.entries(span.attributes).map(([key, value]) => {{
+                        return `<tr><td>${{escapeHtml(String(key))}}</td><td>${{escapeHtml(String(value))}}</td></tr>`;
+                    }}).join("");
+                    attributesHtml = `
+                    <div class="details-section">
+                        <h3>Attributes</h3>
+                        <table class="details-table">
+                            ${{attrsRows}}
+                        </table>
+                    </div>
+                    `;
+                }}
+
+                let eventsHtml = "";
+                if (span.events && span.events.length > 0) {{
+                    const eventsRows = span.events.map(event => {{
+                        const eventName = escapeHtml(event.name || "");
+                        const eventTime = formatTimestamp(event.timestamp || "");
+                        const eventData = escapeHtml(JSON.stringify(event.data || {{}}));
+                        return `<tr><td>${{eventName}}</td><td>${{eventTime}}<br>${{eventData}}</td></tr>`;
+                    }}).join("");
+                    eventsHtml = `
+                    <div class="details-section">
+                        <h3>Events</h3>
+                        <table class="details-table">
+                            ${{eventsRows}}
+                        </table>
+                    </div>
+                    `;
+                }}
+
+                let errorHtml = "";
+                if (span.error_message) {{
+                    const errorMsg = escapeHtml(span.error_message);
+                    errorHtml = `
+                    <div class="details-section">
+                        <h3>Error</h3>
+                        <div style="color: #BF616A; font-family: monospace; font-size: 0.9rem;">${{errorMsg}}</div>
+                    </div>
+                    `;
+                }}
+
+                return `
+                    <div class="details-section">
+                        <h3>Operation</h3>
+                        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">${{operationName}}</div>
+                        ${{statusBadge}}
+                    </div>
+                    <div class="details-section">
+                        <h3>Timing</h3>
+                        <table class="details-table">
+                            <tr><td>Start Time</td><td>${{startTime}}</td></tr>
+                            <tr><td>End Time</td><td>${{endTime}}</td></tr>
+                            <tr><td>Duration</td><td>${{duration}}</td></tr>
+                        </table>
+                    </div>
+                    ${{attributesHtml}}
+                    ${{eventsHtml}}
+                    ${{errorHtml}}
+                `;
+            }}
+
+            function selectSpan(spanId) {{
+                // Update all span items
+                document.querySelectorAll('.span-item').forEach(item => {{
+                    item.classList.remove('current-span');
+                }});
+
+                // Highlight selected span
+                const selectedItem = document.querySelector(`[data-span-id="${{spanId}}"]`);
+                if (selectedItem) {{
+                    selectedItem.classList.add('current-span');
+                    selectedItem.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
+                }}
+
+                // Find span data and update details panel
+                const span = spanData.find(s => s.span_id === spanId);
+                if (span) {{
+                    const detailsPanel = document.getElementById('span-details-panel');
+                    if (detailsPanel) {{
+                        detailsPanel.innerHTML = generateDetailsHtml(span);
+                    }}
+                }}
+            }}
+
+            function renderSpans(page) {{
+                const startIdx = (page - 1) * perPage;
+                const endIdx = startIdx + perPage;
+
+                // Show/hide spans based on current page
+                const spanItems = document.querySelectorAll('.span-item');
+                spanItems.forEach((item, index) => {{
+                    if (index >= startIdx && index < endIdx) {{
+                        item.style.display = 'block';
+                    }} else {{
+                        item.style.display = 'none';
+                    }}
+                }});
+
+                // Update pagination controls
+                const startDisplay = startIdx + 1;
+                const endDisplay = Math.min(endIdx, totalSpans);
+                document.getElementById('pagination-info').textContent =
+                    `Showing ${{startDisplay}}-${{endDisplay}} of ${{totalSpans}} spans`;
+                document.getElementById('page-info').textContent =
+                    `Page ${{page}} of ${{totalPages}}`;
+
+                // Update button states
+                const prevBtn = document.getElementById('prev-btn');
+                const nextBtn = document.getElementById('next-btn');
+                if (prevBtn) {{
+                    prevBtn.disabled = page === 1;
+                    prevBtn.onclick = () => changePage(page - 1);
+                }}
+                if (nextBtn) {{
+                    nextBtn.disabled = page === totalPages;
+                    nextBtn.onclick = () => changePage(page + 1);
+                }}
+            }}
+
+            function changePage(newPage) {{
+                if (newPage < 1 || newPage > totalPages) return;
+                currentPage = newPage;
+                renderSpans(currentPage);
+            }}
+
+            // Initialize pagination on load
+            renderSpans(currentPage);
+        </script>
+    </div>
+    """
+    return html
+
+
+def generate_span_details_html(span_dict: Dict[str, Any]) -> str:
+    """Generate HTML for span details panel.
+
+    :param span_dict: Span dictionary
+    :return: HTML string for details panel
+    """
+    operation_name = escape_html(span_dict.get("operation_name", ""))
+    status = span_dict.get("status", "started")
+    status_class = f"status-{status}"
+    status_badge = (
+        f'<span class="status-badge {status_class}">{escape_html(status)}</span>'
+    )
+
+    start_time = format_timestamp(span_dict.get("start_time", ""))
+    end_time = (
+        format_timestamp(span_dict.get("end_time", ""))
+        if span_dict.get("end_time")
+        else "in progress"
+    )
+    duration = format_duration(span_dict.get("duration_ms"), status == "started")
+
+    # Attributes section
+    attributes_html = ""
+    if span_dict.get("attributes"):
+        attrs_rows = []
+        for key, value in span_dict["attributes"].items():
+            key_escaped = escape_html(str(key))
+            value_escaped = escape_html(str(value))
+            attrs_rows.append(
+                f"<tr><td>{key_escaped}</td><td>{value_escaped}</td></tr>"
+            )
+        attributes_html = f"""
+        <div class="details-section">
+            <h3>Attributes</h3>
+            <table class="details-table">
+                {"".join(attrs_rows)}
+            </table>
+        </div>
+        """
+
+    # Events section
+    events_html = ""
+    if span_dict.get("events"):
+        events_rows = []
+        for event in span_dict["events"]:
+            event_name = escape_html(event.get("name", ""))
+            event_time = format_timestamp(event.get("timestamp", ""))
+            event_data = escape_html(str(event.get("data", {})))
+            events_rows.append(
+                f"<tr><td>{event_name}</td><td>{event_time}<br>{event_data}</td></tr>"
+            )
+        events_html = f"""
+        <div class="details-section">
+            <h3>Events</h3>
+            <table class="details-table">
+                {"".join(events_rows)}
+            </table>
+        </div>
+        """
+
+    # Error section
+    error_html = ""
+    if span_dict.get("error_message"):
+        error_msg = escape_html(span_dict["error_message"])
+        error_html = f"""
+        <div class="details-section">
+            <h3>Error</h3>
+            <div style="color: #BF616A; font-family: monospace; font-size: 0.9rem;">{error_msg}</div>
+        </div>
+        """
+
+    return f"""
+        <div class="details-section">
+            <h3>Operation</h3>
+            <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">{operation_name}</div>
+            {status_badge}
+        </div>
+        <div class="details-section">
+            <h3>Timing</h3>
+            <table class="details-table">
+                <tr><td>Start Time</td><td>{start_time}</td></tr>
+                <tr><td>End Time</td><td>{end_time}</td></tr>
+                <tr><td>Duration</td><td>{duration}</td></tr>
+            </table>
+        </div>
+        {attributes_html}
+        {events_html}
+        {error_html}
+    """
+
+
+def generate_pagination_html(
+    page: int, total_pages: int, total_spans: int, per_page: int = 25
+) -> str:
+    """Generate pagination controls HTML.
+
+    :param page: Current page number
+    :param total_pages: Total number of pages
+    :param total_spans: Total number of spans
+    :param per_page: Number of spans per page
+    :return: HTML string for pagination controls
+    """
+    if total_pages <= 1:
+        return ""
+
+    prev_disabled = "disabled" if page == 1 else ""
+    next_disabled = "disabled" if page == total_pages else ""
+
+    start_idx = (page - 1) * per_page + 1
+    end_idx = min(page * per_page, total_spans)
+
+    return f"""
+    <div class="pagination-controls" id="pagination-controls">
+        <div class="pagination-info" id="pagination-info">
+            Showing {start_idx}-{end_idx} of {total_spans} spans
+        </div>
+        <div class="pagination-buttons">
+            <button class="pagination-btn" id="prev-btn" {prev_disabled} onclick="changePage(currentPage - 1)">Previous</button>
+            <span style="padding: 0.5rem; color: #2E3440;" id="page-info">Page {page} of {total_pages}</span>
+            <button class="pagination-btn" id="next-btn" {next_disabled} onclick="changePage(currentPage + 1)">Next</button>
+        </div>
+    </div>
+    """
