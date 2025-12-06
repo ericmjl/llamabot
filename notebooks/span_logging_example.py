@@ -44,20 +44,11 @@ def _():
         SimpleBot,
         dict_to_span,
         enable_span_recording,
-        get_span_tree,
         get_spans,
         span,
     )
 
-    return (
-        SimpleBot,
-        dict_to_span,
-        enable_span_recording,
-        get_span_tree,
-        get_spans,
-        mo,
-        span,
-    )
+    return SimpleBot, dict_to_span, enable_span_recording, get_spans, mo, span
 
 
 @app.cell(hide_code=True)
@@ -109,7 +100,9 @@ def _(mo):
 
 @app.cell
 def _(SimpleBot):
-    bot = SimpleBot("You are a helpful assistant.")
+    bot = SimpleBot(
+        "You are a helpful assistant.", model_name="ollama_chat/gemma3n:latest"
+    )
     return (bot,)
 
 
@@ -207,41 +200,6 @@ def _(all_spans, mo):
     Found {len(all_spans)} spans
     """
     )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        """
-    ## View Span Tree
-    """
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        """
-    Get a hierarchical tree of spans for a specific trace:
-    """
-    )
-    return
-
-
-@app.cell
-def _(all_spans, get_span_tree, mo):
-    if all_spans:
-        trace_id = all_spans[0]["trace_id"]
-        span_tree = get_span_tree(trace_id)
-        span_tree_display = mo.md(
-            f"**Trace ID:** {trace_id}\n\n**Span Tree:**\n\n```\n{span_tree}\n```"
-        )
-    else:
-        span_tree_display = mo.md("No spans found.")
-
-    span_tree_display
     return
 
 
