@@ -12,6 +12,13 @@ from llamabot.recorder import (
     upgrade_database,
     add_column,
     sqlite_log,
+    SpanRecord,
+    span,
+    get_current_span,
+    get_spans,
+    get_span_tree,
+    enable_span_recording,
+    is_span_recording_enabled,
 )
 from llamabot.components.messages import BaseMessage
 from unittest.mock import Mock
@@ -132,3 +139,273 @@ def test_sqlite_log(engine, monkeypatch, tmp_path):
     assert temp_db_path.exists()
 
     # The temporary directory and its contents will be automatically cleaned up after the test
+
+
+def test_span_creation(tmp_path):
+    """Test that a span can be created and used as context manager."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("test_operation", test_attr="test_value", db_path=db_path) as s:
+        assert s.operation_name == "test_operation"
+        assert s["test_attr"] == "test_value"
+        assert s.status == "started"
+        s.log("test_event", data="test_data")
+
+    # Check span was saved to database
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    upgrade_database(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    span_record = session.query(SpanRecord).first()
+    assert span_record is not None
+    assert span_record.operation_name == "test_operation"
+    assert span_record.status == "completed"
+    assert span_record.duration_ms is not None
+    assert span_record.duration_ms > 0
+
+    import json
+
+    attributes = json.loads(span_record.attributes)
+    assert attributes["test_attr"] == "test_value"
+
+    events = json.loads(span_record.events)
+    assert len(events) == 1
+    assert events[0]["name"] == "test_event"
+
+    session.close()
+
+
+def test_span_dictionary_interface(tmp_path):
+    """Test that spans support dictionary-like interface."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("dict_test", db_path=db_path) as s:
+        s["key1"] = "value1"
+        s["key2"] = 42
+        assert s["key1"] == "value1"
+        assert s["key2"] == 42
+        assert "key1" in s
+        assert "key2" in s
+        assert s.get("key1") == "value1"
+        assert s.get("nonexistent", "default") == "default"
+        del s["key1"]
+        assert "key1" not in s
+
+
+def test_nested_spans(tmp_path):
+    """Test that spans can be nested."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("outer", db_path=db_path) as outer:
+        with outer.span("inner") as inner:
+            inner["nested"] = True
+            inner.log("inner_event")
+
+        outer.log("outer_event")
+
+    # Check both spans were saved
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    upgrade_database(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    spans = session.query(SpanRecord).all()
+    assert len(spans) == 2
+
+    outer_span = next(s for s in spans if s.operation_name == "outer")
+    inner_span = next(s for s in spans if s.operation_name == "inner")
+
+    assert inner_span.parent_span_id == outer_span.span_id
+    assert outer_span.parent_span_id is None
+    assert outer_span.trace_id == inner_span.trace_id
+
+    session.close()
+
+
+def test_span_decorator(tmp_path):
+    """Test that span can be used as decorator."""
+    db_path = tmp_path / "test_spans.db"
+
+    @span("decorated_function", db_path=db_path)
+    def test_function(x: int, y: int) -> int:
+        """Test function for span decorator.
+
+        :param x: First number
+        :param y: Second number
+        :return: Sum of x and y
+        """
+        current_span = get_current_span()
+        if current_span:
+            current_span.log("function_called", x=x, y=y)
+        return x + y
+
+    result = test_function(2, 3)
+    assert result == 5
+
+    # Check span was created
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    upgrade_database(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    span_record = session.query(SpanRecord).first()
+    assert span_record is not None
+    assert span_record.operation_name == "decorated_function"
+
+    import json
+
+    events = json.loads(span_record.events)
+    assert len(events) == 1
+    assert events[0]["name"] == "function_called"
+
+    session.close()
+
+
+def test_get_current_span():
+    """Test get_current_span function."""
+    assert get_current_span() is None
+
+    with span("test") as s:
+        assert get_current_span() is s
+
+    assert get_current_span() is None
+
+
+def test_get_spans(tmp_path):
+    """Test get_spans query function."""
+    db_path = tmp_path / "test_spans.db"
+
+    # Create multiple spans
+    with span("operation1", category="test", db_path=db_path) as s1:
+        s1["value"] = 1
+
+    with span("operation2", category="test", db_path=db_path) as s2:
+        s2["value"] = 2
+
+    trace_id = s1.trace_id
+
+    # Query spans
+    spans = get_spans(trace_id=trace_id, db_path=db_path)
+    assert len(spans) == 2
+
+    # Query by operation name
+    spans = get_spans(operation_name="operation1", db_path=db_path)
+    assert len(spans) == 1
+    assert spans[0]["operation_name"] == "operation1"
+
+    # Query by attribute
+    spans = get_spans(category="test", db_path=db_path)
+    assert len(spans) == 2
+
+
+def test_get_span_tree(tmp_path):
+    """Test get_span_tree function."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("root", db_path=db_path) as root:
+        with root.span("child1"):
+            pass
+        with root.span("child2") as child2:
+            with child2.span("grandchild"):
+                pass
+
+    trace_id = root.trace_id
+
+    tree = get_span_tree(trace_id, db_path=db_path)
+    assert tree["operation_name"] == "root"
+    assert len(tree["children"]) == 2
+    assert tree["children"][0]["operation_name"] == "child1"
+    assert tree["children"][1]["operation_name"] == "child2"
+    assert len(tree["children"][1]["children"]) == 1
+    assert tree["children"][1]["children"][0]["operation_name"] == "grandchild"
+
+
+def test_span_error_handling(tmp_path):
+    """Test that spans capture errors correctly."""
+    db_path = tmp_path / "test_spans.db"
+
+    try:
+        with span("error_test", db_path=db_path):
+            raise ValueError("Test error")
+    except ValueError:
+        pass
+
+    # Check span was saved with error status
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    upgrade_database(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    span_record = session.query(SpanRecord).first()
+    assert span_record.status == "error"
+    assert "Test error" in span_record.error_message
+
+    session.close()
+
+
+def test_enable_span_recording():
+    """Test enable_span_recording function."""
+    # Reset state
+    import llamabot.recorder as recorder_module
+
+    recorder_module._span_recording_enabled = False
+
+    assert not is_span_recording_enabled()
+    enable_span_recording()
+    assert is_span_recording_enabled()
+
+
+def test_sqlite_log_links_to_span(tmp_path, monkeypatch):
+    """Test that sqlite_log links messages to current span."""
+    db_path = tmp_path / "test_message_log.db"
+
+    def mock_get_object_name(obj):
+        return "test_object"
+
+    monkeypatch.setattr("llamabot.recorder.get_object_name", mock_get_object_name)
+
+    test_obj = Mock()
+    test_obj.model_name = "test_model"
+    test_obj.temperature = 0.7
+
+    test_messages = [
+        BaseMessage(role="user", content="Hello"),
+        BaseMessage(role="assistant", content="Hi there!"),
+    ]
+
+    # Create a span and log within it
+    with span("test_operation", db_path=db_path):
+        log_id = sqlite_log(test_obj, test_messages, db_path=db_path)
+
+    # Check message log is linked to span
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    upgrade_database(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    log_entry = session.query(MessageLog).filter_by(id=log_id).first()
+    assert log_entry.span_id is not None
+    assert log_entry.trace_id is not None
+
+    # Verify span exists
+    span_record = session.query(SpanRecord).filter_by(span_id=log_entry.span_id).first()
+    assert span_record is not None
+    assert span_record.operation_name == "test_operation"
+
+    session.close()

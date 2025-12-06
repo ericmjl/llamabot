@@ -6,7 +6,7 @@ from types import NoneType
 from typing import Generator, List, Optional, Union
 from datetime import datetime
 
-from llamabot.recorder import sqlite_log
+from llamabot.recorder import sqlite_log, is_span_recording_enabled, Span
 from loguru import logger
 
 
@@ -106,6 +106,30 @@ class SimpleBot:
         :param human_messages: One or more human messages to use, or lists of messages.
         :return: The response to the human messages, primed by the system prompt.
         """
+        # Check if span recording is enabled
+        if is_span_recording_enabled():
+            # Create outer span for the entire bot call
+            query_content = " ".join(
+                [
+                    msg.content if hasattr(msg, "content") else str(msg)
+                    for msg in human_messages
+                ]
+            )
+            outer_span = Span(
+                "simplebot_call",
+                query=query_content,
+                model=self.model_name,
+                temperature=self.temperature,
+            )
+            with outer_span:
+                return self._call_with_spans(human_messages, outer_span)
+        else:
+            return self._call_without_spans(human_messages)
+
+    def _call_without_spans(
+        self, human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]]
+    ) -> Union[AIMessage, Generator]:
+        """Internal method for calling bot without spans."""
         # Reset run metadata for new call
         self.run_meta = {
             "start_time": datetime.now(),
@@ -156,6 +180,81 @@ class SimpleBot:
         if self.memory:
             self.memory.append(processed_messages[-1])
             self.memory.append(response_message)
+
+        # Record end time
+        self.run_meta["end_time"] = datetime.now()
+        self.run_meta["duration"] = (
+            self.run_meta["end_time"] - self.run_meta["start_time"]
+        ).total_seconds()
+
+        return response_message
+
+    def _call_with_spans(
+        self,
+        human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
+        outer_span: Span,
+    ) -> Union[AIMessage, Generator]:
+        """Internal method for calling bot with spans."""
+        # Reset run metadata for new call
+        self.run_meta = {
+            "start_time": datetime.now(),
+            "message_counts": {"user": 0, "assistant": 0, "tool": 0},
+            "tool_usage": {},
+        }
+
+        processed_messages = to_basemessage(human_messages)
+
+        memory_messages = []
+        if self.memory:
+            memory_messages = self.memory.retrieve(
+                query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
+            )
+
+        messages = [self.system_prompt] + memory_messages + processed_messages
+
+        # Count initial messages
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                self.run_meta["message_counts"]["user"] += 1
+            elif isinstance(msg, AIMessage):
+                self.run_meta["message_counts"]["assistant"] += 1
+
+        # Create span for LLM request
+        with outer_span.span("llm_request", model=self.model_name) as llm_request_span:
+            llm_request_span["message_count"] = len(messages)
+            llm_request_span["temperature"] = self.temperature
+
+            stream = self.stream_target != "none"
+            response = make_response(self, messages, stream)
+            response = stream_chunks(response, target=self.stream_target)
+            tool_calls = extract_tool_calls(response)
+            content = extract_content(response)
+            response_message = AIMessage(content=content, tool_calls=tool_calls)
+
+        # Create span for LLM response processing
+        with outer_span.span("llm_response") as llm_response_span:
+            llm_response_span["response_length"] = len(content) if content else 0
+            llm_response_span["tool_calls_count"] = len(tool_calls) if tool_calls else 0
+
+            # Update message counts
+            self.run_meta["message_counts"]["assistant"] += 1
+
+            # Record tool usage if any
+            if tool_calls:
+                for call in tool_calls:
+                    tool_name = call.function.name
+                    if tool_name not in self.run_meta["tool_usage"]:
+                        self.run_meta["tool_usage"][tool_name] = {
+                            "calls": 0,
+                            "success": 0,
+                            "failures": 0,
+                        }
+                    self.run_meta["tool_usage"][tool_name]["calls"] += 1
+
+            sqlite_log(self, messages + [response_message])
+            if self.memory:
+                self.memory.append(processed_messages[-1])
+                self.memory.append(response_message)
 
         # Record end time
         self.run_meta["end_time"] = datetime.now()

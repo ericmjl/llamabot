@@ -33,6 +33,13 @@ from .components.tools import tool
 from .components.docstore import BM25DocStore, LanceDBDocStore
 from .components.chat_memory import ChatMemory
 from .components.pocketflow import nodeify
+from .recorder import (
+    span,
+    get_current_span,
+    get_spans,
+    get_span_tree,
+    enable_span_recording,
+)
 
 
 def set_debug_mode(enabled: bool = True) -> None:
@@ -80,6 +87,11 @@ __all__ = [
     "set_debug_mode",
     "ChatMemory",
     "nodeify",
+    "span",
+    "get_current_span",
+    "get_spans",
+    "get_span_tree",
+    "enable_span_recording",
 ]
 
 # Ensure ~/.llamabot directory exists
