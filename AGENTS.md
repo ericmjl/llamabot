@@ -39,6 +39,8 @@ and environment isolation.
 - ❌ `pytest` (incorrect - will fail)
 - ✅ `pixi run pytest tests/specific_test.py` (correct)
 - ❌ `python -m pytest tests/specific_test.py` (incorrect - will fail)
+- ✅ `pixi run python -c "import llamabot"` (correct)
+- ❌ `python3 -c "import llamabot"` (incorrect - will fail)
 
 **Testing Environment**: Tests must be run within the test environment using
 `pixi run test` or by activating the test environment first. For pytest
@@ -138,7 +140,9 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **No "Private" Functions**: Do not create functions prefixed with underscores
   (e.g., `_helper_function`). Python doesn't need this convention - if a function
   is only used internally, it can simply be a regular function without the
-  underscore prefix.
+  underscore prefix. All helper functions should be public (no underscore prefixes).
+  Use descriptive names instead of hiding with underscores. This makes the codebase
+  more maintainable and allows functions to be reused when needed.
 
 ### Bot Development
 

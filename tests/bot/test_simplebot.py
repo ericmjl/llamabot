@@ -11,27 +11,28 @@ It includes tests for the following:
 """
 
 import hashlib
-from unittest.mock import patch, MagicMock, call
-import pytest
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+from unittest.mock import MagicMock, call, patch
 
-from hypothesis import given, settings, strategies as st
+import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
+from litellm import ModelResponse
 from pydantic import BaseModel
 
 from llamabot.bot.simplebot import (
     SimpleBot,
+    extract_content,
+    extract_tool_calls,
     make_response,
     stream_chunks,
-    extract_tool_calls,
-    extract_content,
 )
 from llamabot.components.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
-from litellm import ModelResponse
-
+from llamabot.recorder import enable_span_recording, get_spans, span
 
 # Helper strategies for hypothesis testing
 valid_stream_targets = st.one_of(
@@ -565,3 +566,218 @@ def test_extract_content(content):
         assert result == ""
     else:
         assert result == content
+
+
+# Tests for bot span tracking
+def test_bot_tracks_multiple_trace_ids(tmp_path, monkeypatch):
+    """Test that bot tracks all trace_ids from multiple calls."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Make multiple bot calls
+    bot("First call")
+    bot("Second call")
+    bot("Third call")
+
+    # Check that bot tracked all trace_ids
+    assert len(bot._trace_ids) == 3
+    assert len(set(bot._trace_ids)) == 3  # All unique
+
+    # Verify each trace_id has spans
+    for trace_id in bot._trace_ids:
+        spans = get_spans(trace_id=trace_id, db_path=db_path)
+        assert len(spans) > 0
+        # Each call should have a simplebot_call root span
+        root_spans = [s for s in spans if s.get("parent_span_id") is None]
+        assert len(root_spans) == 1
+        assert root_spans[0]["operation_name"] == "simplebot_call"
+
+
+def test_bot_display_spans_shows_all_calls(tmp_path, monkeypatch):
+    """Test that display_spans() shows spans from all bot calls."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Make multiple bot calls
+    bot("First call")
+    bot("Second call")
+    bot("Third call")
+
+    # Get HTML from display_spans
+    html = bot.display_spans()
+
+    # Verify HTML contains spans from all calls
+    assert "simplebot_call" in html
+    # Should have multiple simplebot_call spans (one per call)
+    # Check that we can find spans from all trace_ids
+    all_spans = []
+    for trace_id in bot._trace_ids:
+        spans = get_spans(trace_id=trace_id, db_path=db_path)
+        all_spans.extend(spans)
+
+    # Verify HTML contains references to spans from all calls
+    for span_dict in all_spans:
+        assert span_dict["span_id"] in html or span_dict["operation_name"] in html
+
+
+def test_bot_spans_exclude_manual_spans(tmp_path, monkeypatch):
+    """Test that manual spans created separately don't appear in bot's spans."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Make a bot call
+    bot("Bot call")
+
+    # Create a manual span separately
+    with span("manual_operation", db_path=db_path) as manual_span:
+        manual_span["test"] = "value"
+
+    # Get spans from bot
+    bot_html = bot.display_spans()
+
+    # Verify manual span is NOT in bot's spans
+    assert manual_span.span_id not in bot_html
+    assert "manual_operation" not in bot_html
+
+    # Verify bot's trace_ids don't include manual span's trace_id
+    assert manual_span.trace_id not in bot._trace_ids
+
+    # Verify bot's spans only include bot-related spans
+    all_bot_spans = []
+    for trace_id in bot._trace_ids:
+        spans = get_spans(trace_id=trace_id, db_path=db_path)
+        all_bot_spans.extend(spans)
+
+    manual_spans = get_spans(trace_id=manual_span.trace_id, db_path=db_path)
+    bot_span_ids = {s["span_id"] for s in all_bot_spans}
+    manual_span_ids = {s["span_id"] for s in manual_spans}
+
+    # No overlap between bot spans and manual spans
+    assert bot_span_ids.isdisjoint(manual_span_ids)
+
+
+def test_trace_id_cleared_after_root_span_exit(tmp_path, monkeypatch):
+    """Test that trace_id is cleared from context after root span exits.
+
+    This test verifies that when a bot creates a root span (which creates a new trace_id),
+    and that span exits, subsequent manual spans get a different trace_id rather than
+    inheriting the bot's trace_id.
+
+    Note: This test may be flaky when run with other tests due to context variable
+    persistence. The key behavior being tested is that manual spans created after
+    a bot call get a different trace_id.
+    """
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    # Clear any existing trace_id context from previous tests
+    from llamabot.recorder import current_trace_id_var
+
+    current_trace_id_var.set(None)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Make a bot call - this creates a root span that should clear trace_id on exit
+    bot("Bot call")
+
+    # Get the bot's trace_id
+    bot_trace_id = bot._trace_ids[0]
+
+    # Create a manual span - it should get a NEW trace_id since bot's root span cleared context
+    with span("manual_operation", db_path=db_path) as manual_span:
+        pass
+
+    # Verify manual span has a different trace_id (this is the key behavior we're testing)
+    # Note: This may fail if context variables leak between tests, but the behavior
+    # is correct when tests run in isolation
+    if manual_span.trace_id == bot_trace_id:
+        # If they're the same, it means context wasn't cleared - this is the bug we're testing for
+        pytest.fail(
+            f"Manual span inherited bot's trace_id {bot_trace_id}. "
+            "This indicates the trace_id context was not cleared when bot's root span exited."
+        )
+
+    # Verify bot's trace_ids still only contain bot's trace_id
+    assert len(bot._trace_ids) == 1
+    assert bot._trace_ids[0] == bot_trace_id
+
+    # Verify spans are in separate traces (no overlap)
+    bot_spans = get_spans(trace_id=bot_trace_id, db_path=db_path)
+    manual_spans = get_spans(trace_id=manual_span.trace_id, db_path=db_path)
+    bot_span_ids = {s["span_id"] for s in bot_spans}
+    manual_span_ids = {s["span_id"] for s in manual_spans}
+    assert bot_span_ids.isdisjoint(manual_span_ids)
+
+
+def test_nested_spans_preserve_trace_id(tmp_path, monkeypatch):
+    """Test that nested spans within bot call preserve trace_id."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Make a bot call
+    bot("Bot call")
+
+    bot_trace_id = bot._trace_ids[0]
+
+    # Verify all spans from bot call share the same trace_id
+    bot_spans = get_spans(trace_id=bot_trace_id, db_path=db_path)
+    assert len(bot_spans) > 0
+    for span_dict in bot_spans:
+        assert span_dict["trace_id"] == bot_trace_id
+
+    # Verify nested spans (like llm_request, llm_response) are included
+    operation_names = {s["operation_name"] for s in bot_spans}
+    assert "simplebot_call" in operation_names
+    assert "llm_request" in operation_names
+    assert "llm_response" in operation_names
+
+
+def test_bot_display_spans_no_spans_yet():
+    """Test display_spans() when no spans have been recorded."""
+    bot = SimpleBot(system_prompt="Test prompt")
+
+    html = bot.display_spans()
+
+    assert "No spans recorded" in html
+
+
+def test_bot_display_spans_empty_database(tmp_path, monkeypatch):
+    """Test display_spans() when spans are tracked but not in database."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Manually add a trace_id that doesn't exist in database
+    bot._trace_ids.append("nonexistent-trace-id")
+
+    html = bot.display_spans()
+
+    assert "No spans found" in html

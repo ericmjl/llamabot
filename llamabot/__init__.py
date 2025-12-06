@@ -39,6 +39,7 @@ from .recorder import (
     get_spans,
     get_span_tree,
     enable_span_recording,
+    dict_to_span,
 )
 
 
@@ -92,6 +93,7 @@ __all__ = [
     "get_spans",
     "get_span_tree",
     "enable_span_recording",
+    "dict_to_span",
 ]
 
 # Ensure ~/.llamabot directory exists

@@ -69,6 +69,42 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md("""
+    ## Span-Based Observability
+
+    This tutorial demonstrates span-based logging for observability.
+    Spans automatically track bot operations, tool executions, and decision-making.
+    We'll also add manual spans to custom workflows for complete trace visibility.
+    """)
+    return
+
+
+@app.cell
+def _():
+    from llamabot import (
+        enable_span_recording,
+        get_current_span,
+        get_span_tree,
+        get_spans,
+        span,
+    )
+
+    return enable_span_recording, get_current_span, get_span_tree, get_spans, span
+
+
+@app.cell
+def _(enable_span_recording):
+    # Enable span recording globally
+    # This automatically creates spans for:
+    # - SimpleBot, StructuredBot, QueryBot calls
+    # - AgentBot calls and decision-making
+    # - Tool executions via @nodeify decorator
+    enable_span_recording()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
     ## Marimo Notebooks
 
     Marimo uses reactive execution:
@@ -263,9 +299,18 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(Path, convert_from_path, tempfile):
+def _(Path, convert_from_path, span, tempfile):
+    @span("convert_pdf_to_images", category="file_processing")
     def convert_pdf_to_images(file_path: str):
         """Convert PDF to list of image paths."""
+        from llamabot import get_current_span
+
+        s = get_current_span()
+        if s:
+            s["file_path"] = file_path
+            file_extension = Path(file_path).suffix.lower()
+            s["file_extension"] = file_extension
+
         file_extension = Path(file_path).suffix.lower()
 
         if file_extension == ".pdf":
@@ -277,10 +322,18 @@ def _(Path, convert_from_path, tempfile):
                 ) as temp_img:
                     image.save(temp_img.name, "PNG")
                     image_paths.append(temp_img.name)
+            if s:
+                s["page_count"] = len(image_paths)
+                s["conversion_success"] = True
             return image_paths
         elif file_extension in [".png", ".jpg", ".jpeg"]:
+            if s:
+                s["page_count"] = 1
+                s["conversion_success"] = True
             return [file_path]
         else:
+            if s:
+                s["conversion_success"] = False
             raise ValueError(f"Unsupported file type: {file_extension}")
 
     return (convert_pdf_to_images,)
@@ -344,13 +397,31 @@ def _(mo):
 
 
 @app.cell
-def _(convert_pdf_to_images, ocr_bot, receipt_structuring_bot, user):
+def _(
+    convert_pdf_to_images,
+    get_current_span,
+    ocr_bot,
+    receipt_structuring_bot,
+    span,
+    user,
+):
+    @span("extract_receipt_data", category="receipt_processing")
     def extract_receipt_data(file_path: str):
         """Extract receipt data from PDF or image file using two-step process:
         1. OCR extraction with DeepSeek-OCR (SimpleBot)
         2. Structure the data with StructuredBot
         """
-        image_paths = convert_pdf_to_images(file_path)
+        s = get_current_span()
+        if s:
+            s["file_path"] = file_path
+
+        # PDF to image conversion
+        if s:
+            with s.span("pdf_to_images", file_path=file_path):
+                image_paths = convert_pdf_to_images(file_path)
+                s["page_count"] = len(image_paths)
+        else:
+            image_paths = convert_pdf_to_images(file_path)
 
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
@@ -362,15 +433,30 @@ def _(convert_pdf_to_images, ocr_bot, receipt_structuring_bot, user):
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results
         ocr_texts = []
-        for image_path in image_paths:
-            ocr_response = ocr_bot(user(prompt_text, image_path))
-            ocr_texts.append(ocr_response.content)
+        if s:
+            with s.span("ocr_extraction", page_count=len(image_paths)):
+                for image_path in image_paths:
+                    ocr_response = ocr_bot(user(prompt_text, image_path))
+                    ocr_texts.append(ocr_response.content)
+                s.log("ocr_completed", pages=len(image_paths))
+        else:
+            for image_path in image_paths:
+                ocr_response = ocr_bot(user(prompt_text, image_path))
+                ocr_texts.append(ocr_response.content)
 
         # Combine OCR results from all pages
         combined_ocr_text = "\n\n--- Page Break ---\n\n".join(ocr_texts)
 
         # Step 2: Structure the extracted text according to ReceiptData schema
-        result = receipt_structuring_bot(combined_ocr_text)
+        if s:
+            with s.span("structure_data"):
+                result = receipt_structuring_bot(combined_ocr_text)
+                s.log("structuring_completed")
+                s["vendor"] = result.vendor
+                s["amount"] = result.amount
+        else:
+            result = receipt_structuring_bot(combined_ocr_text)
+
         return result
 
     return (extract_receipt_data,)
@@ -385,7 +471,7 @@ def _():
 
 
 @app.cell
-def _(Path, extract_receipt_data, nodeify, tool):
+def _(Path, extract_receipt_data, get_current_span, nodeify, tool):
     @nodeify(loopback_name="decide")
     @tool
     def process_receipt(file_path: str = None, _globals_dict: dict = None) -> str:
@@ -396,6 +482,7 @@ def _(Path, extract_receipt_data, nodeify, tool):
         :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :return: JSON string of extracted receipt data
         """
+        s = get_current_span()
         if _globals_dict is None:
             raise ValueError("No globals_dict available. Cannot process receipt.")
 
@@ -433,7 +520,12 @@ def _(Path, extract_receipt_data, nodeify, tool):
                 f"Available file variables in globals: {available_files}"
             )
 
-        receipt_data = extract_receipt_data(file_path)
+        # Extract receipt data (this will create nested spans automatically)
+        if s:
+            with s.span("extract_receipt_data_call"):
+                receipt_data = extract_receipt_data(file_path)
+        else:
+            receipt_data = extract_receipt_data(file_path)
         return receipt_data.model_dump_json()
 
     return (process_receipt,)
@@ -522,13 +614,18 @@ def _(InvoiceData, invoice_generation_sysprompt, lmb):
 
 
 @app.cell
-def _(InvoiceData, invoice_writer_bot):
+def _(InvoiceData, get_current_span, invoice_writer_bot, span):
+    @span("generate_invoice", category="invoice_generation")
     def generate_invoice(invoice_description: str) -> InvoiceData:
         """Generate invoice from natural language description.
 
         :param invoice_description: Natural language description of the invoice to generate.
             Should include client name, project description, amount, and any other relevant details.
         """
+        s = get_current_span()
+        if s:
+            s["invoice_description"] = invoice_description[:200]  # Truncate for storage
+
         prompt = f"""Generate an invoice based on this description:
         {invoice_description}
 
@@ -538,15 +635,20 @@ def _(InvoiceData, invoice_writer_bot):
         """
 
         invoice = invoice_writer_bot(prompt)
+        if s:
+            s["invoice_number"] = invoice.invoice_number
+            s["amount"] = invoice.amount
         return invoice
 
     return (generate_invoice,)
 
 
 @app.cell
-def _(InvoiceData):
+def _(InvoiceData, get_current_span, span):
+    @span("render_invoice_html", category="invoice_generation")
     def render_invoice_html(invoice: InvoiceData) -> str:
         """Render invoice as beautiful HTML."""
+        s = get_current_span()
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -583,13 +685,16 @@ def _(InvoiceData):
         </body>
         </html>
         """
+        if s:
+            s["invoice_number"] = invoice.invoice_number
+            s["html_length"] = len(html)
         return html
 
     return (render_invoice_html,)
 
 
 @app.cell
-def _(generate_invoice, nodeify, render_invoice_html, tool):
+def _(generate_invoice, get_current_span, nodeify, render_invoice_html, tool):
     @nodeify(loopback_name="decide")
     @tool
     def write_invoice(invoice_description: str, _globals_dict: dict = None) -> str:
@@ -611,8 +716,16 @@ def _(generate_invoice, nodeify, render_invoice_html, tool):
         :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :return: Confirmation message indicating invoice was generated
         """
-        invoice = generate_invoice(invoice_description)
-        html = render_invoice_html(invoice)
+        s = get_current_span()
+        # Generate invoice (this will create nested spans automatically)
+        if s:
+            with s.span("generate_invoice_call"):
+                invoice = generate_invoice(invoice_description)
+            with s.span("render_invoice_html_call"):
+                html = render_invoice_html(invoice)
+        else:
+            invoice = generate_invoice(invoice_description)
+            html = render_invoice_html(invoice)
 
         # Store invoice HTML in globals so it can be returned to user
         if _globals_dict is not None:
@@ -873,10 +986,15 @@ def _(Path, files, tempfile):
 
 
 @app.cell
-def _(coordinator_bot):
+def _(coordinator_bot, span):
     def chat_turn(messages, config):
         user_message = messages[-1].content
-        result = coordinator_bot(user_message, globals())
+        with span(
+            "coordinator_chat_turn",
+            user_message=user_message[:100],
+            category="chat_interaction",
+        ):
+            result = coordinator_bot(user_message, globals())
         return result
 
     return (chat_turn,)
@@ -941,6 +1059,128 @@ def _(mo):
 
     This is the agent-as-tool pattern: agents use other agents as tools.
     """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ---
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Span Visualization & Observability
+
+    Now that we've enabled span recording, let's explore the spans that were automatically created.
+    Spans provide complete trace visibility into the agent workflow:
+
+    - **Automatic spans**: Created by bots (SimpleBot, StructuredBot, AgentBot) and tools
+    - **Manual spans**: Created by our custom workflow functions
+    - **Nested structure**: Spans form a hierarchy showing the complete execution flow
+
+    The trace hierarchy looks like:
+    `coordinator_chat_turn → agentbot_call → decision → tool_call → extract_receipt_data → pdf_to_images → ocr_extraction → structure_data`
+    """)
+    return
+
+
+@app.cell
+def _(get_spans, mo):
+    # Query all spans
+    all_spans = get_spans()
+    mo.md(f"**Total spans recorded:** {len(all_spans)}")
+    return (all_spans,)
+
+
+@app.cell
+def _(all_spans, get_spans, mo):
+    # Query spans by category
+    receipt_spans = get_spans(category="receipt_processing")
+    invoice_spans = get_spans(category="invoice_generation")
+    tool_spans = get_spans(operation_name="tool_call")
+
+    mo.md(f"""
+    **Spans by category:**
+    - Receipt processing: {len(receipt_spans)}
+    - Invoice generation: {len(invoice_spans)}
+    - Tool executions: {len(tool_spans)}
+    """)
+    return invoice_spans, receipt_spans, tool_spans
+
+
+@app.cell
+def _(all_spans, get_span_tree, mo):
+    # Display span tree for the most recent trace
+    if all_spans:
+        # Get the most recent trace_id
+        trace_id = all_spans[-1]["trace_id"]
+        span_tree = get_span_tree(trace_id)
+
+        tree_display = mo.md(f"""
+        **Span Tree for Trace:** `{trace_id}`
+
+        ```
+        {span_tree}
+        ```
+        """)
+    else:
+        tree_display = mo.md("No spans found. Run some operations first to see spans.")
+
+    tree_display
+    return
+
+
+@app.cell
+def _(all_spans, mo):
+    # Show span statistics
+    if all_spans:
+        categories = {}
+        operations = {}
+        total_duration = 0
+
+        for span_record in all_spans:
+            # Count by category
+            category = span_record.get("attributes", {}).get(
+                "category", "uncategorized"
+            )
+            categories[category] = categories.get(category, 0) + 1
+
+            # Count by operation
+            op_name = span_record.get("operation_name", "unknown")
+            operations[op_name] = operations.get(op_name, 0) + 1
+
+            # Sum durations
+            if span_record.get("duration_ms"):
+                total_duration += span_record["duration_ms"]
+
+        category_list = "\n".join(
+            [f"- {k}: {v}" for k, v in sorted(categories.items())]
+        )
+        operation_list = "\n".join(
+            [f"- {k}: {v}" for k, v in sorted(operations.items())[:10]]
+        )
+
+        stats_display = mo.md(f"""
+        **Span Statistics:**
+
+        **By Category:**
+        {category_list}
+
+        **By Operation (top 10):**
+        {operation_list}
+
+        **Total Duration:** {total_duration:.2f} ms
+        """)
+    else:
+        stats_display = mo.md(
+            "No spans found. Run some operations first to see statistics."
+        )
+
+    stats_display
     return
 
 
@@ -1307,10 +1547,15 @@ def _(coordinator_with_complaints):
 
 
 @app.cell
-def _(coordinator_with_complaints):
+def _(coordinator_with_complaints, span):
     def chat_turn_with_complaints(messages, config):
         user_message = messages[-1].content
-        result = coordinator_with_complaints(user_message, globals())
+        with span(
+            "coordinator_chat_turn",
+            user_message=user_message[:100],
+            category="chat_interaction",
+        ):
+            result = coordinator_with_complaints(user_message, globals())
         return result
 
     return (chat_turn_with_complaints,)

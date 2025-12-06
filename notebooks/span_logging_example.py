@@ -2,7 +2,8 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "llamabot",
-#     "marimo",
+#     "marimo>=0.17.0",
+#     "pyzmq",
 # ]
 #
 # [tool.uv.sources]
@@ -41,13 +42,22 @@ def _():
 
     from llamabot import (
         SimpleBot,
+        dict_to_span,
         enable_span_recording,
         get_span_tree,
         get_spans,
         span,
     )
 
-    return SimpleBot, enable_span_recording, get_span_tree, get_spans, mo, span
+    return (
+        SimpleBot,
+        dict_to_span,
+        enable_span_recording,
+        get_span_tree,
+        get_spans,
+        mo,
+        span,
+    )
 
 
 @app.cell(hide_code=True)
@@ -125,7 +135,8 @@ def _(mo):
 
 @app.cell
 def _(bot):
-    response = bot("What is 2+2?")
+    for i in range(3):
+        response = bot(f"What is 2+{i}?")
     return (response,)
 
 
@@ -136,6 +147,27 @@ def _(mo, response):
     **Response:** {response.content}
     """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ## Display Spans from Bot Instance
+
+    Each bot instance tracks its own spans. When you display the bot object
+    (as the last expression in a cell), it automatically shows the spans
+    visualization from the most recent call:
+    """
+    )
+    return
+
+
+@app.cell
+def _(bot):
+    # Display the bot object - this automatically shows spans from the last call
+    bot
     return
 
 
@@ -160,9 +192,11 @@ def _(mo):
 
 
 @app.cell
-def _(get_spans):
+def _(dict_to_span, get_spans):
     all_spans = get_spans()
-    all_spans
+    # Display the first span if available
+    first_span = dict_to_span(all_spans[0]) if all_spans else None
+    first_span
     return (all_spans,)
 
 
@@ -244,6 +278,13 @@ def _(span):
 
         s["status"] = "completed"
         s.log("operation_finished")
+    s
+    return
+
+
+@app.cell
+def _(bot):
+    bot
     return
 
 
@@ -355,24 +396,10 @@ def _(get_spans):
 
 
 @app.cell
-def _(decorated_spans, mo):
-    if decorated_spans:
-        span_info = decorated_spans[0]
-        decorated_display = mo.md(
-            f"""
-        Found {len(decorated_spans)} span(s) for `decorated_function`:
-
-        - **Operation:** {span_info["operation_name"]}
-        - **Duration:** {span_info["duration_ms"]:.2f} ms
-        - **Status:** {span_info["status"]}
-        - **Attributes:** {span_info["attributes"]}
-        - **Events:** {len(span_info["events"])} event(s)
-        """
-        )
-    else:
-        decorated_display = mo.md("No spans found for decorated_function.")
-
-    decorated_display
+def _(decorated_spans, dict_to_span):
+    # Display the first decorated span
+    decorated_span = dict_to_span(decorated_spans[0]) if decorated_spans else None
+    decorated_span
     return
 
 
@@ -403,18 +430,10 @@ def _(get_spans):
 
 
 @app.cell
-def _(category_spans, mo):
-    if category_spans:
-        category_display = mo.md(
-            f"""
-        Found {len(category_spans)} span(s) with `category="example"`:
-
-        {chr(10).join([f"- **{s['operation_name']}**: {s['duration_ms']:.2f} ms" for s in category_spans])}
-        """
-        )
-    else:
-        category_display = mo.md("No spans found with category='example'.")
-    category_display
+def _(category_spans, dict_to_span):
+    # Display the first category span
+    category_span = dict_to_span(category_spans[0]) if category_spans else None
+    category_span
     return
 
 

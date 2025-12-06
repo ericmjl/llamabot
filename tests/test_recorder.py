@@ -3,25 +3,35 @@ This module provides a set of tests for the PromptRecorder
 and autorecord functions in the llamabot.recorder module.
 """
 
+from unittest.mock import Mock
+
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
-from llamabot.recorder import (
-    MessageLog,
-    Base,
-    upgrade_database,
-    add_column,
-    sqlite_log,
-    SpanRecord,
-    span,
-    get_current_span,
-    get_spans,
-    get_span_tree,
-    enable_span_recording,
-    is_span_recording_enabled,
-)
+
 from llamabot.components.messages import BaseMessage
-from unittest.mock import Mock
+from llamabot.recorder import (
+    Base,
+    MessageLog,
+    Span,
+    SpanRecord,
+    add_column,
+    build_hierarchy,
+    calculate_nesting_level,
+    enable_span_recording,
+    escape_html,
+    format_duration,
+    format_timestamp,
+    get_current_span,
+    get_span_color,
+    get_span_tree,
+    get_spans,
+    is_span_recording_enabled,
+    span,
+    span_to_dict,
+    sqlite_log,
+    upgrade_database,
+)
 
 
 @pytest.fixture
@@ -409,3 +419,252 @@ def test_sqlite_log_links_to_span(tmp_path, monkeypatch):
     assert span_record.operation_name == "test_operation"
 
     session.close()
+
+
+def test_span_to_dict(tmp_path):
+    """Test span_to_dict conversion function."""
+    db_path = tmp_path / "test_spans.db"
+
+    # Test with complete span
+    with span("test_operation", category="test", db_path=db_path) as s:
+        s["result"] = "success"
+        s.log("test_event", data="test_data")
+
+    span_dict = span_to_dict(s)
+    assert span_dict["span_id"] == s.span_id
+    assert span_dict["trace_id"] == s.trace_id
+    assert span_dict["operation_name"] == "test_operation"
+    assert span_dict["status"] == "completed"
+    assert span_dict["duration_ms"] is not None
+    assert span_dict["end_time"] is not None
+    assert span_dict["attributes"]["category"] == "test"
+    assert span_dict["attributes"]["result"] == "success"
+    assert len(span_dict["events"]) == 1
+
+    # Test with incomplete span
+    incomplete_span = Span("incomplete", db_path=db_path)
+    incomplete_dict = span_to_dict(incomplete_span)
+    assert incomplete_dict["status"] == "started"
+    assert incomplete_dict["end_time"] is None
+    assert incomplete_dict["duration_ms"] is None
+
+    # Test with error span
+    try:
+        with span("error_operation", db_path=db_path) as error_s:
+            raise ValueError("Test error")
+    except ValueError:
+        pass
+
+    error_dict = span_to_dict(error_s)
+    assert error_dict["status"] == "error"
+    assert error_dict["error_message"] == "Test error"
+
+
+def test_escape_html():
+    """Test HTML escaping function."""
+    # Test special characters
+    assert (
+        escape_html("<script>alert('xss')</script>")
+        == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;"
+    )
+    assert escape_html('Hello "world"') == "Hello &quot;world&quot;"
+    assert escape_html("A & B") == "A &amp; B"
+
+    # Test normal text
+    assert escape_html("Hello world") == "Hello world"
+
+    # Test None/empty strings
+    assert escape_html(None) == ""
+    assert escape_html("") == ""
+
+
+def test_format_timestamp():
+    """Test timestamp formatting."""
+    # Test ISO format
+    timestamp = "2024-01-01T12:34:56.123456"
+    formatted = format_timestamp(timestamp)
+    assert "12:34:56" in formatted
+
+    # Test None handling
+    assert format_timestamp(None) == ""
+    assert format_timestamp("") == ""
+
+
+def test_format_duration():
+    """Test duration formatting."""
+    # Test milliseconds
+    assert format_duration(123) == "123ms"
+    assert format_duration(999) == "999ms"
+
+    # Test seconds
+    assert format_duration(1000) == "1.00s"
+    assert format_duration(1500) == "1.50s"
+    assert format_duration(59999) == "60.00s"  # 59999ms = 59.999s rounds to 60.00s
+
+    # Test minutes
+    assert format_duration(60000) == "1.00min"
+    assert format_duration(120000) == "2.00min"
+
+    # Test in-progress spans
+    assert format_duration(None, is_in_progress=True) == "in progress"
+    assert format_duration(None, is_in_progress=False) == "in progress"
+
+
+def test_get_span_color():
+    """Test color mapping."""
+    assert get_span_color("completed") == "#A3BE8C"  # aurora green
+    assert get_span_color("error") == "#BF616A"  # aurora red
+    assert get_span_color("started") == "#5E81AC"  # frost blue
+    assert get_span_color("unknown") == "#5E81AC"  # default
+
+
+def test_calculate_nesting_level(tmp_path):
+    """Test nesting level calculation."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("root", db_path=db_path) as root:
+        with root.span("child1") as child1:
+            with child1.span("grandchild") as grandchild:
+                pass
+
+    # Get all spans
+    spans = get_spans(trace_id=root.trace_id, db_path=db_path)
+    span_dict = {s["span_id"]: s for s in spans}
+
+    # Check nesting levels
+    root_level = calculate_nesting_level(
+        next(s for s in spans if s["span_id"] == root.span_id), span_dict
+    )
+    child_level = calculate_nesting_level(
+        next(s for s in spans if s["span_id"] == child1.span_id), span_dict
+    )
+    grandchild_level = calculate_nesting_level(
+        next(s for s in spans if s["span_id"] == grandchild.span_id), span_dict
+    )
+
+    assert root_level == 0
+    assert child_level == 1
+    assert grandchild_level == 2
+
+
+def test_build_hierarchy(tmp_path):
+    """Test hierarchy building."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("root", db_path=db_path) as root:
+        with root.span("child1"):
+            pass
+        with root.span("child2"):
+            pass
+
+    spans = get_spans(trace_id=root.trace_id, db_path=db_path)
+    tree = build_hierarchy(spans)
+
+    assert tree["operation_name"] == "root"
+    assert len(tree["children"]) == 2
+    assert tree["children"][0]["operation_name"] in ["child1", "child2"]
+    assert tree["children"][1]["operation_name"] in ["child1", "child2"]
+
+
+def test_repr_html_complete_span(tmp_path):
+    """Test _repr_html_() with complete span."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("test_operation", category="test", db_path=db_path) as s:
+        s["result"] = "success"
+
+    html = s._repr_html_()
+
+    # Verify HTML contains span data
+    assert "test_operation" in html
+    assert "test" in html
+    assert "success" in html
+    assert "span-container" in html
+    assert "span-timeline" in html
+    assert "span-details" in html
+    assert s.span_id in html
+
+
+def test_repr_html_incomplete_span(tmp_path):
+    """Test _repr_html_() with incomplete span."""
+    db_path = tmp_path / "test_spans.db"
+
+    incomplete_span = Span("incomplete", db_path=db_path)
+    html = incomplete_span._repr_html_()
+
+    # Verify "in progress" indicator
+    assert "incomplete" in html
+    assert "in progress" in html
+    assert incomplete_span.span_id in html
+
+
+def test_repr_html_with_trace(tmp_path):
+    """Test _repr_html_() with multiple spans in trace."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("root", db_path=db_path) as root:
+        with root.span("child1"):
+            pass
+        with root.span("child2"):
+            pass
+
+    html = root._repr_html_()
+
+    # Verify all spans appear
+    assert "root" in html
+    assert "child1" in html
+    assert "child2" in html
+    assert root.span_id in html
+
+
+def test_repr_html_pagination(tmp_path):
+    """Test pagination in _repr_html_()."""
+    db_path = tmp_path / "test_spans.db"
+
+    # Create 30 spans
+    with span("root", db_path=db_path) as root:
+        for i in range(29):
+            with root.span(f"child{i}"):
+                pass
+
+    html = root._repr_html_()
+
+    # Verify pagination controls appear
+    assert "pagination-controls" in html
+    assert "Showing" in html
+    assert "spans" in html
+
+
+def test_repr_html_html_escaping(tmp_path):
+    """Test HTML escaping in _repr_html_() output."""
+    db_path = tmp_path / "test_spans.db"
+
+    with span("<script>alert('xss')</script>", db_path=db_path) as s:
+        s["key"] = 'Hello "world" & <tags>'
+
+    html = s._repr_html_()
+
+    # Verify user data is HTML escaped
+    assert "&lt;script&gt;" in html  # Escaped operation name
+    assert "&quot;world&quot;" in html  # Escaped attribute value
+    assert "&amp;" in html  # Escaped ampersand
+    # Verify unescaped user data does not appear in content areas
+    # (Note: <script> tag appears in JavaScript code, which is expected)
+    assert (
+        "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;" in html
+    )  # Escaped in span name
+    assert "Hello &quot;world&quot; &amp; &lt;tags&gt;" in html  # Escaped in attributes
+
+
+def test_repr_html_span_not_in_db(tmp_path):
+    """Test span not yet saved to database."""
+    db_path = tmp_path / "test_spans.db"
+
+    # Create span but don't exit context (not saved yet)
+    incomplete_span = Span("not_saved", db_path=db_path)
+    html = incomplete_span._repr_html_()
+
+    # Verify span still appears in visualization
+    assert "not_saved" in html
+    assert incomplete_span.span_id in html
+    assert "span-visualizer" in html

@@ -1,12 +1,11 @@
 """Class definition for QueryBot."""
 
 import contextvars
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
-from dotenv import load_dotenv
-from datetime import datetime
 
-from llamabot.config import default_language_model
+from dotenv import load_dotenv
 
 from llamabot.bot.simplebot import (
     SimpleBot,
@@ -15,17 +14,16 @@ from llamabot.bot.simplebot import (
     make_response,
     stream_chunks,
 )
+from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
+    RetrievedMessage,
     to_basemessage,
 )
-from llamabot.components.docstore import AbstractDocumentStore
-from llamabot.components.messages import (
-    RetrievedMessage,
-)
-from llamabot.recorder import sqlite_log, is_span_recording_enabled, Span
+from llamabot.config import default_language_model
+from llamabot.recorder import Span, is_span_recording_enabled, sqlite_log
 
 load_dotenv()
 
@@ -109,6 +107,9 @@ class QueryBot(SimpleBot):
                 n_results=n_results,
                 model=self.model_name,
             )
+            # Track trace_id for this bot instance
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
             with outer_span:
                 return self._call_with_spans(query_content, n_results, outer_span)
         else:

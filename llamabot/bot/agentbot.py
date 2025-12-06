@@ -179,6 +179,9 @@ class AgentBot:
         # Initialize shared state
         self.shared = dict(memory=[], globals_dict={})
 
+        # Track all trace_ids from this bot instance for span visualization
+        self._trace_ids = []
+
     def __call__(self, query: str, globals_dict: Optional[dict] = None):
         """Execute the agent with a query.
 
@@ -223,6 +226,9 @@ class AgentBot:
                 query=query,
                 max_iterations=self.max_iterations,
             )
+            # Track trace_id for this bot instance
+            if agent_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(agent_span.trace_id)
             with agent_span:
                 # Store trace_id in shared state so nodes can access it
                 self.shared["trace_id"] = agent_span.trace_id
@@ -257,3 +263,59 @@ class AgentBot:
         from llamabot.components.pocketflow import flow_to_mermaid
 
         return mo.mermaid(flow_to_mermaid(self.flow))
+
+    def display_spans(self) -> str:
+        """Display all spans from all bot calls as HTML.
+
+        Queries spans associated with all trace_ids from this bot instance
+        and generates an HTML visualization showing all spans from all calls.
+
+        :return: HTML string for displaying spans in marimo notebooks
+        """
+        from llamabot.recorder import build_hierarchy, generate_span_html, get_spans
+
+        if not self._trace_ids:
+            return '<div style="padding: 1rem; color: #2E3440;">No spans recorded for this bot instance yet.</div>'
+
+        # Collect all spans from all trace_ids for this bot instance
+        all_spans = []
+        for trace_id in self._trace_ids:
+            spans = get_spans(trace_id=trace_id)
+            all_spans.extend(spans)
+
+        if not all_spans:
+            return '<div style="padding: 1rem; color: #2E3440;">No spans found in database for this bot instance.</div>'
+
+        # Find root spans (spans with no parent) to use as current span
+        # Use the most recent root span (last one in the list)
+        root_spans = [s for s in all_spans if s.get("parent_span_id") is None]
+        if root_spans:
+            # Use the last root span (most recent) as the current span for highlighting
+            current_span_dict = root_spans[-1]
+            current_span_id = current_span_dict["span_id"]
+        else:
+            # Fallback to last span if no root spans found
+            current_span_dict = all_spans[-1]
+            current_span_id = current_span_dict["span_id"]
+
+        # Build hierarchical structure
+        trace_tree = build_hierarchy(all_spans)
+
+        # Generate HTML visualization
+        return generate_span_html(
+            span_dict=current_span_dict,
+            all_spans=all_spans,
+            trace_tree=trace_tree,
+            current_span_id=current_span_id,
+        )
+
+    def _repr_html_(self) -> str:
+        """Return HTML representation for marimo display.
+
+        When an AgentBot object is the last expression in a marimo cell,
+        this method is automatically called to display the spans visualization
+        from the most recent bot call.
+
+        :return: HTML string for displaying spans
+        """
+        return self.display_spans()

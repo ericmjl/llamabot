@@ -172,3 +172,6 @@ llamabot/data/mcp_docs/
 
 # Marimo's cache
 __marimo__
+
+# SQLite database
+test_spans.db
