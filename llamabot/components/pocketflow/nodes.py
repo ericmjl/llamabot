@@ -420,7 +420,7 @@ class DecideNode(Node):
 
             # Force respond_to_user with a termination message
             prep_res["func_call"] = {
-                "message": (
+                "response": (
                     f"Maximum iteration limit ({self.max_iterations}) reached. "
                     f"Terminating execution to prevent infinite loop."
                 )
