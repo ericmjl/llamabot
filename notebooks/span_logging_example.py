@@ -206,6 +206,8 @@ def _(all_spans, get_span_tree, mo):
         )
     else:
         span_tree_display = mo.md("No spans found.")
+
+    span_tree_display
     return
 
 
@@ -267,7 +269,7 @@ def _(mo):
 
 @app.cell
 def _(get_spans):
-    filtered_spans = get_spans(attributes={"user_id": 123})
+    filtered_spans = get_spans(user_id=123)
     return (filtered_spans,)
 
 
@@ -396,7 +398,7 @@ def _(mo):
 
 @app.cell
 def _(get_spans):
-    category_spans = get_spans(attributes={"category": "example"})
+    category_spans = get_spans(category="example")
     return (category_spans,)
 
 
