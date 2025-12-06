@@ -6,6 +6,8 @@ from typing import Callable, List, Optional
 from loguru import logger
 from pocketflow import Node
 
+from llamabot.recorder import Span, get_current_span, is_span_recording_enabled
+
 # Constant for the default loopback action name
 DECIDE_NODE_ACTION = "decide"
 
@@ -107,8 +109,33 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
                 if "_globals_dict" in sig.parameters:
                     func_call["_globals_dict"] = globals_dict
 
-                # Call the function with the arguments
-                return self.func(**func_call)
+                # Add span support for tool execution
+                if is_span_recording_enabled():
+                    current_span = get_current_span()
+                    if current_span:
+                        tool_span = current_span.span(
+                            "tool_call", tool_name=self.func.__name__, **func_call
+                        )
+                        with tool_span:
+                            result = self.func(**func_call)
+                            tool_span.log("tool_completed", result=str(result)[:200])
+                            return result
+                    else:
+                        # No parent span, create root span
+                        trace_id = prep_result.get("trace_id")
+                        tool_span = Span(
+                            "tool_call",
+                            trace_id=trace_id,
+                            tool_name=self.func.__name__,
+                            **func_call,
+                        )
+                        with tool_span:
+                            result = self.func(**func_call)
+                            tool_span.log("tool_completed", result=str(result)[:200])
+                            return result
+                else:
+                    # No span recording, execute normally
+                    return self.func(**func_call)
 
             def post(self, shared, prep_result, exec_res):
                 """Post-process the execution result.
@@ -332,17 +359,38 @@ class DecideNode(Node):
         :raises ValueError: If no tool calls are returned from ToolBot or if JSON
                             parsing fails
         """
-        from llamabot.bot.toolbot import ToolBot
+        # Add span support for decision making
+        if is_span_recording_enabled():
+            current_span = get_current_span()
+            if current_span:
+                decision_span = current_span.span(
+                    "decision",
+                    iteration=prep_res.get("iteration_count", 0),
+                    model=self.model_name,
+                )
+                with decision_span:
+                    return self._exec_decision(prep_res, decision_span)
+            else:
+                # No parent span, create root span
+                trace_id = prep_res.get("trace_id")
+                decision_span = Span(
+                    "decision",
+                    trace_id=trace_id,
+                    iteration=prep_res.get("iteration_count", 0),
+                    model=self.model_name,
+                )
+                with decision_span:
+                    return self._exec_decision(prep_res, decision_span)
+        else:
+            return self._exec_decision(prep_res, None)
 
-        bot = ToolBot(
-            model_name=self.model_name,
-            tools=self.tools,
-            system_prompt=self.system_prompt,
-            **self.completion_kwargs,
-        )
-        # Force tool calls - the model must always select a tool
-        bot.tool_choice = "required"
+    def _exec_decision(self, prep_res, span_obj: Optional[Span]):
+        """Internal method to execute decision logic.
 
+        :param prep_res: Prepared result from prep method
+        :param span_obj: Optional span object for logging
+        :return: Function name to execute
+        """
         # Check if we need to force termination due to max_iterations
         if prep_res.get("_force_terminate", False):
             logger.info(
@@ -381,7 +429,21 @@ class DecideNode(Node):
                 f"Forcing respond_to_user due to max_iterations limit ({self.max_iterations}). "
                 f"Termination message prepared."
             )
+            if span_obj:
+                span_obj["forced_termination"] = True
+                span_obj.log("forced_termination", reason="max_iterations_exceeded")
             return "respond_to_user"
+
+        from llamabot.bot.toolbot import ToolBot
+
+        bot = ToolBot(
+            model_name=self.model_name,
+            tools=self.tools,
+            system_prompt=self.system_prompt,
+            **self.completion_kwargs,
+        )
+        # Force tool calls - the model must always select a tool
+        bot.tool_choice = "required"
 
         # Get tool calls from ToolBot
         tool_calls = bot(prep_res["memory"])
@@ -401,6 +463,11 @@ class DecideNode(Node):
         # Extract function name and arguments
         func_name = tool_call.function.name
         func_args_json = tool_call.function.arguments
+
+        # Log to span if available
+        if span_obj:
+            span_obj["chosen_tool"] = func_name
+            span_obj.log("tool_selected", tool_name=func_name)
 
         # Log the chosen tool
         iteration_count = prep_res.get("iteration_count", "unknown")

@@ -189,6 +189,8 @@ class AgentBot:
             globals_dict in shared state. If None, preserves existing globals_dict.
         :return: The result from running the flow
         """
+        from llamabot.recorder import Span, is_span_recording_enabled
+
         # Initialize shared state if it doesn't exist
         if not hasattr(self, "shared") or self.shared is None:
             self.shared = dict(memory=[], globals_dict={})
@@ -214,11 +216,28 @@ class AgentBot:
         if "iteration_count" not in self.shared:
             self.shared["iteration_count"] = 0
 
-        # Run the flow
-        self.flow.run(self.shared)
-
-        # Retrieve result from shared state (set by terminal nodes)
-        return self.shared.get("result")
+        # Add span support for agent execution
+        if is_span_recording_enabled():
+            agent_span = Span(
+                "agentbot_call",
+                query=query,
+                max_iterations=self.max_iterations,
+            )
+            with agent_span:
+                # Store trace_id in shared state so nodes can access it
+                self.shared["trace_id"] = agent_span.trace_id
+                # Run the flow
+                self.flow.run(self.shared)
+                # Record result in span
+                result = self.shared.get("result")
+                agent_span["result"] = str(result)[:200] if result else None
+                agent_span["iterations"] = self.shared.get("iteration_count", 0)
+                return result
+        else:
+            # Run the flow without spans
+            self.flow.run(self.shared)
+            # Retrieve result from shared state (set by terminal nodes)
+            return self.shared.get("result")
 
     def _display_(self):
         """Display the agent's flow graph as a Mermaid diagram.

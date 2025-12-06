@@ -556,7 +556,7 @@ def test_agentbot_max_iterations_terminates():
     bot = AgentBot(tools=[looping_tool], max_iterations=3)
 
     # Mock ToolBot to always return looping_tool
-    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
         mock_toolbot = MagicMock()
         mock_tool_call = MagicMock()
         mock_tool_call.function.name = "looping_tool"
@@ -572,16 +572,23 @@ def test_agentbot_max_iterations_terminates():
             respond_called = True
             return message
 
+        # Set function name for proper tool detection
+        mock_respond.__name__ = "respond_to_user"
+
         # Find and replace respond_to_user in tools
         for i, tool_node in enumerate(bot.tools):
             if tool_node.func.__name__ == "respond_to_user":
                 # Create a mock tool that replaces respond_to_user
                 mock_respond_tool = MagicMock()
-                mock_respond_tool.func.__name__ = "respond_to_user"
                 mock_respond_tool.func = mock_respond
                 mock_respond_tool.loopback_name = None
                 mock_respond_tool.name = "respond_to_user"
                 bot.tools[i] = mock_respond_tool
+                # Also update DecideNode's tools list - find index separately
+                for j, dn_tool in enumerate(bot.decide_node.tools):
+                    if getattr(dn_tool, "func", dn_tool).__name__ == "respond_to_user":
+                        bot.decide_node.tools[j] = mock_respond_tool
+                        break
                 break
 
         # Execute the bot
@@ -608,7 +615,7 @@ def test_agentbot_max_iterations_tracks_count():
     bot = AgentBot(tools=[test_tool], max_iterations=5)
 
     # Mock ToolBot to return test_tool
-    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
         mock_toolbot = MagicMock()
         mock_tool_call = MagicMock()
         mock_tool_call.function.name = "test_tool"
@@ -620,15 +627,21 @@ def test_agentbot_max_iterations_tracks_count():
         def mock_respond(message: str) -> str:
             return message
 
+        mock_respond.__name__ = "respond_to_user"
+
         # Replace respond_to_user in tools
         for i, tool_node in enumerate(bot.tools):
             if tool_node.func.__name__ == "respond_to_user":
                 mock_respond_tool = MagicMock()
-                mock_respond_tool.func.__name__ = "respond_to_user"
                 mock_respond_tool.func = mock_respond
                 mock_respond_tool.loopback_name = None
                 mock_respond_tool.name = "respond_to_user"
                 bot.tools[i] = mock_respond_tool
+                # Also update DecideNode's tools list
+                for j, dn_tool in enumerate(bot.decide_node.tools):
+                    if getattr(dn_tool, "func", dn_tool).__name__ == "respond_to_user":
+                        bot.decide_node.tools[j] = mock_respond_tool
+                        break
                 break
 
         # Execute the bot
@@ -672,7 +685,7 @@ def test_agentbot_max_iterations_initializes_count():
     assert "iteration_count" not in bot.shared
 
     # Mock ToolBot and respond_to_user
-    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
         mock_toolbot = MagicMock()
         mock_tool_call = MagicMock()
         mock_tool_call.function.name = "test_tool"
@@ -713,7 +726,7 @@ def test_agentbot_max_iterations_force_terminate_flag():
     bot = AgentBot(tools=[looping_tool], max_iterations=2)
 
     # Mock ToolBot
-    with patch("llamabot.components.pocketflow.nodes.ToolBot") as mock_toolbot_class:
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
         mock_toolbot = MagicMock()
         mock_tool_call = MagicMock()
         mock_tool_call.function.name = "looping_tool"

@@ -25,7 +25,7 @@ from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.messages import (
     RetrievedMessage,
 )
-from llamabot.recorder import sqlite_log
+from llamabot.recorder import sqlite_log, is_span_recording_enabled, Span
 
 load_dotenv()
 
@@ -99,10 +99,27 @@ class QueryBot(SimpleBot):
 
         :param query: The query to make of the documents.
         """
+        query_content = query if isinstance(query, str) else query.content
+
+        # Check if span recording is enabled
+        if is_span_recording_enabled():
+            outer_span = Span(
+                "querybot_call",
+                query=query_content,
+                n_results=n_results,
+                model=self.model_name,
+            )
+            with outer_span:
+                return self._call_with_spans(query_content, n_results, outer_span)
+        else:
+            return self._call_without_spans(query_content, n_results)
+
+    def _call_without_spans(self, query: str, n_results: int) -> AIMessage:
+        """Internal method for calling bot without spans."""
         # Initialize run metadata
         self.run_meta = {
             "start_time": datetime.now(),
-            "query": query if isinstance(query, str) else query.content,
+            "query": query,
             "n_results": n_results,
             "retrieval_metrics": {
                 "docstore_retrieval_time": 0,
@@ -115,8 +132,6 @@ class QueryBot(SimpleBot):
         messages = [self.system_prompt]
         retreived_messages = set()
 
-        if isinstance(query, (BaseMessage, HumanMessage)):
-            query = query.content
         retrieved_messages = retreived_messages.union(
             self.docstore.retrieve(query, n_results)
         )
@@ -149,6 +164,88 @@ class QueryBot(SimpleBot):
         content = extract_content(response)
         response_message = AIMessage(content=content, tool_calls=tool_calls)
         sqlite_log(self, messages + [response_message])
+
+        if self.memory:
+            self.memory.append(response_message.content)
+
+        # Record end time and duration
+        self.run_meta["end_time"] = datetime.now()
+        self.run_meta["duration"] = (
+            self.run_meta["end_time"] - self.run_meta["start_time"]
+        ).total_seconds()
+
+        return response_message
+
+    def _call_with_spans(
+        self, query: str, n_results: int, outer_span: Span
+    ) -> AIMessage:
+        """Internal method for calling bot with spans."""
+        # Initialize run metadata
+        self.run_meta = {
+            "start_time": datetime.now(),
+            "query": query,
+            "n_results": n_results,
+            "retrieval_metrics": {
+                "docstore_retrieval_time": 0,
+                "memory_retrieval_time": 0,
+                "docstore_results": 0,
+                "memory_results": 0,
+            },
+        }
+
+        messages = [self.system_prompt]
+
+        # Create span for document retrieval
+        with outer_span.span("retrieval", n_results=n_results) as retrieval_span:
+            retreived_messages = set()
+            retrieved_messages = retreived_messages.union(
+                self.docstore.retrieve(query, n_results)
+            )
+            retrieved: List = [
+                RetrievedMessage(content=chunk) for chunk in retrieved_messages
+            ]
+            messages.extend(retrieved)
+
+            # Record docstore metrics
+            self.run_meta["retrieval_metrics"]["docstore_results"] = len(
+                retrieved_messages
+            )
+            retrieval_span["documents_found"] = len(retrieved_messages)
+
+        if self.memory:
+            with outer_span.span("memory_retrieval") as memory_span:
+                memory_start = datetime.now()
+                memory_messages = self.memory.retrieve(query, n_results)
+                self.run_meta["retrieval_metrics"]["memory_retrieval_time"] = (
+                    datetime.now() - memory_start
+                ).total_seconds()
+                memories: List = [
+                    RetrievedMessage(content=chunk) for chunk in memory_messages
+                ]
+                messages.extend(memories)
+                self.run_meta["retrieval_metrics"]["memory_results"] = len(
+                    memory_messages
+                )
+                memory_span["memory_results"] = len(memory_messages)
+
+        messages.append(HumanMessage(content=query))
+
+        # Create span for LLM request
+        with outer_span.span("llm_request", model=self.model_name):
+            processed_messages = to_basemessage(messages)
+            response = make_response(
+                self, processed_messages, self.stream_target != "none"
+            )
+            response = stream_chunks(response, target=self.stream_target)
+            tool_calls = extract_tool_calls(response)
+            content = extract_content(response)
+            response_message = AIMessage(content=content, tool_calls=tool_calls)
+
+        # Create span for LLM response
+        with outer_span.span("llm_response") as llm_response_span:
+            llm_response_span["response_length"] = len(content) if content else 0
+            llm_response_span["tool_calls_count"] = len(tool_calls) if tool_calls else 0
+            sqlite_log(self, messages + [response_message])
 
         if self.memory:
             self.memory.append(response_message.content)
