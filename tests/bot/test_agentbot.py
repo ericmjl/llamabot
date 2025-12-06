@@ -567,10 +567,10 @@ def test_agentbot_max_iterations_terminates():
         # Mock respond_to_user to capture when it's called
         respond_called = False
 
-        def mock_respond(message: str) -> str:
+        def mock_respond(response: str) -> str:
             nonlocal respond_called
             respond_called = True
-            return message
+            return response
 
         # Set function name for proper tool detection
         mock_respond.__name__ = "respond_to_user"
@@ -589,6 +589,12 @@ def test_agentbot_max_iterations_terminates():
                     if getattr(dn_tool, "func", dn_tool).__name__ == "respond_to_user":
                         bot.decide_node.tools[j] = mock_respond_tool
                         break
+                # Update PocketFlow graph connection
+                if (
+                    hasattr(bot.decide_node, "successors")
+                    and "respond_to_user" in bot.decide_node.successors
+                ):
+                    bot.decide_node.successors["respond_to_user"] = mock_respond_tool
                 break
 
         # Execute the bot
@@ -624,8 +630,8 @@ def test_agentbot_max_iterations_tracks_count():
         mock_toolbot_class.return_value = mock_toolbot
 
         # Mock respond_to_user
-        def mock_respond(message: str) -> str:
-            return message
+        def mock_respond(response: str) -> str:
+            return response
 
         mock_respond.__name__ = "respond_to_user"
 
@@ -693,17 +699,29 @@ def test_agentbot_max_iterations_initializes_count():
         mock_toolbot.return_value = [mock_tool_call]
         mock_toolbot_class.return_value = mock_toolbot
 
-        def mock_respond(message: str) -> str:
-            return message
+        def mock_respond(response: str) -> str:
+            return response
 
+        # Find and replace respond_to_user in tools
         for i, tool_node in enumerate(bot.tools):
             if tool_node.func.__name__ == "respond_to_user":
+                # Create a mock tool that replaces respond_to_user
                 mock_respond_tool = MagicMock()
-                mock_respond_tool.func.__name__ = "respond_to_user"
                 mock_respond_tool.func = mock_respond
                 mock_respond_tool.loopback_name = None
                 mock_respond_tool.name = "respond_to_user"
                 bot.tools[i] = mock_respond_tool
+                # Also update DecideNode's tools list - find index separately
+                for j, dn_tool in enumerate(bot.decide_node.tools):
+                    if getattr(dn_tool, "func", dn_tool).__name__ == "respond_to_user":
+                        bot.decide_node.tools[j] = mock_respond_tool
+                        break
+                # Update PocketFlow graph connection
+                if (
+                    hasattr(bot.decide_node, "successors")
+                    and "respond_to_user" in bot.decide_node.successors
+                ):
+                    bot.decide_node.successors["respond_to_user"] = mock_respond_tool
                 break
 
         # After calling, iteration_count should be initialized
@@ -734,18 +752,29 @@ def test_agentbot_max_iterations_force_terminate_flag():
         mock_toolbot.return_value = [mock_tool_call]
         mock_toolbot_class.return_value = mock_toolbot
 
-        def mock_respond(message: str) -> str:
-            return message
+        def mock_respond(response: str) -> str:
+            return response
 
-        # Replace respond_to_user
+        # Find and replace respond_to_user in tools
         for i, tool_node in enumerate(bot.tools):
             if tool_node.func.__name__ == "respond_to_user":
+                # Create a mock tool that replaces respond_to_user
                 mock_respond_tool = MagicMock()
-                mock_respond_tool.func.__name__ = "respond_to_user"
                 mock_respond_tool.func = mock_respond
                 mock_respond_tool.loopback_name = None
                 mock_respond_tool.name = "respond_to_user"
                 bot.tools[i] = mock_respond_tool
+                # Also update DecideNode's tools list - find index separately
+                for j, dn_tool in enumerate(bot.decide_node.tools):
+                    if getattr(dn_tool, "func", dn_tool).__name__ == "respond_to_user":
+                        bot.decide_node.tools[j] = mock_respond_tool
+                        break
+                # Update PocketFlow graph connection
+                if (
+                    hasattr(bot.decide_node, "successors")
+                    and "respond_to_user" in bot.decide_node.successors
+                ):
+                    bot.decide_node.successors["respond_to_user"] = mock_respond_tool
                 break
 
         # Execute the bot
