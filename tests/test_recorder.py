@@ -667,4 +667,4 @@ def test_repr_html_span_not_in_db(tmp_path):
     # Verify span still appears in visualization
     assert "not_saved" in html
     assert incomplete_span.span_id in html
-    assert "span-visualizer" in html
+    assert "span-container" in html
