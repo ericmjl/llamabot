@@ -1,6 +1,7 @@
 """Class definition for QueryBot."""
 
 import contextvars
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
@@ -101,8 +102,11 @@ class QueryBot(SimpleBot):
 
         # Check if span recording is enabled
         if is_span_recording_enabled():
+            # Always create a new trace_id for bot calls to avoid inheriting from context
+            new_trace_id = str(uuid.uuid4())
             outer_span = Span(
                 "querybot_call",
+                trace_id=new_trace_id,
                 query=query_content,
                 n_results=n_results,
                 model=self.model_name,
