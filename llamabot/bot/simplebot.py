@@ -30,6 +30,7 @@ from llamabot.recorder import (
     Span,
     build_hierarchy,
     generate_span_html,
+    get_caller_variable_name,
     get_current_span,
     get_spans,
     span_to_dict,
@@ -124,12 +125,17 @@ class SimpleBot:
                 for msg in human_messages
             ]
         )
+        # Try to get the variable name from the calling frame
+        operation_name = get_caller_variable_name(self)
+        if operation_name is None:
+            operation_name = "simplebot_call"
+
         # Check if there's a current span - if so, create a child span
         current_span = get_current_span()
         if current_span:
             # Create child span using parent's trace_id
             outer_span = Span(
-                "simplebot_call",
+                operation_name,
                 trace_id=current_span.trace_id,
                 parent_span_id=current_span.span_id,
                 query=query_content,
@@ -140,7 +146,7 @@ class SimpleBot:
             # No current span - create a new trace
             new_trace_id = str(uuid.uuid4())
             outer_span = Span(
-                "simplebot_call",
+                operation_name,
                 trace_id=new_trace_id,
                 query=query_content,
                 model=self.model_name,

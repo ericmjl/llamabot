@@ -194,6 +194,7 @@ class AgentBot:
         """
         from llamabot.recorder import (
             Span,
+            get_caller_variable_name,
             get_current_span,
         )
 
@@ -225,12 +226,17 @@ class AgentBot:
         # Create span for agent execution
         import uuid
 
+        # Try to get the variable name from the calling frame
+        operation_name = get_caller_variable_name(self)
+        if operation_name is None:
+            operation_name = "agentbot_call"
+
         # Check if there's a current span - if so, create a child span
         current_span = get_current_span()
         if current_span:
             # Create child span using parent's trace_id
             agent_span = Span(
-                "agentbot_call",
+                operation_name,
                 trace_id=current_span.trace_id,
                 parent_span_id=current_span.span_id,
                 query=query,
@@ -240,7 +246,7 @@ class AgentBot:
             # No current span - create a new trace
             new_trace_id = str(uuid.uuid4())
             agent_span = Span(
-                "agentbot_call",
+                operation_name,
                 trace_id=new_trace_id,
                 query=query,
                 max_iterations=self.max_iterations,

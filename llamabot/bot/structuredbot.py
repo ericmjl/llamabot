@@ -34,6 +34,7 @@ from llamabot.recorder import (
     Span,
     build_hierarchy,
     generate_span_html,
+    get_caller_variable_name,
     get_current_span,
     get_spans,
     span_to_dict,
@@ -132,6 +133,11 @@ class StructuredBot(SimpleBot):
             [msg.content if hasattr(msg, "content") else str(msg) for msg in messages]
         )
 
+        # Try to get the variable name from the calling frame
+        operation_name = get_caller_variable_name(self)
+        if operation_name is None:
+            operation_name = "structuredbot_call"
+
         # Check if there's a current span - if so, create a child span
         current_span = get_current_span()
         if current_span:
@@ -143,7 +149,7 @@ class StructuredBot(SimpleBot):
                 else type(self.pydantic_model).__name__
             )
             outer_span = Span(
-                "structuredbot_call",
+                operation_name,
                 trace_id=current_span.trace_id,
                 parent_span_id=current_span.span_id,
                 query=query_content,
@@ -161,7 +167,7 @@ class StructuredBot(SimpleBot):
             )
             new_trace_id = str(uuid.uuid4())
             outer_span = Span(
-                "structuredbot_call",
+                operation_name,
                 trace_id=new_trace_id,
                 query=query_content,
                 model=self.model_name,

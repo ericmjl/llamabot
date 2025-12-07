@@ -889,3 +889,52 @@ def test_bot_display_spans_empty_database(tmp_path, monkeypatch):
     html = bot.display_spans()
 
     assert "No spans found" in html
+
+
+def test_bot_uses_variable_name_in_span(tmp_path, monkeypatch):
+    """Test that bot uses variable name instead of generic 'simplebot_call'."""
+    monkeypatch.setattr(
+        "llamabot.recorder.find_or_set_db_path", lambda _: tmp_path / "test.db"
+    )
+
+    def test_function():
+        """Helper function to create and call a bot for variable name detection testing.
+
+        Creates a SimpleBot instance with variable name 'ocr_bot', calls it,
+        and returns the bot instance. Used to test that spans use the variable
+        name instead of the generic 'simplebot_call' name.
+        """
+        ocr_bot = SimpleBot("test prompt", mock_response="response")
+        _ = ocr_bot("test query")
+        return ocr_bot
+
+    _ = test_function()
+
+    # Get spans and verify the operation name is the variable name
+    spans = get_spans()
+    assert len(spans) > 0
+    # Find the root span for this bot call
+    root_spans = [s for s in spans if s.parent_span_id is None]
+    assert len(root_spans) > 0
+    # The operation name should be "ocr_bot" not "simplebot_call"
+    assert root_spans[0].operation_name == "ocr_bot"
+
+
+def test_bot_uses_variable_name_even_when_accessed_via_container(tmp_path, monkeypatch):
+    """Test that bot uses variable name even when accessed via container."""
+    monkeypatch.setattr(
+        "llamabot.recorder.find_or_set_db_path", lambda _: tmp_path / "test.db"
+    )
+
+    # Create bot in a container, but still assign to variable
+    bot_list = [SimpleBot("test prompt", mock_response="response")]
+    bot = bot_list[0]  # Access via list, but still has variable name
+
+    _ = bot("test query")
+
+    # Get spans - should use variable name "bot"
+    spans = get_spans()
+    assert len(spans) > 0
+    root_spans = [s for s in spans if s.parent_span_id is None]
+    # Should use variable name "bot" (not generic name)
+    assert root_spans[0].operation_name == "bot"
