@@ -827,7 +827,8 @@ def test_bot_display_spans_no_spans_yet():
 
     html = bot.display_spans()
 
-    assert "No spans recorded" in html
+    # SpanList returns "No spans to display" for empty lists
+    assert "No spans to display" in html
 
 
 def test_bot_creates_child_span_when_called_in_span_context(tmp_path, monkeypatch):
@@ -896,7 +897,8 @@ def test_bot_display_spans_empty_database(tmp_path, monkeypatch):
 
     html = bot.display_spans()
 
-    assert "No spans found" in html
+    # SpanList returns "No spans to display" for empty lists
+    assert "No spans to display" in html
 
 
 def test_bot_uses_variable_name_in_span(tmp_path, monkeypatch):
