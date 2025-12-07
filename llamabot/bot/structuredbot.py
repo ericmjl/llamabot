@@ -141,7 +141,7 @@ class StructuredBot(SimpleBot):
                 parent_span_id=current_span.span_id,
                 query=query_content,
                 model=self.model_name,
-                pydantic_model=self.pydantic_model.__name__,
+                pydantic_model=type(self.pydantic_model).__name__,
                 num_attempts=num_attempts,
             )
         else:
@@ -152,7 +152,7 @@ class StructuredBot(SimpleBot):
                 trace_id=new_trace_id,
                 query=query_content,
                 model=self.model_name,
-                pydantic_model=self.pydantic_model.__name__,
+                pydantic_model=type(self.pydantic_model).__name__,
                 num_attempts=num_attempts,
             )
             # Track trace_id for this bot instance (only for root spans)
