@@ -360,34 +360,57 @@ def _(ReceiptData, lmb, os, receipt_extraction_sysprompt):
 @app.cell
 def _(mo):
     mo.md("""
-    ### Putting It Together: The Extraction Function
+    ### Putting It Together: The Receipt Processing Tool
 
-    The `extract_receipt_data` function orchestrates the two-step process:
+    The `process_receipt` tool orchestrates the two-step process:
     - Converts PDFs to images (if needed)
     - Runs OCR on each image using `ocr_bot`
     - Combines OCR results
     - Structures the combined text using `receipt_structuring_bot`
+
+    **Note**: This tool demonstrates that agents can have read access to the local file system.
+    Simply provide a file path and the tool will read it directly from disk.
     """)
     return
 
 
 @app.cell
+def _():
+    from llamabot.components.pocketflow import nodeify
+    from llamabot.components.tools import tool
+    return nodeify, tool
+
+
+@app.cell
 def _(
+    Path,
     convert_pdf_to_images,
     get_current_span,
+    nodeify,
     ocr_bot,
     receipt_structuring_bot,
     span,
+    tool,
     user,
 ):
+    @nodeify(loopback_name="decide")
+    @tool
     @span
-    def extract_receipt_data(file_path: str):
-        """Extract receipt data from PDF or image file using two-step process:
-        1. OCR extraction with DeepSeek-OCR (SimpleBot)
-        2. Structure the data with StructuredBot
+    def process_receipt(file_path: str) -> str:
+        """Process a receipt PDF or image and extract structured data.
+
+        This tool demonstrates that agents can have read access to the local file system.
+        Simply provide a file path and the tool will read it from disk.
+
+        :param file_path: Path to the receipt file (PDF, PNG, JPG, or JPEG)
+        :return: JSON string of extracted receipt data
         """
         s = get_current_span()
         s["file_path"] = file_path
+
+        # Verify the file exists
+        if not Path(file_path).exists():
+            raise FileNotFoundError(f"Receipt file not found: {file_path}")
 
         # PDF to image conversion (convert_pdf_to_images is @span decorated)
         image_paths = convert_pdf_to_images(file_path)
@@ -416,70 +439,7 @@ def _(
         s["vendor"] = result.vendor
         s["amount"] = result.amount
 
-        return result
-    return (extract_receipt_data,)
-
-
-@app.cell
-def _():
-    from llamabot.components.pocketflow import nodeify
-    from llamabot.components.tools import tool
-    return nodeify, tool
-
-
-@app.cell
-def _(Path, extract_receipt_data, nodeify, span, tool):
-    @nodeify(loopback_name="decide")
-    @tool
-    @span
-    def process_receipt(file_path: str = None, _globals_dict: dict = None) -> str:
-        """Process a receipt PDF or image and extract structured data.
-
-        :param file_path: Optional path to the receipt file (PDF, PNG, JPG, or JPEG) or variable name in globals.
-            If None, will try to find the most recently uploaded file.
-        :param _globals_dict: Internal parameter - automatically injected by AgentBot
-        :return: JSON string of extracted receipt data
-        """
-        if _globals_dict is None:
-            raise ValueError("No globals_dict available. Cannot process receipt.")
-
-        # If no file_path provided, try to find the most recent file
-        if file_path is None:
-            available_files = [
-                (k, v)
-                for k, v in _globals_dict.items()
-                if isinstance(v, str) and Path(v).exists()
-            ]
-            if not available_files:
-                raise FileNotFoundError(
-                    "No receipt file specified and no files found. "
-                    "Please upload a file first or specify which file to process."
-                )
-            # Use the most recent file (last in dict, assuming insertion order)
-            file_path = available_files[-1][1]
-        else:
-            # If file_path is a variable name in globals, get its value
-            if file_path in _globals_dict:
-                actual_path = _globals_dict[file_path]
-                # If it's a string that looks like a path, use it
-                if isinstance(actual_path, str):
-                    file_path = actual_path
-
-        # Verify the file exists
-        if not Path(file_path).exists():
-            available_files = [
-                k
-                for k, v in _globals_dict.items()
-                if isinstance(v, str) and Path(v).exists()
-            ]
-            raise FileNotFoundError(
-                f"Receipt file not found: {file_path}. "
-                f"Available file variables in globals: {available_files}"
-            )
-
-        # Extract receipt data (this will create nested spans automatically)
-        receipt_data = extract_receipt_data(file_path)
-        return receipt_data.model_dump_json()
+        return result.model_dump_json()
     return (process_receipt,)
 
 
@@ -494,14 +454,15 @@ def _(mo):
 
 
 @app.cell
-def _(extract_receipt_data):
+def _(ReceiptData, process_receipt):
     # Test receipt processor with uploaded file
-    # Replace 'your_receipt_file' with the variable name from uploaded files
     # mo.stop(True)
     # Uncomment and modify to test:
-    test_receipt_data = extract_receipt_data(
+    test_receipt_json = process_receipt(
         "/Users/ericmjl/github/llamabot/tutorials/pydata-boston-2025/receipt_lunch.pdf"
     )
+    # Parse JSON back to ReceiptData object for display
+    test_receipt_data = ReceiptData.model_validate_json(test_receipt_json)
     test_receipt_data
     return
 
@@ -514,7 +475,7 @@ def _(ocr_bot):
 
 @app.cell
 def _(get_spans):
-    get_spans(operation_name="extract_receipt_data")
+    get_spans(operation_name="process_receipt")
     return
 
 
@@ -773,7 +734,7 @@ def _(lmb):
         - After a single tool fully satisfies a simple request (rare)
 
         **Examples of multi-step workflows:**
-        - "Process this receipt" → inspect_globals() → process_receipt() → respond_to_user()
+        - "Process this receipt" → process_receipt("/path/to/file.pdf") → respond_to_user()
         - "Create an invoice" → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
         - "What's in the database?" → query_complaints() → respond_to_user() (with formatted results)
 
@@ -782,14 +743,12 @@ def _(lmb):
 
         Workflow Guidelines:
 
-        1. **Receipt Processing** (MULTI-STEP REQUIRED):
-           - When user asks to "process this receipt" or similar:
-             STEP 1: Call inspect_globals() to check what files are available
-             STEP 2: IMMEDIATELY call process_receipt() to process the file (use most recent if multiple exist)
-             STEP 3: After processing completes, use respond_to_user() to summarize the extracted data
-           - Do NOT stop after inspect_globals() - you MUST continue to process_receipt()
-           - If no files are found, use respond_to_user() to ask the user to upload a file first
-           - You can call process_receipt() without a file_path argument - it will use the most recent file automatically
+        1. **Receipt Processing**:
+           - When user asks to "process this receipt" or provides a file path:
+             STEP 1: Call process_receipt(file_path) with the file path provided by the user
+             STEP 2: After processing completes, use respond_to_user() to summarize the extracted data
+           - The tool reads files directly from disk - provide the full file path as a string
+           - If the user doesn't provide a file path, ask them for it using respond_to_user()
 
         2. **Invoice Generation** (MULTI-STEP REQUIRED):
            - Do NOT generate invoices with assumed/made-up data
@@ -1034,7 +993,7 @@ def _(mo):
     - **Nested structure**: Spans form a hierarchy showing the complete execution flow
 
     The trace hierarchy looks like:
-    `coordinator_chat_turn → agentbot_call → decision → tool_call → extract_receipt_data → pdf_to_images → ocr_extraction → structure_data`
+    `coordinator_chat_turn → agentbot_call → decision → tool_call → process_receipt → convert_pdf_to_images → ocr_bot → receipt_structuring_bot`
     """)
     return
 
