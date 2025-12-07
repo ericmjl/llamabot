@@ -593,10 +593,10 @@ def test_bot_tracks_multiple_trace_ids(tmp_path, monkeypatch):
     for trace_id in bot._trace_ids:
         spans = get_spans(trace_id=trace_id, db_path=db_path)
         assert len(spans) > 0
-        # Each call should have a simplebot_call root span
+        # Each call should have a bot root span (using variable name "bot")
         root_spans = [s for s in spans if s.parent_span_id is None]
         assert len(root_spans) == 1
-        assert root_spans[0].operation_name == "simplebot_call"
+        assert root_spans[0].operation_name == "bot"
 
 
 def test_bot_display_spans_shows_all_calls(tmp_path, monkeypatch):
@@ -617,9 +617,9 @@ def test_bot_display_spans_shows_all_calls(tmp_path, monkeypatch):
     # Get HTML from display_spans
     html = bot.display_spans()
 
-    # Verify HTML contains spans from all calls
-    assert "simplebot_call" in html
-    # Should have multiple simplebot_call spans (one per call)
+    # Verify HTML contains spans from all calls (using variable name "bot")
+    assert "bot" in html
+    # Should have multiple bot spans (one per call)
     # Check that we can find spans from all trace_ids
     all_spans = []
     for trace_id in bot._trace_ids:
@@ -860,10 +860,9 @@ def test_bot_creates_child_span_when_called_in_span_context(tmp_path, monkeypatc
     assert bot_span.parent_span_id == parent.span_id
     assert bot_span.trace_id == parent.trace_id
 
-    # Verify bot's trace_ids don't include parent's trace_id (bot creates its own)
-    # Actually wait - with the fix, bot should use parent's trace_id when called in context
-    # But it shouldn't track it in _trace_ids since it's not a root span
-    assert parent.trace_id not in bot._trace_ids
+    # Verify bot's trace_ids include parent's trace_id (bot tracks all trace_ids it participates in)
+    # This allows display_spans() to show spans even when bot is called as a child
+    assert parent.trace_id in bot._trace_ids
 
     # Verify hierarchy when querying by operation name
     spans = get_spans(operation_name="parent_operation", db_path=db_path)
@@ -874,6 +873,12 @@ def test_bot_creates_child_span_when_called_in_span_context(tmp_path, monkeypatc
     # Bot span should have query/response as attributes, not nested spans
     bot_span = [s for s in spans if s.operation_name == "bot"][0]
     assert "query" in bot_span.attributes or "response" in bot_span.attributes
+
+    # Verify that bot.display_spans() can show spans even when called as a child
+    # This is the key behavior: child spans should be trackable
+    html = bot.display_spans()
+    assert "bot" in html  # Should show the bot span
+    assert bot_span.span_id in html  # Should include the span ID
 
 
 def test_bot_display_spans_empty_database(tmp_path, monkeypatch):

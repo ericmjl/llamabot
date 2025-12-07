@@ -242,6 +242,9 @@ class AgentBot:
                 query=query,
                 max_iterations=self.max_iterations,
             )
+            # Track trace_id for this bot instance (even for child spans)
+            if agent_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(agent_span.trace_id)
         else:
             # No current span - create a new trace
             new_trace_id = str(uuid.uuid4())
@@ -251,7 +254,7 @@ class AgentBot:
                 query=query,
                 max_iterations=self.max_iterations,
             )
-            # Track trace_id for this bot instance (only for root spans)
+            # Track trace_id for this bot instance
             if agent_span.trace_id not in self._trace_ids:
                 self._trace_ids.append(agent_span.trace_id)
         with agent_span:

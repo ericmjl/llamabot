@@ -141,6 +141,9 @@ class SimpleBot:
                 model=self.model_name,
                 temperature=self.temperature,
             )
+            # Track trace_id for this bot instance (even for child spans)
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
         else:
             # No current span - create a new trace
             new_trace_id = str(uuid.uuid4())
@@ -151,7 +154,7 @@ class SimpleBot:
                 model=self.model_name,
                 temperature=self.temperature,
             )
-            # Track trace_id for this bot instance (only for root spans)
+            # Track trace_id for this bot instance
             if outer_span.trace_id not in self._trace_ids:
                 self._trace_ids.append(outer_span.trace_id)
         with outer_span:
