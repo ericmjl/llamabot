@@ -6,13 +6,13 @@ Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 """
 
 import json
-from typing import Union
+import uuid
 from datetime import datetime
+from typing import Union
 
-from llamabot.recorder import sqlite_log
+from litellm import get_supported_openai_params, supports_response_schema
 from loguru import logger
 from pydantic import BaseModel, ValidationError
-from litellm import supports_response_schema, get_supported_openai_params
 
 from llamabot.bot.simplebot import (
     SimpleBot,
@@ -29,6 +29,15 @@ from llamabot.components.messages import (
 )
 from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
+from llamabot.recorder import (
+    Span,
+    build_hierarchy,
+    generate_span_html,
+    get_current_span,
+    get_spans,
+    span_to_dict,
+    sqlite_log,
+)
 
 
 @prompt(role="user")
@@ -90,6 +99,9 @@ class StructuredBot(SimpleBot):
         self.pydantic_model = pydantic_model
         self.allow_failed_validation = allow_failed_validation
 
+        # Track all trace_ids from this bot instance for span visualization
+        self._trace_ids = []
+
     def get_validation_error_message(self, exception: ValidationError) -> HumanMessage:
         """Return a validation error message to feed back to the bot.
 
@@ -113,6 +125,49 @@ class StructuredBot(SimpleBot):
         :param verbose: Whether to show verbose output.
         :return: An instance of the specified Pydantic model.
         """
+        # Compose the full message list
+        messages = to_basemessage(messages)
+        query_content = " ".join(
+            [msg.content if hasattr(msg, "content") else str(msg) for msg in messages]
+        )
+
+        # Check if there's a current span - if so, create a child span
+        current_span = get_current_span()
+        if current_span:
+            # Create child span using parent's trace_id
+            outer_span = Span(
+                "structuredbot_call",
+                trace_id=current_span.trace_id,
+                parent_span_id=current_span.span_id,
+                query=query_content,
+                model=self.model_name,
+                pydantic_model=self.pydantic_model.__name__,
+                num_attempts=num_attempts,
+            )
+        else:
+            # No current span - create a new trace
+            new_trace_id = str(uuid.uuid4())
+            outer_span = Span(
+                "structuredbot_call",
+                trace_id=new_trace_id,
+                query=query_content,
+                model=self.model_name,
+                pydantic_model=self.pydantic_model.__name__,
+                num_attempts=num_attempts,
+            )
+            # Track trace_id for this bot instance (only for root spans)
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+        with outer_span:
+            return self._call_with_spans(messages, num_attempts, verbose, outer_span)
+
+    def _call_without_spans(
+        self,
+        messages: list[BaseMessage],
+        num_attempts: int,
+        verbose: bool,
+    ) -> BaseModel | None:
+        """Internal method for calling bot without spans."""
         # Initialize run metadata
         self.run_meta = {
             "start_time": datetime.now(),
@@ -131,8 +186,6 @@ class StructuredBot(SimpleBot):
             },
         }
 
-        # Compose the full message list
-        messages = to_basemessage(messages)
         full_messages = [self.system_prompt] + messages
 
         last_response = None
@@ -200,3 +253,146 @@ class StructuredBot(SimpleBot):
                         self.get_validation_error_message(e),
                     ]
                 )
+
+    def _call_with_spans(
+        self,
+        messages: list[BaseMessage],
+        num_attempts: int,
+        verbose: bool,
+        outer_span: Span,
+    ) -> BaseModel | None:
+        """Internal method for calling bot with spans."""
+        # Record schema complexity in span
+        schema_fields = len(self.pydantic_model.model_fields)
+        nested_models = len(
+            [
+                f
+                for f in self.pydantic_model.model_fields.values()
+                if hasattr(f.annotation, "__origin__")
+                and f.annotation.__origin__ is BaseModel
+            ]
+        )
+        outer_span["schema_fields"] = schema_fields
+        outer_span["schema_nested_models"] = nested_models
+
+        full_messages = [self.system_prompt] + messages
+
+        last_response = None
+        last_codeblock = None
+        validation_attempts = 0
+        # we'll attempt to get the response from the model and validate it
+        for attempt in range(num_attempts):
+            try:
+                validation_attempts += 1
+                validation_start = datetime.now()
+
+                # Create full messages list for this attempt
+                for message in full_messages:
+                    if isinstance(message, str):
+                        print(message)
+
+                # Get response using the same pattern as SimpleBot
+                response = make_response(
+                    self, full_messages, self.stream_target != "none"
+                )
+                response = stream_chunks(response, target=self.stream_target)
+
+                # Extract content from the response
+                content = extract_content(response)
+
+                # parse the response, and validate it against the pydantic model
+                last_response = AIMessage(content=content)
+                sqlite_log(self, messages + [last_response])
+
+                last_codeblock = json.loads(last_response.content)
+                obj = self.pydantic_model.model_validate(last_codeblock)
+
+                # Record successful validation in span
+                validation_time = (datetime.now() - validation_start).total_seconds()
+                outer_span["validation_attempts"] = validation_attempts
+                outer_span["validation_success"] = True
+                outer_span["validation_time"] = validation_time
+
+                return obj
+
+            except ValidationError as e:
+                # Record validation error in span
+                outer_span["validation_attempts"] = validation_attempts
+                outer_span["last_validation_error"] = str(e)
+
+                # we're on our last try
+                if attempt == num_attempts - 1:
+                    if self.allow_failed_validation and last_codeblock is not None:
+                        outer_span["validation_success"] = False
+                        outer_span["allow_failed_validation"] = True
+                        return self.pydantic_model.model_construct(**last_codeblock)
+                    outer_span["validation_success"] = False
+                    raise e
+
+                # Otherwise, if we failed, give the LLM the validation error and try again.
+                if verbose:
+                    logger.info(e)
+                full_messages.extend(
+                    [
+                        AIMessage(content=last_response.content),
+                        self.get_validation_error_message(e),
+                    ]
+                )
+
+    def display_spans(self) -> str:
+        """Display all spans from all bot calls as HTML.
+
+        Queries spans associated with all trace_ids from this bot instance
+        and generates an HTML visualization showing all spans from all calls.
+
+        :return: HTML string for displaying spans in marimo notebooks
+        """
+        if not self._trace_ids:
+            return '<div style="padding: 1rem; color: #2E3440;">No spans recorded for this bot instance yet.</div>'
+
+        # Collect all spans from all trace_ids for this bot instance
+        all_spans_objects = []
+        for trace_id in self._trace_ids:
+            spans = get_spans(trace_id=trace_id)
+            # SpanList is iterable, so we can extend with it
+            all_spans_objects.extend(spans)
+
+        if not all_spans_objects:
+            return '<div style="padding: 1rem; color: #2E3440;">No spans found in database for this bot instance.</div>'
+
+        # Convert Span objects to dictionaries for visualization
+        all_spans = [span_to_dict(s) for s in all_spans_objects]
+
+        # Find root spans (spans with no parent) to use as current span
+        # Use the most recent root span (last one in the list)
+        root_spans = [s for s in all_spans if s.get("parent_span_id") is None]
+        if root_spans:
+            # Use the last root span (most recent) as the current span for highlighting
+            current_span_dict = root_spans[-1]
+            current_span_id = current_span_dict["span_id"]
+        else:
+            # Fallback to last span if no root spans found
+            current_span_dict = all_spans[-1]
+            current_span_id = current_span_dict["span_id"]
+
+        # Build hierarchical structure
+        trace_tree = build_hierarchy(all_spans)
+
+        # Generate HTML visualization
+        return generate_span_html(
+            span_dict=current_span_dict,
+            all_spans=all_spans,
+            trace_tree=trace_tree,
+            current_span_id=current_span_id,
+        )
+
+    def _repr_html_(self) -> str:
+        """Return HTML representation for marimo display.
+
+        When a StructuredBot object is the last expression in a marimo cell,
+        this method is automatically called to display the spans visualization
+        from all bot calls.
+
+        :return: HTML string for displaying spans
+        """
+        return self.display_spans()

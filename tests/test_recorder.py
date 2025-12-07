@@ -542,7 +542,11 @@ def test_span_error_handling(tmp_path):
 
 
 def test_enable_span_recording():
-    """Test enable_span_recording function."""
+    """Test enable_span_recording function.
+
+    Note: Bots now always create spans by default, but enable_span_recording()
+    can still be used for other parts of the codebase that check this flag.
+    """
     # Reset state
     import llamabot.recorder as recorder_module
 

@@ -27,7 +27,6 @@ from llamabot.config import default_language_model
 from llamabot.recorder import (
     Span,
     get_current_span,
-    is_span_recording_enabled,
     sqlite_log,
 )
 
@@ -105,37 +104,33 @@ class QueryBot(SimpleBot):
         """
         query_content = query if isinstance(query, str) else query.content
 
-        # Check if span recording is enabled
-        if is_span_recording_enabled():
-            # Check if there's a current span - if so, create a child span
-            current_span = get_current_span()
-            if current_span:
-                # Create child span using parent's trace_id
-                outer_span = Span(
-                    "querybot_call",
-                    trace_id=current_span.trace_id,
-                    parent_span_id=current_span.span_id,
-                    query=query_content,
-                    n_results=n_results,
-                    model=self.model_name,
-                )
-            else:
-                # No current span - create a new trace
-                new_trace_id = str(uuid.uuid4())
-                outer_span = Span(
-                    "querybot_call",
-                    trace_id=new_trace_id,
-                    query=query_content,
-                    n_results=n_results,
-                    model=self.model_name,
-                )
-                # Track trace_id for this bot instance (only for root spans)
-                if outer_span.trace_id not in self._trace_ids:
-                    self._trace_ids.append(outer_span.trace_id)
-            with outer_span:
-                return self._call_with_spans(query_content, n_results, outer_span)
+        # Check if there's a current span - if so, create a child span
+        current_span = get_current_span()
+        if current_span:
+            # Create child span using parent's trace_id
+            outer_span = Span(
+                "querybot_call",
+                trace_id=current_span.trace_id,
+                parent_span_id=current_span.span_id,
+                query=query_content,
+                n_results=n_results,
+                model=self.model_name,
+            )
         else:
-            return self._call_without_spans(query_content, n_results)
+            # No current span - create a new trace
+            new_trace_id = str(uuid.uuid4())
+            outer_span = Span(
+                "querybot_call",
+                trace_id=new_trace_id,
+                query=query_content,
+                n_results=n_results,
+                model=self.model_name,
+            )
+            # Track trace_id for this bot instance (only for root spans)
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+        with outer_span:
+            return self._call_with_spans(query_content, n_results, outer_span)
 
     def _call_without_spans(self, query: str, n_results: int) -> AIMessage:
         """Internal method for calling bot without spans."""
@@ -203,19 +198,6 @@ class QueryBot(SimpleBot):
         self, query: str, n_results: int, outer_span: Span
     ) -> AIMessage:
         """Internal method for calling bot with spans."""
-        # Initialize run metadata
-        self.run_meta = {
-            "start_time": datetime.now(),
-            "query": query,
-            "n_results": n_results,
-            "retrieval_metrics": {
-                "docstore_retrieval_time": 0,
-                "memory_retrieval_time": 0,
-                "docstore_results": 0,
-                "memory_results": 0,
-            },
-        }
-
         messages = [self.system_prompt]
 
         # Create span for document retrieval
@@ -228,28 +210,18 @@ class QueryBot(SimpleBot):
                 RetrievedMessage(content=chunk) for chunk in retrieved_messages
             ]
             messages.extend(retrieved)
-
-            # Record docstore metrics
-            self.run_meta["retrieval_metrics"]["docstore_results"] = len(
-                retrieved_messages
-            )
             retrieval_span["documents_found"] = len(retrieved_messages)
+            outer_span["docstore_results"] = len(retrieved_messages)
 
         if self.memory:
             with outer_span.span("memory_retrieval") as memory_span:
-                memory_start = datetime.now()
                 memory_messages = self.memory.retrieve(query, n_results)
-                self.run_meta["retrieval_metrics"]["memory_retrieval_time"] = (
-                    datetime.now() - memory_start
-                ).total_seconds()
                 memories: List = [
                     RetrievedMessage(content=chunk) for chunk in memory_messages
                 ]
                 messages.extend(memories)
-                self.run_meta["retrieval_metrics"]["memory_results"] = len(
-                    memory_messages
-                )
                 memory_span["memory_results"] = len(memory_messages)
+                outer_span["memory_results"] = len(memory_messages)
 
         messages.append(HumanMessage(content=query))
 
@@ -272,11 +244,5 @@ class QueryBot(SimpleBot):
 
         if self.memory:
             self.memory.append(response_message.content)
-
-        # Record end time and duration
-        self.run_meta["end_time"] = datetime.now()
-        self.run_meta["duration"] = (
-            self.run_meta["end_time"] - self.run_meta["start_time"]
-        ).total_seconds()
 
         return response_message

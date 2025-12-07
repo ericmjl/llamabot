@@ -72,8 +72,9 @@ def _(mo):
 
 
 @app.cell
-def _(enable_span_recording):
-    enable_span_recording()
+def _():
+    # Span recording is now enabled by default for all bots
+    # Spans are automatically created - no need to call enable_span_recording()
     return
 
 
