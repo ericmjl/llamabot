@@ -30,6 +30,7 @@ from llamabot.recorder import (
     Span,
     build_hierarchy,
     generate_span_html,
+    get_current_span,
     get_spans,
     is_span_recording_enabled,
     span_to_dict,
@@ -126,18 +127,31 @@ class SimpleBot:
                     for msg in human_messages
                 ]
             )
-            # Always create a new trace_id for bot calls to avoid inheriting from context
-            new_trace_id = str(uuid.uuid4())
-            outer_span = Span(
-                "simplebot_call",
-                trace_id=new_trace_id,
-                query=query_content,
-                model=self.model_name,
-                temperature=self.temperature,
-            )
-            # Track trace_id for this bot instance
-            if outer_span.trace_id not in self._trace_ids:
-                self._trace_ids.append(outer_span.trace_id)
+            # Check if there's a current span - if so, create a child span
+            current_span = get_current_span()
+            if current_span:
+                # Create child span using parent's trace_id
+                outer_span = Span(
+                    "simplebot_call",
+                    trace_id=current_span.trace_id,
+                    parent_span_id=current_span.span_id,
+                    query=query_content,
+                    model=self.model_name,
+                    temperature=self.temperature,
+                )
+            else:
+                # No current span - create a new trace
+                new_trace_id = str(uuid.uuid4())
+                outer_span = Span(
+                    "simplebot_call",
+                    trace_id=new_trace_id,
+                    query=query_content,
+                    model=self.model_name,
+                    temperature=self.temperature,
+                )
+                # Track trace_id for this bot instance (only for root spans)
+                if outer_span.trace_id not in self._trace_ids:
+                    self._trace_ids.append(outer_span.trace_id)
             with outer_span:
                 return self._call_with_spans(human_messages, outer_span)
         else:

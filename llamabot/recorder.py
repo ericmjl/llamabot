@@ -838,9 +838,23 @@ def _span_decorator(
             # Determine operation name
             op_name = operation_name or func.__name__
 
-            # Create span
-            trace_id = get_or_create_trace_id()
-            span_obj = Span(op_name, trace_id=trace_id, db_path=db_path, **attributes)
+            # Check if there's a current span - if so, create a child span
+            current_span = get_current_span()
+            if current_span:
+                # Create child span using parent's trace_id
+                span_obj = Span(
+                    op_name,
+                    trace_id=current_span.trace_id,
+                    parent_span_id=current_span.span_id,
+                    db_path=db_path,
+                    **attributes,
+                )
+            else:
+                # No current span - create a new trace
+                trace_id = get_or_create_trace_id()
+                span_obj = Span(
+                    op_name, trace_id=trace_id, db_path=db_path, **attributes
+                )
 
             # Log function inputs and outputs automatically
             try:
@@ -945,13 +959,38 @@ def get_spans(
         # Build query
         query = session.query(SpanRecord)
 
-        # Apply filters
+        # Special handling for operation_name filter:
+        # If filtering by operation_name, we want to return only the matching spans
+        # and their descendants (children, grandchildren, etc.), not unrelated spans
+        # from the same trace. This gives a focused view of the subtree.
+        matching_span_ids = None
+        if operation_name:
+            # First, find all spans matching the operation_name
+            matching_spans = (
+                session.query(SpanRecord)
+                .filter(SpanRecord.operation_name == operation_name)
+                .all()
+            )
+            if not matching_spans:
+                # No matching spans found, return empty result
+                return SpanList([])
+            # Collect unique trace_ids from matching spans
+            trace_ids_to_fetch = list(set(span.trace_id for span in matching_spans))
+            # Collect span_ids of matching spans
+            matching_span_ids = set(span.span_id for span in matching_spans)
+            # Query for ALL spans in those traces (we'll filter to descendants later)
+            query = session.query(SpanRecord).filter(
+                SpanRecord.trace_id.in_(trace_ids_to_fetch)
+            )
+        else:
+            # Build query normally
+            query = session.query(SpanRecord)
+
+        # Apply other filters
         if trace_id:
             query = query.filter(SpanRecord.trace_id == trace_id)
         if span_id:
             query = query.filter(SpanRecord.span_id == span_id)
-        if operation_name:
-            query = query.filter(SpanRecord.operation_name == operation_name)
         if start_time:
             query = query.filter(SpanRecord.start_time >= start_time.isoformat())
         if end_time:
@@ -980,6 +1019,31 @@ def get_spans(
                 "error_message": span_record.error_message,
             }
             result.append(span_dict)
+
+        # If filtering by operation_name, filter to only matching spans and their descendants
+        if matching_span_ids is not None:
+            # Recursively collect all descendants of matching spans
+            def collect_descendants(span_id: str, collected: set) -> None:
+                """Recursively collect all descendant span IDs."""
+                if span_id in collected:
+                    return
+                collected.add(span_id)
+                # Find all spans that have this span as parent
+                for span in result:
+                    if span.get("parent_span_id") == span_id:
+                        collect_descendants(span["span_id"], collected)
+
+            # Collect matching spans and all their descendants
+            relevant_span_ids = set()
+            for matching_span_id in matching_span_ids:
+                collect_descendants(matching_span_id, relevant_span_ids)
+
+            # Filter result to only include relevant spans
+            result = [
+                span_dict
+                for span_dict in result
+                if span_dict["span_id"] in relevant_span_ids
+            ]
 
         # Apply attribute filters in Python
         if attribute_filters:

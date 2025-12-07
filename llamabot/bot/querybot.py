@@ -24,7 +24,12 @@ from llamabot.components.messages import (
     to_basemessage,
 )
 from llamabot.config import default_language_model
-from llamabot.recorder import Span, is_span_recording_enabled, sqlite_log
+from llamabot.recorder import (
+    Span,
+    get_current_span,
+    is_span_recording_enabled,
+    sqlite_log,
+)
 
 load_dotenv()
 
@@ -102,18 +107,31 @@ class QueryBot(SimpleBot):
 
         # Check if span recording is enabled
         if is_span_recording_enabled():
-            # Always create a new trace_id for bot calls to avoid inheriting from context
-            new_trace_id = str(uuid.uuid4())
-            outer_span = Span(
-                "querybot_call",
-                trace_id=new_trace_id,
-                query=query_content,
-                n_results=n_results,
-                model=self.model_name,
-            )
-            # Track trace_id for this bot instance
-            if outer_span.trace_id not in self._trace_ids:
-                self._trace_ids.append(outer_span.trace_id)
+            # Check if there's a current span - if so, create a child span
+            current_span = get_current_span()
+            if current_span:
+                # Create child span using parent's trace_id
+                outer_span = Span(
+                    "querybot_call",
+                    trace_id=current_span.trace_id,
+                    parent_span_id=current_span.span_id,
+                    query=query_content,
+                    n_results=n_results,
+                    model=self.model_name,
+                )
+            else:
+                # No current span - create a new trace
+                new_trace_id = str(uuid.uuid4())
+                outer_span = Span(
+                    "querybot_call",
+                    trace_id=new_trace_id,
+                    query=query_content,
+                    n_results=n_results,
+                    model=self.model_name,
+                )
+                # Track trace_id for this bot instance (only for root spans)
+                if outer_span.trace_id not in self._trace_ids:
+                    self._trace_ids.append(outer_span.trace_id)
             with outer_span:
                 return self._call_with_spans(query_content, n_results, outer_span)
         else:
