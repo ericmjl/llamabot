@@ -178,185 +178,99 @@ class StructuredBot(SimpleBot):
             if outer_span.trace_id not in self._trace_ids:
                 self._trace_ids.append(outer_span.trace_id)
         with outer_span:
-            return self._call_with_spans(messages, num_attempts, verbose, outer_span)
+            # Record schema complexity in span
+            schema_fields = len(self.pydantic_model.model_fields)
+            nested_models = len(
+                [
+                    f
+                    for f in self.pydantic_model.model_fields.values()
+                    if hasattr(f.annotation, "__origin__")
+                    and f.annotation.__origin__ is BaseModel
+                ]
+            )
+            outer_span["schema_fields"] = schema_fields
+            outer_span["schema_nested_models"] = nested_models
 
-    def _call_without_spans(
-        self,
-        messages: list[BaseMessage],
-        num_attempts: int,
-        verbose: bool,
-    ) -> BaseModel | None:
-        """Internal method for calling bot without spans."""
-        # Initialize run metadata
-        self.run_meta = {
-            "start_time": datetime.now(),
-            "validation_attempts": 0,
-            "validation_success": False,
-            "schema_complexity": {
-                "fields": len(self.pydantic_model.model_fields),
-                "nested_models": len(
-                    [
-                        f
-                        for f in self.pydantic_model.model_fields.values()
-                        if hasattr(f.annotation, "__origin__")
-                        and f.annotation.__origin__ is BaseModel
-                    ]
-                ),
-            },
-        }
+            # Extract query content from messages for span
+            query_content = " ".join(
+                [
+                    msg.content if hasattr(msg, "content") else str(msg)
+                    for msg in messages
+                ]
+            )
+            outer_span["query"] = query_content[:500]  # Truncate for storage
+            outer_span["temperature"] = self.temperature
 
-        full_messages = [self.system_prompt] + messages
+            full_messages = [self.system_prompt] + messages
 
-        last_response = None
-        last_codeblock = None
-        # we'll attempt to get the response from the model and validate it
-        for attempt in range(num_attempts):
-            try:
-                self.run_meta["validation_attempts"] += 1
-                validation_start = datetime.now()
+            last_response = None
+            last_codeblock = None
+            validation_attempts = 0
+            # we'll attempt to get the response from the model and validate it
+            for attempt in range(num_attempts):
+                try:
+                    validation_attempts += 1
+                    validation_start = datetime.now()
 
-                # Create full messages list for this attempt
-                for message in full_messages:
-                    if isinstance(message, str):
-                        print(message)
+                    # Create full messages list for this attempt
+                    for message in full_messages:
+                        if isinstance(message, str):
+                            print(message)
 
-                # Get response using the same pattern as SimpleBot
-                response = make_response(
-                    self, full_messages, self.stream_target != "none"
-                )
-                response = stream_chunks(response, target=self.stream_target)
+                    # Get response using the same pattern as SimpleBot
+                    response = make_response(
+                        self, full_messages, self.stream_target != "none"
+                    )
+                    response = stream_chunks(response, target=self.stream_target)
 
-                # Extract content from the response
-                content = extract_content(response)
+                    # Extract content from the response
+                    content = extract_content(response)
 
-                # parse the response, and validate it against the pydantic model
-                last_response = AIMessage(content=content)
-                sqlite_log(self, messages + [last_response])
+                    # parse the response, and validate it against the pydantic model
+                    last_response = AIMessage(content=content)
+                    sqlite_log(self, messages + [last_response])
 
-                last_codeblock = json.loads(last_response.content)
-                obj = self.pydantic_model.model_validate(last_codeblock)
+                    last_codeblock = json.loads(last_response.content)
+                    obj = self.pydantic_model.model_validate(last_codeblock)
 
-                # Record successful validation
-                self.run_meta["validation_success"] = True
-                self.run_meta["validation_time"] = (
-                    datetime.now() - validation_start
-                ).total_seconds()
-                self.run_meta["end_time"] = datetime.now()
-                self.run_meta["duration"] = (
-                    self.run_meta["end_time"] - self.run_meta["start_time"]
-                ).total_seconds()
+                    # Record successful validation in span
+                    validation_time = (
+                        datetime.now() - validation_start
+                    ).total_seconds()
+                    outer_span["validation_attempts"] = validation_attempts
+                    outer_span["validation_success"] = True
+                    outer_span["validation_time"] = validation_time
+                    # Record response content
+                    outer_span["response"] = (
+                        content[:500] if content else None
+                    )  # Truncate for storage
+                    outer_span["response_length"] = len(content) if content else 0
 
-                return obj
+                    return obj
 
-            except ValidationError as e:
-                # Record validation error
-                self.run_meta["last_validation_error"] = str(e)
+                except ValidationError as e:
+                    # Record validation error in span
+                    outer_span["validation_attempts"] = validation_attempts
+                    outer_span["last_validation_error"] = str(e)
 
-                # we're on our last try
-                if attempt == num_attempts - 1:
-                    if self.allow_failed_validation and last_codeblock is not None:
-                        # If we allow failed validation, return the last attempt
-                        self.run_meta["end_time"] = datetime.now()
-                        self.run_meta["duration"] = (
-                            self.run_meta["end_time"] - self.run_meta["start_time"]
-                        ).total_seconds()
-                        return self.pydantic_model.model_construct(**last_codeblock)
-                    raise e
-
-                # Otherwise, if we failed, give the LLM the validation error and try again.
-                if verbose:
-                    logger.info(e)
-                full_messages.extend(
-                    [
-                        AIMessage(content=last_response.content),
-                        self.get_validation_error_message(e),
-                    ]
-                )
-
-    def _call_with_spans(
-        self,
-        messages: list[BaseMessage],
-        num_attempts: int,
-        verbose: bool,
-        outer_span: Span,
-    ) -> BaseModel | None:
-        """Internal method for calling bot with spans."""
-        # Record schema complexity in span
-        schema_fields = len(self.pydantic_model.model_fields)
-        nested_models = len(
-            [
-                f
-                for f in self.pydantic_model.model_fields.values()
-                if hasattr(f.annotation, "__origin__")
-                and f.annotation.__origin__ is BaseModel
-            ]
-        )
-        outer_span["schema_fields"] = schema_fields
-        outer_span["schema_nested_models"] = nested_models
-
-        full_messages = [self.system_prompt] + messages
-
-        last_response = None
-        last_codeblock = None
-        validation_attempts = 0
-        # we'll attempt to get the response from the model and validate it
-        for attempt in range(num_attempts):
-            try:
-                validation_attempts += 1
-                validation_start = datetime.now()
-
-                # Create full messages list for this attempt
-                for message in full_messages:
-                    if isinstance(message, str):
-                        print(message)
-
-                # Get response using the same pattern as SimpleBot
-                response = make_response(
-                    self, full_messages, self.stream_target != "none"
-                )
-                response = stream_chunks(response, target=self.stream_target)
-
-                # Extract content from the response
-                content = extract_content(response)
-
-                # parse the response, and validate it against the pydantic model
-                last_response = AIMessage(content=content)
-                sqlite_log(self, messages + [last_response])
-
-                last_codeblock = json.loads(last_response.content)
-                obj = self.pydantic_model.model_validate(last_codeblock)
-
-                # Record successful validation in span
-                validation_time = (datetime.now() - validation_start).total_seconds()
-                outer_span["validation_attempts"] = validation_attempts
-                outer_span["validation_success"] = True
-                outer_span["validation_time"] = validation_time
-
-                return obj
-
-            except ValidationError as e:
-                # Record validation error in span
-                outer_span["validation_attempts"] = validation_attempts
-                outer_span["last_validation_error"] = str(e)
-
-                # we're on our last try
-                if attempt == num_attempts - 1:
-                    if self.allow_failed_validation and last_codeblock is not None:
+                    # we're on our last try
+                    if attempt == num_attempts - 1:
+                        if self.allow_failed_validation and last_codeblock is not None:
+                            outer_span["validation_success"] = False
+                            outer_span["allow_failed_validation"] = True
+                            return self.pydantic_model.model_construct(**last_codeblock)
                         outer_span["validation_success"] = False
-                        outer_span["allow_failed_validation"] = True
-                        return self.pydantic_model.model_construct(**last_codeblock)
-                    outer_span["validation_success"] = False
-                    raise e
+                        raise e
 
-                # Otherwise, if we failed, give the LLM the validation error and try again.
-                if verbose:
-                    logger.info(e)
-                full_messages.extend(
-                    [
-                        AIMessage(content=last_response.content),
-                        self.get_validation_error_message(e),
-                    ]
-                )
+                    # Otherwise, if we failed, give the LLM the validation error and try again.
+                    if verbose:
+                        logger.info(e)
+                    full_messages.extend(
+                        [
+                            AIMessage(content=last_response.content),
+                            self.get_validation_error_message(e),
+                        ]
+                    )
 
     def display_spans(self) -> str:
         """Display all spans from all bot calls as HTML.

@@ -813,11 +813,12 @@ def test_nested_spans_preserve_trace_id(tmp_path, monkeypatch):
     for span_obj in bot_spans:
         assert span_obj.trace_id == bot_trace_id
 
-    # Verify nested spans (like llm_request, llm_response) are included
+    # Verify bot span has query and response attributes (no longer nested spans)
+    # Bot span should use variable name "bot" instead of generic "simplebot_call"
     operation_names = {s.operation_name for s in bot_spans}
-    assert "simplebot_call" in operation_names
-    assert "llm_request" in operation_names
-    assert "llm_response" in operation_names
+    assert "bot" in operation_names
+    bot_span = [s for s in bot_spans if s.operation_name == "bot"][0]
+    assert "query" in bot_span.attributes or "response" in bot_span.attributes
 
 
 def test_bot_display_spans_no_spans_yet():
@@ -851,9 +852,9 @@ def test_bot_creates_child_span_when_called_in_span_context(tmp_path, monkeypatc
     assert "parent_operation" in span_dict
     parent = span_dict["parent_operation"]
 
-    # Check that bot created a child span
-    assert "simplebot_call" in span_dict
-    bot_span = span_dict["simplebot_call"]
+    # Check that bot created a child span (using variable name "bot")
+    assert "bot" in span_dict
+    bot_span = span_dict["bot"]
 
     # Verify parent-child relationship
     assert bot_span.parent_span_id == parent.span_id
@@ -868,9 +869,11 @@ def test_bot_creates_child_span_when_called_in_span_context(tmp_path, monkeypatc
     spans = get_spans(operation_name="parent_operation", db_path=db_path)
     span_names = [s.operation_name for s in spans]
     assert "parent_operation" in span_names
-    assert "simplebot_call" in span_names
-    # Should also include nested spans from bot (llm_request, llm_response)
-    assert "llm_request" in span_names or "llm_response" in span_names
+    # Bot span should use variable name "bot" instead of generic "simplebot_call"
+    assert "bot" in span_names
+    # Bot span should have query/response as attributes, not nested spans
+    bot_span = [s for s in spans if s.operation_name == "bot"][0]
+    assert "query" in bot_span.attributes or "response" in bot_span.attributes
 
 
 def test_bot_display_spans_empty_database(tmp_path, monkeypatch):

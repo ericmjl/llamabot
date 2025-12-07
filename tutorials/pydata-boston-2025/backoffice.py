@@ -23,6 +23,7 @@ def _():
     from pathlib import Path
 
     import marimo as mo
+
     return Path, mo
 
 
@@ -88,6 +89,7 @@ def _():
         get_spans,
         span,
     )
+
     return get_current_span, get_span_tree, get_spans, span
 
 
@@ -229,6 +231,7 @@ def _(mo):
 @app.cell
 def _():
     from pydantic import BaseModel
+
     return (BaseModel,)
 
 
@@ -242,12 +245,14 @@ def _(BaseModel):
         amount: float
         category: str
         description: str
+
     return (ReceiptData,)
 
 
 @app.cell
 def _():
     import llamabot as lmb
+
     return (lmb,)
 
 
@@ -266,18 +271,21 @@ def _(lmb):
         If any field is unclear or missing, use your best judgment based on the context.
         For dates, convert any format to YYYY-MM-DD. For amounts, extract only the numerical value.
         """
+
     return (receipt_extraction_sysprompt,)
 
 
 @app.cell
 def _():
     from pdf2image import convert_from_path
+
     return (convert_from_path,)
 
 
 @app.cell
 def _():
     import tempfile
+
     return (tempfile,)
 
 
@@ -312,12 +320,14 @@ def _(Path, convert_from_path, span, tempfile):
         else:
             s["conversion_success"] = False
             raise ValueError(f"Unsupported file type: {file_extension}")
+
     return (convert_pdf_to_images,)
 
 
 @app.cell
 def _():
     from llamabot.components.messages import user
+
     return (user,)
 
 
@@ -378,6 +388,7 @@ def _(mo):
 def _():
     from llamabot.components.pocketflow import nodeify
     from llamabot.components.tools import tool
+
     return nodeify, tool
 
 
@@ -419,7 +430,9 @@ def _(
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
         else:
-            prompt_text = f"Extract all text from this {len(image_paths)}-page receipt document."
+            prompt_text = (
+                f"Extract all text from this {len(image_paths)}-page receipt document."
+            )
 
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results (ocr_bot creates spans automatically)
@@ -440,6 +453,7 @@ def _(
         s["amount"] = result.amount
 
         return result.model_dump_json()
+
     return (process_receipt,)
 
 
@@ -511,6 +525,7 @@ def _(BaseModel):
         project_description: str
         amount: float
         notes: str = ""
+
     return (InvoiceData,)
 
 
@@ -522,6 +537,7 @@ def _(lmb):
         Fill out invoice forms with structured data provided.
         Ensure all fields are professional and business-appropriate.
         """
+
     return (invoice_generation_sysprompt,)
 
 
@@ -546,9 +562,7 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
             Should include client name, project description, amount, and any other relevant details.
         """
         s = get_current_span()
-        s["invoice_description"] = invoice_description[
-            :200
-        ]  # Truncate for storage
+        s["invoice_description"] = invoice_description[:200]  # Truncate for storage
 
         prompt = f"""Generate an invoice based on this description:
         {invoice_description}
@@ -562,6 +576,7 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
         s["invoice_number"] = invoice.invoice_number
         s["amount"] = invoice.amount
         return invoice
+
     return (generate_invoice,)
 
 
@@ -610,6 +625,7 @@ def _(InvoiceData, get_current_span, span):
         s["invoice_number"] = invoice.invoice_number
         s["html_length"] = len(html)
         return html
+
     return (render_invoice_html,)
 
 
@@ -650,6 +666,7 @@ def _(generate_invoice, nodeify, render_invoice_html, span, tool):
             "**YOU MUST NOW**: Call return_object_to_user('invoice_html') immediately to return it to the user, "
             "then call respond_to_user() to confirm completion."
         )
+
     return (write_invoice,)
 
 
@@ -833,12 +850,14 @@ def _(lmb):
 
         Remember: It's better to ask for clarification than to assume and generate incorrect information.
         """
+
     return (coordinator_sysprompt,)
 
 
 @app.cell
 def _():
     from llamabot import AgentBot
+
     return (AgentBot,)
 
 
@@ -888,9 +907,7 @@ def _(Path, files, tempfile):
                 temp_file_path = temp_file.name
 
             # Make file available in globals
-            variable_name = (
-                Path(file.name).stem.replace(" ", "_").replace("-", "_")
-            )
+            variable_name = Path(file.name).stem.replace(" ", "_").replace("-", "_")
             globals()[variable_name] = temp_file_path
             print(f"File available as: {variable_name}")
     return
@@ -907,6 +924,7 @@ def _(coordinator_bot, span):
         ):
             result = coordinator_bot(user_message, globals())
         return result
+
     return (chat_turn,)
 
 
@@ -993,7 +1011,7 @@ def _(mo):
     - **Nested structure**: Spans form a hierarchy showing the complete execution flow
 
     The trace hierarchy looks like:
-    `coordinator_chat_turn → agentbot_call → decision → tool_call → process_receipt → convert_pdf_to_images → ocr_bot → receipt_structuring_bot`
+    `coordinator_chat_turn → agentbot_call → decision → tool_call → process_receipt → convert_pdf_to_images → ocr_bot, receipt_structuring_bot`
     """)
     return
 
@@ -1044,9 +1062,7 @@ def _(all_spans, get_span_tree, mo):
         ```
         """)
     else:
-        tree_display = mo.md(
-            "No spans found. Run some operations first to see spans."
-        )
+        tree_display = mo.md("No spans found. Run some operations first to see spans.")
 
     tree_display
     return
@@ -1127,6 +1143,7 @@ def _(mo):
 @app.cell
 def _():
     from llamabot.components.docstore import LanceDBDocStore
+
     return (LanceDBDocStore,)
 
 
@@ -1175,6 +1192,7 @@ def _(lmb):
         - Consider alternative deployment strategies or infrastructure improvements to reduce latency
         - Establish service level expectations for runner spin-up times and monitor against them
         """
+
     return (anonymization_sysprompt,)
 
 
@@ -1200,6 +1218,7 @@ def _(LanceDBDocStore):
 @app.cell
 def _():
     from datetime import datetime
+
     return (datetime,)
 
 
@@ -1258,6 +1277,7 @@ def _(anonymization_bot, datetime, nodeify, tool):
             f"**YOU MUST NOW**: Call respond_to_user() immediately to show this structured version to the user for review. "
             f"After the user confirms, call confirm_store_complaint() to store it in the database."
         )
+
     return (anonymize_complaint,)
 
 
@@ -1300,6 +1320,7 @@ def _(complaints_db, datetime, nodeify, tool):
         complaints_db.append(anonymized, partition=complaint_date)
 
         return f"Complaint stored successfully. Date partition: {complaint_date}"
+
     return (confirm_store_complaint,)
 
 
@@ -1319,6 +1340,7 @@ def _(lmb):
 
         Provide clear summaries and identify patterns.
         """
+
     return (summarization_sysprompt,)
 
 
@@ -1362,9 +1384,7 @@ def _(complaints_db, nodeify, tool):
         """
         # Query vector database
         partitions = [date_partition] if date_partition else None
-        results = complaints_db.retrieve(
-            query, n_results=10, partitions=partitions
-        )
+        results = complaints_db.retrieve(query, n_results=10, partitions=partitions)
 
         if not results:
             return (
@@ -1381,6 +1401,7 @@ def _(complaints_db, nodeify, tool):
             f"Found {len(results)} concerns matching '{query}'. Results stored in 'complaint_query_results'. "
             f"**YOU MUST NOW**: Call respond_to_user() immediately to present the results to the user."
         )
+
     return (query_complaints,)
 
 
@@ -1471,6 +1492,7 @@ def _(coordinator_with_complaints, span):
         ):
             result = coordinator_with_complaints(user_message, globals())
         return result
+
     return (chat_turn_with_complaints,)
 
 
