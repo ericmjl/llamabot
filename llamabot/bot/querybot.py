@@ -26,6 +26,7 @@ from llamabot.components.messages import (
 from llamabot.config import default_language_model
 from llamabot.recorder import (
     Span,
+    get_caller_variable_name,
     get_current_span,
     sqlite_log,
 )
@@ -104,12 +105,17 @@ class QueryBot(SimpleBot):
         """
         query_content = query if isinstance(query, str) else query.content
 
+        # Try to get the variable name from the calling frame
+        operation_name = get_caller_variable_name(self)
+        if operation_name is None:
+            operation_name = "querybot_call"
+
         # Check if there's a current span - if so, create a child span
         current_span = get_current_span()
         if current_span:
             # Create child span using parent's trace_id
             outer_span = Span(
-                "querybot_call",
+                operation_name,
                 trace_id=current_span.trace_id,
                 parent_span_id=current_span.span_id,
                 query=query_content,
@@ -120,7 +126,7 @@ class QueryBot(SimpleBot):
             # No current span - create a new trace
             new_trace_id = str(uuid.uuid4())
             outer_span = Span(
-                "querybot_call",
+                operation_name,
                 trace_id=new_trace_id,
                 query=query_content,
                 n_results=n_results,

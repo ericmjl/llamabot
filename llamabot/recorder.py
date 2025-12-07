@@ -36,6 +36,59 @@ prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 current_span_var = contextvars.ContextVar("current_span", default=None)
 current_trace_id_var = contextvars.ContextVar("current_trace_id", default=None)
 
+
+def get_caller_variable_name(obj) -> Optional[str]:
+    """Get the variable name that an object is referenced by in the calling frame.
+
+    This function inspects the calling frame to find which variable name
+    references the given object. This is useful for automatically naming
+    spans based on the bot instance variable name.
+
+    :param obj: The object to find the variable name for
+    :return: The variable name, or None if not found
+    """
+    try:
+        # Get the current frame (this function)
+        current_frame = std_inspect.currentframe()
+        if current_frame is None:
+            return None
+
+        # Get the caller's frame (the frame that called the function containing this)
+        # We need to go back 2 frames: one for this function, one for the bot's __call__
+        caller_frame = current_frame.f_back
+        if caller_frame is None:
+            return None
+
+        # Go back one more frame to get the actual caller (the user's code)
+        user_frame = caller_frame.f_back
+        if user_frame is None:
+            return None
+
+        # Search through caller's local variables
+        for name, value in user_frame.f_locals.items():
+            if value is obj:
+                return name
+
+        # Also check globals if not found in locals
+        for name, value in user_frame.f_globals.items():
+            if value is obj:
+                return name
+
+    except Exception:
+        # If anything goes wrong, return None
+        pass
+    finally:
+        # Clean up frame references to avoid circular references
+        try:
+            del current_frame
+            del caller_frame
+            del user_frame
+        except Exception:
+            pass
+
+    return None
+
+
 # Design sqlite database for storing prompts and responses.
 # Columns:
 # - Python object name from globals()
