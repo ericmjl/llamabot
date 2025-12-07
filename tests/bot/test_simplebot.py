@@ -829,6 +829,50 @@ def test_bot_display_spans_no_spans_yet():
     assert "No spans recorded" in html
 
 
+def test_bot_creates_child_span_when_called_in_span_context(tmp_path, monkeypatch):
+    """Test that bot creates child spans when called within a span context."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Call bot within a span context
+    with span("parent_operation", db_path=db_path):
+        bot("Bot call within span")
+
+    # Verify spans were created
+    spans = get_spans(db_path=db_path)
+    span_dict = {s.operation_name: s for s in spans}
+
+    # Check that parent span exists
+    assert "parent_operation" in span_dict
+    parent = span_dict["parent_operation"]
+
+    # Check that bot created a child span
+    assert "simplebot_call" in span_dict
+    bot_span = span_dict["simplebot_call"]
+
+    # Verify parent-child relationship
+    assert bot_span.parent_span_id == parent.span_id
+    assert bot_span.trace_id == parent.trace_id
+
+    # Verify bot's trace_ids don't include parent's trace_id (bot creates its own)
+    # Actually wait - with the fix, bot should use parent's trace_id when called in context
+    # But it shouldn't track it in _trace_ids since it's not a root span
+    assert parent.trace_id not in bot._trace_ids
+
+    # Verify hierarchy when querying by operation name
+    spans = get_spans(operation_name="parent_operation", db_path=db_path)
+    span_names = [s.operation_name for s in spans]
+    assert "parent_operation" in span_names
+    assert "simplebot_call" in span_names
+    # Should also include nested spans from bot (llm_request, llm_response)
+    assert "llm_request" in span_names or "llm_response" in span_names
+
+
 def test_bot_display_spans_empty_database(tmp_path, monkeypatch):
     """Test display_spans() when spans are tracked but not in database."""
     enable_span_recording()

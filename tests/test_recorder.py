@@ -403,13 +403,93 @@ def test_get_spans(tmp_path):
     spans = get_spans(trace_id=trace_id, db_path=db_path)
     assert len(spans) == 2
 
-    # Query by operation name
+    # Query by operation name (should return only matching span, no children)
     spans = get_spans(operation_name="operation1", db_path=db_path)
     assert len(spans) == 1
     assert spans[0].operation_name == "operation1"
 
     # Query by attribute
     spans = get_spans(category="test", db_path=db_path)
+    assert len(spans) == 2
+
+
+def test_get_spans_operation_name_returns_descendants(tmp_path):
+    """Test that get_spans(operation_name=...) returns matching spans and their descendants."""
+    db_path = tmp_path / "test_spans.db"
+
+    # Create a trace with nested spans
+    with span("parent_operation", db_path=db_path) as parent:
+        with parent.span("child1"):
+            pass
+        with parent.span("child2") as child2:
+            with child2.span("grandchild"):
+                pass
+        # Create an unrelated sibling span (same trace, different parent)
+        with span("unrelated_sibling", db_path=db_path) as sibling:
+            sibling["note"] = "unrelated"
+
+    # Query by parent operation name - should return parent and all descendants
+    spans = get_spans(operation_name="parent_operation", db_path=db_path)
+    span_names = [s.operation_name for s in spans]
+
+    # Should include parent and all descendants
+    assert "parent_operation" in span_names
+    assert "child1" in span_names
+    assert "child2" in span_names
+    assert "grandchild" in span_names
+
+    # Should NOT include unrelated sibling
+    assert "unrelated_sibling" not in span_names
+    assert len(spans) == 4
+
+    # Query by child operation name - should return child and its descendants only
+    spans = get_spans(operation_name="child2", db_path=db_path)
+    span_names = [s.operation_name for s in spans]
+
+    assert "child2" in span_names
+    assert "grandchild" in span_names
+    assert "parent_operation" not in span_names
+    assert "child1" not in span_names
+    assert "unrelated_sibling" not in span_names
+    assert len(spans) == 2
+
+
+def test_span_decorator_creates_child_span(tmp_path):
+    """Test that @span decorator creates child spans when called within a span context."""
+    db_path = tmp_path / "test_spans.db"
+
+    @span("inner_function", db_path=db_path)
+    def inner_function(x: int) -> int:
+        """Inner function that should be a child span."""
+        return x * 2
+
+    # Call decorated function within a span context
+    with span("outer_operation", db_path=db_path) as outer_span:
+        result = inner_function(5)
+        assert result == 10
+
+    # Verify spans were created
+    spans = get_spans(db_path=db_path)
+    span_dict = {s.operation_name: s for s in spans}
+
+    # Check that inner_function span exists and is a child of outer_operation
+    assert "outer_operation" in span_dict
+    assert "inner_function" in span_dict
+
+    outer_span_from_db = span_dict["outer_operation"]
+    inner_span = span_dict["inner_function"]
+
+    # Verify parent-child relationship
+    assert inner_span.parent_span_id == outer_span_from_db.span_id
+    assert inner_span.trace_id == outer_span_from_db.trace_id
+    # Also verify it matches the context manager span
+    assert inner_span.parent_span_id == outer_span.span_id
+
+    # Verify hierarchy when querying by operation name
+    spans = get_spans(operation_name="outer_operation", db_path=db_path)
+    span_names = [s.operation_name for s in spans]
+    assert "outer_operation" in span_names
+    assert "inner_function" in span_names
     assert len(spans) == 2
 
 
