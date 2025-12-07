@@ -47,7 +47,7 @@ def _():
         span,
     )
 
-    return SimpleBot, enable_span_recording, get_spans, mo, span
+    return SimpleBot, get_spans, mo, span
 
 
 @app.cell(hide_code=True)
@@ -147,13 +147,13 @@ def _(mo, response):
 def _(mo):
     mo.md(
         """
-        ## Display Spans from Bot Instance
+    ## Display Spans from Bot Instance
 
-        Each bot instance tracks its own spans. You can access them via the `.spans` property,
-        which returns a `SpanList` that displays all spans from the bot's calls.
+    Each bot instance tracks its own spans. You can access them via the `.spans` property,
+    which returns a `SpanList` that displays all spans from the bot's calls.
 
-        Alternatively, displaying the bot object directly also shows spans (for SimpleBot and StructuredBot).
-        """
+    Alternatively, displaying the bot object directly also shows spans (for SimpleBot and StructuredBot).
+    """
     )
     return
 
