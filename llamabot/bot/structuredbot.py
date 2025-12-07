@@ -5,6 +5,7 @@ Courtesey of Elliot Salisbury (@ElliotSalisbury).
 Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 """
 
+import inspect
 import json
 import uuid
 from datetime import datetime
@@ -135,24 +136,36 @@ class StructuredBot(SimpleBot):
         current_span = get_current_span()
         if current_span:
             # Create child span using parent's trace_id
+            # Get model class name - pydantic_model is a class, not an instance
+            model_name = (
+                self.pydantic_model.__name__
+                if inspect.isclass(self.pydantic_model)
+                else type(self.pydantic_model).__name__
+            )
             outer_span = Span(
                 "structuredbot_call",
                 trace_id=current_span.trace_id,
                 parent_span_id=current_span.span_id,
                 query=query_content,
                 model=self.model_name,
-                pydantic_model=type(self.pydantic_model).__name__,
+                pydantic_model=model_name,
                 num_attempts=num_attempts,
             )
         else:
             # No current span - create a new trace
+            # Get model class name - pydantic_model is a class, not an instance
+            model_name = (
+                self.pydantic_model.__name__
+                if inspect.isclass(self.pydantic_model)
+                else type(self.pydantic_model).__name__
+            )
             new_trace_id = str(uuid.uuid4())
             outer_span = Span(
                 "structuredbot_call",
                 trace_id=new_trace_id,
                 query=query_content,
                 model=self.model_name,
-                pydantic_model=type(self.pydantic_model).__name__,
+                pydantic_model=model_name,
                 num_attempts=num_attempts,
             )
             # Track trace_id for this bot instance (only for root spans)
