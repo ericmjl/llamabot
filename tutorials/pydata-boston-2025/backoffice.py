@@ -20,18 +20,20 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    import sys
     from pathlib import Path
 
     import marimo as mo
-
-    # Ensure we're using the local editable llamabot installation
-    # Add the repository root to sys.path so local changes are picked up
-    repo_root = Path(__file__).parent.parent.parent
-    llamabot_path = repo_root / "llamabot"
-    if llamabot_path.exists() and str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
     return Path, mo
+
+
+@app.cell
+def _():
+    import os
+
+    os.environ["TUTORIAL_API_BASE"] = (
+        "https://ericmjl--ollama-service-ollamaservice-server.modal.run"
+    )
+    return (os,)
 
 
 @app.cell
@@ -81,30 +83,12 @@ def _(mo):
 @app.cell
 def _():
     from llamabot import (
-        enable_span_recording,
         get_current_span,
         get_span_tree,
         get_spans,
         span,
     )
-    return (
-        enable_span_recording,
-        get_current_span,
-        get_span_tree,
-        get_spans,
-        span,
-    )
-
-
-@app.cell
-def _():
-    # Span recording is now enabled by default for all bots
-    # Spans are automatically created for:
-    # - SimpleBot, StructuredBot, QueryBot calls
-    # - AgentBot calls and decision-making
-    # - Tool executions via @nodeify decorator
-    # No need to call enable_span_recording() - spans are always created
-    return
+    return get_current_span, get_span_tree, get_spans, span
 
 
 @app.cell
@@ -299,18 +283,15 @@ def _():
 
 @app.cell(hide_code=True)
 def _(Path, convert_from_path, span, tempfile):
-    @span("convert_pdf_to_images", category="file_processing")
+    @span
     def convert_pdf_to_images(file_path: str):
         """Convert PDF to list of image paths."""
         from llamabot import get_current_span
 
         s = get_current_span()
-        if s:
-            s["file_path"] = file_path
-            file_extension = Path(file_path).suffix.lower()
-            s["file_extension"] = file_extension
-
+        s["file_path"] = file_path
         file_extension = Path(file_path).suffix.lower()
+        s["file_extension"] = file_extension
 
         if file_extension == ".pdf":
             images = convert_from_path(file_path, dpi=200)
@@ -321,18 +302,15 @@ def _(Path, convert_from_path, span, tempfile):
                 ) as temp_img:
                     image.save(temp_img.name, "PNG")
                     image_paths.append(temp_img.name)
-            if s:
-                s["page_count"] = len(image_paths)
-                s["conversion_success"] = True
+            s["page_count"] = len(image_paths)
+            s["conversion_success"] = True
             return image_paths
         elif file_extension in [".png", ".jpg", ".jpeg"]:
-            if s:
-                s["page_count"] = 1
-                s["conversion_success"] = True
+            s["page_count"] = 1
+            s["conversion_success"] = True
             return [file_path]
         else:
-            if s:
-                s["conversion_success"] = False
+            s["conversion_success"] = False
             raise ValueError(f"Unsupported file type: {file_extension}")
     return (convert_pdf_to_images,)
 
@@ -354,27 +332,27 @@ def _(mo):
 
 
 @app.cell
-def _(lmb):
+def _(lmb, os):
     # Step 1: OCR extraction with DeepSeek-OCR (SimpleBot)
     # DeepSeek-OCR doesn't support structured outputs, so we use SimpleBot
     ocr_bot = lmb.SimpleBot(
         system_prompt="Extract all text from receipts accurately. "
         "Preserve the structure and include all numbers, dates, and vendor names.",
         model_name="ollama/deepseek-ocr",  # Fixed: ollama/deepseek-ocr
-        # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
+        api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (ocr_bot,)
 
 
 @app.cell
-def _(ReceiptData, lmb, receipt_extraction_sysprompt):
+def _(ReceiptData, lmb, os, receipt_extraction_sysprompt):
     # Step 2: Structure the data (using a model that supports structured outputs)
     # This bot takes the OCR text and structures it according to ReceiptData schema
     receipt_structuring_bot = lmb.StructuredBot(
         system_prompt=receipt_extraction_sysprompt(),
         pydantic_model=ReceiptData,
         model_name="ollama_chat/gemma3n:latest",  # Or use "gpt-4.1" if available
-        # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
+        api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (receipt_structuring_bot,)
 
@@ -402,23 +380,19 @@ def _(
     span,
     user,
 ):
-    @span("extract_receipt_data", category="receipt_processing")
+    @span
     def extract_receipt_data(file_path: str):
         """Extract receipt data from PDF or image file using two-step process:
         1. OCR extraction with DeepSeek-OCR (SimpleBot)
         2. Structure the data with StructuredBot
         """
         s = get_current_span()
-        if s:
-            s["file_path"] = file_path
+        s["file_path"] = file_path
 
         # PDF to image conversion
-        if s:
-            with s.span("pdf_to_images", file_path=file_path):
-                image_paths = convert_pdf_to_images(file_path)
-                s["page_count"] = len(image_paths)
-        else:
+        with s.span("pdf_to_images", file_path=file_path):
             image_paths = convert_pdf_to_images(file_path)
+            s["page_count"] = len(image_paths)
 
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
@@ -428,29 +402,21 @@ def _(
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results
         ocr_texts = []
-        if s:
-            with s.span("ocr_extraction", page_count=len(image_paths)):
-                for image_path in image_paths:
-                    ocr_response = ocr_bot(user(prompt_text, image_path))
-                    ocr_texts.append(ocr_response.content)
-                s.log("ocr_completed", pages=len(image_paths))
-        else:
+        with s.span("ocr_extraction", page_count=len(image_paths)):
             for image_path in image_paths:
                 ocr_response = ocr_bot(user(prompt_text, image_path))
                 ocr_texts.append(ocr_response.content)
+            s.log("ocr_completed", pages=len(image_paths))
 
         # Combine OCR results from all pages
         combined_ocr_text = "\n\n--- Page Break ---\n\n".join(ocr_texts)
 
         # Step 2: Structure the extracted text according to ReceiptData schema
-        if s:
-            with s.span("structure_data"):
-                result = receipt_structuring_bot(combined_ocr_text)
-                s.log("structuring_completed")
-                s["vendor"] = result.vendor
-                s["amount"] = result.amount
-        else:
+        with s.span("structure_data"):
             result = receipt_structuring_bot(combined_ocr_text)
+            s.log("structuring_completed")
+            s["vendor"] = result.vendor
+            s["amount"] = result.amount
 
         return result
     return (extract_receipt_data,)
@@ -464,9 +430,10 @@ def _():
 
 
 @app.cell
-def _(Path, extract_receipt_data, get_current_span, nodeify, tool):
+def _(Path, extract_receipt_data, get_current_span, nodeify, span, tool):
     @nodeify(loopback_name="decide")
     @tool
+    @span
     def process_receipt(file_path: str = None, _globals_dict: dict = None) -> str:
         """Process a receipt PDF or image and extract structured data.
 
@@ -514,10 +481,7 @@ def _(Path, extract_receipt_data, get_current_span, nodeify, tool):
             )
 
         # Extract receipt data (this will create nested spans automatically)
-        if s:
-            with s.span("extract_receipt_data_call"):
-                receipt_data = extract_receipt_data(file_path)
-        else:
+        with s.span("extract_receipt_data_call"):
             receipt_data = extract_receipt_data(file_path)
         return receipt_data.model_dump_json()
     return (process_receipt,)
@@ -605,19 +569,19 @@ def _(lmb):
 
 
 @app.cell
-def _(InvoiceData, invoice_generation_sysprompt, lmb):
+def _(InvoiceData, invoice_generation_sysprompt, lmb, os):
     invoice_writer_bot = lmb.StructuredBot(
         system_prompt=invoice_generation_sysprompt(),
         pydantic_model=InvoiceData,
         model_name="ollama_chat/gemma3n:latest",
-        # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
+        api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (invoice_writer_bot,)
 
 
 @app.cell
 def _(InvoiceData, get_current_span, invoice_writer_bot, span):
-    @span("generate_invoice", category="invoice_generation")
+    @span
     def generate_invoice(invoice_description: str) -> InvoiceData:
         """Generate invoice from natural language description.
 
@@ -625,10 +589,9 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
             Should include client name, project description, amount, and any other relevant details.
         """
         s = get_current_span()
-        if s:
-            s["invoice_description"] = invoice_description[
-                :200
-            ]  # Truncate for storage
+        s["invoice_description"] = invoice_description[
+            :200
+        ]  # Truncate for storage
 
         prompt = f"""Generate an invoice based on this description:
         {invoice_description}
@@ -639,16 +602,15 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
         """
 
         invoice = invoice_writer_bot(prompt)
-        if s:
-            s["invoice_number"] = invoice.invoice_number
-            s["amount"] = invoice.amount
+        s["invoice_number"] = invoice.invoice_number
+        s["amount"] = invoice.amount
         return invoice
     return (generate_invoice,)
 
 
 @app.cell
 def _(InvoiceData, get_current_span, span):
-    @span("render_invoice_html", category="invoice_generation")
+    @span
     def render_invoice_html(invoice: InvoiceData) -> str:
         """Render invoice as beautiful HTML."""
         s = get_current_span()
@@ -688,17 +650,24 @@ def _(InvoiceData, get_current_span, span):
         </body>
         </html>
         """
-        if s:
-            s["invoice_number"] = invoice.invoice_number
-            s["html_length"] = len(html)
+        s["invoice_number"] = invoice.invoice_number
+        s["html_length"] = len(html)
         return html
     return (render_invoice_html,)
 
 
 @app.cell
-def _(generate_invoice, get_current_span, nodeify, render_invoice_html, tool):
+def _(
+    generate_invoice,
+    get_current_span,
+    nodeify,
+    render_invoice_html,
+    span,
+    tool,
+):
     @nodeify(loopback_name="decide")
     @tool
+    @span
     def write_invoice(invoice_description: str, _globals_dict: dict = None) -> str:
         """Generate and render an invoice from natural language description.
 
@@ -720,13 +689,9 @@ def _(generate_invoice, get_current_span, nodeify, render_invoice_html, tool):
         """
         s = get_current_span()
         # Generate invoice (this will create nested spans automatically)
-        if s:
-            with s.span("generate_invoice_call"):
-                invoice = generate_invoice(invoice_description)
-            with s.span("render_invoice_html_call"):
-                html = render_invoice_html(invoice)
-        else:
+        with s.span("generate_invoice_call"):
             invoice = generate_invoice(invoice_description)
+        with s.span("render_invoice_html_call"):
             html = render_invoice_html(invoice)
 
         # Store invoice HTML in globals so it can be returned to user
@@ -933,12 +898,12 @@ def _():
 
 
 @app.cell
-def _(AgentBot, coordinator_sysprompt, process_receipt, write_invoice):
+def _(AgentBot, coordinator_sysprompt, os, process_receipt, write_invoice):
     coordinator_bot = AgentBot(
         tools=[process_receipt, write_invoice],
         system_prompt=coordinator_sysprompt(),
         model_name="ollama_chat/gemma3n:latest",
-        # api_base="https://<your-modal-endpoint>.modal.run",  # Uncomment and add your endpoint
+        api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (coordinator_bot,)
 
@@ -1269,11 +1234,11 @@ def _(lmb):
 
 
 @app.cell
-def _(anonymization_sysprompt, lmb):
+def _(anonymization_sysprompt, lmb, os):
     anonymization_bot = lmb.SimpleBot(
         system_prompt=anonymization_sysprompt(),
         model_name="ollama_chat/gemma3n:latest",
-        # api_base="https://<your-modal-endpoint>.modal.run",
+        api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (anonymization_bot,)
 
@@ -1413,11 +1378,11 @@ def _(lmb):
 
 
 @app.cell
-def _(lmb, summarization_sysprompt):
+def _(lmb, os, summarization_sysprompt):
     summarization_bot = lmb.SimpleBot(
         system_prompt=summarization_sysprompt(),
         model_name="ollama_chat/gemma3n:latest",
-        # api_base="https://<your-modal-endpoint>.modal.run",
+        api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return
 
@@ -1518,6 +1483,7 @@ def _(
     anonymize_complaint,
     confirm_store_complaint,
     coordinator_sysprompt,
+    os,
     process_receipt,
     query_complaints,
     write_invoice,
@@ -1538,7 +1504,7 @@ def _(
         # model_name="ollama_chat/deepseek-r1:14b", # failed on being stuck in a loop!
         # model_name="ollama_chat/qwen3-vl:latest", # doesn't work!
         # model_name="ollama_chat/phi4:latest", # doesn't work!
-        # api_base="https://<your-modal-endpoint>.modal.run",
+        api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (coordinator_with_complaints,)
 
