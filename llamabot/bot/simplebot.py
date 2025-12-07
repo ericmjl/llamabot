@@ -32,7 +32,6 @@ from llamabot.recorder import (
     generate_span_html,
     get_current_span,
     get_spans,
-    is_span_recording_enabled,
     span_to_dict,
     sqlite_log,
 )
@@ -118,44 +117,40 @@ class SimpleBot:
         :param human_messages: One or more human messages to use, or lists of messages.
         :return: The response to the human messages, primed by the system prompt.
         """
-        # Check if span recording is enabled
-        if is_span_recording_enabled():
-            # Create outer span for the entire bot call
-            query_content = " ".join(
-                [
-                    msg.content if hasattr(msg, "content") else str(msg)
-                    for msg in human_messages
-                ]
+        # Create outer span for the entire bot call
+        query_content = " ".join(
+            [
+                msg.content if hasattr(msg, "content") else str(msg)
+                for msg in human_messages
+            ]
+        )
+        # Check if there's a current span - if so, create a child span
+        current_span = get_current_span()
+        if current_span:
+            # Create child span using parent's trace_id
+            outer_span = Span(
+                "simplebot_call",
+                trace_id=current_span.trace_id,
+                parent_span_id=current_span.span_id,
+                query=query_content,
+                model=self.model_name,
+                temperature=self.temperature,
             )
-            # Check if there's a current span - if so, create a child span
-            current_span = get_current_span()
-            if current_span:
-                # Create child span using parent's trace_id
-                outer_span = Span(
-                    "simplebot_call",
-                    trace_id=current_span.trace_id,
-                    parent_span_id=current_span.span_id,
-                    query=query_content,
-                    model=self.model_name,
-                    temperature=self.temperature,
-                )
-            else:
-                # No current span - create a new trace
-                new_trace_id = str(uuid.uuid4())
-                outer_span = Span(
-                    "simplebot_call",
-                    trace_id=new_trace_id,
-                    query=query_content,
-                    model=self.model_name,
-                    temperature=self.temperature,
-                )
-                # Track trace_id for this bot instance (only for root spans)
-                if outer_span.trace_id not in self._trace_ids:
-                    self._trace_ids.append(outer_span.trace_id)
-            with outer_span:
-                return self._call_with_spans(human_messages, outer_span)
         else:
-            return self._call_without_spans(human_messages)
+            # No current span - create a new trace
+            new_trace_id = str(uuid.uuid4())
+            outer_span = Span(
+                "simplebot_call",
+                trace_id=new_trace_id,
+                query=query_content,
+                model=self.model_name,
+                temperature=self.temperature,
+            )
+            # Track trace_id for this bot instance (only for root spans)
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+        with outer_span:
+            return self._call_with_spans(human_messages, outer_span)
 
     def _call_without_spans(
         self, human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]]
@@ -226,13 +221,6 @@ class SimpleBot:
         outer_span: Span,
     ) -> Union[AIMessage, Generator]:
         """Internal method for calling bot with spans."""
-        # Reset run metadata for new call
-        self.run_meta = {
-            "start_time": datetime.now(),
-            "message_counts": {"user": 0, "assistant": 0, "tool": 0},
-            "tool_usage": {},
-        }
-
         processed_messages = to_basemessage(human_messages)
 
         memory_messages = []
@@ -243,12 +231,12 @@ class SimpleBot:
 
         messages = [self.system_prompt] + memory_messages + processed_messages
 
-        # Count initial messages
-        for msg in messages:
-            if isinstance(msg, HumanMessage):
-                self.run_meta["message_counts"]["user"] += 1
-            elif isinstance(msg, AIMessage):
-                self.run_meta["message_counts"]["assistant"] += 1
+        # Count initial messages and record in span
+        user_count = sum(1 for msg in messages if isinstance(msg, HumanMessage))
+        assistant_count = sum(1 for msg in messages if isinstance(msg, AIMessage))
+        outer_span["input_message_count"] = len(messages)
+        outer_span["input_user_messages"] = user_count
+        outer_span["input_assistant_messages"] = assistant_count
 
         # Create span for LLM request
         with outer_span.span("llm_request", model=self.model_name) as llm_request_span:
@@ -267,31 +255,16 @@ class SimpleBot:
             llm_response_span["response_length"] = len(content) if content else 0
             llm_response_span["tool_calls_count"] = len(tool_calls) if tool_calls else 0
 
-            # Update message counts
-            self.run_meta["message_counts"]["assistant"] += 1
-
-            # Record tool usage if any
+            # Record tool usage in span if any
             if tool_calls:
-                for call in tool_calls:
-                    tool_name = call.function.name
-                    if tool_name not in self.run_meta["tool_usage"]:
-                        self.run_meta["tool_usage"][tool_name] = {
-                            "calls": 0,
-                            "success": 0,
-                            "failures": 0,
-                        }
-                    self.run_meta["tool_usage"][tool_name]["calls"] += 1
+                tool_names = [call.function.name for call in tool_calls]
+                outer_span["tool_calls"] = ", ".join(tool_names)
+                outer_span["tool_calls_count"] = len(tool_calls)
 
             sqlite_log(self, messages + [response_message])
             if self.memory:
                 self.memory.append(processed_messages[-1])
                 self.memory.append(response_message)
-
-        # Record end time
-        self.run_meta["end_time"] = datetime.now()
-        self.run_meta["duration"] = (
-            self.run_meta["end_time"] - self.run_meta["start_time"]
-        ).total_seconds()
 
         return response_message
 

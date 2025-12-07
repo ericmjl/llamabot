@@ -195,7 +195,6 @@ class AgentBot:
         from llamabot.recorder import (
             Span,
             get_current_span,
-            is_span_recording_enabled,
         )
 
         # Initialize shared state if it doesn't exist
@@ -223,48 +222,42 @@ class AgentBot:
         if "iteration_count" not in self.shared:
             self.shared["iteration_count"] = 0
 
-        # Add span support for agent execution
-        if is_span_recording_enabled():
-            import uuid
+        # Create span for agent execution
+        import uuid
 
-            # Check if there's a current span - if so, create a child span
-            current_span = get_current_span()
-            if current_span:
-                # Create child span using parent's trace_id
-                agent_span = Span(
-                    "agentbot_call",
-                    trace_id=current_span.trace_id,
-                    parent_span_id=current_span.span_id,
-                    query=query,
-                    max_iterations=self.max_iterations,
-                )
-            else:
-                # No current span - create a new trace
-                new_trace_id = str(uuid.uuid4())
-                agent_span = Span(
-                    "agentbot_call",
-                    trace_id=new_trace_id,
-                    query=query,
-                    max_iterations=self.max_iterations,
-                )
-                # Track trace_id for this bot instance (only for root spans)
-                if agent_span.trace_id not in self._trace_ids:
-                    self._trace_ids.append(agent_span.trace_id)
-            with agent_span:
-                # Store trace_id in shared state so nodes can access it
-                self.shared["trace_id"] = agent_span.trace_id
-                # Run the flow
-                self.flow.run(self.shared)
-                # Record result in span
-                result = self.shared.get("result")
-                agent_span["result"] = str(result)[:200] if result else None
-                agent_span["iterations"] = self.shared.get("iteration_count", 0)
-                return result
+        # Check if there's a current span - if so, create a child span
+        current_span = get_current_span()
+        if current_span:
+            # Create child span using parent's trace_id
+            agent_span = Span(
+                "agentbot_call",
+                trace_id=current_span.trace_id,
+                parent_span_id=current_span.span_id,
+                query=query,
+                max_iterations=self.max_iterations,
+            )
         else:
-            # Run the flow without spans
+            # No current span - create a new trace
+            new_trace_id = str(uuid.uuid4())
+            agent_span = Span(
+                "agentbot_call",
+                trace_id=new_trace_id,
+                query=query,
+                max_iterations=self.max_iterations,
+            )
+            # Track trace_id for this bot instance (only for root spans)
+            if agent_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(agent_span.trace_id)
+        with agent_span:
+            # Store trace_id in shared state so nodes can access it
+            self.shared["trace_id"] = agent_span.trace_id
+            # Run the flow
             self.flow.run(self.shared)
-            # Retrieve result from shared state (set by terminal nodes)
-            return self.shared.get("result")
+            # Record result in span
+            result = self.shared.get("result")
+            agent_span["result"] = str(result)[:200] if result else None
+            agent_span["iterations"] = self.shared.get("iteration_count", 0)
+            return result
 
     def _display_(self):
         """Display the agent's flow graph as a Mermaid diagram.
