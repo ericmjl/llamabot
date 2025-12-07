@@ -147,19 +147,27 @@ def _(mo, response):
 def _(mo):
     mo.md(
         """
-    ## Display Spans from Bot Instance
+        ## Display Spans from Bot Instance
 
-    Each bot instance tracks its own spans. When you display the bot object
-    (as the last expression in a cell), it automatically shows the spans
-    visualization from the most recent call:
-    """
+        Each bot instance tracks its own spans. You can access them via the `.spans` property,
+        which returns a `SpanList` that displays all spans from the bot's calls.
+
+        Alternatively, displaying the bot object directly also shows spans (for SimpleBot and StructuredBot).
+        """
     )
     return
 
 
 @app.cell
 def _(bot):
-    # Display the bot object - this automatically shows spans from the last call
+    # Access spans via the .spans property (unified interface for all bots)
+    bot.spans
+    return
+
+
+@app.cell
+def _(bot):
+    # Display the bot object directly - also shows spans (for SimpleBot/StructuredBot)
     bot
     return
 
@@ -242,7 +250,8 @@ def _(span):
 
 @app.cell
 def _(bot):
-    bot
+    # Display spans using the .spans property
+    bot.spans
     return
 
 
