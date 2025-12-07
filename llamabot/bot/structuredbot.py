@@ -32,12 +32,8 @@ from llamabot.config import default_language_model
 from llamabot.prompt_manager import prompt
 from llamabot.recorder import (
     Span,
-    build_hierarchy,
-    generate_span_html,
     get_caller_variable_name,
     get_current_span,
-    get_spans,
-    span_to_dict,
     sqlite_log,
 )
 
@@ -283,44 +279,7 @@ class StructuredBot(SimpleBot):
 
         :return: HTML string for displaying spans in marimo notebooks
         """
-        if not self._trace_ids:
-            return '<div style="padding: 1rem; color: #2E3440;">No spans recorded for this bot instance yet.</div>'
-
-        # Collect all spans from all trace_ids for this bot instance
-        all_spans_objects = []
-        for trace_id in self._trace_ids:
-            spans = get_spans(trace_id=trace_id)
-            # SpanList is iterable, so we can extend with it
-            all_spans_objects.extend(spans)
-
-        if not all_spans_objects:
-            return '<div style="padding: 1rem; color: #2E3440;">No spans found in database for this bot instance.</div>'
-
-        # Convert Span objects to dictionaries for visualization
-        all_spans = [span_to_dict(s) for s in all_spans_objects]
-
-        # Find root spans (spans with no parent) to use as current span
-        # Use the most recent root span (last one in the list)
-        root_spans = [s for s in all_spans if s.get("parent_span_id") is None]
-        if root_spans:
-            # Use the last root span (most recent) as the current span for highlighting
-            current_span_dict = root_spans[-1]
-            current_span_id = current_span_dict["span_id"]
-        else:
-            # Fallback to last span if no root spans found
-            current_span_dict = all_spans[-1]
-            current_span_id = current_span_dict["span_id"]
-
-        # Build hierarchical structure
-        trace_tree = build_hierarchy(all_spans)
-
-        # Generate HTML visualization
-        return generate_span_html(
-            span_dict=current_span_dict,
-            all_spans=all_spans,
-            trace_tree=trace_tree,
-            current_span_id=current_span_id,
-        )
+        return self.spans._repr_html_()
 
     def _repr_html_(self) -> str:
         """Return HTML representation for marimo display.

@@ -27,12 +27,10 @@ from llamabot.components.messages import (
 from llamabot.config import default_language_model
 from llamabot.recorder import (
     Span,
-    build_hierarchy,
-    generate_span_html,
+    SpanList,
     get_caller_variable_name,
     get_current_span,
     get_spans,
-    span_to_dict,
     sqlite_log,
 )
 
@@ -213,16 +211,17 @@ class SimpleBot:
 
             return response_message
 
-    def display_spans(self) -> str:
-        """Display all spans from all bot calls as HTML.
+    @property
+    def spans(self) -> SpanList:
+        """Return all spans from all bot calls as a SpanList.
 
         Queries spans associated with all trace_ids from this bot instance
-        and generates an HTML visualization showing all spans from all calls.
+        and returns them as a SpanList, which can be displayed in marimo notebooks.
 
-        :return: HTML string for displaying spans in marimo notebooks
+        :return: SpanList containing all spans from this bot instance
         """
         if not self._trace_ids:
-            return '<div style="padding: 1rem; color: #2E3440;">No spans recorded for this bot instance yet.</div>'
+            return SpanList([])
 
         # Collect all spans from all trace_ids for this bot instance
         all_spans_objects = []
@@ -231,34 +230,17 @@ class SimpleBot:
             # SpanList is iterable, so we can extend with it
             all_spans_objects.extend(spans)
 
-        if not all_spans_objects:
-            return '<div style="padding: 1rem; color: #2E3440;">No spans found in database for this bot instance.</div>'
+        return SpanList(all_spans_objects)
 
-        # Convert Span objects to dictionaries for visualization
-        all_spans = [span_to_dict(s) for s in all_spans_objects]
+    def display_spans(self) -> str:
+        """Display all spans from all bot calls as HTML.
 
-        # Find root spans (spans with no parent) to use as current span
-        # Use the most recent root span (last one in the list)
-        root_spans = [s for s in all_spans if s.get("parent_span_id") is None]
-        if root_spans:
-            # Use the last root span (most recent) as the current span for highlighting
-            current_span_dict = root_spans[-1]
-            current_span_id = current_span_dict["span_id"]
-        else:
-            # Fallback to last span if no root spans found
-            current_span_dict = all_spans[-1]
-            current_span_id = current_span_dict["span_id"]
+        Queries spans associated with all trace_ids from this bot instance
+        and generates an HTML visualization showing all spans from all calls.
 
-        # Build hierarchical structure
-        trace_tree = build_hierarchy(all_spans)
-
-        # Generate HTML visualization
-        return generate_span_html(
-            span_dict=current_span_dict,
-            all_spans=all_spans,
-            trace_tree=trace_tree,
-            current_span_id=current_span_id,
-        )
+        :return: HTML string for displaying spans in marimo notebooks
+        """
+        return self.spans._repr_html_()
 
     def _repr_html_(self) -> str:
         """Return HTML representation for marimo display.

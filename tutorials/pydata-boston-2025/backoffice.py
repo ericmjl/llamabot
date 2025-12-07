@@ -36,7 +36,7 @@ def _():
     return (os,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     # Building LLM Agents: Workflow-First Approach
@@ -55,27 +55,13 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Setup Verification
 
     This tutorial uses a modal-hosted Ollama endpoint.
     Make sure you have access to the endpoint URL.
-
-    For local development, you can use `gpt-4.1` or another vision-capable model.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ## Span-Based Observability
-
-    This tutorial demonstrates span-based logging for observability.
-    Spans automatically track bot operations, tool executions, and decision-making.
-    We'll also add manual spans to custom workflows for complete trace visibility.
     """)
     return
 
@@ -84,14 +70,13 @@ def _(mo):
 def _():
     from llamabot import (
         get_current_span,
-        get_span_tree,
         get_spans,
         span,
     )
-    return get_current_span, get_span_tree, get_spans, span
+    return get_current_span, get_spans, span
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Marimo Notebooks
@@ -106,7 +91,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ---
@@ -114,7 +99,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Part 1: Workflow Mapping
@@ -131,7 +116,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Workflow Diagram
@@ -139,7 +124,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.mermaid(
         """
@@ -153,7 +138,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Agent Breakdown
@@ -161,11 +146,13 @@ def _(mo):
     1. **Receipt Processor**: PDF → structured data (for expense tracking)
     2. **Invoice Writer**: natural language → formatted invoice (for billing clients)
     3. **Coordinator**: orchestrates both agents
+
+    Note that each corresponds to a **testable workflow that we can build first**, upon which we add agentic orchestration.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Prerequisites (Critical!)
@@ -176,12 +163,12 @@ def _(mo):
     2. **API/storage access**: Ensure access to storage APIs (Notion, database, etc.) BEFORE building agents that store data
     3. **Template/form definition**: Invoice generation requires a template/form structure that AI fills out
 
-    **Workflow-first means requirements-first.**
+    In the interest of time, within this tutorial, we will skip these definitions, but I am happy to show an example from my own personal life (expenses tracking) afterwards.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ---
@@ -189,7 +176,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Part 2: Receipt Processor Agent
@@ -199,7 +186,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Two-Step Process: OCR + Structuring
@@ -230,19 +217,6 @@ def _(mo):
 def _():
     from pydantic import BaseModel
     return (BaseModel,)
-
-
-@app.cell
-def _(BaseModel):
-    class ReceiptData(BaseModel):
-        """Receipt data schema - must be defined BEFORE building extraction agent."""
-
-        vendor: str
-        date: str
-        amount: float
-        category: str
-        description: str
-    return (ReceiptData,)
 
 
 @app.cell
@@ -345,13 +319,26 @@ def _(lmb, os):
 
 
 @app.cell
+def _(BaseModel):
+    class ReceiptData(BaseModel):
+        """Receipt data schema - must be defined BEFORE building extraction agent."""
+
+        vendor: str
+        date: str
+        amount: float
+        category: str
+        description: str
+    return (ReceiptData,)
+
+
+@app.cell
 def _(ReceiptData, lmb, os, receipt_extraction_sysprompt):
     # Step 2: Structure the data (using a model that supports structured outputs)
     # This bot takes the OCR text and structures it according to ReceiptData schema
     receipt_structuring_bot = lmb.StructuredBot(
         system_prompt=receipt_extraction_sysprompt(),
         pydantic_model=ReceiptData,
-        model_name="ollama_chat/gemma3n:latest",  # Or use "gpt-4.1" if available
+        model_name="ollama_chat/gemma3n:latest",
         api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (receipt_structuring_bot,)
@@ -469,12 +456,14 @@ def _(ReceiptData, process_receipt):
 
 @app.cell
 def _(ocr_bot):
-    ocr_bot
+    # Display spans from the bot using the .spans property
+    ocr_bot.spans
     return
 
 
 @app.cell
 def _(get_spans):
+    # Alternative: Query spans directly from the database
     get_spans(operation_name="process_receipt")
     return
 
@@ -487,7 +476,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Part 3: Invoice Writer Agent
@@ -500,6 +489,9 @@ def _(mo):
 
 @app.cell
 def _(BaseModel):
+    import textwrap
+
+
     class InvoiceData(BaseModel):
         """Invoice data schema - form structure for invoice generation."""
 
@@ -511,6 +503,42 @@ def _(BaseModel):
         project_description: str
         amount: float
         notes: str = ""
+
+        def _repr_html_(self) -> str:
+            """Return HTML representation for marimo display."""
+            return textwrap.dedent(f"""
+            <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 2px;">Invoice</div>
+                    <div style="font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px;">{self.invoice_number}</div>
+                </div>
+                <div style="padding: 40px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Issue Date</h3>
+                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.issue_date}</p>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Due Date</h3>
+                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.due_date}</p>
+                        </div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 30px;">
+                        <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Bill To</h3>
+                        <p style="font-size: 16px; color: #212529; line-height: 1.6; margin: 0;">{self.client_name}<br>{self.client_address}</p>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #28a745;">
+                        <h3 style="font-size: 18px; font-weight: 600; color: #212529; margin-bottom: 12px; margin: 0 0 12px 0;">Project Description</h3>
+                        <p style="font-size: 16px; color: #495057; line-height: 1.7; margin: 0;">{self.project_description}</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px;">Amount Due</div>
+                        <div style="font-size: 48px; font-weight: 700; letter-spacing: -2px;">${self.amount:,.2f}</div>
+                    </div>
+                    {f'<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-top: 20px;"><strong style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #856404; display: block; margin-bottom: 8px;">Notes</strong><p style="color: #856404; line-height: 1.6; margin: 0;">{self.notes}</p></div>' if self.notes else ""}
+                </div>
+            </div>
+            """).strip()
     return (InvoiceData,)
 
 
@@ -550,10 +578,27 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
             :200
         ]  # Truncate for storage
 
+        from datetime import datetime, timedelta
+
+        # Calculate today's date and 30 business days from today
+        today = datetime.now().date()
+
+        # Calculate 30 business days (excluding weekends)
+        business_days_added = 0
+        due_date = today
+        while business_days_added < 30:
+            due_date += timedelta(days=1)
+            # Check if it's a weekday (Monday=0, Sunday=6)
+            if due_date.weekday() < 5:  # Monday-Friday
+                business_days_added += 1
+
         prompt = f"""Generate an invoice based on this description:
         {invoice_description}
 
-        Use today's date as issue_date and 30 days from today as due_date.
+        IMPORTANT DATE RULES:
+        - issue_date: MUST be {today.strftime("%Y-%m-%d")} (today's date)
+        - due_date: MUST be {due_date.strftime("%Y-%m-%d")} (30 business days from today, which is {today.strftime("%Y-%m-%d")})
+
         Generate a professional invoice number in format INV-YYYY-XXX.
         Extract client information, project details, and amount from the description.
         """
@@ -565,48 +610,16 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
     return (generate_invoice,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(InvoiceData, get_current_span, span):
     @span
     def render_invoice_html(invoice: InvoiceData) -> str:
-        """Render invoice as beautiful HTML."""
-        s = get_current_span()
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; }}
-                .invoice-header {{ border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }}
-                .invoice-number {{ font-size: 24px; font-weight: bold; }}
-                .invoice-details {{ margin: 20px 0; }}
-                .invoice-details table {{ width: 100%; border-collapse: collapse; }}
-                .invoice-details td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-                .invoice-details td:first-child {{ font-weight: bold; width: 150px; }}
-                .amount {{ font-size: 32px; font-weight: bold; color: #2563eb; margin: 20px 0; }}
-                .project-description {{ margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px; }}
-            </style>
-        </head>
-        <body>
-            <div class="invoice-header">
-                <div class="invoice-number">Invoice {invoice.invoice_number}</div>
-            </div>
-            <div class="invoice-details">
-                <table>
-                    <tr><td>Issue Date:</td><td>{invoice.issue_date}</td></tr>
-                    <tr><td>Due Date:</td><td>{invoice.due_date}</td></tr>
-                    <tr><td>Bill To:</td><td>{invoice.client_name}<br>{invoice.client_address}</td></tr>
-                </table>
-            </div>
-            <div class="project-description">
-                <h3>Project Description</h3>
-                <p>{invoice.project_description}</p>
-            </div>
-            <div class="amount">Amount Due: ${invoice.amount:,.2f}</div>
-            {f'<div class="notes"><p><strong>Notes:</strong> {invoice.notes}</p></div>' if invoice.notes else ""}
-        </body>
-        </html>
+        """Render invoice as beautiful HTML.
+
+        This function delegates to InvoiceData._repr_html_() for consistency.
         """
+        s = get_current_span()
+        html = invoice._repr_html_()
         s["invoice_number"] = invoice.invoice_number
         s["html_length"] = len(html)
         return html
@@ -653,7 +666,7 @@ def _(generate_invoice, nodeify, render_invoice_html, span, tool):
     return (write_invoice,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Test: Invoice Writer
@@ -664,14 +677,13 @@ def _(mo):
 
 
 @app.cell
-def _(generate_invoice, mo, render_invoice_html):
+def _(generate_invoice):
     # Test invoice writer with natural language description
     # mo.stop(True)
     # Uncomment to test:
     test_description = "Invoice for Acme Corporation, web development project completed in January 2025, amount $5000, client address: 123 Main St, Boston MA 02101"
     test_invoice = generate_invoice(test_description)
     test_invoice
-    mo.Html(render_invoice_html(test_invoice))
     return
 
 
@@ -694,7 +706,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(lmb):
     @lmb.prompt("system")
     def coordinator_sysprompt():
@@ -751,18 +763,50 @@ def _(lmb):
            - If the user doesn't provide a file path, ask them for it using respond_to_user()
 
         2. **Invoice Generation** (MULTI-STEP REQUIRED):
-           - Do NOT generate invoices with assumed/made-up data
-           - If the user asks to "create an invoice" without sufficient details:
-             STEP 1: Use respond_to_user() to ask for missing information:
-               * Client name and address
-               * Project description
-               * Amount
-               * Due date (optional, defaults to 30 days)
-             STEP 2: Wait for user's next message with the details
-           - If the user provides sufficient details:
-             STEP 1: Call write_invoice() with the invoice description
-             STEP 2: IMMEDIATELY call return_object_to_user('invoice_html') to return the HTML to the user
-           - Do NOT stop after write_invoice() - you MUST also return the invoice HTML
+           **CRITICAL**: Each invoice request is INDEPENDENT. NEVER reuse information from previous requests unless explicitly stated by the user.
+
+           **REQUIRED Information Checklist** - Before calling write_invoice(), you MUST verify ALL of these are present:
+           - ✅ Client name (specific name, NOT "my client", "the client", or vague references)
+           - ✅ Client address (full address with street, city, state, zip)
+           - ✅ Project description (specific description of work/services)
+           - ✅ Amount (specific dollar amount, NOT ranges or estimates)
+
+           **Date Handling (AUTOMATIC - Do NOT ask user for dates):**
+           - **Issuance date**: ALWAYS today's date. Use the `today_date` tool to get the current date before calling write_invoice()
+           - **Due date**: ALWAYS 30 BUSINESS DAYS (not calendar days) from the issuance date. Calculate this automatically - do NOT ask the user for a due date
+           - The write_invoice tool will automatically handle date calculations, but you should include today's date in the description for clarity
+
+           **If ANY required information is missing or vague:**
+           STEP 1: Use respond_to_user() to ask SPECIFICALLY for the missing information.
+           DO NOT make assumptions or use information from previous requests.
+           Example: "I need a few details to create this invoice:
+           - What is the client's full name?
+           - What is the client's complete address (street, city, state, zip)?
+           - What is the specific amount for this invoice?
+           - What is the project description or services provided?"
+           STEP 2: Wait for user's response with ALL required details
+
+           **Only if ALL required information is explicitly provided:**
+           STEP 1: Call `today_date()` tool to get today's date (required for invoice generation)
+           STEP 2: Call write_invoice() with the complete invoice description including ALL required fields.
+                   The description should mention that issuance date is today and due date is 30 business days from today.
+           STEP 3: IMMEDIATELY call return_object_to_user('invoice_html') to return the HTML to the user
+           STEP 4: Call respond_to_user() to confirm completion
+
+           **Examples of INSUFFICIENT requests that require clarification:**
+           - "Create an invoice for my client" → Missing: client name, address, amount, project description
+           - "Create an invoice for consulting services" → Missing: client name, address, amount
+           - "Generate an invoice for $5000" → Missing: client name, address, project description
+           - "Create an invoice for Acme Corp" → Missing: address, amount, project description
+
+           **Example of SUFFICIENT request:**
+           - "Create an invoice for Acme Corp at 123 Main St, Boston MA 02101, web development project, $5000"
+
+           **NEVER:**
+           - Reuse client names, amounts, or addresses from previous requests
+           - Assume "my client" refers to a previous client
+           - Generate invoices with partial information
+           - Make up or estimate missing information
 
         3. **Internal Concerns** (CONVERSATIONAL MULTI-STEP WORKFLOW):
            - **Act as a listening partner**: Your goal is to help the user express their concern fully
@@ -847,10 +891,22 @@ def _(AgentBot, coordinator_sysprompt, os, process_receipt, write_invoice):
     coordinator_bot = AgentBot(
         tools=[process_receipt, write_invoice],
         system_prompt=coordinator_sysprompt(),
-        model_name="ollama_chat/gemma3n:latest",
+        model_name="ollama_chat/deepseek-r1:32b",
         api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (coordinator_bot,)
+
+
+@app.cell
+def _(coordinator_bot):
+    coordinator_bot
+    return
+
+
+@app.cell
+def _(coordinator_bot):
+    coordinator_bot.spans
+    return
 
 
 @app.cell
@@ -936,6 +992,12 @@ def _(chat, mo):
 
 
 @app.cell
+def _(coordinator_bot):
+    coordinator_bot.spans
+    return
+
+
+@app.cell
 def _(mo):
     mo.md("""
     ### Test: Coordinator Agent
@@ -955,7 +1017,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### How the Coordinator Works
@@ -969,136 +1031,6 @@ def _(mo):
 
     This is the agent-as-tool pattern: agents use other agents as tools.
     """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ---
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ## Span Visualization & Observability
-
-    Now that we've enabled span recording, let's explore the spans that were automatically created.
-    Spans provide complete trace visibility into the agent workflow:
-
-    - **Automatic spans**: Created by bots (SimpleBot, StructuredBot, AgentBot) and tools
-    - **Manual spans**: Created by our custom workflow functions
-    - **Nested structure**: Spans form a hierarchy showing the complete execution flow
-
-    The trace hierarchy looks like:
-    `coordinator_chat_turn → agentbot_call → decision → tool_call → process_receipt → convert_pdf_to_images → ocr_bot, receipt_structuring_bot`
-    """)
-    return
-
-
-@app.cell
-def _(get_spans, mo):
-    # Query all spans
-    all_spans = get_spans()
-    mo.md(f"**Total spans recorded:** {len(all_spans)}")
-    return (all_spans,)
-
-
-@app.cell
-def _(all_spans):
-    all_spans
-    return
-
-
-@app.cell
-def _(get_spans, mo):
-    # Query spans by category
-    receipt_spans = get_spans(category="receipt_processing")
-    invoice_spans = get_spans(category="invoice_generation")
-    tool_spans = get_spans(operation_name="tool_call")
-
-    mo.md(f"""
-    **Spans by category:**
-    - Receipt processing: {len(receipt_spans)}
-    - Invoice generation: {len(invoice_spans)}
-    - Tool executions: {len(tool_spans)}
-    """)
-    return
-
-
-@app.cell
-def _(all_spans, get_span_tree, mo):
-    # Display span tree for the most recent trace
-    if all_spans:
-        # Get the most recent trace_id
-        trace_id = all_spans[-1]["trace_id"]
-        span_tree = get_span_tree(trace_id)
-
-        tree_display = mo.md(f"""
-        **Span Tree for Trace:** `{trace_id}`
-
-        ```
-        {span_tree}
-        ```
-        """)
-    else:
-        tree_display = mo.md(
-            "No spans found. Run some operations first to see spans."
-        )
-
-    tree_display
-    return
-
-
-@app.cell
-def _(all_spans, mo):
-    # Show span statistics
-    if all_spans:
-        categories = {}
-        operations = {}
-        total_duration = 0
-
-        for span_record in all_spans:
-            # Count by category
-            category = span_record.get("attributes", {}).get(
-                "category", "uncategorized"
-            )
-            categories[category] = categories.get(category, 0) + 1
-
-            # Count by operation
-            op_name = span_record.get("operation_name", "unknown")
-            operations[op_name] = operations.get(op_name, 0) + 1
-
-            # Sum durations
-            if span_record.get("duration_ms"):
-                total_duration += span_record["duration_ms"]
-
-        category_list = "\n".join(
-            [f"- {k}: {v}" for k, v in sorted(categories.items())]
-        )
-        operation_list = "\n".join(
-            [f"- {k}: {v}" for k, v in sorted(operations.items())[:10]]
-        )
-
-        stats_display = mo.md(f"""
-        **Span Statistics:**
-
-        **By Category:**
-        {category_list}
-
-        **By Operation (top 10):**
-        {operation_list}
-
-        **Total Duration:** {total_duration:.2f} ms
-        """)
-    else:
-        stats_display = mo.md(
-            "No spans found. Run some operations first to see statistics."
-        )
-
-    stats_display
     return
 
 
@@ -1443,12 +1375,7 @@ def _(
             query_complaints,
         ],
         system_prompt=coordinator_sysprompt(),
-        model_name="gpt-4.1",
-        # model_name="ollama_chat/qwen3:30b",  # works!
-        # model_name="ollama/deepseek-r1:14b", # failed on being unhelpful!
-        # model_name="ollama_chat/deepseek-r1:14b", # failed on being stuck in a loop!
-        # model_name="ollama_chat/qwen3-vl:latest", # doesn't work!
-        # model_name="ollama_chat/phi4:latest", # doesn't work!
+        model_name="ollama_chat/gemma3n:latest",
         api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (coordinator_with_complaints,)
@@ -1456,7 +1383,15 @@ def _(
 
 @app.cell
 def _(coordinator_with_complaints):
-    coordinator_with_complaints.shared
+    # AgentBot shows the PocketFlow graph structure when displayed directly
+    coordinator_with_complaints
+    return
+
+
+@app.cell
+def _(coordinator_with_complaints):
+    # Access spans via the .spans property (works for all bots)
+    coordinator_with_complaints.spans
     return
 
 
@@ -1535,6 +1470,34 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md("""
+    ### Deploying LLMs on Modal
+
+    This tutorial uses a Modal-hosted Ollama endpoint for demonstration.
+    To deploy your own LLM hosting infrastructure on Modal:
+
+    **Repository**: [ollama-on-modal](https://github.com/ericmjl/ollama-on-modal)
+
+    This repository contains:
+    - Complete setup instructions for hosting Ollama models on Modal
+    - Pre-configured deployments for popular models
+    - Cost-effective cloud hosting for LLM inference
+    - Production-ready infrastructure patterns
+
+    **Why Modal?**
+    - Pay-per-use pricing (no idle costs)
+    - Automatic scaling
+    - Easy deployment with Python
+    - GPU access for fast inference
+
+    Follow the repository's README to set up your own Modal endpoint and update
+    the `TUTORIAL_API_BASE` environment variable in this notebook.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
     ### Best Practices
 
     1. **Workflow-first**: Always map workflows before coding
@@ -1546,7 +1509,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Q&A

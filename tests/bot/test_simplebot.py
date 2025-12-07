@@ -32,7 +32,7 @@ from llamabot.components.messages import (
     HumanMessage,
     SystemMessage,
 )
-from llamabot.recorder import enable_span_recording, get_spans, span
+from llamabot.recorder import SpanList, enable_span_recording, get_spans, span
 
 # Helper strategies for hypothesis testing
 valid_stream_targets = st.one_of(
@@ -946,3 +946,95 @@ def test_bot_uses_variable_name_even_when_accessed_via_container(tmp_path, monke
     root_spans = [s for s in spans if s.parent_span_id is None]
     # Should use variable name "bot" (not generic name)
     assert root_spans[0].operation_name == "bot"
+
+
+def test_bot_spans_property_returns_spanlist(tmp_path, monkeypatch):
+    """Test that bot.spans property returns a SpanList."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Before any calls, spans should be empty SpanList
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) == 0
+
+    # Make a bot call
+    bot("First call")
+
+    # After call, spans should contain spans
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) > 0
+
+    # Verify spans are iterable
+    span_list = list(spans)
+    assert len(span_list) > 0
+    assert all(hasattr(s, "span_id") for s in span_list)
+
+
+def test_bot_spans_property_includes_all_calls(tmp_path, monkeypatch):
+    """Test that bot.spans includes spans from all bot calls."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Make multiple bot calls
+    bot("First call")
+    bot("Second call")
+    bot("Third call")
+
+    # Get spans via property
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) >= 3  # At least one span per call
+
+    # Verify all trace_ids are represented
+    span_trace_ids = {s.trace_id for s in spans}
+    assert len(span_trace_ids) == 3  # One trace_id per call
+    assert span_trace_ids == set(bot._trace_ids)
+
+
+def test_bot_display_spans_uses_spans_property(tmp_path, monkeypatch):
+    """Test that display_spans() uses the .spans property internally."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = SimpleBot(system_prompt="Test prompt", mock_response="Response")
+
+    # Make a bot call
+    bot("Test call")
+
+    # Get spans via property
+    spans = bot.spans
+    assert len(spans) > 0
+
+    # Get HTML from display_spans (which should use .spans internally)
+    html = bot.display_spans()
+
+    # Verify HTML contains span information
+    assert len(html) > 0
+    # Verify that spans from .spans property are represented in HTML
+    span_ids_in_html = [s.span_id for s in spans if s.span_id in html]
+    assert len(span_ids_in_html) > 0
+
+
+def test_bot_spans_property_empty_when_no_calls():
+    """Test that bot.spans returns empty SpanList when no calls have been made."""
+    bot = SimpleBot(system_prompt="Test prompt")
+
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) == 0
+    assert list(spans) == []

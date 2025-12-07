@@ -9,6 +9,7 @@ from llamabot.bot.agentbot import AgentBot
 from llamabot.components.pocketflow import DECIDE_NODE_ACTION, DecideNode, nodeify
 from llamabot.components.tools import tool
 from llamabot.prompt_library.agentbot import decision_bot_system_prompt
+from llamabot.recorder import SpanList, enable_span_recording
 
 
 @nodeify(loopback_name=DECIDE_NODE_ACTION)
@@ -734,3 +735,62 @@ def test_agentbot_max_iterations_force_terminate_flag():
         # Verify that _force_terminate flag was set in shared state
         # The flag is set in DecideNode.prep() when max_iterations is exceeded
         assert bot.shared.get("_force_terminate", False) is True
+
+
+def test_agentbot_spans_property_returns_spanlist(tmp_path, monkeypatch):
+    """Test that AgentBot.spans property returns a SpanList."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = AgentBot(tools=[echo_function], model_name="gpt-4.1")
+
+    # Before any calls, spans should be empty SpanList
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) == 0
+
+    # Make a bot call (will use mocked completion)
+    with patch("llamabot.bot.toolbot.make_response") as mock_make_response:
+        mock_response = MagicMock()
+        mock_response.content = "test"
+        mock_response.tool_calls = []
+        mock_make_response.return_value = mock_response
+
+        try:
+            bot("test query")
+        except (ValueError, AttributeError):
+            # Expected to fail due to mocking, but spans should still be tracked
+            pass
+
+    # After call attempt, spans property should still work
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+
+
+def test_agentbot_spans_property_empty_when_no_calls():
+    """Test that AgentBot.spans returns empty SpanList when no calls have been made."""
+    bot = AgentBot(tools=[echo_function], model_name="gpt-4.1")
+
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) == 0
+    assert list(spans) == []
+
+
+def test_agentbot_spans_property_has_unified_interface():
+    """Test that AgentBot.spans provides the same interface as SimpleBot.spans."""
+    bot = AgentBot(tools=[echo_function], model_name="gpt-4.1")
+
+    # Verify .spans property exists
+    assert hasattr(bot, "spans")
+
+    # Verify it returns SpanList
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+
+    # Verify SpanList is iterable
+    assert hasattr(spans, "__iter__")
+    assert hasattr(spans, "__len__")

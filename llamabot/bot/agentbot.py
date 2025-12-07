@@ -287,23 +287,19 @@ class AgentBot:
 
         return mo.mermaid(flow_to_mermaid(self.flow))
 
-    def display_spans(self) -> str:
-        """Display all spans from all bot calls as HTML.
+    @property
+    def spans(self):
+        """Return all spans from all bot calls as a SpanList.
 
         Queries spans associated with all trace_ids from this bot instance
-        and generates an HTML visualization showing all spans from all calls.
+        and returns them as a SpanList, which can be displayed in marimo notebooks.
 
-        :return: HTML string for displaying spans in marimo notebooks
+        :return: SpanList containing all spans from this bot instance
         """
-        from llamabot.recorder import (
-            build_hierarchy,
-            generate_span_html,
-            get_spans,
-            span_to_dict,
-        )
+        from llamabot.recorder import SpanList, get_spans
 
         if not self._trace_ids:
-            return '<div style="padding: 1rem; color: #2E3440;">No spans recorded for this bot instance yet.</div>'
+            return SpanList([])
 
         # Collect all spans from all trace_ids for this bot instance
         all_spans_objects = []
@@ -312,42 +308,41 @@ class AgentBot:
             # SpanList is iterable, so we can extend with it
             all_spans_objects.extend(spans)
 
-        if not all_spans_objects:
-            return '<div style="padding: 1rem; color: #2E3440;">No spans found in database for this bot instance.</div>'
+        return SpanList(all_spans_objects)
 
-        # Convert Span objects to dictionaries for visualization
-        all_spans = [span_to_dict(s) for s in all_spans_objects]
+    def display_spans(self) -> str:
+        """Display all spans from all bot calls as HTML.
 
-        # Find root spans (spans with no parent) to use as current span
-        # Use the most recent root span (last one in the list)
-        root_spans = [s for s in all_spans if s.get("parent_span_id") is None]
-        if root_spans:
-            # Use the last root span (most recent) as the current span for highlighting
-            current_span_dict = root_spans[-1]
-            current_span_id = current_span_dict["span_id"]
-        else:
-            # Fallback to last span if no root spans found
-            current_span_dict = all_spans[-1]
-            current_span_id = current_span_dict["span_id"]
+        Queries spans associated with all trace_ids from this bot instance
+        and generates an HTML visualization showing all spans from all calls.
 
-        # Build hierarchical structure
-        trace_tree = build_hierarchy(all_spans)
-
-        # Generate HTML visualization
-        return generate_span_html(
-            span_dict=current_span_dict,
-            all_spans=all_spans,
-            trace_tree=trace_tree,
-            current_span_id=current_span_id,
-        )
+        :return: HTML string for displaying spans in marimo notebooks
+        """
+        return self.spans._repr_html_()
 
     def _repr_html_(self) -> str:
         """Return HTML representation for marimo display.
 
         When an AgentBot object is the last expression in a marimo cell,
-        this method is automatically called to display the spans visualization
-        from the most recent bot call.
+        this method is automatically called to display the PocketFlow graph structure.
 
-        :return: HTML string for displaying spans
+        To view spans instead, use the `.spans` property: `bot.spans`
+
+        :return: HTML string for displaying the PocketFlow graph
         """
-        return self.display_spans()
+        # Return the graph visualization instead of spans
+        # Users can access spans via bot.spans property
+        try:
+            import marimo as mo
+        except ImportError:
+            return '<div style="padding: 1rem; color: #2E3440;">marimo is required for AgentBot visualization. Please install marimo.</div>'
+        from llamabot.components.pocketflow import flow_to_mermaid
+
+        # Get the mermaid diagram and convert to HTML
+        mermaid_diagram = flow_to_mermaid(self.flow)
+        mermaid_element = mo.mermaid(mermaid_diagram)
+        # Marimo elements have _repr_html_() method
+        if hasattr(mermaid_element, "_repr_html_"):
+            return mermaid_element._repr_html_()
+        # Fallback: wrap mermaid diagram in HTML
+        return f'<div class="mermaid">{mermaid_diagram}</div>'

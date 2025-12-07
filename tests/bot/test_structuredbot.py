@@ -1,13 +1,14 @@
 """Tests for StructuredBot."""
 
 import json
-import pytest
-from typing import Optional, List, Any, Dict
+from typing import Any, Dict, List, Optional
 
+import pytest
 from pydantic import BaseModel, Field, ValidationError
 
 from llamabot.bot.structuredbot import StructuredBot
 from llamabot.components.messages import SystemMessage
+from llamabot.recorder import SpanList, enable_span_recording
 
 
 class TestModel(BaseModel):
@@ -222,3 +223,44 @@ def test_structuredbot_max_attempts_reached(mocker):
 
     assert "number_field" in str(exc_info.value)
     assert "greater than" in str(exc_info.value)
+
+
+def test_structuredbot_spans_property_returns_spanlist(tmp_path, monkeypatch):
+    """Test that StructuredBot.spans property returns a SpanList."""
+    enable_span_recording()
+    db_path = tmp_path / "test_spans.db"
+
+    # Patch the database path to use our test database
+    monkeypatch.setattr("llamabot.recorder.find_or_set_db_path", lambda x: db_path)
+
+    bot = StructuredBot(
+        system_prompt="Return data according to the schema.",
+        pydantic_model=TestModel,
+        mock_response='{"required_field": "test", "number_field": 1}',
+    )
+
+    # Before any calls, spans should be empty SpanList
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) == 0
+
+    # Make a bot call
+    bot("Test query")
+
+    # After call, spans should contain spans
+    spans = bot.spans
+    assert isinstance(spans, SpanList)
+    assert len(spans) > 0
+
+
+def test_structuredbot_spans_property_inherited_from_simplebot():
+    """Test that StructuredBot inherits .spans property from SimpleBot."""
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=TestModel,
+    )
+
+    # Verify .spans property exists and returns SpanList
+    assert hasattr(bot, "spans")
+    spans = bot.spans
+    assert isinstance(spans, SpanList)

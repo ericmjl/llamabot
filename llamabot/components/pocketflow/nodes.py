@@ -436,26 +436,65 @@ class DecideNode(Node):
 
         from llamabot.bot.toolbot import ToolBot
 
+        # For Ollama models, enhance the system prompt to explicitly require tool calls
+        # since they don't support tool_choice='required'
+        is_ollama_model = self.model_name.startswith(
+            "ollama"
+        ) or self.model_name.startswith("ollama_chat")
+
+        if is_ollama_model:
+            # Append explicit requirement for tool calls to the system prompt
+            tool_requirement_suffix = """
+
+**CRITICAL FOR OLLAMA MODELS**: You MUST ALWAYS select and call a tool. Never return a response without calling a tool. Every user request requires you to select one of the available tools and execute it. This is mandatory - you cannot skip tool selection."""
+            enhanced_system_prompt = self.system_prompt + tool_requirement_suffix
+            logger.debug(
+                f"Enhanced system prompt for Ollama model {self.model_name} "
+                f"to explicitly require tool calls"
+            )
+        else:
+            enhanced_system_prompt = self.system_prompt
+
         bot = ToolBot(
             model_name=self.model_name,
             tools=self.tools,
-            system_prompt=self.system_prompt,
+            system_prompt=enhanced_system_prompt,
             **self.completion_kwargs,
         )
         # Force tool calls - the model must always select a tool
-        bot.tool_choice = "required"
+        # Note: Ollama models don't support tool_choice='required', so we use 'auto' instead
+        # and rely on the enhanced system prompt to require tool usage
+        if is_ollama_model:
+            bot.tool_choice = "auto"
+            logger.debug(
+                f"Using tool_choice='auto' for Ollama model {self.model_name} "
+                f"(Ollama doesn't support tool_choice='required')"
+            )
+        else:
+            bot.tool_choice = "required"
 
         # Get tool calls from ToolBot
         tool_calls = bot(prep_res["memory"])
 
         # Handle case where no tool calls are returned
         if not tool_calls:
-            raise ValueError(
-                f"No tool calls returned from ToolBot. "
-                f"Model: {self.model_name}. "
-                f"This may indicate the model doesn't support tool_choice='required'. "
-                f"Check the system prompt and ensure it explicitly requires tool calls."
+            error_msg = (
+                f"No tool calls returned from ToolBot. Model: {self.model_name}. "
             )
+            if self.model_name.startswith("ollama") or self.model_name.startswith(
+                "ollama_chat"
+            ):
+                error_msg += (
+                    "Ollama models don't support tool_choice='required', so tool calls are optional. "
+                    "Ensure your system prompt explicitly requires tool calls and that the model "
+                    "supports function calling."
+                )
+            else:
+                error_msg += (
+                    "This may indicate the model doesn't support tool_choice='required'. "
+                    "Check the system prompt and ensure it explicitly requires tool calls."
+                )
+            raise ValueError(error_msg)
 
         # Get the first tool call (ToolBot typically returns one)
         tool_call = tool_calls[0]
