@@ -24,7 +24,6 @@ def _():
     from pathlib import Path
 
     import marimo as mo
-
     return Path, mo
 
 
@@ -74,7 +73,6 @@ def _():
         get_current_span,
         span,
     )
-
     return get_current_span, span
 
 
@@ -218,14 +216,17 @@ def _(mo):
 @app.cell
 def _():
     from pydantic import BaseModel
-
     return (BaseModel,)
 
 
 @app.cell
 def _():
-    import llamabot as lmb
+    return
 
+
+@app.cell
+def _():
+    import llamabot as lmb
     return (lmb,)
 
 
@@ -246,21 +247,18 @@ def _(lmb):
         If any field is unclear or missing, use your best judgment based on the context.
         For dates, convert any format to YYYY-MM-DD. For amounts, extract only the numerical value.
         """
-
     return (receipt_extraction_sysprompt,)
 
 
 @app.cell
 def _():
     from pdf2image import convert_from_path
-
     return (convert_from_path,)
 
 
 @app.cell
 def _():
     import tempfile
-
     return (tempfile,)
 
 
@@ -295,14 +293,12 @@ def _(Path, convert_from_path, span, tempfile):
         else:
             s["conversion_success"] = False
             raise ValueError(f"Unsupported file type: {file_extension}")
-
     return (convert_pdf_to_images,)
 
 
 @app.cell
 def _():
     from llamabot.components.messages import user
-
     return (user,)
 
 
@@ -332,7 +328,7 @@ def _(lmb, os):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Exercise
+    ### Exercise: Define ReceiptData Schema
 
     Your task is to add the following fields to this model:
     - vendor: The name of the vendor/merchant (string)
@@ -348,19 +344,28 @@ def _(mo):
 
 
 @app.cell
-def _(BaseModel):
+def _(BaseModel, render_receipt_html):
     class ReceiptDataExercise(BaseModel):
         """Receipt data schema - must be defined BEFORE building extraction agent."""
 
         pass
 
+        def _repr_html_(self) -> str:
+            """Return HTML representation for marimo display."""
+            return render_receipt_html(
+                vendor=self.vendor,
+                date=self.date,
+                amount=self.amount,
+                category=self.category,
+                description=self.description,
+            )
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Exercise
+    ### Exercise: Use ReceiptDataExercise
 
     Change `ReceiptData` to `ReceiptDataExercise` that you filled out.
     """)
@@ -475,6 +480,7 @@ def _(ocr_texts, receipt_structuring_bot):
     combined_ocr_text = "\n\n--- Page Break ---\n\n".join(ocr_texts)
     result = receipt_structuring_bot(combined_ocr_text)
     print(f"Structured data: {result.model_dump_json(indent=2)}")
+    result
     return
 
 
@@ -482,7 +488,6 @@ def _(ocr_texts, receipt_structuring_bot):
 def _():
     from llamabot.components.pocketflow import nodeify
     from llamabot.components.tools import tool
-
     return nodeify, tool
 
 
@@ -543,9 +548,7 @@ def _(
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
         else:
-            prompt_text = (
-                f"Extract all text from this {len(image_paths)}-page receipt document."
-            )
+            prompt_text = f"Extract all text from this {len(image_paths)}-page receipt document."
 
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results (ocr_bot creates spans automatically)
@@ -566,7 +569,6 @@ def _(
         s["amount"] = result.amount
 
         return result.model_dump_json()
-
     return (process_receipt,)
 
 
@@ -593,7 +595,7 @@ def _(ReceiptData, process_receipt):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Exercise
+    ### Exercise: Display Bot Spans
 
     Display spans from the bot using the .spans property of ocr_bot:
     """)
@@ -634,14 +636,13 @@ def _(lmb):
         Fill out invoice forms with structured data provided.
         Ensure all fields are professional and business-appropriate.
         """
-
     return (invoice_generation_sysprompt,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Exercise
+    ### Exercise: Define InvoiceData Schema
 
     Just as we defined the structure for receipt data, now we need to define what an invoice looks like. Your task is to create the `InvoiceDataExercise` model by adding these fields:
 
@@ -660,19 +661,31 @@ def _(mo):
 
 
 @app.cell
-def _(BaseModel):
+def _(BaseModel, render_invoice_html):
     class InvoiceDataExercise(BaseModel):
         """Invoice data schema - form structure for invoice generation."""
 
         pass
 
+        def _repr_html_(self) -> str:
+            """Return HTML representation for marimo display."""
+            return render_invoice_html(
+                invoice_number=self.invoice_number,
+                client_name=self.client_name,
+                client_address=self.client_address,
+                issue_date=self.issue_date,
+                due_date=self.due_date,
+                project_description=self.project_description,
+                amount=self.amount,
+                notes=self.notes,
+            )
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Exercise
+    ### Exercise: Use InvoiceDataExercise
 
     Now that you've filled out the `InvoiceDataExercise` model, update the `invoice_writer_bot` to use your exercise version instead of the pre-built `InvoiceData`. Replace `InvoiceData` with `InvoiceDataExercise` in the pydantic_model parameter below.
     """)
@@ -710,7 +723,9 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
             Should include client name, project description, amount, and any other relevant details.
         """
         s = get_current_span()
-        s["invoice_description"] = invoice_description[:200]  # Truncate for storage
+        s["invoice_description"] = invoice_description[
+            :200
+        ]  # Truncate for storage
 
         from datetime import datetime, timedelta
 
@@ -741,14 +756,13 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
         s["invoice_number"] = invoice.invoice_number
         s["amount"] = invoice.amount
         return invoice
-
     return (generate_invoice,)
 
 
 @app.cell(hide_code=True)
 def _(InvoiceData, get_current_span, span):
     @span
-    def render_invoice_html(invoice: InvoiceData) -> str:
+    def format_invoice_html(invoice: InvoiceData) -> str:
         """Render invoice as beautiful HTML.
 
         This function delegates to InvoiceData._repr_html_() for consistency.
@@ -758,8 +772,7 @@ def _(InvoiceData, get_current_span, span):
         s["invoice_number"] = invoice.invoice_number
         s["html_length"] = len(html)
         return html
-
-    return (render_invoice_html,)
+    return (format_invoice_html,)
 
 
 @app.cell(hide_code=True)
@@ -775,7 +788,7 @@ def _(mo):
 
 
 @app.cell
-def _(generate_invoice, nodeify, render_invoice_html, span, tool):
+def _(format_invoice_html, generate_invoice, nodeify, span, tool):
     @nodeify(loopback_name="decide")
     @tool
     @span
@@ -798,9 +811,9 @@ def _(generate_invoice, nodeify, render_invoice_html, span, tool):
         :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :return: Confirmation message indicating invoice was generated
         """
-        # Generate invoice (generate_invoice and render_invoice_html are @span decorated)
+        # Generate invoice (generate_invoice and format_invoice_html are @span decorated)
         invoice = generate_invoice(invoice_description)
-        html = render_invoice_html(invoice)
+        html = format_invoice_html(invoice)
 
         # Store invoice HTML in globals so it can be returned to user
         if _globals_dict is not None:
@@ -810,7 +823,6 @@ def _(generate_invoice, nodeify, render_invoice_html, span, tool):
             "Invoice generated successfully. "
             "**YOU MUST NOW**: Call return_object_to_user('invoice_html') immediately to return it to the user."
         )
-
     return (write_invoice,)
 
 
@@ -825,13 +837,13 @@ def _(mo):
 
 
 @app.cell
-def _(generate_invoice):
+def _(format_invoice_html, generate_invoice):
     # Test invoice writer with natural language description
     # mo.stop(True)
     # Uncomment to test:
     test_description = "Invoice for Acme Corporation, web development project completed in January 2025, amount $5000, client address: 123 Main St, Boston MA 02101"
     test_invoice = generate_invoice(test_description)
-    test_invoice
+    format_invoice_html(test_invoice)
     return
 
 
@@ -962,14 +974,12 @@ def _(lmb):
 
         Remember: It's better to ask for clarification than to assume and generate incorrect information.
         """
-
     return (coordinator_sysprompt,)
 
 
 @app.cell
 def _():
     from llamabot import AgentBot
-
     return (AgentBot,)
 
 
@@ -1057,7 +1067,9 @@ def _(Path, files, tempfile):
                 temp_file_path = temp_file.name
 
             # Make file available in globals
-            variable_name = Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            variable_name = (
+                Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            )
             globals()[variable_name] = temp_file_path
             print(f"File available as: {variable_name}")
     return
@@ -1088,7 +1100,6 @@ def _(coordinator_bot, datetime, span):
                 [f"Today's date: {datetime.now()}", user_message], globals()
             )
         return result
-
     return (chat_turn,)
 
 
@@ -1147,7 +1158,7 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Exercise
+    ### Exercise: View Coordinator Spans
 
     View the `coordinator_bot.spans` to see what the bot chose to do.
     """)
@@ -1286,9 +1297,120 @@ def _(mo):
 
 
 @app.cell
-def _(BaseModel):
+def _():
     import textwrap
 
+
+    def render_invoice_html(
+        invoice_number: str,
+        client_name: str,
+        client_address: str,
+        issue_date: str,
+        due_date: str,
+        project_description: str,
+        amount: float,
+        notes: str = "",
+    ) -> str:
+        """Render invoice data as HTML.
+
+        :param invoice_number: Invoice identifier
+        :param client_name: Client name
+        :param client_address: Client address
+        :param issue_date: Issue date
+        :param due_date: Due date
+        :param project_description: Project description
+        :param amount: Invoice amount
+        :param notes: Optional notes
+        :return: HTML string
+        """
+        return textwrap.dedent(f"""
+            <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 2px;">Invoice</div>
+                    <div style="font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px;">{invoice_number}</div>
+                </div>
+                <div style="padding: 40px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Issue Date</h3>
+                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{issue_date}</p>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Due Date</h3>
+                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{due_date}</p>
+                        </div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 30px;">
+                        <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Bill To</h3>
+                        <p style="font-size: 16px; color: #212529; line-height: 1.6; margin: 0;">{client_name}<br>{client_address}</p>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #28a745;">
+                        <h3 style="font-size: 18px; font-weight: 600; color: #212529; margin-bottom: 12px; margin: 0 0 12px 0;">Project Description</h3>
+                        <p style="font-size: 16px; color: #495057; line-height: 1.7; margin: 0;">{project_description}</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px;">Amount Due</div>
+                        <div style="font-size: 48px; font-weight: 700; letter-spacing: -2px;">${amount:,.2f}</div>
+                    </div>
+                    {f'<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-top: 20px;"><strong style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #856404; display: block; margin-bottom: 8px;">Notes</strong><p style="color: #856404; line-height: 1.6; margin: 0;">{notes}</p></div>' if notes else ""}
+                </div>
+            </div>
+            """).strip()
+
+
+    def render_receipt_html(
+        vendor: str,
+        date: str,
+        amount: float,
+        category: str,
+        description: str,
+    ) -> str:
+        """Render receipt data as HTML.
+
+        :param vendor: Vendor name
+        :param date: Receipt date
+        :param amount: Receipt amount
+        :param category: Expense category
+        :param description: Receipt description
+        :return: HTML string
+        """
+        return textwrap.dedent(f"""
+            <div style="max-width: 700px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; border-left: 4px solid #10b981;">
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">Receipt Entry</div>
+                            <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">{vendor}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">Amount</div>
+                            <div style="font-size: 28px; font-weight: 700; letter-spacing: -1px;">${amount:,.2f}</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding: 24px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 6px; border-left: 3px solid #10b981;">
+                            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">Date</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #212529;">{date}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 6px; border-left: 3px solid #10b981;">
+                            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">Category</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #212529;">{category}</div>
+                        </div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 16px; border-radius: 6px; border-left: 3px solid #10b981;">
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 8px; font-weight: 600;">Description</div>
+                        <div style="font-size: 15px; color: #495057; line-height: 1.5;">{description}</div>
+                    </div>
+                </div>
+            </div>
+            """).strip()
+    return render_invoice_html, render_receipt_html
+
+
+@app.cell
+def _(BaseModel, render_invoice_html):
     class InvoiceData(BaseModel):
         """Invoice data schema - form structure for invoice generation."""
 
@@ -1303,60 +1425,35 @@ def _(BaseModel):
 
         def _repr_html_(self) -> str:
             """Return HTML representation for marimo display."""
-            return textwrap.dedent(f"""
-            <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center;">
-                    <div style="font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 2px;">Invoice</div>
-                    <div style="font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px;">{self.invoice_number}</div>
-                </div>
-                <div style="padding: 40px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Issue Date</h3>
-                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.issue_date}</p>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Due Date</h3>
-                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.due_date}</p>
-                        </div>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 30px;">
-                        <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Bill To</h3>
-                        <p style="font-size: 16px; color: #212529; line-height: 1.6; margin: 0;">{self.client_name}<br>{self.client_address}</p>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #28a745;">
-                        <h3 style="font-size: 18px; font-weight: 600; color: #212529; margin-bottom: 12px; margin: 0 0 12px 0;">Project Description</h3>
-                        <p style="font-size: 16px; color: #495057; line-height: 1.7; margin: 0;">{self.project_description}</p>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
-                        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px;">Amount Due</div>
-                        <div style="font-size: 48px; font-weight: 700; letter-spacing: -2px;">${self.amount:,.2f}</div>
-                    </div>
-                    {f'<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-top: 20px;"><strong style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #856404; display: block; margin-bottom: 8px;">Notes</strong><p style="color: #856404; line-height: 1.6; margin: 0;">{self.notes}</p></div>' if self.notes else ""}
-                </div>
-            </div>
-            """).strip()
+            return render_invoice_html(
+                invoice_number=self.invoice_number,
+                client_name=self.client_name,
+                client_address=self.client_address,
+                issue_date=self.issue_date,
+                due_date=self.due_date,
+                project_description=self.project_description,
+                amount=self.amount,
+                notes=self.notes,
+            )
 
+
+    # Test instance to verify display
+    example_invoice = InvoiceData(
+        invoice_number="INV-2025-001",
+        client_name="Acme Corporation",
+        client_address="123 Main St, Boston MA 02101",
+        issue_date="2025-01-15",
+        due_date="2025-02-14",
+        project_description="Web development and consulting services",
+        amount=5000.00,
+        notes="Payment due within 30 days of invoice date.",
+    )
+    example_invoice
     return (InvoiceData,)
 
 
 @app.cell
-def _():
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    ### Exercise
-
-    Change `InvoiceData` to `InvoiceDataExercise` that you filled out.
-    """)
-    return
-
-
-@app.cell
-def _(BaseModel):
+def _(BaseModel, render_receipt_html):
     class ReceiptData(BaseModel):
         """Receipt data schema - must be defined BEFORE building extraction agent."""
 
@@ -1366,6 +1463,26 @@ def _(BaseModel):
         category: str
         description: str
 
+        def _repr_html_(self) -> str:
+            """Return HTML representation for marimo display."""
+            return render_receipt_html(
+                vendor=self.vendor,
+                date=self.date,
+                amount=self.amount,
+                category=self.category,
+                description=self.description,
+            )
+
+
+    # Test instance to verify display
+    example_receipt = ReceiptData(
+        vendor="Starbucks Coffee",
+        date="2025-01-15",
+        amount=12.50,
+        category="Meals",
+        description="Team lunch meeting - coffee and pastries",
+    )
+    example_receipt
     return (ReceiptData,)
 
 

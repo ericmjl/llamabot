@@ -73,6 +73,11 @@ reflected in the marimo editor interface.
 own cell using `mo.mermaid(...)` function, not embedded in markdown code blocks.
 Create a separate cell for each mermaid diagram.
 
+**Marimo Cell Types**: When adding Marimo notebook cells that should be Python code,
+do not house them within a Markdown cell. Change the cell type to Python instead.
+Markdown cells (`mo.md(...)`) are for documentation only. Python code should be in
+Python cells (using `@app.cell` decorator without `hide_code=True` for code cells).
+
 **No Jupyter Notebooks**: This project does not use `.ipynb` files anymore.
 All examples and notebooks should be created as Marimo notebooks (`.py` files).
 If you encounter any `.ipynb` files, they should be converted to Marimo format.
