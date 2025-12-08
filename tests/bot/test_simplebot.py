@@ -548,6 +548,66 @@ def test_extract_tool_calls(tool_calls):
         assert result == tool_calls
 
 
+def test_extract_tool_calls_from_json_content_with_tools_wrapper():
+    """Test extract_tool_calls parses JSON content with {"tools": [...]} wrapper and "parameters" key."""
+    from llamabot.bot.simplebot import extract_tool_calls
+    import json
+
+    # Create mock response with JSON content in the format some Ollama models return
+    json_content = json.dumps(
+        {
+            "tools": [
+                {
+                    "name": "list_uploaded_files",
+                    "description": "List all uploaded files available for processing.",
+                    "parameters": {},
+                },
+                {
+                    "name": "process_receipt",
+                    "description": "Process a receipt PDF or image and extract structured data.",
+                    "parameters": {"file_path": "/tmp/test.pdf"},
+                },
+            ]
+        }
+    )
+
+    mock_response = create_mock_model_response(content=json_content, tool_calls=None)
+
+    # Call function
+    result = extract_tool_calls(mock_response)
+
+    # Check that we got 2 tool calls
+    assert len(result) == 2
+    assert result[0].function.name == "list_uploaded_files"
+    assert result[1].function.name == "process_receipt"
+    # Check that parameters were parsed correctly
+    process_receipt_args = json.loads(result[1].function.arguments)
+    assert process_receipt_args == {"file_path": "/tmp/test.pdf"}
+
+
+def test_extract_tool_calls_from_json_content_with_parameters_key():
+    """Test extract_tool_calls parses JSON content with "parameters" instead of "arguments"."""
+    from llamabot.bot.simplebot import extract_tool_calls
+    import json
+
+    # Create mock response with JSON content using "parameters" key
+    json_content = json.dumps(
+        {"name": "process_receipt", "parameters": {"file_path": "/tmp/test.pdf"}}
+    )
+
+    mock_response = create_mock_model_response(content=json_content, tool_calls=None)
+
+    # Call function
+    result = extract_tool_calls(mock_response)
+
+    # Check that we got 1 tool call
+    assert len(result) == 1
+    assert result[0].function.name == "process_receipt"
+    # Check that parameters were parsed correctly
+    args = json.loads(result[0].function.arguments)
+    assert args == {"file_path": "/tmp/test.pdf"}
+
+
 # Tests for extract_content function
 @given(content=st.one_of(st.none(), st.text()))
 def test_extract_content(content):

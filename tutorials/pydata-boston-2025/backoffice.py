@@ -24,7 +24,6 @@ def _():
     from pathlib import Path
 
     import marimo as mo
-
     return Path, mo
 
 
@@ -74,7 +73,6 @@ def _():
         get_current_span,
         span,
     )
-
     return get_current_span, span
 
 
@@ -218,14 +216,12 @@ def _(mo):
 @app.cell
 def _():
     from pydantic import BaseModel, Field
-
     return BaseModel, Field
 
 
 @app.cell
 def _():
     import llamabot as lmb
-
     return (lmb,)
 
 
@@ -246,21 +242,18 @@ def _(lmb):
         If any field is unclear or missing, use your best judgment based on the context.
         For dates, convert any format to YYYY-MM-DD. For amounts, extract only the numerical value.
         """
-
     return (receipt_extraction_sysprompt,)
 
 
 @app.cell
 def _():
     from pdf2image import convert_from_path
-
     return (convert_from_path,)
 
 
 @app.cell
 def _():
     import tempfile
-
     return (tempfile,)
 
 
@@ -295,14 +288,12 @@ def _(Path, convert_from_path, span, tempfile):
         else:
             s["conversion_success"] = False
             raise ValueError(f"Unsupported file type: {file_extension}")
-
     return (convert_pdf_to_images,)
 
 
 @app.cell
 def _():
     from llamabot.components.messages import user
-
     return (user,)
 
 
@@ -365,7 +356,6 @@ def _(BaseModel, Field, render_receipt_html):
                 category=self.category,
                 description=self.description,
             )
-
     return
 
 
@@ -520,7 +510,6 @@ def _(mo):
 def _():
     from llamabot.components.pocketflow import nodeify
     from llamabot.components.tools import tool
-
     return nodeify, tool
 
 
@@ -558,13 +547,14 @@ def _(
     @nodeify(loopback_name="decide")
     @tool
     @span
-    def process_receipt(file_path: str) -> str:
+    def process_receipt(file_path: str, _globals_dict: dict = None) -> str:
         """Process a receipt PDF or image and extract structured data.
 
         This tool demonstrates that agents can have read access to the local file system.
         Simply provide a file path and the tool will read it from disk.
 
         :param file_path: Path to the receipt file (PDF, PNG, JPG, or JPEG)
+        :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :return: JSON string of extracted receipt data
         """
         # This is a LlamaBot feature for logging, ignore this!
@@ -582,9 +572,7 @@ def _(
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
         else:
-            prompt_text = (
-                f"Extract all text from this {len(image_paths)}-page receipt document."
-            )
+            prompt_text = f"Extract all text from this {len(image_paths)}-page receipt document."
 
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results (ocr_bot creates spans automatically)
@@ -604,8 +592,11 @@ def _(
         s["vendor"] = result.vendor
         s["amount"] = result.amount
 
-        return result.model_dump_json()
+        # Store ReceiptData object in globals for returning to user
+        if _globals_dict is not None:
+            _globals_dict["receipt_data"] = result
 
+        return result.model_dump_json()
     return (process_receipt,)
 
 
@@ -677,7 +668,6 @@ def _(lmb):
         Fill out invoice forms with structured data provided.
         Ensure all fields are professional and business-appropriate.
         """
-
     return (invoice_generation_sysprompt,)
 
 
@@ -722,7 +712,6 @@ def _(BaseModel, render_invoice_html):
                 amount=self.amount,
                 notes=self.notes,
             )
-
     return
 
 
@@ -760,7 +749,6 @@ def _(mo):
 @app.cell
 def _():
     from datetime import datetime, timedelta
-
     return datetime, timedelta
 
 
@@ -781,7 +769,9 @@ def _(
             Should include client name, project description, amount, and any other relevant details.
         """
         s = get_current_span()
-        s["invoice_description"] = invoice_description[:200]  # Truncate for storage
+        s["invoice_description"] = invoice_description[
+            :200
+        ]  # Truncate for storage
 
         # Calculate today's date and 30 business days from today
         today = datetime.now().date()
@@ -810,7 +800,6 @@ def _(
         s["invoice_number"] = invoice.invoice_number
         s["amount"] = invoice.amount
         return invoice
-
     return (generate_invoice,)
 
 
@@ -827,7 +816,6 @@ def _(InvoiceData, get_current_span, span):
         s["invoice_number"] = invoice.invoice_number
         s["html_length"] = len(html)
         return html
-
     return (format_invoice_html,)
 
 
@@ -879,7 +867,6 @@ def _(format_invoice_html, generate_invoice, nodeify, span, tool):
             "Invoice generated successfully. "
             "**YOU MUST NOW**: Call return_object_to_user('invoice_html') immediately to return it to the user."
         )
-
     return (write_invoice,)
 
 
@@ -904,7 +891,7 @@ def _(format_invoice_html, generate_invoice):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ---
@@ -930,6 +917,12 @@ def _(lmb):
         """You are a back-office coordinator agent.
         You help process receipts and generate invoices for clients.
 
+        **CRITICAL**: Receipt processing and invoice generation are SEPARATE tasks.
+        When a user asks to process a receipt, ONLY process the receipt. Do NOT mention invoices.
+        Only generate invoices when the user explicitly requests invoice generation.
+
+        **CRITICAL FILE PATH RULE**: When a user mentions "uploaded file" or "file I uploaded", you MUST ALWAYS call list_uploaded_files() FIRST to get the actual file path. NEVER use placeholder paths like "/tmp/path/to/file.pdf" or "/path/to/receipt.pdf". The actual path will be returned by list_uploaded_files() - extract it from the response and use that exact path.
+
         **CRITICAL**: You MUST always select a tool. Never return empty tool calls.
         Every user query requires a tool to be executed.
 
@@ -945,13 +938,13 @@ def _(lmb):
         ## Single-Step vs Multi-Step Requests:
 
         **Single-step requests** (do the task, then respond):
-        - "Process this receipt" → process_receipt() → respond_to_user() with results
+        - "Process this receipt" → list_uploaded_files() → extract path from response → process_receipt(actual_path) → return_object_to_user('receipt_data') → respond_to_user()
         - "List uploaded files" → list_uploaded_files() → respond_to_user() with results
         - "What information did you extract?" → respond_to_user() with information from previous processing
         - These requests are COMPLETE after doing the single task - do NOT assume next steps
 
         **Multi-step requests** (do all steps, then respond):
-        - "Process receipt and generate invoice" → process_receipt() → write_invoice() → return_object_to_user() → respond_to_user()
+        - "Process receipt and generate invoice" → list_uploaded_files() → extract path → process_receipt(actual_path) → return_object_to_user('receipt_data') → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
         - "Create an invoice" → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
         - These require completing ALL explicitly requested steps before responding
 
@@ -962,9 +955,9 @@ def _(lmb):
         - When you need to ask the user for clarification (but only after checking what's available first)
 
         **Examples:**
-        - Single-step: "Process this receipt" → process_receipt("/path/to/file.pdf") → respond_to_user() [STOP HERE]
+        - Single-step: "Process this receipt" → list_uploaded_files() → parse response to get actual file path → process_receipt(actual_path) → return_object_to_user('receipt_data') → respond_to_user() [STOP HERE - DO NOT mention invoices]
         - Single-step: "List uploaded files" → list_uploaded_files() → respond_to_user() [STOP HERE]
-        - Multi-step: "Process receipt and generate invoice" → process_receipt() → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
+        - Multi-step: "Process receipt and generate invoice" → list_uploaded_files() → parse response to get actual file path → process_receipt(actual_path) → return_object_to_user('receipt_data') → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
         - Multi-step: "Create an invoice" → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
 
         CRITICAL: Complete ONLY what the user explicitly requests. Do NOT assume they want additional actions.
@@ -973,19 +966,23 @@ def _(lmb):
         Workflow Guidelines:
 
         1. **Receipt Processing** (SINGLE-STEP WORKFLOW):
+           - **MANDATORY FIRST STEP**: When user asks to "process this receipt" or mentions "uploaded file" or "file I uploaded", you MUST ALWAYS call list_uploaded_files() FIRST. Never use placeholder paths like "/path/to/file.pdf" or "/tmp/path/to/receipt.pdf".
            - When user asks to "process this receipt" or mentions "uploaded file" or "file I uploaded":
-             STEP 1: Call list_uploaded_files() to discover what files are available
+             STEP 1: **MANDATORY** - Call list_uploaded_files() to discover what files are available. DO NOT skip this step. DO NOT use placeholder paths.
              STEP 2: Parse the response - it will show "Uploaded files available:" followed by lines like "- filename: /tmp/actual/path/to/file.pdf"
-             STEP 3: Extract the file path (the part after the colon, e.g., "/tmp/actual/path/to/file.pdf")
+             STEP 3: Extract the file path (the part after the colon, e.g., "/tmp/actual/path/to/file.pdf"). This is the ACTUAL path, not a placeholder.
              STEP 4: If multiple files exist, use the most recent one (last in the list) or match by filename if user specifies
-             STEP 5: Call process_receipt(file_path) with the EXACT file path extracted from step 3 (must be the actual path, not a placeholder)
-             STEP 6: After processing completes, use respond_to_user() to summarize the extracted data
-             STEP 7: STOP - The request is complete. Do NOT assume the user wants to generate an invoice or do anything else.
-           - If user explicitly provides a file path (e.g., "./receipt.pdf" or "/tmp/file.pdf"), use that path directly - skip list_uploaded_files()
+             STEP 5: Call process_receipt(file_path) with the EXACT file path extracted from step 3 (must be the actual path, not a placeholder like "/tmp/path/to/receipt.pdf")
+             STEP 6: After processing completes, IMMEDIATELY call return_object_to_user('receipt_data') to return the ReceiptData object
+             STEP 7: Call respond_to_user() with a brief summary (e.g., "Receipt processed successfully")
+             STEP 8: STOP - The request is complete. Do NOT mention invoices, do NOT ask about invoices, do NOT assume the user wants to generate an invoice.
+           - **ONLY** if user explicitly provides a file path in their message (e.g., "./receipt.pdf" or "/tmp/file.pdf"), use that path directly - skip list_uploaded_files()
            - If list_uploaded_files() returns "No uploaded files found", ask the user to upload a file using respond_to_user()
            - The tool reads files directly from disk - provide the full file path as a string
-           - **CRITICAL**: Use the ACTUAL file path from list_uploaded_files() response, NOT placeholder paths like "/tmp/path/to/file.pdf"
-           - **IMPORTANT**: Processing a receipt is a standalone task. Only generate an invoice if the user explicitly asks for it.
+           - **CRITICAL**: NEVER use placeholder paths like "/tmp/path/to/file.pdf" or "/path/to/receipt.pdf". ALWAYS call list_uploaded_files() first to get the actual path.
+           - **CRITICAL**: Use the ACTUAL file path from list_uploaded_files() response, NOT placeholder paths
+           - **CRITICAL**: After processing a receipt, ONLY mention the receipt data. NEVER mention invoices, invoice generation, or ask for invoice information. Receipt processing and invoice generation are completely separate tasks.
+           - **IMPORTANT**: Processing a receipt is a standalone task. Only generate an invoice if the user explicitly asks for it in a separate request.
 
         2. **Invoice Generation** (MULTI-STEP REQUIRED):
            **CRITICAL**: Each invoice request is INDEPENDENT. NEVER reuse information from previous requests unless explicitly stated by the user.
@@ -1043,14 +1040,12 @@ def _(lmb):
         Remember: It's better to ask for clarification than to assume and generate incorrect information.
         Most importantly: Complete ONLY what the user explicitly requests. Do NOT infer or assume they want additional actions beyond their request.
         """
-
     return (coordinator_sysprompt,)
 
 
 @app.cell
 def _():
     from llamabot import AgentBot
-
     return (AgentBot,)
 
 
@@ -1089,7 +1084,6 @@ def _(nodeify, tool):
             else:
                 return "No uploaded files found. Please upload a file using the file upload widget above."
         return "No uploaded files found. Please upload a file using the file upload widget above."
-
     return (list_uploaded_files,)
 
 
@@ -1176,7 +1170,9 @@ def _(Path, files, tempfile):
                 temp_file_path = temp_file.name
 
             # Make file available in globals (both ways for backward compatibility)
-            variable_name = Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            variable_name = (
+                Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            )
             globals()[variable_name] = temp_file_path
 
             # Store in structured uploaded_files dictionary
@@ -1210,7 +1206,6 @@ def _(coordinator_bot, datetime, span):
                 [f"Today's date: {datetime.now()}", user_message], globals()
             )
         return result
-
     return (chat_turn,)
 
 
@@ -1220,6 +1215,8 @@ def _(mo):
     ### Example prompts
 
     The `example_prompts` list provides suggested starting points for users interacting with the chat interface. Marimo displays these as clickable suggestions when the chat is empty, helping users understand what the agent can do and how to phrase their requests. Think of them as both a user guide and a way to jumpstart conversations when someone isn't sure where to begin.
+
+    I have included two "perfect prompts" -- prompts that provide sufficient information that a user would ideally *not* have to input, but can be used for diagnosis of bot behaviour.
     """)
     return
 
@@ -1273,26 +1270,6 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("""
-    ### Test: Coordinator Agent
-
-    Test the coordinator with a sample query:
-    """)
-    return
-
-
-@app.cell
-def _(coordinator_bot):
-    # Test coordinator agent
-    test_response = coordinator_bot(
-        "Process a receipt and generate an invoice", globals()
-    )
-    test_response
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
     mo.md(r"""
     If we get something like "Please provide the file path of the receipt you'd like me to process.", that's actually desired behaviour!
     """)
@@ -1322,7 +1299,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ---
@@ -1330,7 +1307,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Part 6: Discussion & Next Steps
@@ -1346,7 +1323,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Deploying LLMs on Modal
@@ -1402,9 +1379,10 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     import textwrap
+
 
     def render_invoice_html(
         invoice_number: str,
@@ -1462,6 +1440,7 @@ def _():
             </div>
             """).strip()
 
+
     def render_receipt_html(
         vendor: str,
         date: str,
@@ -1510,7 +1489,6 @@ def _():
                 </div>
             </div>
             """).strip()
-
     return render_invoice_html, render_receipt_html
 
 
@@ -1540,6 +1518,7 @@ def _(BaseModel, render_invoice_html):
                 amount=self.amount,
                 notes=self.notes,
             )
+
 
     # Test instance to verify display
     example_invoice = InvoiceData(
@@ -1576,6 +1555,7 @@ def _(BaseModel, render_receipt_html):
                 category=self.category,
                 description=self.description,
             )
+
 
     # Test instance to verify display
     example_receipt = ReceiptData(

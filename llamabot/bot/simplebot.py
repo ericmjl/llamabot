@@ -474,13 +474,23 @@ def extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToo
             # Try to parse JSON from content
             content_json = json.loads(message.content.strip())
 
+            # Handle wrapper format: {"tools": [...]}
+            if isinstance(content_json, dict) and "tools" in content_json:
+                content_json = content_json["tools"]
+
             # Check if it's a single tool call object
             if isinstance(content_json, dict) and "name" in content_json:
-                # Single tool call: {"name": "tool_name", "arguments": {...}}
+                # Single tool call: {"name": "tool_name", "arguments": {...}} or {"name": "tool_name", "parameters": {...}}
                 tool_name = content_json.get("name", "unknown")
+                # Support both "arguments" and "parameters" keys
+                tool_args = (
+                    content_json.get("arguments")
+                    or content_json.get("parameters")
+                    or {}
+                )
                 function = Function(
                     name=tool_name,
-                    arguments=serialize_tool_arguments(content_json.get("arguments")),
+                    arguments=serialize_tool_arguments(tool_args),
                 )
                 tool_call = ChatCompletionMessageToolCall(
                     function=function, id=f"call_{tool_name}", type="function"
@@ -493,9 +503,11 @@ def extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToo
                 for idx, tc in enumerate(content_json):
                     if isinstance(tc, dict) and "name" in tc:
                         tool_name = tc.get("name", "unknown")
+                        # Support both "arguments" and "parameters" keys
+                        tool_args = tc.get("arguments") or tc.get("parameters") or {}
                         function = Function(
                             name=tool_name,
-                            arguments=serialize_tool_arguments(tc.get("arguments")),
+                            arguments=serialize_tool_arguments(tool_args),
                         )
                         tool_call = ChatCompletionMessageToolCall(
                             function=function,
