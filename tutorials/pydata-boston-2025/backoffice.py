@@ -3,9 +3,10 @@
 # dependencies = [
 #     "llamabot[all]",
 #     "marimo>=0.17.0",
-#     "pydantic",
+#     "pydantic==2.12.5",
 #     "pdf2image",
 #     "pyzmq",
+#     "anthropic==0.75.0",
 # ]
 #
 # [tool.uv.sources]
@@ -15,7 +16,7 @@
 import marimo
 
 __generated_with = "0.18.3"
-app = marimo.App(width="medium")
+app = marimo.App(width="full")
 
 
 @app.cell
@@ -23,7 +24,6 @@ def _():
     from pathlib import Path
 
     import marimo as mo
-
     return Path, mo
 
 
@@ -59,7 +59,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Setup Verification
+    ### Setup Verification
 
     This tutorial uses a modal-hosted Ollama endpoint.
     Make sure you have access to the endpoint URL.
@@ -74,14 +74,13 @@ def _():
         get_spans,
         span,
     )
-
-    return get_current_span, get_spans, span
+    return get_current_span, span
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Marimo Notebooks
+    ### Marimo Notebooks
 
     Marimo uses reactive execution:
 
@@ -218,14 +217,12 @@ def _(mo):
 @app.cell
 def _():
     from pydantic import BaseModel
-
     return (BaseModel,)
 
 
 @app.cell
 def _():
     import llamabot as lmb
-
     return (lmb,)
 
 
@@ -244,21 +241,18 @@ def _(lmb):
         If any field is unclear or missing, use your best judgment based on the context.
         For dates, convert any format to YYYY-MM-DD. For amounts, extract only the numerical value.
         """
-
     return (receipt_extraction_sysprompt,)
 
 
 @app.cell
 def _():
     from pdf2image import convert_from_path
-
     return (convert_from_path,)
 
 
 @app.cell
 def _():
     import tempfile
-
     return (tempfile,)
 
 
@@ -293,14 +287,12 @@ def _(Path, convert_from_path, span, tempfile):
         else:
             s["conversion_success"] = False
             raise ValueError(f"Unsupported file type: {file_extension}")
-
     return (convert_pdf_to_images,)
 
 
 @app.cell
 def _():
     from llamabot.components.messages import user
-
     return (user,)
 
 
@@ -327,18 +319,41 @@ def _(lmb, os):
     return (ocr_bot,)
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Exercise
+
+    Your task is to add the following fields to this model:
+    - vendor: The name of the vendor/merchant (string)
+    - date: The transaction date in YYYY-MM-DD format (string)
+    - amount: The total amount as a number without currency symbols (float)
+    - category: Business category like "Office Supplies", "Travel", "Meals", etc. (string)
+    - description: Brief description of what was purchased (string)
+
+    Once you define these fields, the receipt processing agent will be able to
+    extract structured data from receipt images and PDFs.
+    """)
+    return
+
+
 @app.cell
 def _(BaseModel):
-    class ReceiptData(BaseModel):
+    class ReceiptDataExercise(BaseModel):
         """Receipt data schema - must be defined BEFORE building extraction agent."""
 
-        vendor: str
-        date: str
-        amount: float
-        category: str
-        description: str
+        pass
+    return
 
-    return (ReceiptData,)
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Exercise
+
+    Change `ReceiptData` to `ReceiptDataExercise` that you filled out.
+    """)
+    return
 
 
 @app.cell
@@ -354,19 +369,119 @@ def _(ReceiptData, lmb, os, receipt_extraction_sysprompt):
     return (receipt_structuring_bot,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Putting It Together: The Receipt Processing Tool
+    ### Breaking down receipt processing: Step by step
 
-    The `process_receipt` tool orchestrates the two-step process:
-    - Converts PDFs to images (if needed)
-    - Runs OCR on each image using `ocr_bot`
-    - Combines OCR results
-    - Structures the combined text using `receipt_structuring_bot`
+    Before we create the full tool, let's see how each piece works independently.
+    This helps understand what's happening under the hood.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### Exercise: Step 1 - Convert PDF to images
+
+    First, we need to convert the receipt PDF into images that vision models can process.
+
+    Try this with the provided receipt in the repo (`./receipt_lunch.pdf`), then feel free to experiment with your own receipts by pointing to the right file path on disk.
+    """)
+    return
+
+
+@app.cell
+def _(convert_pdf_to_images):
+    # Exercise: Convert a receipt PDF to images
+    # Start with the provided receipt:
+    example_file_path = "./receipt_lunch.pdf"
+
+    # After trying with the provided receipt, try your own:
+    # example_file_path = "/path/to/your/receipt.pdf"
+
+    image_paths = convert_pdf_to_images(example_file_path)
+    print(f"Converted to {len(image_paths)} image(s)")
+    return (image_paths,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### Exercise: Step 2 - Extract text with OCR
+
+    Next, we use the OCR bot to extract all text from each image.
+    The `ocr_bot` uses a vision model to read the receipt.
+
+    Try experimenting with different prompts to see how the results change. Does more specific instruction lead to better extraction? Does a simpler prompt work just as well?
+    """)
+    return
+
+
+@app.cell
+def _(image_paths, ocr_bot, user):
+    # Exercise: Extract text from receipt images using OCR
+    # Try different prompts to see what works best:
+    ocr_texts = []
+    for image_path in image_paths:
+        # Try this prompt first:
+        prompt_text = "Extract all text from this image."
+
+        # Then experiment with alternatives like:
+        # prompt_text = "Read all the text from this receipt, preserving the layout."
+        # prompt_text = "Extract the text content from this receipt image."
+        # prompt_text = "What text do you see in this image?"
+
+        ocr_response = ocr_bot(user(prompt_text, image_path))
+        ocr_texts.append(ocr_response.content)
+    print(f"Extracted text from {len(ocr_texts)} page(s)")
+    return (ocr_texts,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    The use of `user(text1, text2)` here is to cast text into a UserMessage, which underneath the hood affords simpler code writing compared to using the raw OpenAI-compatible API.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### Step 3: Structure the extracted text
+
+    Finally, we combine the OCR text and use the structuring bot to convert
+    it into our `ReceiptData` schema with validated fields.
+    """)
+    return
+
+
+@app.cell
+def _(ocr_texts, receipt_structuring_bot):
+    # Example: Structure the extracted OCR text
+    combined_ocr_text = "\n\n--- Page Break ---\n\n".join(ocr_texts)
+    result = receipt_structuring_bot(combined_ocr_text)
+    print(f"Structured data: {result.model_dump_json(indent=2)}")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### Now let's tie it all together: The receipt processing tool
+
+    The `process_receipt` tool combines all three steps into a single function
+    that agents can call. It handles file validation, PDF conversion, OCR extraction,
+    and data structuring automatically.
 
     **Note**: This tool demonstrates that agents can have read access to the local file system.
     Simply provide a file path and the tool will read it directly from disk.
+
+    You'll notice the function includes span-based logging, a newer feature in llamabot. Think of spans as breadcrumbs that track what your code is doing - they record when operations start and finish, what data flows through them, and any important details along the way. You can mostly ignore them while learning, but they become incredibly handy when debugging complex agent workflows. When something goes wrong, instead of wondering "what just happened?", you can trace back through the spans to see exactly what your agent was doing at each step.
+
+    The three decorators stacked on this function each serve a specific purpose. The `@span` decorator handles that logging I just mentioned - it automatically creates a trace record whenever the function runs, capturing timing and any metadata you want to attach. The `@tool` decorator transforms the function into something agents can understand and call autonomously - it reads the docstring and type hints to generate a tool description that the LLM uses to decide when to invoke it. Finally, `@nodeify(loopback_name="decide")` integrates the function into the agent's workflow graph, specifying that after this tool completes, control should loop back to a node called "decide" where the agent chooses its next action. Together, these decorators turn a regular Python function into an observable, agent-callable workflow step.
     """)
     return
 
@@ -375,7 +490,6 @@ def _(mo):
 def _():
     from llamabot.components.pocketflow import nodeify
     from llamabot.components.tools import tool
-
     return nodeify, tool
 
 
@@ -417,9 +531,7 @@ def _(
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
         else:
-            prompt_text = (
-                f"Extract all text from this {len(image_paths)}-page receipt document."
-            )
+            prompt_text = f"Extract all text from this {len(image_paths)}-page receipt document."
 
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results (ocr_bot creates spans automatically)
@@ -440,16 +552,15 @@ def _(
         s["amount"] = result.amount
 
         return result.model_dump_json()
-
     return (process_receipt,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Test: Receipt Processor
 
-    Upload a receipt PDF or image above, then test the receipt processor:
+    Now, let's test the LLM tool `process_receipt`, so that we can verify that it is working.
     """)
     return
 
@@ -457,28 +568,20 @@ def _(mo):
 @app.cell
 def _(ReceiptData, process_receipt):
     # Test receipt processor with uploaded file
-    # mo.stop(True)
-    # Uncomment and modify to test:
-    test_receipt_json = process_receipt(
-        "/Users/ericmjl/github/llamabot/tutorials/pydata-boston-2025/receipt_lunch.pdf"
-    )
+    test_receipt_json = process_receipt("./receipt_lunch.pdf")
     # Parse JSON back to ReceiptData object for display
     test_receipt_data = ReceiptData.model_validate_json(test_receipt_json)
     test_receipt_data
     return
 
 
-@app.cell
-def _(ocr_bot):
-    # Display spans from the bot using the .spans property
-    ocr_bot.spans
-    return
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Exercise
 
-
-@app.cell
-def _(get_spans):
-    # Alternative: Query spans directly from the database
-    get_spans(operation_name="process_receipt")
+    Display spans from the bot using the .spans property of ocr_bot:
+    """)
     return
 
 
@@ -502,61 +605,6 @@ def _(mo):
 
 
 @app.cell
-def _(BaseModel):
-    import textwrap
-
-    class InvoiceData(BaseModel):
-        """Invoice data schema - form structure for invoice generation."""
-
-        invoice_number: str
-        client_name: str
-        client_address: str
-        issue_date: str
-        due_date: str
-        project_description: str
-        amount: float
-        notes: str = ""
-
-        def _repr_html_(self) -> str:
-            """Return HTML representation for marimo display."""
-            return textwrap.dedent(f"""
-            <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center;">
-                    <div style="font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 2px;">Invoice</div>
-                    <div style="font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px;">{self.invoice_number}</div>
-                </div>
-                <div style="padding: 40px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Issue Date</h3>
-                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.issue_date}</p>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Due Date</h3>
-                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.due_date}</p>
-                        </div>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 30px;">
-                        <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Bill To</h3>
-                        <p style="font-size: 16px; color: #212529; line-height: 1.6; margin: 0;">{self.client_name}<br>{self.client_address}</p>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #28a745;">
-                        <h3 style="font-size: 18px; font-weight: 600; color: #212529; margin-bottom: 12px; margin: 0 0 12px 0;">Project Description</h3>
-                        <p style="font-size: 16px; color: #495057; line-height: 1.7; margin: 0;">{self.project_description}</p>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
-                        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px;">Amount Due</div>
-                        <div style="font-size: 48px; font-weight: 700; letter-spacing: -2px;">${self.amount:,.2f}</div>
-                    </div>
-                    {f'<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-top: 20px;"><strong style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #856404; display: block; margin-bottom: 8px;">Notes</strong><p style="color: #856404; line-height: 1.6; margin: 0;">{self.notes}</p></div>' if self.notes else ""}
-                </div>
-            </div>
-            """).strip()
-
-    return (InvoiceData,)
-
-
-@app.cell
 def _(lmb):
     @lmb.prompt("system")
     def invoice_generation_sysprompt():
@@ -564,8 +612,47 @@ def _(lmb):
         Fill out invoice forms with structured data provided.
         Ensure all fields are professional and business-appropriate.
         """
-
     return (invoice_generation_sysprompt,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Exercise
+
+    Just as we defined the structure for receipt data, now we need to define what an invoice looks like. Your task is to create the `InvoiceDataExercise` model by adding these fields:
+
+    - invoice_number: The invoice identifier like "INV-2025-001" (string)
+    - client_name: The name of the client being billed (string)
+    - client_address: The client's full mailing address (string)
+    - issue_date: The date the invoice is issued in YYYY-MM-DD format (string)
+    - due_date: The payment due date in YYYY-MM-DD format (string)
+    - project_description: Description of the work or services provided (string)
+    - amount: The total amount to be paid (float)
+    - notes: Optional additional notes or payment instructions (string, optional with default empty string)
+
+    Think of this as defining the form template that the invoice generation agent will fill out.
+    """)
+    return
+
+
+@app.cell
+def _(BaseModel):
+    class InvoiceDataExercise(BaseModel):
+        """Invoice data schema - form structure for invoice generation."""
+
+        pass
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Exercise
+
+    Now that you've filled out the `InvoiceDataExercise` model, update the `invoice_writer_bot` to use your exercise version instead of the pre-built `InvoiceData`. Replace `InvoiceData` with `InvoiceDataExercise` in the pydantic_model parameter below.
+    """)
+    return
 
 
 @app.cell
@@ -579,6 +666,16 @@ def _(InvoiceData, invoice_generation_sysprompt, lmb, os):
     return (invoice_writer_bot,)
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Tying it all together: The invoice generation workflow
+
+    Now that we have our invoice writer bot configured, let's combine the pieces into a complete workflow. The `generate_invoice` function takes a natural language description of what to invoice and returns a structured `InvoiceData` object. It handles the date calculations automatically, so you don't need to worry about computing business days or formatting dates correctly. The invoice writer bot does the heavy lifting of extracting client information, project details, and amounts from your description.
+    """)
+    return
+
+
 @app.cell
 def _(InvoiceData, get_current_span, invoice_writer_bot, span):
     @span
@@ -589,7 +686,9 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
             Should include client name, project description, amount, and any other relevant details.
         """
         s = get_current_span()
-        s["invoice_description"] = invoice_description[:200]  # Truncate for storage
+        s["invoice_description"] = invoice_description[
+            :200
+        ]  # Truncate for storage
 
         from datetime import datetime, timedelta
 
@@ -620,7 +719,6 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
         s["invoice_number"] = invoice.invoice_number
         s["amount"] = invoice.amount
         return invoice
-
     return (generate_invoice,)
 
 
@@ -637,8 +735,19 @@ def _(InvoiceData, get_current_span, span):
         s["invoice_number"] = invoice.invoice_number
         s["html_length"] = len(html)
         return html
-
     return (render_invoice_html,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Creating the invoice writing tool
+
+    With our invoice generation workflow ready, we wrap it in a `write_invoice` tool that agents can call. You'll notice a few things that might look unusual at first. The `_globals_dict` parameter is automatically injected by AgentBot and allows the tool to store generated data (like the invoice HTML) in a shared space where other tools or the agent can access it later. This is how we pass complex objects between tool calls without serializing everything to strings.
+
+    The docstring here is deliberately verbose and detailed because it serves double duty. When the agent decides which tool to call, it reads this docstring as the tool's description. The more context you provide about when to use the tool, what information it needs, and what it returns, the better the agent can decide whether this is the right tool for the user's request. Think of it as writing instructions for the agent, not just documentation for developers.
+    """)
+    return
 
 
 @app.cell
@@ -675,10 +784,8 @@ def _(generate_invoice, nodeify, render_invoice_html, span, tool):
 
         return (
             "Invoice generated successfully. "
-            "**YOU MUST NOW**: Call return_object_to_user('invoice_html') immediately to return it to the user, "
-            "then call respond_to_user() to confirm completion."
+            "**YOU MUST NOW**: Call return_object_to_user('invoice_html') immediately to return it to the user."
         )
-
     return (write_invoice,)
 
 
@@ -727,7 +834,7 @@ def _(lmb):
     @lmb.prompt("system")
     def coordinator_sysprompt():
         """You are a back-office coordinator agent.
-        You help process receipts, generate invoices for clients, and handle internal concerns.
+        You help process receipts and generate invoices for clients.
 
         **CRITICAL**: You MUST always select a tool. Never return empty tool calls.
         Every user query requires a tool to be executed.
@@ -764,7 +871,6 @@ def _(lmb):
         **Examples of multi-step workflows:**
         - "Process this receipt" → process_receipt("/path/to/file.pdf") → respond_to_user()
         - "Create an invoice" → write_invoice() → return_object_to_user('invoice_html') → respond_to_user()
-        - "What's in the database?" → query_complaints() → respond_to_user() (with formatted results)
 
         CRITICAL: Use as many tool calls as needed to support the user's request excellently.
         Do NOT assume information - always check what's available first, then ask for clarification if needed.
@@ -788,9 +894,9 @@ def _(lmb):
            - ✅ Amount (specific dollar amount, NOT ranges or estimates)
 
            **Date Handling (AUTOMATIC - Do NOT ask user for dates):**
-           - **Issuance date**: ALWAYS today's date. Use the `today_date` tool to get the current date before calling write_invoice()
-           - **Due date**: ALWAYS 30 BUSINESS DAYS (not calendar days) from the issuance date. Calculate this automatically - do NOT ask the user for a due date
-           - The write_invoice tool will automatically handle date calculations, but you should include today's date in the description for clarity
+           - **Issuance date**: ALWAYS today's date (calculated automatically by the tool)
+           - **Due date**: ALWAYS 30 BUSINESS DAYS (not calendar days) from the issuance date (calculated automatically by the tool)
+           - The write_invoice tool will automatically handle ALL date calculations - you do NOT need to provide dates
 
            **If ANY required information is missing or vague:**
            STEP 1: Use respond_to_user() to ask SPECIFICALLY for the missing information.
@@ -803,11 +909,9 @@ def _(lmb):
            STEP 2: Wait for user's response with ALL required details
 
            **Only if ALL required information is explicitly provided:**
-           STEP 1: Call `today_date()` tool to get today's date (required for invoice generation)
-           STEP 2: Call write_invoice() with the complete invoice description including ALL required fields.
-                   The description should mention that issuance date is today and due date is 30 business days from today.
-           STEP 3: IMMEDIATELY call return_object_to_user('invoice_html') to return the HTML to the user
-           STEP 4: Call respond_to_user() to confirm completion
+           STEP 1: Call write_invoice() with the complete invoice description including ALL required fields (client name, address, project description, amount).
+           STEP 2: IMMEDIATELY call return_object_to_user('invoice_html') to return the HTML to the user
+           STEP 3: Call respond_to_user() to confirm completion
 
            **Examples of INSUFFICIENT requests that require clarification:**
            - "Create an invoice for my client" → Missing: client name, address, amount, project description
@@ -824,67 +928,7 @@ def _(lmb):
            - Generate invoices with partial information
            - Make up or estimate missing information
 
-        3. **Internal Concerns** (CONVERSATIONAL MULTI-STEP WORKFLOW):
-           - **Act as a listening partner**: Your goal is to help the user express their concern fully
-             so that when anonymized, it will be useful and actionable for someone reading it.
-
-           - **When user first shares a concern**:
-             STEP 1: Assess if the concern has enough actionable information:
-               * Does it identify WHAT the issue is? (e.g., "deployment process", "communication breakdown")
-               * Does it identify WHY it's a problem? (e.g., "team lead hasn't responded", "causing delays")
-               * Does it identify IMPACT? (e.g., "blocking my work", "affecting team morale")
-
-             STEP 2A: If information is INSUFFICIENT (vague, too brief, missing context):
-               * Use respond_to_user() to ask empathetic, open-ended questions to draw out more details
-               * Examples of good questions:
-                 - "I hear you're concerned about [topic]. Can you help me understand what specifically is happening?"
-                 - "What impact is this having on your work or the team?"
-                 - "Is there a particular situation or example that illustrates this concern?"
-                 - "What would help resolve this, or what would you like to see happen?"
-               * Wait for user's response, then reassess
-
-             STEP 2B: If information is SUFFICIENT (clear issue, context, and impact):
-               * Construct the full conversation history as a formatted string by combining:
-                 - The user's initial concern (from the conversation memory)
-                 - Your clarifying questions (what you asked via respond_to_user calls)
-                 - The user's responses to your questions (from subsequent conversation turns)
-                 - Any additional context they shared
-               * Format it naturally as a dialogue, e.g.:
-                 "User: I'm worried about our deployment process.
-                 Agent: Can you help me understand what specifically is happening?
-                 User: The team lead hasn't responded to my questions about the new workflow.
-                 Agent: What impact is this having on your work?
-                 User: It's blocking my progress and causing delays."
-               * IMPORTANT: Include the full conversation, not just the initial concern.
-                 The anonymization will be more useful if it includes the context from your questions.
-               * Call anonymize_complaint() with this formatted conversation history string
-               * IMMEDIATELY call respond_to_user() to show the anonymized version for review
-
-             - **After showing structured version**:
-               * Use respond_to_user() to ask: "Does this structured version capture your concern accurately?
-                 It includes the issue, details, impact, and recommended actions. If yes, I can store it.
-                 If you'd like to add anything or clarify any section, please let me know."
-               * Wait for user confirmation
-
-           - **After user confirms storage** (e.g., "yes", "store it", "that looks good"):
-             STEP 1: Call confirm_store_complaint() to store the anonymized complaint
-             STEP 2: IMMEDIATELY call respond_to_user() to confirm storage and thank them
-
-           - **Key principles for handling concerns**:
-             * Be empathetic and supportive - you're helping them express something important
-             * Ask ONE question at a time - don't overwhelm with multiple questions
-             * Focus on drawing out WHAT, WHY, and IMPACT - these make concerns actionable
-             * Don't rush to anonymize - take time to understand the full picture
-             * Once anonymized, always show it for review before storing
-
-        4. **Querying Complaints** (MULTI-STEP REQUIRED):
-           - When user asks to "show stored complaints" or "what's in the database":
-             STEP 1: Call query_complaints() with an appropriate query (or empty query to get all)
-             STEP 2: IMMEDIATELY call respond_to_user() to present the results from 'complaint_query_results' in globals
-           - Do NOT stop after query_complaints() - you MUST use respond_to_user() to return the results
-           - Format the results nicely for the user (you can summarize, categorize, or list them)
-
-        5. **General Principles**:
+        3. **General Principles**:
            - Break complex requests into multiple tool calls
            - Check available resources before assuming
            - Ask clarifying questions when information is missing
@@ -893,26 +937,46 @@ def _(lmb):
 
         Remember: It's better to ask for clarification than to assume and generate incorrect information.
         """
-
     return (coordinator_sysprompt,)
 
 
 @app.cell
 def _():
     from llamabot import AgentBot
-
     return (AgentBot,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Introducing AgentBot
+
+    AgentBot is LlamaBot's implementation of the agentic workflow pattern. Unlike SimpleBot or StructuredBot that just respond to prompts, AgentBot can make decisions about which tools to use and orchestrate multi-step workflows. You give it a set of tools (like our `process_receipt` and `write_invoice` functions) and a system prompt that explains its role, and it figures out which tool to call based on what the user asks for.
+
+    Under the hood, AgentBot uses a loop-decide-execute pattern. It reads the user's request, decides which tool (if any) to call, executes that tool, sees the result, and then decides what to do next. This continues until it determines the user's request is fully satisfied. You can read more about AgentBot's architecture and capabilities in the LlamaBot documentation at https://llamabot.readthedocs.io/, though be aware the docs are still catching up with recent features.
+    """)
+    return
 
 
 @app.cell
 def _(AgentBot, coordinator_sysprompt, os, process_receipt, write_invoice):
     coordinator_bot = AgentBot(
-        tools=[process_receipt, write_invoice],
+        tools=[write_invoice, process_receipt],
         system_prompt=coordinator_sysprompt(),
         model_name="ollama_chat/deepseek-r1:32b",
         api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (coordinator_bot,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Visualizing the agent workflow
+
+    AgentBots have a special `_repr_html_` method that renders a different view than other bots. When you display an AgentBot in a marimo notebook, you'll see a mermaid diagram showing the workflow graph. The blue nodes represent tools that yield control back to the agent for further decision-making (like `process_receipt` and `write_invoice`), while green nodes represent terminal tools that send responses directly back to the user (like `respond_to_user`). This visualization helps you understand the agent's decision flow at a glance.
+    """)
+    return
 
 
 @app.cell
@@ -921,9 +985,13 @@ def _(coordinator_bot):
     return
 
 
-@app.cell
-def _(coordinator_bot):
-    coordinator_bot.spans
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Enabling file uploads
+
+    The `files` widget allows users to upload receipts through the marimo GUI. When someone uploads a file, it gets loaded into memory and saved to a temporary location on disk. The agent can then access these files by their file paths, which we make available in the notebook's globals. This is essential for the receipt processing workflow, since users need a way to provide their receipt PDFs to the agent without manually typing file paths.
+    """)
     return
 
 
@@ -962,14 +1030,28 @@ def _(Path, files, tempfile):
                 temp_file_path = temp_file.name
 
             # Make file available in globals
-            variable_name = Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            variable_name = (
+                Path(file.name).stem.replace(" ", "_").replace("-", "_")
+            )
             globals()[variable_name] = temp_file_path
             print(f"File available as: {variable_name}")
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### The chat turn pattern
+
+    The `chat_turn` function follows marimo's standard pattern for `mo.ui.chat`. Marimo expects a function that takes a list of messages and a config object, then returns the next response. Inside the function, we extract the user's latest message from `messages[-1].content`, pass it to our coordinator bot, and return the result. The bot automatically handles the conversation state.
+
+    We wrap the coordinator bot call in a `span` context manager here to track each chat interaction. This creates a trace record that captures the user's message and the bot's response, making it easier to debug issues or analyze conversation patterns later. The span's category label helps filter traces when you're looking at logs from multiple sources.
+    """)
+    return
+
+
 @app.cell
-def _(coordinator_bot, span):
+def _(coordinator_bot, datetime, span):
     def chat_turn(messages, config):
         user_message = messages[-1].content
         with span(
@@ -977,17 +1059,28 @@ def _(coordinator_bot, span):
             user_message=user_message[:100],
             category="chat_interaction",
         ):
-            result = coordinator_bot(user_message, globals())
+            result = coordinator_bot(
+                [f"Today's date: {datetime.now()}", user_message], globals()
+            )
         return result
-
     return (chat_turn,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Example prompts
+
+    The `example_prompts` list provides suggested starting points for users interacting with the chat interface. Marimo displays these as clickable suggestions when the chat is empty, helping users understand what the agent can do and how to phrase their requests. Think of them as both a user guide and a way to jumpstart conversations when someone isn't sure where to begin.
+    """)
+    return
 
 
 @app.cell
 def _(chat_turn, mo):
     example_prompts = [
         "Process this receipt and extract the data",
-        "Generate an invoice for Acme Corp, web development project, $5000",
+        "Generate an invoice for Acme Corp, web development project, $5000. The company's located at 123 Boylston Street, Boston, MA, 01234.",
         "What information did you extract from the receipt?",
         "Create an invoice for my client for consulting services",
     ]
@@ -996,11 +1089,23 @@ def _(chat_turn, mo):
     return (chat,)
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Exercise: Testing the limits
+
+    Now comes the important part. Try to break the back-office coordinator. Give it ambiguous requests, edge cases, or instructions that don't quite fit the expected patterns. What happens when you ask for an invoice without providing all the required information? What if you upload a receipt that's hard to read or in an unexpected format? What if you chain multiple requests together in confusing ways?
+
+    The failure modes you discover aren't bugs to be ashamed of - they're valuable data points. Each one tells you something about where your agent needs better guardrails, clearer instructions, or more sophisticated error handling. In a real deployment, you'd want to collect these failures systematically and build evaluations around them, but that's challenging when you're building something new and don't yet know what the common failure patterns will be. For now, just observe what breaks and think about whether each failure represents a fixable prompt engineering issue, a missing tool capability, or an inherent limitation of the approach.
+    """)
+    return
+
+
 @app.cell
 def _(chat, mo):
     mo.vstack(
         [
-            mo.md("# Back-Office Coordinator"),
+            mo.md("### Back-Office Coordinator"),
             mo.md("Upload receipts and chat with the coordinator agent."),
             chat,
         ]
@@ -1009,12 +1114,21 @@ def _(chat, mo):
 
 
 @app.cell
-def _(coordinator_bot):
-    coordinator_bot.spans
+def _():
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Exercise
+
+    View the `coordinator_bot.spans` to see what the bot chose to do.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Test: Coordinator Agent
@@ -1025,12 +1139,26 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
+def _(coordinator_bot):
     # Test coordinator agent
-    mo.stop(True)
-    # Uncomment to test:
-    # test_response = coordinator_bot("Process a receipt and generate an invoice", globals())
-    # test_response
+    test_response = coordinator_bot(
+        "Process a receipt and generate an invoice", globals()
+    )
+    test_response
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    If we get something like "Please provide the file path of the receipt you'd like me to process.", that's actually desired behaviour!
+    """)
+    return
+
+
+@app.cell
+def _(coordinator_bot):
+    coordinator_bot.spans
     return
 
 
@@ -1048,421 +1176,6 @@ def _(mo):
 
     This is the agent-as-tool pattern: agents use other agents as tools.
     """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ---
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ## Part 5: Bonus - Internal Complaints Agent
-
-    Pre-built agent for handling internal company concerns:
-    - Anonymizes chat history
-    - Shows anonymized version for review
-    - Stores in vector database with date partition (after confirmation)
-    - Queries and summarizes complaints by category
-    """)
-    return
-
-
-@app.cell
-def _():
-    from llamabot.components.docstore import LanceDBDocStore
-
-    return (LanceDBDocStore,)
-
-
-@app.cell
-def _(lmb):
-    @lmb.prompt("system")
-    def anonymization_sysprompt():
-        """You are an expert at anonymizing and structuring internal company concerns.
-
-        Your task is to transform a conversation about a concern into a clear, structured format
-        that emphasizes the issue and actionable items. Do NOT preserve the verbatim conversation format.
-
-        **Anonymization Requirements:**
-        - Remove all personally identifiable information (names, emails, phone numbers, specific departments)
-        - Replace with generic placeholders like [EMPLOYEE], [DEPARTMENT], [TEAM], etc.
-        - Preserve the core concern content and sentiment
-
-        **Output Format:**
-        Structure the anonymized concern using this format:
-
-        **Issue:** [Brief, clear statement of the core problem or concern]
-
-        **Details:** [Specific context about what's happening, root causes, or contributing factors.
-        Synthesize information from the conversation into a coherent narrative, not verbatim quotes.]
-
-        **Impact:** [How this issue is affecting work, team, productivity, deadlines, or morale.
-        Be specific about consequences.]
-
-        **Recommended Actions:** [Actionable steps that could address this concern. Focus on what
-        management, processes, or systems could do to help. Be concrete and practical.]
-
-        **Example:**
-        **Issue:** Deployment process delays due to slow runner spin-up times
-
-        **Details:** The deployment infrastructure experiences significant latency during runner initialization,
-        causing confusion and delays. The issue appears to be infrastructure-related rather than user-triggered,
-        with runners taking an unusually long time to spin up.
-
-        **Impact:** These delays are blocking progress, causing missed deadlines, and reducing overall team productivity.
-        The uncertainty around runner spin-up times creates confusion and makes it difficult to plan deployments effectively.
-
-        **Recommended Actions:**
-        - Investigate infrastructure performance and identify bottlenecks in runner spin-up process
-        - Review and optimize CI/CD pipeline configuration for runner initialization
-        - Provide clearer visibility into runner status and expected spin-up times
-        - Consider alternative deployment strategies or infrastructure improvements to reduce latency
-        - Establish service level expectations for runner spin-up times and monitor against them
-        """
-
-    return (anonymization_sysprompt,)
-
-
-@app.cell
-def _(anonymization_sysprompt, lmb, os):
-    anonymization_bot = lmb.SimpleBot(
-        system_prompt=anonymization_sysprompt(),
-        model_name="ollama_chat/gemma3n:latest",
-        api_base=os.getenv("TUTORIAL_API_BASE", None),
-    )
-    return (anonymization_bot,)
-
-
-@app.cell
-def _(LanceDBDocStore):
-    complaints_db = LanceDBDocStore(
-        table_name="internal-complaints",
-        enable_partitioning=True,
-    )
-    return (complaints_db,)
-
-
-@app.cell
-def _():
-    from datetime import datetime
-
-    return (datetime,)
-
-
-@app.cell
-def _(anonymization_bot, datetime, nodeify, tool):
-    @nodeify(loopback_name="decide")
-    @tool
-    def anonymize_complaint(
-        chat_history: str, _globals_dict: dict = None, globals_dict: dict = None
-    ) -> str:
-        """Anonymize internal company concern from chat history.
-
-        This tool should be called AFTER you've had a conversation with the user to draw out
-        sufficient actionable information (what the issue is, why it's a problem, and what impact it has).
-
-        IMPORTANT: Pass the FULL conversation history as a formatted string, including:
-        - The user's initial concern
-        - Your clarifying questions (from respond_to_user calls)
-        - The user's responses to your questions
-        - Any additional context they've shared
-
-        Pass the full conversation history as a natural dialogue string. The anonymization bot will
-        transform it into a structured format with Issue, Details, Impact, and Recommended Actions sections.
-        Example conversation to pass:
-        "User: I'm worried about our deployment process.
-        Agent: Can you help me understand what specifically is happening?
-        User: The team lead hasn't responded to my questions about the new workflow.
-        Agent: What impact is this having on your work?
-        User: It's blocking my progress and causing delays."
-
-        This ensures the anonymized version will be useful and actionable for someone reading it.
-
-        Shows the anonymized version for review before storing.
-        Use confirm_store_complaint to actually store it.
-
-        :param chat_history: The FULL chat conversation formatted as a string, including all questions and answers
-        :param _globals_dict: Internal parameter - automatically injected by AgentBot
-        :param globals_dict: Optional explicit globals dict (for testing/direct calls)
-        :return: The anonymized complaint text for review
-        """
-        # Use explicit globals_dict if provided, otherwise use _globals_dict
-        gdict = globals_dict if globals_dict is not None else _globals_dict
-
-        # Anonymize and structure the concern
-        anonymized = anonymization_bot(
-            f"Transform this internal company concern conversation into a structured format:\n\n{chat_history}"
-        )
-
-        # Store in globals for review and potential storage
-        if gdict is not None:
-            gdict["anonymized_complaint"] = anonymized.content
-            gdict["complaint_date"] = datetime.now().strftime("%Y-%m-%d")
-
-        return (
-            f"Here is the anonymized and structured version of your concern:\n\n{anonymized.content}\n\n"
-            f"**YOU MUST NOW**: Call respond_to_user() immediately to show this structured version to the user for review. "
-            f"After the user confirms, call confirm_store_complaint() to store it in the database."
-        )
-
-    return (anonymize_complaint,)
-
-
-@app.cell
-def _(complaints_db, datetime, nodeify, tool):
-    @nodeify(loopback_name="decide")
-    @tool
-    def confirm_store_complaint(
-        _globals_dict: dict = None, globals_dict: dict = None
-    ) -> str:
-        """Store the anonymized complaint in the database with date partition.
-
-        This should be called after anonymize_complaint() has been executed
-        and the user has reviewed the anonymized version.
-
-        :param _globals_dict: Internal parameter - automatically injected by AgentBot
-        :param globals_dict: Optional explicit globals dict (for testing/direct calls)
-        :return: Confirmation message with storage details
-        """
-        # Use explicit globals_dict if provided, otherwise use _globals_dict
-        gdict = globals_dict if globals_dict is not None else _globals_dict
-
-        if gdict is None:
-            raise ValueError(
-                "No globals_dict available. "
-                "When calling directly, pass globals_dict=globals() explicitly."
-            )
-
-        if "anonymized_complaint" not in gdict:
-            raise ValueError(
-                "No anonymized complaint found. Run anonymize_complaint() first."
-            )
-
-        anonymized = gdict["anonymized_complaint"]
-        complaint_date = gdict.get(
-            "complaint_date", datetime.now().strftime("%Y-%m-%d")
-        )
-
-        # Store in vector database with date as partition
-        complaints_db.append(anonymized, partition=complaint_date)
-
-        return f"Complaint stored successfully. Date partition: {complaint_date}"
-
-    return (confirm_store_complaint,)
-
-
-@app.cell
-def _(lmb):
-    @lmb.prompt("system")
-    def summarization_sysprompt():
-        """You are an expert at analyzing internal company concerns.
-        Summarize concerns and categorize them by common issue types:
-        - Process/workflow issues
-        - Team collaboration problems
-        - Resource allocation concerns
-        - Technical/system problems
-        - Communication issues
-        - Management/leadership concerns
-        - Other
-
-        Provide clear summaries and identify patterns.
-        """
-
-    return (summarization_sysprompt,)
-
-
-@app.cell
-def _(lmb, os, summarization_sysprompt):
-    summarization_bot = lmb.SimpleBot(
-        system_prompt=summarization_sysprompt(),
-        model_name="ollama_chat/gemma3n:latest",
-        api_base=os.getenv("TUTORIAL_API_BASE", None),
-    )
-    return
-
-
-@app.cell
-def _(complaints_db, nodeify, tool):
-    # Design Principle: Separation of Concerns
-    # This tool only queries the database and stores results in globals.
-    # It does NOT format or summarize the results - that's the agent's job via respond_to_user().
-    # This separation prevents infinite loops and makes the tool's responsibility clear:
-    # - Tool: Query data and store it
-    # - Agent: Format and present data to the user
-    @nodeify(loopback_name="decide")
-    @tool
-    def query_complaints(
-        query: str, date_partition: str = None, _globals_dict: dict = None
-    ) -> str:
-        """Query anonymized internal concerns from the database.
-
-        This tool queries the database and stores the results in globals.
-        After calling this tool, use respond_to_user() to present the results to the user.
-
-        Design Principle: Separation of Concerns
-        - This tool only queries and stores data (data access layer)
-        - The agent handles formatting/presentation via respond_to_user() (presentation layer)
-        - This prevents infinite loops and makes responsibilities clear
-
-        :param query: Search query for concerns (e.g., "process issues", "communication problems")
-        :param date_partition: Optional date partition to search (YYYY-MM-DD format). If None, searches all partitions.
-        :param _globals_dict: Internal parameter - automatically injected by AgentBot
-        :return: Confirmation message indicating results are stored and ready to be returned
-        """
-        # Query vector database
-        partitions = [date_partition] if date_partition else None
-        results = complaints_db.retrieve(query, n_results=10, partitions=partitions)
-
-        if not results:
-            return (
-                f"No concerns found matching query: {query}. "
-                f"**YOU MUST NOW**: Call respond_to_user() immediately to inform the user."
-            )
-
-        # Store results in globals
-        if _globals_dict is not None:
-            _globals_dict["complaint_query_results"] = results
-            _globals_dict["complaint_query"] = query
-
-        return (
-            f"Found {len(results)} concerns matching '{query}'. Results stored in 'complaint_query_results'. "
-            f"**YOU MUST NOW**: Call respond_to_user() immediately to present the results to the user."
-        )
-
-    return (query_complaints,)
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ### Test: Internal Complaints Agent
-
-    Test anonymization, confirmation, and summarization:
-    """)
-    return
-
-
-@app.cell
-def _(anonymize_complaint, confirm_store_complaint, query_complaints):
-    # Test internal complaints agent
-    # mo.stop(True)
-    # Uncomment to test:
-    test_concern = """
-    Employee: Hi, I'm Sarah from Engineering (sarah@company.com).
-    I'm concerned about our deployment process. The team lead hasn't
-    responded to my questions about the new workflow.
-    """
-
-    # Test anonymization (shows anonymized version)
-    # Pass globals() explicitly for direct calls (not through AgentBot)
-    result1 = anonymize_complaint(test_concern, _globals_dict=globals())
-    print(result1)
-
-    # After reviewing, confirm storage (pass globals() explicitly for direct calls)
-    result2 = confirm_store_complaint(_globals_dict=globals())
-    print(result2)
-
-    # Test query complaints
-    result3 = query_complaints("process issues", _globals_dict=globals())
-    print(result3)
-    if "complaint_query_results" in globals():
-        print("\nQuery results:", globals()["complaint_query_results"])
-    return
-
-
-@app.cell
-def _(
-    AgentBot,
-    anonymize_complaint,
-    confirm_store_complaint,
-    coordinator_sysprompt,
-    os,
-    process_receipt,
-    query_complaints,
-    write_invoice,
-):
-    # Add complaint tools to coordinator
-    coordinator_with_complaints = AgentBot(
-        tools=[
-            process_receipt,
-            write_invoice,
-            anonymize_complaint,
-            confirm_store_complaint,
-            query_complaints,
-        ],
-        system_prompt=coordinator_sysprompt(),
-        model_name="ollama_chat/gemma3n:latest",
-        api_base=os.getenv("TUTORIAL_API_BASE", None),
-    )
-    return (coordinator_with_complaints,)
-
-
-@app.cell
-def _(coordinator_with_complaints):
-    # AgentBot shows the PocketFlow graph structure when displayed directly
-    coordinator_with_complaints
-    return
-
-
-@app.cell
-def _(coordinator_with_complaints):
-    # Access spans via the .spans property (works for all bots)
-    coordinator_with_complaints.spans
-    return
-
-
-@app.cell
-def _(coordinator_with_complaints, span):
-    def chat_turn_with_complaints(messages, config):
-        user_message = messages[-1].content
-        with span(
-            "coordinator_chat_turn",
-            user_message=user_message[:100],
-            category="chat_interaction",
-        ):
-            result = coordinator_with_complaints(user_message, globals())
-        return result
-
-    return (chat_turn_with_complaints,)
-
-
-@app.cell
-def _(chat_turn_with_complaints, mo):
-    example_prompts_complaints = [
-        "Process this receipt and extract the data",
-        "Generate an invoice for Acme Corp, web development project, $5000",
-        "Anonymize this internal concern: I'm worried about our deployment process",
-        "Store the anonymized complaint",
-        "Summarize complaints about process issues",
-    ]
-
-    chat_with_complaints = mo.ui.chat(
-        chat_turn_with_complaints,
-        max_height=600,
-        prompts=example_prompts_complaints,
-    )
-    return (chat_with_complaints,)
-
-
-@app.cell
-def _(chat_with_complaints, mo):
-    v = mo.vstack(
-        [
-            mo.md("# Back-Office Coordinator (with Complaints)"),
-            mo.md(
-                "Upload receipts, generate invoices, and handle internal concerns. "
-                "The coordinator can anonymize and store complaints, and query/summarize them."
-            ),
-            chat_with_complaints,
-        ]
-    )
-    v
     return
 
 
@@ -1544,6 +1257,89 @@ def _(mo):
     - How do I scale? → Use modal endpoints, batch processing, async operations
     """)
     return
+
+
+@app.cell
+def _(BaseModel):
+    import textwrap
+
+
+    class InvoiceData(BaseModel):
+        """Invoice data schema - form structure for invoice generation."""
+
+        invoice_number: str
+        client_name: str
+        client_address: str
+        issue_date: str
+        due_date: str
+        project_description: str
+        amount: float
+        notes: str = ""
+
+        def _repr_html_(self) -> str:
+            """Return HTML representation for marimo display."""
+            return textwrap.dedent(f"""
+            <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 2px;">Invoice</div>
+                    <div style="font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px;">{self.invoice_number}</div>
+                </div>
+                <div style="padding: 40px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Issue Date</h3>
+                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.issue_date}</p>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Due Date</h3>
+                            <p style="font-size: 18px; font-weight: 600; color: #495057; margin: 0;">{self.due_date}</p>
+                        </div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 30px;">
+                        <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 12px; font-weight: 600; margin: 0 0 12px 0;">Bill To</h3>
+                        <p style="font-size: 16px; color: #212529; line-height: 1.6; margin: 0;">{self.client_name}<br>{self.client_address}</p>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #28a745;">
+                        <h3 style="font-size: 18px; font-weight: 600; color: #212529; margin-bottom: 12px; margin: 0 0 12px 0;">Project Description</h3>
+                        <p style="font-size: 16px; color: #495057; line-height: 1.7; margin: 0;">{self.project_description}</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px;">Amount Due</div>
+                        <div style="font-size: 48px; font-weight: 700; letter-spacing: -2px;">${self.amount:,.2f}</div>
+                    </div>
+                    {f'<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-top: 20px;"><strong style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #856404; display: block; margin-bottom: 8px;">Notes</strong><p style="color: #856404; line-height: 1.6; margin: 0;">{self.notes}</p></div>' if self.notes else ""}
+                </div>
+            </div>
+            """).strip()
+    return (InvoiceData,)
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ### Exercise
+
+    Change `InvoiceData` to `InvoiceDataExercise` that you filled out.
+    """)
+    return
+
+
+@app.cell
+def _(BaseModel):
+    class ReceiptData(BaseModel):
+        """Receipt data schema - must be defined BEFORE building extraction agent."""
+
+        vendor: str
+        date: str
+        amount: float
+        category: str
+        description: str
+    return (ReceiptData,)
 
 
 if __name__ == "__main__":
