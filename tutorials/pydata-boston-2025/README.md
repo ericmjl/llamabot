@@ -1,4 +1,4 @@
-# Building with LLMs Made Simple
+# Building LLM Agents Made Simple
 
 [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/ericmjl/llamabot/blob/main/tutorials/pydata-boston-2025/backoffice.py)
 
