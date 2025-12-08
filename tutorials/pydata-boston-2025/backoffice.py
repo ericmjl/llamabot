@@ -231,7 +231,9 @@ def _(lmb):
     @lmb.prompt("system")
     def receipt_extraction_sysprompt():
         """You are an expert at extracting financial information from receipt and invoice documents.
+
         Extract the following information accurately:
+
         - vendor: The name of the vendor/merchant
         - date: The transaction date in YYYY-MM-DD format
         - amount: The total amount as a number (without currency symbols)
@@ -313,7 +315,7 @@ def _(lmb, os):
     ocr_bot = lmb.SimpleBot(
         system_prompt="Extract all text from receipts accurately. "
         "Preserve the structure and include all numbers, dates, and vendor names.",
-        model_name="ollama/deepseek-ocr",  # Fixed: ollama/deepseek-ocr
+        model_name="ollama/deepseek-ocr",
         api_base=os.getenv("TUTORIAL_API_BASE", None),
     )
     return (ocr_bot,)
@@ -383,7 +385,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Exercise: Step 1 - Convert PDF to images
+    ### Step 1 - Convert PDF to images
 
     First, we need to convert the receipt PDF into images that vision models can process.
 
@@ -467,6 +469,13 @@ def _(ocr_texts, receipt_structuring_bot):
     return
 
 
+@app.cell
+def _():
+    from llamabot.components.pocketflow import nodeify
+    from llamabot.components.tools import tool
+    return nodeify, tool
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
@@ -484,13 +493,6 @@ def _(mo):
     The three decorators stacked on this function each serve a specific purpose. The `@span` decorator handles that logging I just mentioned - it automatically creates a trace record whenever the function runs, capturing timing and any metadata you want to attach. The `@tool` decorator transforms the function into something agents can understand and call autonomously - it reads the docstring and type hints to generate a tool description that the LLM uses to decide when to invoke it. Finally, `@nodeify(loopback_name="decide")` integrates the function into the agent's workflow graph, specifying that after this tool completes, control should loop back to a node called "decide" where the agent chooses its next action. Together, these decorators turn a regular Python function into an observable, agent-callable workflow step.
     """)
     return
-
-
-@app.cell
-def _():
-    from llamabot.components.pocketflow import nodeify
-    from llamabot.components.tools import tool
-    return nodeify, tool
 
 
 @app.cell
@@ -582,6 +584,13 @@ def _(mo):
 
     Display spans from the bot using the .spans property of ocr_bot:
     """)
+    return
+
+
+@app.cell
+def _(ocr_bot):
+    # Your answer goes here
+    ocr_bot.spans
     return
 
 
