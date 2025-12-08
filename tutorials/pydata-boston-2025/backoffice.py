@@ -215,8 +215,8 @@ def _(mo):
 
 @app.cell
 def _():
-    from pydantic import BaseModel
-    return (BaseModel,)
+    from pydantic import BaseModel, Field
+    return BaseModel, Field
 
 
 @app.cell
@@ -344,11 +344,12 @@ def _(mo):
 
 
 @app.cell
-def _(BaseModel, render_receipt_html):
+def _(BaseModel, Field, render_receipt_html):
     class ReceiptDataExercise(BaseModel):
         """Receipt data schema - must be defined BEFORE building extraction agent."""
 
-        pass
+        vendor: str = Field(str, description="The name of the vendor/merchant.")
+        # Fill in the rest below!
 
         def _repr_html_(self) -> str:
             """Return HTML representation for marimo display."""
