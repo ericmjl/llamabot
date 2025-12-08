@@ -52,7 +52,7 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    # Building LLM Agents: Workflow-First Approach
+    # Building LLM Agents Made Simple
 
     Learn to build practical LLM agents using LlamaBot and Marimo notebooks.
     The most important lesson: **start with workflows, not technology**.
