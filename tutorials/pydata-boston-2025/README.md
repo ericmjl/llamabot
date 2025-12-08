@@ -6,7 +6,7 @@ Learn to build practical LLM agents using LlamaBot and Marimo notebooks. The mos
 
 ## Overview
 
-This tutorial demonstrates how to build a complete back-office automation system through three agents:
+This tutorial demonstrates how to build a back-office automation system through three agents:
 
 - **Receipt processor** - Extracts structured data from PDF receipts
 - **Invoice writer** - Generates formatted invoices from natural language
@@ -33,7 +33,7 @@ Before building agents, you must:
 
 ### Two-Step OCR Pattern
 
-Vision models like DeepSeek-OCR excel at OCR but don't support structured outputs. The solution:
+Vision models like DeepSeek-OCR excel at OCR but don't necessarily support structured outputs. The solution:
 
 1. **OCR Step** - Extract text from images using vision models
 2. **Structuring Step** - Convert unstructured text to validated Pydantic models
@@ -59,6 +59,8 @@ Or open them in Marimo:
 ```bash
 marimo edit backoffice.py
 ```
+
+Or click on the Molab shield above to open it up in Molab, Marimo's counterpart to Google Colab.
 
 ## What You'll Learn
 
