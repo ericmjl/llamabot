@@ -352,6 +352,7 @@ def _(BaseModel, render_receipt_html):
 
         def _repr_html_(self) -> str:
             """Return HTML representation for marimo display."""
+            # `render_receipt_html` is defined at the bottom of the notebook!
             return render_receipt_html(
                 vendor=self.vendor,
                 date=self.date,
@@ -484,6 +485,31 @@ def _(ocr_texts, receipt_structuring_bot):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Step 4: Store the structured data
+
+    At this point, you have a validated `ReceiptData` object with all the extracted information.
+    In a production system, this is where you'd persist the data to your backend storage.
+
+    Common storage patterns include:
+
+    - **Database**: Insert into PostgreSQL, SQLite, or your preferred database
+    - **API**: POST to a REST API endpoint (e.g., Notion, Airtable, custom backend)
+    - **File system**: Append to CSV, JSONL, or other structured files
+    - **Data warehouse**: Stream to BigQuery, Snowflake, or similar systems
+
+    Your schema (`ReceiptData`) is already defined, so storage becomes
+    a straightforward serialization step. The Pydantic model ensures data consistency
+    before it reaches your storage layer.
+
+    For this tutorial, we'll skip the storage step and focus on the agent orchestration,
+    but remember: **workflow-first means thinking about where data flows next**.
+    """)
+    return
+
+
 @app.cell
 def _():
     from llamabot.components.pocketflow import nodeify
@@ -534,6 +560,7 @@ def _(
         :param file_path: Path to the receipt file (PDF, PNG, JPG, or JPEG)
         :return: JSON string of extracted receipt data
         """
+        # This is a LlamaBot feature for logging, ignore this!
         s = get_current_span()
         s["file_path"] = file_path
 
@@ -646,14 +673,14 @@ def _(mo):
 
     Just as we defined the structure for receipt data, now we need to define what an invoice looks like. Your task is to create the `InvoiceDataExercise` model by adding these fields:
 
-    - invoice_number: The invoice identifier like "INV-2025-001" (string)
-    - client_name: The name of the client being billed (string)
-    - client_address: The client's full mailing address (string)
-    - issue_date: The date the invoice is issued in YYYY-MM-DD format (string)
-    - due_date: The payment due date in YYYY-MM-DD format (string)
-    - project_description: Description of the work or services provided (string)
-    - amount: The total amount to be paid (float)
-    - notes: Optional additional notes or payment instructions (string, optional with default empty string)
+    - `invoice_number`: The invoice identifier like "INV-2025-001" (string)
+    - `client_name`: The name of the client being billed (string)
+    - `client_address`: The client's full mailing address (string)
+    - `issue_date`: The date the invoice is issued in YYYY-MM-DD format (string)
+    - `due_date`: The payment due date in YYYY-MM-DD format (string)
+    - `project_description`: Description of the work or services provided (string)
+    - `amount`: The total amount to be paid (float)
+    - `notes`: Optional additional notes or payment instructions (string, optional with default empty string)
 
     Think of this as defining the form template that the invoice generation agent will fill out.
     """)
@@ -669,6 +696,7 @@ def _(BaseModel, render_invoice_html):
 
         def _repr_html_(self) -> str:
             """Return HTML representation for marimo display."""
+            # `render_invoice_html` is defined at the bottom of the notebook!
             return render_invoice_html(
                 invoice_number=self.invoice_number,
                 client_name=self.client_name,
