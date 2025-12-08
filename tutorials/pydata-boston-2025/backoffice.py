@@ -1299,14 +1299,6 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    If we get something like "Please provide the file path of the receipt you'd like me to process.", that's actually desired behaviour!
-    """)
-    return
-
-
 @app.cell
 def _(coordinator_bot):
     coordinator_bot.spans
