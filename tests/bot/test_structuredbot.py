@@ -264,3 +264,283 @@ def test_structuredbot_spans_property_inherited_from_simplebot():
     assert hasattr(bot, "spans")
     spans = bot.spans
     assert isinstance(spans, SpanList)
+
+
+# Tests for new StructuredBot display methods
+def test_format_field_type_simple_types():
+    """Test format_field_type() with simple types."""
+    from pydantic import BaseModel
+
+    class SimpleModel(BaseModel):
+        """Test model with simple field types."""
+
+        string_field: str
+        int_field: int
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=SimpleModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    schema = SimpleModel.model_json_schema()
+
+    # Test string type
+    field_type = bot.format_field_type(schema["properties"]["string_field"], schema)
+    assert field_type == "string"
+
+    # Test integer type
+    field_type = bot.format_field_type(schema["properties"]["int_field"], schema)
+    assert field_type == "integer"
+
+
+def test_format_field_type_array():
+    """Test format_field_type() with array types."""
+    from pydantic import BaseModel
+    from typing import List
+
+    class ArrayModel(BaseModel):
+        """Test model with array field type."""
+
+        items: List[str]
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=ArrayModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    schema = ArrayModel.model_json_schema()
+    field_type = bot.format_field_type(schema["properties"]["items"], schema)
+
+    assert "array" in field_type.lower()
+
+
+def test_format_field_type_optional():
+    """Test format_field_type() with optional fields."""
+    from pydantic import BaseModel
+    from typing import Optional
+
+    class OptionalModel(BaseModel):
+        """Test model with optional field."""
+
+        optional_field: Optional[str] = None
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=OptionalModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    schema = OptionalModel.model_json_schema()
+    field_type = bot.format_field_type(schema["properties"]["optional_field"], schema)
+
+    # Should show as union with null
+    assert "|" in field_type or "null" in field_type
+
+
+def test_render_field_required():
+    """Test render_field() with required field."""
+    from pydantic import BaseModel
+
+    class RequiredModel(BaseModel):
+        """Test model with required field."""
+
+        required_field: str
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=RequiredModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    schema = RequiredModel.model_json_schema()
+    field_html = bot.render_field(
+        "required_field",
+        schema["properties"]["required_field"],
+        required=True,
+        schema=schema,
+    )
+
+    assert "required_field" in field_html
+    assert "required" in field_html
+
+
+def test_render_field_optional():
+    """Test render_field() with optional field."""
+    from pydantic import BaseModel
+    from typing import Optional
+
+    class OptionalModel(BaseModel):
+        """Test model with optional field."""
+
+        optional_field: Optional[str] = None
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=OptionalModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    schema = OptionalModel.model_json_schema()
+    field_html = bot.render_field(
+        "optional_field",
+        schema["properties"]["optional_field"],
+        required=False,
+        schema=schema,
+    )
+
+    assert "optional_field" in field_html
+    assert "optional" in field_html
+
+
+def test_render_field_with_default():
+    """Test render_field() with default value."""
+    from pydantic import BaseModel
+
+    class DefaultModel(BaseModel):
+        """Test model with default value."""
+
+        field_with_default: str = "default_value"
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=DefaultModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    schema = DefaultModel.model_json_schema()
+    field_html = bot.render_field(
+        "field_with_default",
+        schema["properties"]["field_with_default"],
+        required=False,
+        schema=schema,
+    )
+
+    assert "field_with_default" in field_html
+    assert "default_value" in field_html or "Default" in field_html
+
+
+def test_render_field_with_description():
+    """Test render_field() with field description."""
+    from pydantic import BaseModel, Field
+
+    class DescribedModel(BaseModel):
+        """Test model with field description."""
+
+        described_field: str = Field(description="This is a test field")
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=DescribedModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    schema = DescribedModel.model_json_schema()
+    field_html = bot.render_field(
+        "described_field",
+        schema["properties"]["described_field"],
+        required=True,
+        schema=schema,
+    )
+
+    assert "described_field" in field_html
+    assert "This is a test field" in field_html
+
+
+def test_generate_schema_html_basic():
+    """Test generate_schema_html() with basic model."""
+    from pydantic import BaseModel
+
+    class BasicModel(BaseModel):
+        """Test model with basic fields."""
+
+        field1: str
+        field2: int
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=BasicModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    html = bot.generate_schema_html()
+
+    assert "Pydantic Model Schema" in html
+    assert "BasicModel" in html
+    assert "field1" in html
+    assert "field2" in html
+
+
+def test_generate_schema_html_with_descriptions():
+    """Test generate_schema_html() includes field descriptions."""
+    from pydantic import BaseModel, Field
+
+    class DescribedModel(BaseModel):
+        """Test model with multiple described fields."""
+
+        name: str = Field(description="The name field")
+        age: int = Field(description="The age field")
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=DescribedModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    html = bot.generate_schema_html()
+
+    assert "The name field" in html
+    assert "The age field" in html
+
+
+def test_repr_html_shows_config_and_schema():
+    """Test that _repr_html_() shows both configuration and schema."""
+    from pydantic import BaseModel
+
+    class LocalTestModel(BaseModel):
+        """Test model for config and schema display."""
+
+        test_field: str
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=LocalTestModel,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    html = bot._repr_html_()
+
+    # Should contain configuration
+    assert "StructuredBot Configuration" in html
+    assert "ollama_chat/gemma2:2b" in html
+    assert "Test prompt" in html
+
+    # Should contain schema
+    assert "Pydantic Model Schema" in html
+    assert "LocalTestModel" in html
+    assert "test_field" in html
+
+
+def test_repr_html_uses_generate_methods():
+    """Test that _repr_html_() uses generate_config_html() and generate_schema_html()."""
+    from pydantic import BaseModel
+
+    class LocalTestModel2(BaseModel):
+        """Test model for generate methods."""
+
+        test_field: str
+
+    bot = StructuredBot(
+        system_prompt="Test prompt",
+        pydantic_model=LocalTestModel2,
+        model_name="ollama_chat/gemma2:2b",
+    )
+
+    # Get combined HTML
+    repr_html = bot._repr_html_()
+
+    # Schema should be part of repr_html
+    # Note: We can't do exact string match because repr_html modifies the HTML
+    assert "Pydantic Model Schema" in repr_html
+    assert "test_field" in repr_html

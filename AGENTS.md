@@ -137,12 +137,15 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
   linting errors during development)
 - **File Editing**: When possible, only edit the requested file; avoid
   unnecessary changes to other files
-- **No "Private" Functions**: Do not create functions prefixed with underscores
-  (e.g., `_helper_function`). Python doesn't need this convention - if a function
-  is only used internally, it can simply be a regular function without the
-  underscore prefix. All helper functions should be public (no underscore prefixes).
-  Use descriptive names instead of hiding with underscores. This makes the codebase
-  more maintainable and allows functions to be reused when needed.
+- **No "Private" Functions or Methods**: Do not create functions or methods prefixed
+  with underscores (e.g., `_helper_function`, `_generate_html`). Python doesn't need
+  this convention - if a function or method is only used internally, it can simply be
+  a regular function/method without the underscore prefix. All helper functions and
+  methods should be public (no underscore prefixes). The ONLY exceptions are
+  well-known protocols like `__dunder__` methods (e.g., `__init__`, `__call__`) or
+  framework-specific conventions (e.g., marimo's `_repr_html_`). Use descriptive names
+  instead of hiding with underscores. This makes the codebase more maintainable and
+  allows functions/methods to be reused when needed.
 
 ### Bot Development
 
