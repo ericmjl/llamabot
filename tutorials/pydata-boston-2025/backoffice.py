@@ -916,7 +916,7 @@ def _(format_invoice_html, generate_invoice):
     # Uncomment to test:
     test_description = "Invoice for Acme Corporation, web development project completed in January 2025, amount $5000, client address: 123 Main St, Boston MA 02101"
     test_invoice = generate_invoice(test_description)
-    format_invoice_html(test_invoice)
+    test_invoice
     return
 
 
