@@ -42,40 +42,11 @@ def _():
 
     from llamabot import (
         SimpleBot,
-        enable_span_recording,
         get_spans,
         span,
     )
 
     return SimpleBot, get_spans, mo, span
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        """
-    ## Enable Span Recording
-    """
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        """
-    First, enable span recording globally. This will automatically create spans
-    for all bot operations.
-    """
-    )
-    return
-
-
-@app.cell
-def _():
-    # Span recording is now enabled by default for all bots
-    # Spans are automatically created - no need to call enable_span_recording()
-    return
 
 
 @app.cell(hide_code=True)
@@ -152,7 +123,8 @@ def _(mo):
     Each bot instance tracks its own spans. You can access them via the `.spans` property,
     which returns a `SpanList` that displays all spans from the bot's calls.
 
-    Alternatively, displaying the bot object directly also shows spans (for SimpleBot and StructuredBot).
+    Note: Displaying the bot object directly shows the bot's configuration, not spans.
+    Use `.spans` to view the span visualization.
     """
     )
     return
@@ -167,7 +139,7 @@ def _(bot):
 
 @app.cell
 def _(bot):
-    # Display the bot object directly - also shows spans (for SimpleBot/StructuredBot)
+    # Display the bot object directly - shows configuration (not spans)
     bot
     return
 

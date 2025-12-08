@@ -1040,3 +1040,115 @@ def test_bot_spans_property_empty_when_no_calls():
     assert isinstance(spans, SpanList)
     assert len(spans) == 0
     assert list(spans) == []
+
+
+# Tests for new display methods
+def test_generate_config_html_basic():
+    """Test that generate_config_html() returns valid HTML."""
+    bot = SimpleBot(
+        system_prompt="Test prompt",
+        model_name="test-model",
+        temperature=0.5,
+        stream_target="stdout",
+    )
+
+    html = bot.generate_config_html()
+
+    # Check that HTML contains expected configuration values
+    assert "test-model" in html
+    assert "0.5" in html
+    assert "stdout" in html
+    assert "Test prompt" in html
+    assert "SimpleBot Configuration" in html
+
+
+def test_generate_config_html_with_json_mode():
+    """Test that generate_config_html() shows JSON mode correctly."""
+    bot = SimpleBot(system_prompt="Test prompt", json_mode=True)
+
+    html = bot.generate_config_html()
+
+    assert "Yes" in html  # JSON Mode should show "Yes"
+
+
+def test_generate_config_html_without_json_mode():
+    """Test that generate_config_html() shows JSON mode as No when disabled."""
+    bot = SimpleBot(system_prompt="Test prompt", json_mode=False)
+
+    html = bot.generate_config_html()
+
+    assert "No" in html  # JSON Mode should show "No"
+
+
+def test_generate_config_html_with_memory():
+    """Test that generate_config_html() shows memory class name."""
+    mock_memory = MagicMock()
+    bot = SimpleBot(system_prompt="Test prompt", memory=mock_memory)
+
+    html = bot.generate_config_html()
+
+    # Should show the class name of the memory object
+    assert "MagicMock" in html
+
+
+def test_generate_config_html_without_memory():
+    """Test that generate_config_html() shows None when no memory."""
+    bot = SimpleBot(system_prompt="Test prompt", memory=None)
+
+    html = bot.generate_config_html()
+
+    assert "None" in html
+
+
+def test_generate_config_html_with_completion_kwargs():
+    """Test that generate_config_html() shows additional parameters."""
+    bot = SimpleBot(
+        system_prompt="Test prompt",
+        max_tokens=100,
+        top_p=0.9,
+    )
+
+    html = bot.generate_config_html()
+
+    # Should show the additional parameters
+    assert "Additional Parameters" in html
+    assert "max_tokens" in html
+    assert "100" in html
+    assert "top_p" in html
+    assert "0.9" in html
+
+
+def test_generate_config_html_without_completion_kwargs():
+    """Test that generate_config_html() works without additional parameters."""
+    bot = SimpleBot(system_prompt="Test prompt")
+
+    html = bot.generate_config_html()
+
+    # Should NOT show additional parameters section
+    assert "Additional Parameters" not in html
+
+
+def test_repr_html_returns_config_not_spans():
+    """Test that _repr_html_() returns configuration HTML, not spans."""
+    bot = SimpleBot(system_prompt="Test prompt", model_name="test-model")
+
+    html = bot._repr_html_()
+
+    # Should contain configuration
+    assert "SimpleBot Configuration" in html
+    assert "test-model" in html
+    assert "Test prompt" in html
+
+    # Should NOT contain span-related content (this would only be in display_spans())
+    # Note: This test verifies the change from showing spans to showing config
+
+
+def test_repr_html_uses_generate_config_html():
+    """Test that _repr_html_() uses generate_config_html() internally."""
+    bot = SimpleBot(system_prompt="Test prompt")
+
+    # Both should return the same HTML
+    config_html = bot.generate_config_html()
+    repr_html = bot._repr_html_()
+
+    assert config_html == repr_html

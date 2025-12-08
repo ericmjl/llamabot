@@ -242,16 +242,85 @@ class SimpleBot:
         """
         return self.spans._repr_html_()
 
+    def generate_config_html(self) -> str:
+        """Generate HTML representation of bot configuration.
+
+        Creates a visual display of the bot's configuration including
+        model settings, parameters, and system prompt using Nord color scheme.
+
+        :return: HTML string showing bot configuration
+        """
+        # Extract memory class name if present
+        memory_display = type(self.memory).__name__ if self.memory else "None"
+
+        # Format completion_kwargs
+        extra_params = ""
+        if self.completion_kwargs:
+            params_html = []
+            for key, value in self.completion_kwargs.items():
+                params_html.append(f"<tr><td>{key}</td><td>{str(value)}</td></tr>")
+            extra_params = f"""
+            <div style="margin-top: 1rem;">
+                <div style="color: #2E3440; font-size: 1.05rem; font-weight: 600; border-bottom: 2px solid #5E81AC; padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+                    Additional Parameters
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    {''.join(params_html)}
+                </table>
+            </div>
+            """
+
+        html = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; padding: 1rem;">
+            <div style="background: #E5E9F0; border-radius: 8px; padding: 1rem;">
+                <div style="color: #2E3440; font-size: 1.1rem; font-weight: 600; border-bottom: 2px solid #5E81AC; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    SimpleBot Configuration
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #D8DEE9;">
+                        <td style="padding: 0.5rem; font-weight: 600; color: #2E3440; width: 30%;">Model</td>
+                        <td style="padding: 0.5rem; color: #2E3440; font-family: monospace;">{self.model_name}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #D8DEE9;">
+                        <td style="padding: 0.5rem; font-weight: 600; color: #2E3440;">Temperature</td>
+                        <td style="padding: 0.5rem; color: #2E3440; font-family: monospace;">{self.temperature}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #D8DEE9;">
+                        <td style="padding: 0.5rem; font-weight: 600; color: #2E3440;">Stream</td>
+                        <td style="padding: 0.5rem; color: #2E3440; font-family: monospace;">{self.stream_target}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #D8DEE9;">
+                        <td style="padding: 0.5rem; font-weight: 600; color: #2E3440;">JSON Mode</td>
+                        <td style="padding: 0.5rem; color: #2E3440; font-family: monospace;">{"Yes" if self.json_mode else "No"}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem; font-weight: 600; color: #2E3440;">Memory</td>
+                        <td style="padding: 0.5rem; color: #2E3440; font-family: monospace;">{memory_display}</td>
+                    </tr>
+                </table>
+                {extra_params}
+                <div style="margin-top: 1rem;">
+                    <div style="color: #2E3440; font-size: 1.05rem; font-weight: 600; border-bottom: 2px solid #5E81AC; padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+                        System Prompt
+                    </div>
+                    <div style="background: white; border-left: 3px solid #5E81AC; padding: 1rem; border-radius: 4px; color: #2E3440; white-space: pre-wrap; font-family: system-ui, sans-serif; line-height: 1.5;">
+{self.system_prompt.content}</div>
+                </div>
+            </div>
+        </div>
+        """
+        return html
+
     def _repr_html_(self) -> str:
         """Return HTML representation for marimo display.
 
         When a SimpleBot object is the last expression in a marimo cell,
-        this method is automatically called to display the spans visualization
-        from the most recent bot call.
+        this method is automatically called to display the bot's configuration
+        including system prompt, model settings, and parameters.
 
-        :return: HTML string for displaying spans
+        :return: HTML string for displaying bot configuration
         """
-        return self.display_spans()
+        return self.generate_config_html()
 
 
 def make_response(

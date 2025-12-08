@@ -281,13 +281,151 @@ class StructuredBot(SimpleBot):
         """
         return self.spans._repr_html_()
 
+    def format_field_type(self, field_info: dict, schema: dict) -> str:
+        """Format a field type from JSON schema to readable string.
+
+        Handles various JSON schema type formats including arrays, unions,
+        optional fields, and nested model references.
+
+        :param field_info: Field schema information dictionary
+        :param schema: Complete schema dictionary (for $ref lookups)
+        :return: Formatted type string (e.g., "array of string", "string | null")
+        """
+        # Handle $ref (nested models)
+        if "$ref" in field_info:
+            ref_path = field_info["$ref"].split("/")[-1]
+            return ref_path
+
+        # Handle anyOf (unions)
+        if "anyOf" in field_info:
+            types = []
+            for option in field_info["anyOf"]:
+                if option.get("type") == "null":
+                    types.append("null")
+                elif "$ref" in option:
+                    ref_name = option["$ref"].split("/")[-1]
+                    types.append(ref_name)
+                elif "type" in option:
+                    types.append(option["type"])
+            return " | ".join(types)
+
+        # Handle arrays
+        if field_info.get("type") == "array":
+            if "items" in field_info:
+                items = field_info["items"]
+                if "$ref" in items:
+                    item_type = items["$ref"].split("/")[-1]
+                else:
+                    item_type = items.get("type", "any")
+                return f"array of {item_type}"
+            return "array"
+
+        # Simple type
+        return field_info.get("type", "any")
+
+    def render_field(
+        self, name: str, info: dict, required: bool, schema: dict, indent_level: int = 0
+    ) -> str:
+        """Render a single Pydantic model field as HTML.
+
+        :param name: Field name
+        :param info: Field schema information
+        :param required: Whether the field is required
+        :param schema: Complete schema dictionary (for $ref lookups)
+        :param indent_level: Indentation level for nested fields
+        :return: HTML string for the field
+        """
+        field_type = self.format_field_type(info, schema)
+        required_badge = (
+            '<span style="color: #BF616A; font-size: 0.85rem; font-weight: 600;">required</span>'
+            if required
+            else '<span style="color: #81A1C1; font-size: 0.85rem;">optional</span>'
+        )
+
+        # Extract default value
+        default_html = ""
+        if "default" in info:
+            default_val = str(info["default"])
+            default_html = f'<div style="color: #A3BE8C; font-size: 0.85rem; font-family: monospace; margin-top: 0.25rem;">Default: {default_val}</div>'
+
+        # Extract description
+        description_html = ""
+        if "description" in info:
+            description_html = f'<div style="color: #4C566A; font-size: 0.9rem; margin-top: 0.25rem; font-style: italic;">{info["description"]}</div>'
+
+        indent_style = (
+            f"margin-left: {indent_level * 1.5}rem;" if indent_level > 0 else ""
+        )
+
+        return f"""
+        <div style="background: white; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px; border-left: 3px solid #A3BE8C; {indent_style}">
+            <div>
+                <span style="font-weight: 600; color: #2E3440; font-family: monospace;">{name}</span>:
+                <span style="color: #5E81AC; font-family: monospace; font-size: 0.9rem;">{field_type}</span>
+                ({required_badge})
+            </div>
+            {default_html}
+            {description_html}
+        </div>
+        """
+
+    def generate_schema_html(self) -> str:
+        """Generate HTML representation of the Pydantic model schema.
+
+        Extracts schema from self.pydantic_model and creates a beautiful
+        HTML rendering showing all fields with their types, requirements,
+        defaults, and descriptions.
+
+        :return: HTML string showing the Pydantic model schema
+        """
+        schema = self.pydantic_model.model_json_schema()
+        model_name = schema.get("title", self.pydantic_model.__name__)
+        properties = schema.get("properties", {})
+        required_fields = set(schema.get("required", []))
+
+        # Render all fields
+        fields_html = []
+        for field_name, field_info in properties.items():
+            is_required = field_name in required_fields
+            field_html = self.render_field(field_name, field_info, is_required, schema)
+            fields_html.append(field_html)
+
+        html = f"""
+        <div style="margin-top: 1rem;">
+            <div style="color: #2E3440; font-size: 1.05rem; font-weight: 600; border-bottom: 2px solid #5E81AC; padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+                Pydantic Model Schema
+            </div>
+            <div style="margin-bottom: 0.5rem; color: #2E3440;">
+                <span style="font-weight: 600;">Model:</span> <span style="font-family: monospace; color: #5E81AC;">{model_name}</span>
+            </div>
+            <div style="margin-top: 0.75rem;">
+                <div style="font-weight: 600; color: #2E3440; margin-bottom: 0.5rem;">Fields:</div>
+                {''.join(fields_html)}
+            </div>
+        </div>
+        """
+        return html
+
     def _repr_html_(self) -> str:
         """Return HTML representation for marimo display.
 
         When a StructuredBot object is the last expression in a marimo cell,
-        this method is automatically called to display the spans visualization
-        from all bot calls.
+        this method is automatically called to display the bot's configuration
+        and Pydantic model schema.
 
-        :return: HTML string for displaying spans
+        :return: HTML string for displaying bot configuration and schema
         """
-        return self.display_spans()
+        config_html = self.generate_config_html()
+        schema_html = self.generate_schema_html()
+
+        # Combine both, inserting schema_html before the closing divs of config
+        # Extract the content part of config_html (before final closing tags)
+        config_parts = config_html.rsplit("</div>", 2)
+        combined_html = config_parts[0] + schema_html + "</div>" + "</div>"
+
+        # Update the header to say "StructuredBot"
+        combined_html = combined_html.replace(
+            "SimpleBot Configuration", "StructuredBot Configuration"
+        )
+
+        return combined_html
