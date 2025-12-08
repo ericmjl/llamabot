@@ -3,10 +3,10 @@
 # dependencies = [
 #     "llamabot[all]",
 #     "marimo>=0.17.0",
-#     "pydantic==2.12.5",
+#     "pydantic",
 #     "pdf2image",
 #     "pyzmq",
-#     "anthropic==0.75.0",
+#     "anthropic",
 # ]
 #
 # [tool.uv.sources]
@@ -24,6 +24,7 @@ def _():
     from pathlib import Path
 
     import marimo as mo
+
     return Path, mo
 
 
@@ -71,9 +72,9 @@ def _(mo):
 def _():
     from llamabot import (
         get_current_span,
-        get_spans,
         span,
     )
+
     return get_current_span, span
 
 
@@ -217,12 +218,14 @@ def _(mo):
 @app.cell
 def _():
     from pydantic import BaseModel
+
     return (BaseModel,)
 
 
 @app.cell
 def _():
     import llamabot as lmb
+
     return (lmb,)
 
 
@@ -243,18 +246,21 @@ def _(lmb):
         If any field is unclear or missing, use your best judgment based on the context.
         For dates, convert any format to YYYY-MM-DD. For amounts, extract only the numerical value.
         """
+
     return (receipt_extraction_sysprompt,)
 
 
 @app.cell
 def _():
     from pdf2image import convert_from_path
+
     return (convert_from_path,)
 
 
 @app.cell
 def _():
     import tempfile
+
     return (tempfile,)
 
 
@@ -289,12 +295,14 @@ def _(Path, convert_from_path, span, tempfile):
         else:
             s["conversion_success"] = False
             raise ValueError(f"Unsupported file type: {file_extension}")
+
     return (convert_pdf_to_images,)
 
 
 @app.cell
 def _():
     from llamabot.components.messages import user
+
     return (user,)
 
 
@@ -345,6 +353,7 @@ def _(BaseModel):
         """Receipt data schema - must be defined BEFORE building extraction agent."""
 
         pass
+
     return
 
 
@@ -473,6 +482,7 @@ def _(ocr_texts, receipt_structuring_bot):
 def _():
     from llamabot.components.pocketflow import nodeify
     from llamabot.components.tools import tool
+
     return nodeify, tool
 
 
@@ -533,7 +543,9 @@ def _(
         if len(image_paths) == 1:
             prompt_text = "Extract all text from this receipt image."
         else:
-            prompt_text = f"Extract all text from this {len(image_paths)}-page receipt document."
+            prompt_text = (
+                f"Extract all text from this {len(image_paths)}-page receipt document."
+            )
 
         # Step 1: OCR extraction - extract text from images
         # Process each image and combine the results (ocr_bot creates spans automatically)
@@ -554,6 +566,7 @@ def _(
         s["amount"] = result.amount
 
         return result.model_dump_json()
+
     return (process_receipt,)
 
 
@@ -621,6 +634,7 @@ def _(lmb):
         Fill out invoice forms with structured data provided.
         Ensure all fields are professional and business-appropriate.
         """
+
     return (invoice_generation_sysprompt,)
 
 
@@ -651,6 +665,7 @@ def _(BaseModel):
         """Invoice data schema - form structure for invoice generation."""
 
         pass
+
     return
 
 
@@ -695,9 +710,7 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
             Should include client name, project description, amount, and any other relevant details.
         """
         s = get_current_span()
-        s["invoice_description"] = invoice_description[
-            :200
-        ]  # Truncate for storage
+        s["invoice_description"] = invoice_description[:200]  # Truncate for storage
 
         from datetime import datetime, timedelta
 
@@ -728,6 +741,7 @@ def _(InvoiceData, get_current_span, invoice_writer_bot, span):
         s["invoice_number"] = invoice.invoice_number
         s["amount"] = invoice.amount
         return invoice
+
     return (generate_invoice,)
 
 
@@ -744,6 +758,7 @@ def _(InvoiceData, get_current_span, span):
         s["invoice_number"] = invoice.invoice_number
         s["html_length"] = len(html)
         return html
+
     return (render_invoice_html,)
 
 
@@ -795,6 +810,7 @@ def _(generate_invoice, nodeify, render_invoice_html, span, tool):
             "Invoice generated successfully. "
             "**YOU MUST NOW**: Call return_object_to_user('invoice_html') immediately to return it to the user."
         )
+
     return (write_invoice,)
 
 
@@ -946,12 +962,14 @@ def _(lmb):
 
         Remember: It's better to ask for clarification than to assume and generate incorrect information.
         """
+
     return (coordinator_sysprompt,)
 
 
 @app.cell
 def _():
     from llamabot import AgentBot
+
     return (AgentBot,)
 
 
@@ -1039,9 +1057,7 @@ def _(Path, files, tempfile):
                 temp_file_path = temp_file.name
 
             # Make file available in globals
-            variable_name = (
-                Path(file.name).stem.replace(" ", "_").replace("-", "_")
-            )
+            variable_name = Path(file.name).stem.replace(" ", "_").replace("-", "_")
             globals()[variable_name] = temp_file_path
             print(f"File available as: {variable_name}")
     return
@@ -1072,6 +1088,7 @@ def _(coordinator_bot, datetime, span):
                 [f"Today's date: {datetime.now()}", user_message], globals()
             )
         return result
+
     return (chat_turn,)
 
 
@@ -1272,7 +1289,6 @@ def _(mo):
 def _(BaseModel):
     import textwrap
 
-
     class InvoiceData(BaseModel):
         """Invoice data schema - form structure for invoice generation."""
 
@@ -1320,6 +1336,7 @@ def _(BaseModel):
                 </div>
             </div>
             """).strip()
+
     return (InvoiceData,)
 
 
@@ -1348,6 +1365,7 @@ def _(BaseModel):
         amount: float
         category: str
         description: str
+
     return (ReceiptData,)
 
 
