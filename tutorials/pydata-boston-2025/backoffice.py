@@ -1335,13 +1335,29 @@ def _(mo):
     mo.md("""
     ## Part 6: Discussion & Next Steps
 
-    ### Moving from Notebook to Production
+    1. What error modes did you observe?
+    2. What ways can we make the coordination agent more robust?
+    3. Testing and evaluation are two sides of the same coin. How would you unit test each agent?
+    """)
+    return
 
-    - **Local vs Cloud**: Use modal endpoints for production, local Ollama for development
-    - **Error Handling**: Add try/except blocks and validation
-    - **Storage**: Connect to real databases (Notion, PostgreSQL, etc.)
-    - **Templates**: Store invoice templates in files or databases
-    - **Monitoring**: Add logging and observability
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### Additional Thoughts
+
+    My hope is that this tutorial demystifies how one goes about building LLM agents.
+    Strictly speaking, by Anthropic's definition, we have built two workflows and one agent.
+    However, I am of the opinion that anything that involves an LLM making autonomous decisions
+    can be labeled an agent. (Open to discussion!)
+
+    At its core, we start with well-defined workflows that have a natural language component to it,
+    one where there are bits of ambiguity that requires natural language to solve.
+    That's where we can build LLM-enabled workflows.
+    Later on, if we require handling situations with sufficient dynamic range
+    to require autonomous decision-making, we can wrap those workflows as tools
+    for LLM-enabled agents to work with.
     """)
     return
 
