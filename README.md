@@ -230,7 +230,7 @@ The ChatMemory system provides intelligent conversation memory that can maintain
 
 **Note**: For RAG (Retrieval-Augmented Generation) with document stores, use `QueryBot` with a document store instead of SimpleBot with memory. SimpleBot's memory parameter is specifically for conversational memory, while QueryBot is designed for document retrieval and question answering.
 
-For more details on chat memory, see the [Chat Memory module documentation](modules/chat_memory.md).
+For more details on chat memory, see the [Chat Memory component documentation](reference/components/chat_memory.md).
 
 ### ToolBot
 

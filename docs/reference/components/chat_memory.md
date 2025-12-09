@@ -290,6 +290,5 @@ print(diagram)
 
 ## See Also
 
-- [Chat Memory Module](../modules/chat_memory.md)
 - [Which Bot Should I Use?](../getting-started/which-bot.md)
 - [SimpleBot Reference](../reference/bots/simplebot.md)
