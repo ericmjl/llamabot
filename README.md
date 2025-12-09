@@ -21,8 +21,6 @@ To install all of the optional dependencies, run:
 pip install "llamabot[all]"
 ```
 
-
-
 ## Get access to LLMs
 
 ### Option 1: Using local models with Ollama
@@ -262,10 +260,10 @@ print(response)
 ```
 
 ToolBot is ideal for:
-- **Data analysis workflows** where you need to execute custom code
-- **Automation tasks** that require specific function calls
-- **API integrations** that need to call external services
-- **Single-turn function calling** scenarios
+* **Data analysis workflows** where you need to execute custom code
+* **Automation tasks** that require specific function calls
+* **API integrations** that need to call external services
+* **Single-turn function calling** scenarios
 
 ### QueryBot
 
@@ -353,10 +351,10 @@ print(person.hobbies)  # ["hiking", "photography"]
 ```
 
 StructuredBot is perfect for:
-- **Data extraction** from unstructured text
-- **API responses** that need to match specific schemas
-- **Form processing** with validation
-- **Structured outputs** for downstream processing
+* **Data extraction** from unstructured text
+* **API responses** that need to match specific schemas
+* **Form processing** with validation
+* **Structured outputs** for downstream processing
 
 ### ImageBot
 
@@ -437,15 +435,15 @@ print(response)
 ```
 
 **When to use `lmb.dev()`:**
-- **Development tasks**: Code refactoring, debugging, testing
-- **Code review**: Providing feedback on code quality
-- **Documentation**: Adding docstrings, comments, or README updates
-- **Debugging**: Describing issues or requesting fixes
+* **Development tasks**: Code refactoring, debugging, testing
+* **Code review**: Providing feedback on code quality
+* **Documentation**: Adding docstrings, comments, or README updates
+* **Debugging**: Describing issues or requesting fixes
 
 **Message Type Hierarchy:**
-- `lmb.system()` - Bot behavior and instructions
-- `lmb.user()` - User input and questions
-- `lmb.dev()` - Development context and tasks
+* `lmb.system()` - Bot behavior and instructions
+* `lmb.user()` - User input and questions
+* `lmb.dev()` - Development context and tasks
 
 ### Experimentation
 
@@ -482,12 +480,10 @@ And now they will be viewable in the locally-stored message logs:
 
 Llamabot comes with CLI demos of what can be built with it and a bit of supporting code.
 
-
 And here is one where I use `llamabot`'s `SimpleBot` to create a bot
 that automatically writes commit messages for me.
 
 [![Watch the terminal session on Asciinema](https://asciinema.org/a/594334.png)](https://asciinema.org/a/594334)
-
 
 ## Contributing
 
