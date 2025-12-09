@@ -76,12 +76,14 @@ class ChatMemory:
 ### Node Selectors
 
 #### LinearNodeSelector
+
 - Always selects the most recent assistant message as parent
 - Creates linear conversation flow
 - No LLM calls required
 - Used by default in linear mode
 
 #### LLMNodeSelector
+
 - Uses LLM to intelligently select which assistant message to branch from
 - Considers message content and conversation context
 - Supports retry logic with feedback
@@ -90,6 +92,7 @@ class ChatMemory:
 ### Summarizers
 
 #### LLMSummarizer
+
 - Generates message summaries for better threading
 - Optional component that can be disabled for performance
 - Uses LLM to create concise summaries of message content
@@ -130,12 +133,14 @@ def __call__(self, *human_messages):
 ### Memory Operations
 
 #### Storage
+
 ```python
 # Add conversation turn to memory
 memory.append(human_message, assistant_message)
 ```
 
 #### Retrieval
+
 ```python
 # Get relevant context
 context_messages = memory.retrieve(
@@ -146,6 +151,7 @@ context_messages = memory.retrieve(
 ```
 
 #### Reset
+
 ```python
 # Clear all stored messages
 memory.reset()
@@ -226,7 +232,7 @@ structured_bot = lmb.StructuredBot(
 
 The chat memory system uses a modular architecture:
 
-```
+```text
 llamabot/components/chat_memory/
 ├── __init__.py        # Exports main classes and functions
 ├── memory.py          # Main ChatMemory class
@@ -239,6 +245,7 @@ llamabot/components/chat_memory/
 ### Data Model
 
 #### ConversationNode
+
 ```python
 @dataclass
 class ConversationNode:
@@ -250,6 +257,7 @@ class ConversationNode:
 ```
 
 #### MessageSummary
+
 ```python
 class MessageSummary(BaseModel):
     title: str = Field(..., description="Title of the message")
@@ -260,4 +268,4 @@ class MessageSummary(BaseModel):
 
 The graph memory uses a **tree structure** where all nodes are connected in a single conversation tree:
 
-```
+```text

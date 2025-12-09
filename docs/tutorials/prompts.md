@@ -47,6 +47,7 @@ print(message.content)
 4. A message object is returned containing the rendered content
 
 **Example of the rendered output:**
+
 ```python
 message = explain_concept("machine learning", "high school students")
 print(message.content)
@@ -64,6 +65,7 @@ The key insight is that **the decorated function executes normally** - it takes 
 The `@prompt` decorator supports three message roles:
 
 ### System prompts
+
 Use `role="system"` for instructions that define the AI's behavior:
 
 ```python
@@ -74,6 +76,7 @@ def helpful_assistant():
 ```
 
 ### User prompts
+
 Use `role="user"` for messages that simulate user input:
 
 ```python
@@ -84,6 +87,7 @@ def ask_question(topic):
 ```
 
 ### Assistant prompts
+
 Use `role="assistant"` for few-shot examples or assistant responses:
 
 ```python
@@ -388,6 +392,7 @@ def follow_up(previous_topic, new_question):
 **Jinja2 syntax errors**: Check your template syntax, especially with loops and conditionals.
 
 **Import errors**: Make sure to import `prompt` from `llamabot`:
+
 ```python
 from llamabot import prompt
 ```

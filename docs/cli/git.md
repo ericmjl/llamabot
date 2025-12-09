@@ -8,11 +8,11 @@ linked_files:
 - llamabot/prompt_library/git.py
 ---
 
-## LlamaBot Git CLI Documentation
+# LlamaBot Git CLI Documentation
 
 Welcome to the LlamaBot Git CLI documentation. This guide provides a comprehensive tutorial on how to use the various commands available in the LlamaBot Git CLI, designed to enhance your Git experience with automated commit messages, release notes, and activity reports.
 
-### Getting Started
+## Getting Started
 
 Before you begin, ensure that you have the LlamaBot CLI installed on your system. You will also need to have Git installed and be within a Git repository to use most of the commands.
 
