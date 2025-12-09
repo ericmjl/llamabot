@@ -39,6 +39,12 @@ repos:
     rev: v0.0.9
     hooks:
       - id: convert-to-webp
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.46.0
+    hooks:
+      - id: markdownlint
+        files: ^docs/.*\.md$
+        exclude: ^docs/releases/.*\.md$
   - repo: local
     hooks:
       - id: pixi-install
