@@ -1,4 +1,4 @@
-# Getting Started with Contributing
+# Development Setup
 
 Welcome! This guide will help you set up your development environment for LlamaBot using pixi, our dependency management tool.
 
