@@ -142,7 +142,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ab/15/f0d69acc5e06892d19e09c127cd928cf20f5d2966a069e93693fc389b132/lancedb-0.25.3-cp39-abi3-manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -155,7 +155,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0d/e2/9baffdae21a76f77ef8447f1a05a96ec4bc0a24dae08767abc0a2fe680b8/multidict-6.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b6/23/2a1b231b8ff672b4c450dac27164a8b2ca7d9b7144f9c02d2396518352eb/numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/dc/61/e24b560ab2e2eaeb3c839129175fb330dfcfc29e5203196e5541a4c44682/nvidia_cublas_cu12-12.8.4.1-py3-none-manylinux_2_27_x86_64.whl
@@ -390,7 +390,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/33/fdaff64a111f86dbb99f3ff09136df93b441e350f4953884a9fc21c49283/lancedb-0.25.3-cp39-abi3-manylinux_2_28_aarch64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/20/a7760713e65888db79bbae4f6146a6ae5c04e4a204a3c48896c408cd6ed2/lxml-6.0.2-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -403,7 +403,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/2f/91dbac13e0ba94669ea5119ba267c9a832f0cb65419aca75549fcf09a3dc/multidict-6.7.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/74/78/fcd41e5a0ce4f3f7b003da85825acddae6d7ecb60cf25194741b036ca7d6/numpy-2.3.5-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -615,7 +615,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d7/62/a149b47dc4ccf3c569eba722b805cbba1b90566976ff1d459f20f7f00ebc/lancedb-0.25.3-cp39-abi3-macosx_10_15_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/37/6f/9aae1008083bb501ef63284220ce81638332f9ccbfa53765b2b7502203cf/lxml-6.0.2-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -628,7 +628,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/38/6f/614f09a04e6184f8824268fce4bc925e9849edfa654ddd59f0b64508c595/multidict-6.7.0-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/44/37/e669fe6cbb2b96c62f6bbedc6a81c0f3b7362f6a59230b23caa673a85721/numpy-2.3.5-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -839,7 +839,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b2/94/ae3e74bb27dcca321ccf1e7a32ccab09b1062ddf54f96376221ca8610e7c/lancedb-0.25.3-cp39-abi3-macosx_11_0_arm64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f3/c8/8ff2bc6b920c84355146cd1ab7d181bc543b89241cfb1ebee824a7c81457/lxml-6.0.2-cp312-cp312-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -852,7 +852,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b3/93/c4f67a436dd026f2e780c433277fff72be79152894d9fc36f44569cab1a6/multidict-6.7.0-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/65/df0db6c097892c9380851ab9e44b52d4f7ba576b833996e0080181c0c439/numpy-2.3.5-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -1064,7 +1064,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/dc/3c5785cee0f0abaa5046ff817f3d64275909067500d6a317da0aeb9141b8/lancedb-0.25.3-cp39-abi3-win_amd64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f7/d7/0cdfb6c3e30893463fb3d1e52bc5f5f99684a03c29a0b6b605cfae879cd5/lxml-6.0.2-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -1077,7 +1077,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/46/e2/348cd32faad84eaf1d20cce80e2bb0ef8d312c55bca1f7fa9865e7770aaf/multidict-6.7.0-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2d/57/8aeaf160312f7f489dea47ab61e430b5cb051f59a98ae68b7133ce8fa06a/numpy-2.3.5-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -1318,7 +1318,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ab/15/f0d69acc5e06892d19e09c127cd928cf20f5d2966a069e93693fc389b132/lancedb-0.25.3-cp39-abi3-manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -1341,7 +1341,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b6/23/2a1b231b8ff672b4c450dac27164a8b2ca7d9b7144f9c02d2396518352eb/numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/dc/61/e24b560ab2e2eaeb3c839129175fb330dfcfc29e5203196e5541a4c44682/nvidia_cublas_cu12-12.8.4.1-py3-none-manylinux_2_27_x86_64.whl
@@ -1601,7 +1601,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/33/fdaff64a111f86dbb99f3ff09136df93b441e350f4953884a9fc21c49283/lancedb-0.25.3-cp39-abi3-manylinux_2_28_aarch64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/20/a7760713e65888db79bbae4f6146a6ae5c04e4a204a3c48896c408cd6ed2/lxml-6.0.2-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -1624,7 +1624,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/74/78/fcd41e5a0ce4f3f7b003da85825acddae6d7ecb60cf25194741b036ca7d6/numpy-2.3.5-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
@@ -1861,7 +1861,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d7/62/a149b47dc4ccf3c569eba722b805cbba1b90566976ff1d459f20f7f00ebc/lancedb-0.25.3-cp39-abi3-macosx_10_15_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/37/6f/9aae1008083bb501ef63284220ce81638332f9ccbfa53765b2b7502203cf/lxml-6.0.2-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -1884,7 +1884,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/44/37/e669fe6cbb2b96c62f6bbedc6a81c0f3b7362f6a59230b23caa673a85721/numpy-2.3.5-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
@@ -2120,7 +2120,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b2/94/ae3e74bb27dcca321ccf1e7a32ccab09b1062ddf54f96376221ca8610e7c/lancedb-0.25.3-cp39-abi3-macosx_11_0_arm64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f3/c8/8ff2bc6b920c84355146cd1ab7d181bc543b89241cfb1ebee824a7c81457/lxml-6.0.2-cp312-cp312-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -2143,7 +2143,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/65/df0db6c097892c9380851ab9e44b52d4f7ba576b833996e0080181c0c439/numpy-2.3.5-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
@@ -2380,7 +2380,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/dc/3c5785cee0f0abaa5046ff817f3d64275909067500d6a317da0aeb9141b8/lancedb-0.25.3-cp39-abi3-win_amd64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f7/d7/0cdfb6c3e30893463fb3d1e52bc5f5f99684a03c29a0b6b605cfae879cd5/lxml-6.0.2-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -2403,7 +2403,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2d/57/8aeaf160312f7f489dea47ab61e430b5cb051f59a98ae68b7133ce8fa06a/numpy-2.3.5-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
@@ -2644,7 +2644,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ab/15/f0d69acc5e06892d19e09c127cd928cf20f5d2966a069e93693fc389b132/lancedb-0.25.3-cp39-abi3-manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -2667,7 +2667,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b6/23/2a1b231b8ff672b4c450dac27164a8b2ca7d9b7144f9c02d2396518352eb/numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/dc/61/e24b560ab2e2eaeb3c839129175fb330dfcfc29e5203196e5541a4c44682/nvidia_cublas_cu12-12.8.4.1-py3-none-manylinux_2_27_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/f8/02/2adcaa145158bf1a8295d83591d22e4103dbfd821bcaf6f3f53151ca4ffa/nvidia_cuda_cupti_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
@@ -2907,7 +2907,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/33/fdaff64a111f86dbb99f3ff09136df93b441e350f4953884a9fc21c49283/lancedb-0.25.3-cp39-abi3-manylinux_2_28_aarch64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/20/a7760713e65888db79bbae4f6146a6ae5c04e4a204a3c48896c408cd6ed2/lxml-6.0.2-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -2930,7 +2930,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/74/78/fcd41e5a0ce4f3f7b003da85825acddae6d7ecb60cf25194741b036ca7d6/numpy-2.3.5-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/cf/03675d8bd8ecbf4445504d8071adab19f5f993676795708e36402ab38263/openapi_pydantic-0.5.1-py3-none-any.whl
@@ -3147,7 +3147,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d7/62/a149b47dc4ccf3c569eba722b805cbba1b90566976ff1d459f20f7f00ebc/lancedb-0.25.3-cp39-abi3-macosx_10_15_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/37/6f/9aae1008083bb501ef63284220ce81638332f9ccbfa53765b2b7502203cf/lxml-6.0.2-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -3170,7 +3170,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/44/37/e669fe6cbb2b96c62f6bbedc6a81c0f3b7362f6a59230b23caa673a85721/numpy-2.3.5-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/cf/03675d8bd8ecbf4445504d8071adab19f5f993676795708e36402ab38263/openapi_pydantic-0.5.1-py3-none-any.whl
@@ -3386,7 +3386,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b2/94/ae3e74bb27dcca321ccf1e7a32ccab09b1062ddf54f96376221ca8610e7c/lancedb-0.25.3-cp39-abi3-macosx_11_0_arm64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f3/c8/8ff2bc6b920c84355146cd1ab7d181bc543b89241cfb1ebee824a7c81457/lxml-6.0.2-cp312-cp312-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -3409,7 +3409,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/65/df0db6c097892c9380851ab9e44b52d4f7ba576b833996e0080181c0c439/numpy-2.3.5-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/cf/03675d8bd8ecbf4445504d8071adab19f5f993676795708e36402ab38263/openapi_pydantic-0.5.1-py3-none-any.whl
@@ -3626,7 +3626,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/dc/3c5785cee0f0abaa5046ff817f3d64275909067500d6a317da0aeb9141b8/lancedb-0.25.3-cp39-abi3-win_amd64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f7/d7/0cdfb6c3e30893463fb3d1e52bc5f5f99684a03c29a0b6b605cfae879cd5/lxml-6.0.2-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/70/81/54e3ce63502cd085a0c556652a4e1b919c45a446bd1e5300e10c44c8c521/markdown-3.10-py3-none-any.whl
@@ -3649,7 +3649,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cc/9a/cd673b2f773a12c992f41309ef81b99da1690426bd2f96957a7ade0d3ed7/nbconvert-7.16.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2d/57/8aeaf160312f7f489dea47ab61e430b5cb051f59a98ae68b7133ce8fa06a/numpy-2.3.5-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/cf/03675d8bd8ecbf4445504d8071adab19f5f993676795708e36402ab38263/openapi_pydantic-0.5.1-py3-none-any.whl
@@ -3877,7 +3877,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ab/15/f0d69acc5e06892d19e09c127cd928cf20f5d2966a069e93693fc389b132/lancedb-0.25.3-cp39-abi3-manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -3890,7 +3890,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0d/e2/9baffdae21a76f77ef8447f1a05a96ec4bc0a24dae08767abc0a2fe680b8/multidict-6.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b6/23/2a1b231b8ff672b4c450dac27164a8b2ca7d9b7144f9c02d2396518352eb/numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/dc/61/e24b560ab2e2eaeb3c839129175fb330dfcfc29e5203196e5541a4c44682/nvidia_cublas_cu12-12.8.4.1-py3-none-manylinux_2_27_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/f8/02/2adcaa145158bf1a8295d83591d22e4103dbfd821bcaf6f3f53151ca4ffa/nvidia_cuda_cupti_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
@@ -4118,7 +4118,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/33/fdaff64a111f86dbb99f3ff09136df93b441e350f4953884a9fc21c49283/lancedb-0.25.3-cp39-abi3-manylinux_2_28_aarch64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/20/a7760713e65888db79bbae4f6146a6ae5c04e4a204a3c48896c408cd6ed2/lxml-6.0.2-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -4131,7 +4131,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/2f/91dbac13e0ba94669ea5119ba267c9a832f0cb65419aca75549fcf09a3dc/multidict-6.7.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/74/78/fcd41e5a0ce4f3f7b003da85825acddae6d7ecb60cf25194741b036ca7d6/numpy-2.3.5-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -4336,7 +4336,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d7/62/a149b47dc4ccf3c569eba722b805cbba1b90566976ff1d459f20f7f00ebc/lancedb-0.25.3-cp39-abi3-macosx_10_15_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/37/6f/9aae1008083bb501ef63284220ce81638332f9ccbfa53765b2b7502203cf/lxml-6.0.2-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -4349,7 +4349,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/38/6f/614f09a04e6184f8824268fce4bc925e9849edfa654ddd59f0b64508c595/multidict-6.7.0-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/44/37/e669fe6cbb2b96c62f6bbedc6a81c0f3b7362f6a59230b23caa673a85721/numpy-2.3.5-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -4553,7 +4553,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b2/94/ae3e74bb27dcca321ccf1e7a32ccab09b1062ddf54f96376221ca8610e7c/lancedb-0.25.3-cp39-abi3-macosx_11_0_arm64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f3/c8/8ff2bc6b920c84355146cd1ab7d181bc543b89241cfb1ebee824a7c81457/lxml-6.0.2-cp312-cp312-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -4566,7 +4566,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b3/93/c4f67a436dd026f2e780c433277fff72be79152894d9fc36f44569cab1a6/multidict-6.7.0-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/65/df0db6c097892c9380851ab9e44b52d4f7ba576b833996e0080181c0c439/numpy-2.3.5-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -4771,7 +4771,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/de/16ea77c472c0f9d2d9ecabf5746a90d9ed9c1b1504ca659b1ce0c4833613/lance_namespace-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/b4/40b75958172ce8211258c50e086adfb95f3211f7dc2fe9271a924d9ef2e1/lance_namespace_urllib3_client-0.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/dc/3c5785cee0f0abaa5046ff817f3d64275909067500d6a317da0aeb9141b8/lancedb-0.25.3-cp39-abi3-win_amd64.whl
-      - pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f7/d7/0cdfb6c3e30893463fb3d1e52bc5f5f99684a03c29a0b6b605cfae879cd5/lxml-6.0.2-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -4784,7 +4784,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/46/e2/348cd32faad84eaf1d20cce80e2bb0ef8d312c55bca1f7fa9865e7770aaf/multidict-6.7.0-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2d/57/8aeaf160312f7f489dea47ab61e430b5cb051f59a98ae68b7133ce8fa06a/numpy-2.3.5-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/ee/b6/0c40493c0505652d3da58ad048be19f00c4bdf587140cc578a770d2029d4/ollama-0.4.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/59/fd/ae2da789cd923dd033c99b8d544071a827c92046b150db01cfa5cea5b3fd/openai-2.9.0-py3-none-any.whl
@@ -8201,10 +8201,10 @@ packages:
   purls: []
   size: 55476
   timestamp: 1727963768015
-- pypi: https://files.pythonhosted.org/packages/0b/54/0371456cf5317c1ebb95824ad38d607efa9e878adc1670f743c2de8953d8/litellm-1.80.8-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/0d/02/85f4b50d39d82dcf39bf1fbf2648cb01311866eb2ef2462666348b5ef1fe/litellm-1.80.9-py3-none-any.whl
   name: litellm
-  version: 1.80.8
-  sha256: 8b04de6661d2c9646ad6c4e57a61a6cf549f52e72e6a41d8adbd5691f2f95b3b
+  version: 1.80.9
+  sha256: bad02b96ee3d83702639553ffc5961c605f4f937be8167181bc4c80394a1cdd1
   requires_dist:
   - pyjwt>=2.10.1,<3.0.0 ; python_full_version >= '3.9' and extra == 'proxy'
   - aiohttp>=3.10
@@ -8256,8 +8256,8 @@ packages:
   requires_python: '>=3.9,<4.0'
 - pypi: ./
   name: llamabot
-  version: 0.17.6
-  sha256: 8cc170a35e62306ba01ae1d3bdb376da3c34e44d35b91cc572a9865fbaac5456
+  version: 0.17.7
+  sha256: 33635729dcd75ca47e827013a5713a768ea3a8dbf6809e8d3211c36be09c1c8e
   requires_dist:
   - openai
   - loguru
@@ -8879,10 +8879,10 @@ packages:
   version: 1.6.0
   sha256: 87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c
   requires_python: '>=3.5'
-- pypi: https://files.pythonhosted.org/packages/07/c7/d64168da60332c17d24c0d2f08bdf3987e8d1ae9d84b5bbd0eec2eb26a55/networkx-3.6-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
   name: networkx
-  version: '3.6'
-  sha256: cdb395b105806062473d3be36458d8f1459a4e4b98e236a66c3a48996e07684f
+  version: 3.6.1
+  sha256: d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762
   requires_dist:
   - asv ; extra == 'benchmarking'
   - virtualenv ; extra == 'benchmarking'
@@ -8921,7 +8921,7 @@ packages:
   - pytest-xdist>=3.0 ; extra == 'test'
   - pytest-mpl ; extra == 'test-extras'
   - pytest-randomly ; extra == 'test-extras'
-  requires_python: '>=3.11'
+  requires_python: '>=3.11,!=3.14.1'
 - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
   name: nodeenv
   version: 1.9.1
