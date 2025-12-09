@@ -5,8 +5,6 @@ environments:
     - url: https://prefix.dev/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -1168,8 +1166,6 @@ environments:
     - url: https://prefix.dev/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -2506,8 +2502,6 @@ environments:
     - url: https://prefix.dev/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -3744,8 +3738,6 @@ environments:
     - url: https://prefix.dev/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -8257,7 +8249,7 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.17.7
-  sha256: 33635729dcd75ca47e827013a5713a768ea3a8dbf6809e8d3211c36be09c1c8e
+  sha256: ff8cb732a6536ce2024643c94b83e5d787ae15d1c79c9661ec3587b66da077f3
   requires_dist:
   - openai
   - loguru
@@ -8306,7 +8298,7 @@ packages:
   - case-converter ; extra == 'cli'
   - pyperclip ; extra == 'cli'
   - llamabot[notebooks,rag,agent,cli] ; extra == 'all'
-  requires_python: '>=3.9,<3.13'
+  requires_python: '>=3.9,<3.14'
   editable: true
 - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
   name: loguru
