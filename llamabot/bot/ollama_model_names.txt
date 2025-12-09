@@ -1,3 +1,6 @@
+rnj-1
+deepseek-v3.2
+qwen3-next
 mistral-large-3
 ministral-3
 deepseek-ocr
