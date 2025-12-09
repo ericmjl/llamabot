@@ -9,7 +9,7 @@ Before you begin, make sure you have:
 - **pixi** installed ([installation instructions](https://pixi.sh/latest/))
 
 !!! note "Python Installation"
-    You don't need to install Python separately. Pixi will manage the Python version for you (this project requires Python 3.9-3.13).
+    You don't need to install Python separately. Pixi will manage the Python version for you (this project requires Python 3.10-3.13).
 
 ## Initial Setup
 
