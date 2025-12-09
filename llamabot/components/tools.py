@@ -16,7 +16,7 @@ import types
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from uuid import uuid4
 
 import requests
@@ -27,9 +27,10 @@ from loguru import logger
 
 from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.messages import user
-from llamabot.components.pocketflow import DECIDE_NODE_ACTION, nodeify
+from llamabot.components.pocketflow import nodeify as nodeify_decorator
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 from llamabot.prompt_manager import prompt
+from llamabot.recorder import span as span_decorator
 
 
 def json_schema_type(type_name: str) -> str:
@@ -194,34 +195,105 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
     return result
 
 
-def tool(func: Callable) -> Callable:
+def tool(
+    func: Optional[Callable] = None,
+    *,
+    loopback_name: Optional[str] = "decide",
+    span: bool = True,
+    exclude_args: Optional[List[str]] = None,
+    operation_name: Optional[str] = None,
+    **span_attributes,
+) -> Callable:
     """Decorator to create a tool from a function.
 
-    :param func: The function to decorate.
+    This decorator provides built-in AgentBot integration and observability
+    for tools.
+
+    **Usage patterns:**
+
+    ```python
+    # Basic usage
+    @tool
+    def my_tool(arg: str) -> str:
+        return arg
+
+    # Terminal tool
+    @tool(loopback_name=None)
+    def respond_to_user(response: str) -> str:
+        return response
+
+    # Customize span options (exclude sensitive args from logging)
+    @tool(exclude_args=["api_key"])
+    def secure_tool(api_key: str, data: str) -> str:
+        return f"Processed: {data}"
+    ```
+
+    **Decorator order:**
+    Decorators are applied in this order:
+    1. Original function
+    2. `@tool` (adds json_schema)
+    3. `@span` (if enabled)
+    4. AgentBot integration (outermost)
+
+    :param func: The function to decorate (when used without parentheses)
+    :param loopback_name: Controls whether execution continues after this tool.
+        Defaults to "decide". Set to None for terminal tools.
+    :param span: Whether to apply `@span` decorator. Defaults to True.
+    :param exclude_args: Span parameter: exclude args from logging. Defaults to None.
+    :param operation_name: Span parameter: custom operation name. Defaults to None.
+    :param span_attributes: Additional span attributes passed to `@span`.
     :returns: The decorated function with an attached Function schema.
     """
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        """Wrapper function for tool decorators.
+    def decorator(func: Callable) -> Callable:
+        """Inner decorator function.
 
-        This wrapper preserves the original function's metadata and signature
-        while allowing it to be used as a tool in the agent system.
-        It passes through all arguments and return values unchanged.
-
-        :param *args: Positional arguments to be passed to the wrapped function
-        :param **kwargs: Keyword arguments to be passed to the wrapped function
-        :return: The result of calling the wrapped function with the provided arguments
+        :param func: The function to decorate
+        :returns: The decorated function
         """
-        return func(*args, **kwargs)
 
-    # Create and attach the schema
-    function_dict = function_to_dict(func)
-    wrapper.json_schema = {
-        "type": "function",
-        "function": function_dict,  # Nest function dict under "function" key
-    }
-    return wrapper
+        # First, apply @tool decorator
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            """Wrapper function for tool decorators.
+
+            This wrapper preserves the original function's metadata and signature
+            while allowing it to be used as a tool in the agent system.
+            It passes through all arguments and return values unchanged.
+
+            :param *args: Positional arguments to be passed to the wrapped function
+            :param **kwargs: Keyword arguments to be passed to the wrapped function
+            :return: The result of calling the wrapped function with the provided arguments
+            """
+            return func(*args, **kwargs)
+
+        # Create and attach the schema
+        function_dict = function_to_dict(func)
+        wrapper.json_schema = {
+            "type": "function",
+            "function": function_dict,  # Nest function dict under "function" key
+        }
+
+        # Apply @span decorator if enabled
+        if span:
+            wrapper = span_decorator(
+                operation_name=operation_name,
+                exclude_args=exclude_args,
+                **span_attributes,
+            )(wrapper)
+
+        # Always apply AgentBot integration
+        wrapper = nodeify_decorator(loopback_name=loopback_name)(wrapper)
+
+        return wrapper
+
+    # Support both @tool and @tool(...) usage patterns
+    if func is not None:
+        # Called without parentheses: @tool
+        return decorator(func)
+
+    # Called with parentheses: @tool(...)
+    return decorator
 
 
 @tool
@@ -235,8 +307,7 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
-@nodeify(loopback_name=None)
-@tool
+@tool(loopback_name=None)
 def respond_to_user(response: str) -> str:
     """Respond to the user with a message.
 
@@ -249,8 +320,7 @@ def respond_to_user(response: str) -> str:
     return response
 
 
-@nodeify(loopback_name=None)
-@tool
+@tool(loopback_name=None)
 def return_object_to_user(variable_name: str, _globals_dict: dict = None) -> Any:
     """Return an object from the calling context's globals to the user.
 
@@ -538,7 +608,6 @@ def search_internet_and_summarize(search_term: str, max_results: int) -> Dict[st
         raise
 
 
-@nodeify(loopback_name=DECIDE_NODE_ACTION)
 @tool
 def today_date() -> str:
     """Get the current date.
@@ -548,7 +617,6 @@ def today_date() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 
-@nodeify(loopback_name=DECIDE_NODE_ACTION)
 @tool
 def inspect_globals(_globals_dict: dict = None) -> str:
     """Inspect and return a summary of available objects in the globals dictionary.
@@ -605,7 +673,6 @@ def inspect_globals(_globals_dict: dict = None) -> str:
 DEFAULT_TOOLS = [today_date, respond_to_user, return_object_to_user, inspect_globals]
 
 
-@nodeify(loopback_name=DECIDE_NODE_ACTION)
 @tool
 def write_and_execute_script(
     code: str,
@@ -778,7 +845,6 @@ The generated code will have access to:
         available_libraries_text=available_libraries_text
     )
 
-    @nodeify
     @tool
     def write_and_execute_code_wrapper(
         placeholder_function: str,

@@ -6,13 +6,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from llamabot.bot.agentbot import AgentBot
-from llamabot.components.pocketflow import DECIDE_NODE_ACTION, DecideNode, nodeify
+from llamabot.components.pocketflow import DecideNode
 from llamabot.components.tools import tool
 from llamabot.prompt_library.agentbot import decision_bot_system_prompt
 from llamabot.recorder import SpanList, enable_span_recording
 
 
-@nodeify(loopback_name=DECIDE_NODE_ACTION)
 @tool
 def echo_function(text: str) -> str:
     """Echo back the provided text (test helper function).
@@ -23,7 +22,6 @@ def echo_function(text: str) -> str:
     return text
 
 
-@nodeify(loopback_name=DECIDE_NODE_ACTION)
 @tool
 def add_function(a: int, b: int) -> int:
     """Add two numbers (test helper function).
@@ -47,7 +45,7 @@ def test_agentbot_initialization():
 
 
 def test_agentbot_requires_decorated_tools():
-    """Test that tools must be decorated with @tool and @nodeify."""
+    """Test that tools must be decorated with @tool."""
     bot = AgentBot(tools=[echo_function])
 
     # Check that tools are wrapped (should be FuncNode instances)
@@ -548,7 +546,6 @@ def test_agentbot_max_iterations_tracks_count():
     """Test that AgentBot correctly tracks iteration_count."""
     from unittest.mock import MagicMock, patch
 
-    @nodeify(loopback_name=DECIDE_NODE_ACTION)
     @tool
     def test_tool(message: str) -> str:
         """A test tool."""
@@ -604,7 +601,6 @@ def test_agentbot_max_iterations_tracks_count():
 def test_agentbot_max_iterations_none_no_limit():
     """Test that AgentBot with max_iterations=None has no limit."""
 
-    @nodeify(loopback_name=DECIDE_NODE_ACTION)
     @tool
     def looping_tool(message: str) -> str:
         """A tool that always loops back."""
@@ -622,7 +618,6 @@ def test_agentbot_max_iterations_initializes_count():
     """Test that iteration_count is initialized in shared state."""
     from unittest.mock import MagicMock, patch
 
-    @nodeify(loopback_name=DECIDE_NODE_ACTION)
     @tool
     def test_tool(message: str) -> str:
         """A test tool."""
@@ -682,7 +677,6 @@ def test_agentbot_max_iterations_force_terminate_flag():
     """Test that _force_terminate flag is set when max_iterations is exceeded."""
     from unittest.mock import MagicMock, patch
 
-    @nodeify(loopback_name=DECIDE_NODE_ACTION)
     @tool
     def looping_tool(message: str) -> str:
         """A tool that always loops back."""

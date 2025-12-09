@@ -529,10 +529,9 @@ def _(mo):
 
 @app.cell
 def _():
-    from llamabot.components.pocketflow import nodeify
     from llamabot.components.tools import tool
 
-    return nodeify, tool
+    return tool
 
 
 @app.cell(hide_code=True)
@@ -549,7 +548,7 @@ def _(mo):
 
     You'll notice the function includes span-based logging, a newer feature in llamabot. Think of spans as breadcrumbs that track what your code is doing - they record when operations start and finish, what data flows through them, and any important details along the way. You can mostly ignore them while learning, but they become incredibly handy when debugging complex agent workflows. When something goes wrong, instead of wondering "what just happened?", you can trace back through the spans to see exactly what your agent was doing at each step.
 
-    The three decorators stacked on this function each serve a specific purpose. The `@span` decorator handles that logging I just mentioned - it automatically creates a trace record whenever the function runs, capturing timing and any metadata you want to attach. The `@tool` decorator transforms the function into something agents can understand and call autonomously - it reads the docstring and type hints to generate a tool description that the LLM uses to decide when to invoke it. Finally, `@nodeify(loopback_name="decide")` integrates the function into the agent's workflow graph, specifying that after this tool completes, control should loop back to a node called "decide" where the agent chooses its next action. Together, these decorators turn a regular Python function into an observable, agent-callable workflow step.
+    The `@tool` decorator handles multiple responsibilities: it transforms the function into something agents can understand and call autonomously (reading the docstring and type hints to generate a tool description), enables AgentBot integration so the tool can be orchestrated in multi-step workflows, and provides span-based observability to track execution. Together, this turns a regular Python function into an observable, agent-callable workflow step.
     """)
     return
 
@@ -559,16 +558,13 @@ def _(
     Path,
     convert_pdf_to_images,
     get_current_span,
-    nodeify,
     ocr_bot,
     receipt_structuring_bot,
     span,
     tool,
     user,
 ):
-    @nodeify(loopback_name="decide")
     @tool
-    @span
     def process_receipt(file_path: str, _globals_dict: dict = None) -> str:
         """Process a receipt PDF or image and extract structured data.
 
@@ -587,7 +583,7 @@ def _(
         if not Path(file_path).exists():
             raise FileNotFoundError(f"Receipt file not found: {file_path}")
 
-        # PDF to image conversion (convert_pdf_to_images is @span decorated)
+        # PDF to image conversion
         image_paths = convert_pdf_to_images(file_path)
         s["page_count"] = len(image_paths)
 
@@ -599,7 +595,6 @@ def _(
             )
 
         # Step 1: OCR extraction - extract text from images
-        # Process each image and combine the results (ocr_bot creates spans automatically)
         ocr_texts = []
         for image_path in image_paths:
             ocr_response = ocr_bot(user(prompt_text, image_path))
@@ -610,7 +605,6 @@ def _(
         combined_ocr_text = "\n\n--- Page Break ---\n\n".join(ocr_texts)
 
         # Step 2: Structure the extracted text according to ReceiptData schema
-        # (receipt_structuring_bot creates spans automatically)
         result = receipt_structuring_bot(combined_ocr_text)
         s.log("structuring_completed")
         s["vendor"] = result.vendor
@@ -860,10 +854,8 @@ def _(mo):
 
 
 @app.cell
-def _(format_invoice_html, generate_invoice, nodeify, span, tool):
-    @nodeify(loopback_name="decide")
+def _(format_invoice_html, generate_invoice, span, tool):
     @tool
-    @span
     def write_invoice(invoice_description: str, _globals_dict: dict = None) -> str:
         """Generate and render an invoice from natural language description.
 
@@ -883,7 +875,7 @@ def _(format_invoice_html, generate_invoice, nodeify, span, tool):
         :param _globals_dict: Internal parameter - automatically injected by AgentBot
         :return: Confirmation message indicating invoice was generated
         """
-        # Generate invoice (generate_invoice and format_invoice_html are @span decorated)
+        # Generate invoice
         invoice = generate_invoice(invoice_description)
         html = format_invoice_html(invoice)
 
@@ -1093,8 +1085,7 @@ def _(mo):
 
 
 @app.cell
-def _(nodeify, tool):
-    @nodeify
+def _(tool):
     @tool
     def list_uploaded_files(_globals_dict: dict = None) -> str:
         """List all uploaded files available for processing.

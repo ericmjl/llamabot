@@ -15,7 +15,9 @@ from llamabot.components.tools import DEFAULT_TOOLS
 
 
 def _validate_tools(tools: List[Callable]) -> None:
-    """Validate that all tools are properly decorated with @tool and @nodeify.
+    """Validate that all tools are properly decorated with @tool.
+
+    Tools decorated with `@tool` will automatically have the required attributes.
 
     :param tools: List of tool functions to validate
     :raises ValueError: If any tool is not properly decorated
@@ -28,13 +30,13 @@ def _validate_tools(tools: List[Callable]) -> None:
         if not hasattr(tool_func, "json_schema"):
             issues.append("missing @tool decorator")
 
-        # Check for @nodeify decorator (has func attribute)
+        # Check for AgentBot integration (has func attribute)
         if not hasattr(tool_func, "func"):
-            issues.append("missing @nodeify decorator")
+            issues.append("missing AgentBot integration (use @tool)")
 
-        # Check for loopback_name attribute (from nodeify)
+        # Check for loopback_name attribute
         if not hasattr(tool_func, "loopback_name"):
-            issues.append("missing loopback_name attribute (from @nodeify)")
+            issues.append("missing loopback_name attribute")
 
         if issues:
             tool_name = getattr(tool_func, "__name__", str(tool_func))
@@ -49,17 +51,14 @@ def _validate_tools(tools: List[Callable]) -> None:
 
         error_parts.append("\nTo fix this, decorate your tools like this:")
         error_parts.append("\n  from llamabot.components.tools import tool")
-        error_parts.append(
-            "  from llamabot.components.pocketflow import nodeify, DECIDE_NODE_ACTION"
-        )
-        error_parts.append("\n  @nodeify(loopback_name=DECIDE_NODE_ACTION)")
-        error_parts.append("  @tool")
+        error_parts.append("\n  @tool")
         error_parts.append("  def your_tool(arg: str) -> str:")
         error_parts.append("      return arg")
         error_parts.append("\n  bot = AgentBot(tools=[your_tool])")
-        error_parts.append(
-            "\n  Note: @nodeify must be applied last (outermost decorator)"
-        )
+        error_parts.append("\n  # For terminal tools, use:")
+        error_parts.append("  @tool(loopback_name=None)")
+        error_parts.append("  def terminal_tool(arg: str) -> str:")
+        error_parts.append("      return arg")
 
         raise ValueError("\n".join(error_parts))
 
@@ -67,20 +66,16 @@ def _validate_tools(tools: List[Callable]) -> None:
 class AgentBot:
     """An AgentBot that uses PocketFlow for tool orchestration.
 
-    This bot requires user-provided tools to be decorated with both `@tool` and
-    `@nodeify` decorators. It creates a decision node that uses ToolBot to select
-    tools and executes them through a PocketFlow graph.
+    This bot requires user-provided tools to be decorated with `@tool`. It creates
+    a decision node that uses ToolBot to select tools and executes them through
+    a PocketFlow graph.
 
     **Tool Requirements:**
-    Tools must be decorated with both `@tool` and `@nodeify` before being
-    passed to AgentBot. **Important:** `@nodeify` must be applied last (outermost
-    decorator) so it wraps the `@tool`-decorated function. Example:
+    Tools must be decorated with `@tool` before being passed to AgentBot. Example:
 
     ```python
     from llamabot.components.tools import tool
-    from llamabot.components.pocketflow import nodeify, DECIDE_NODE_ACTION
 
-    @nodeify(loopback_name=DECIDE_NODE_ACTION)
     @tool
     def my_tool(arg: str) -> str:
         return arg
@@ -88,14 +83,18 @@ class AgentBot:
     bot = AgentBot(tools=[my_tool])
     ```
 
-    **Decorator Order:**
-    - `@tool` is applied first (innermost)
-    - `@nodeify` is applied last (outermost)
-    - This ensures the FuncNode can proxy to the tool-decorated function
+    For terminal tools (like `respond_to_user`), use `@tool(loopback_name=None)`.
 
-    For terminal tools (like `respond_to_user`), use `@nodeify(loopback_name=None)`.
+    **Observability:**
+    Span-based logging is enabled by default. You can customize it:
 
-    :param tools: List of tools that must be decorated with both @tool and @nodeify
+    ```python
+    @tool
+    def my_tool(arg: str) -> str:
+        return arg
+    ```
+
+    :param tools: List of tools decorated with @tool (which applies @nodeify automatically)
     :param decide_node: Optional custom decision node (defaults to DecideNode).
         If provided, overrides `system_prompt` parameter.
     :param system_prompt: System prompt string for decision-making.
@@ -106,7 +105,7 @@ class AgentBot:
         If None, no limit is enforced. Defaults to None.
     :param completion_kwargs: Additional keyword arguments to pass to the
         completion function of `litellm` (e.g., `api_base`, `api_key`).
-    :raises ValueError: If any tool is not properly decorated with @tool and @nodeify
+    :raises ValueError: If any tool is not properly decorated with @tool
     """
 
     def __init__(
@@ -122,7 +121,7 @@ class AgentBot:
         _validate_tools(tools)
 
         # Combine default and user-provided tools
-        # Default tools are already nodeified
+        # Default tools are already configured for AgentBot
         all_tools = list(DEFAULT_TOOLS) + tools
 
         self.tools = all_tools
