@@ -16,7 +16,9 @@ Set up the API Key:
 
 Create a .env file (beware that your OS does not append another file extension). Explicitly:
 
+```bash
 export ANTHROPIC_API_KEY="YOUR KEY"
+```
 
 Save this file to the same directory as this notebook
 
