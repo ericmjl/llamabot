@@ -42,12 +42,14 @@ response = bot("Hello!")  # Memory automatically stores and retrieves context
 ### Conversation Threading
 
 **Linear Memory**: Messages are stored in order, retrieved as recent history
-```
+
+```text
 H1 → A1 → H2 → A2 → H3 → A3
 ```
 
 **Graph Memory**: Messages are intelligently connected based on content
-```
+
+```text
 H1: "Let's talk about Python"
 └── A1: "Python is great for data science"
     ├── H2: "What about machine learning?" → A2: "ML libraries include..."
@@ -59,6 +61,7 @@ H1: "Let's talk about Python"
 ### API Levels
 
 #### High-Level API (Opinionated)
+
 ```python
 # Default linear memory
 memory = ChatMemory()  # Uses LinearNodeSelector by default
@@ -68,6 +71,7 @@ memory = ChatMemory.threaded(model="gpt-4o-mini")
 ```
 
 #### Low-Level API (Full Configurability)
+
 ```python
 memory = ChatMemory(
     node_selector=LLMNodeSelector(model="gpt-4o-mini"),
@@ -77,6 +81,7 @@ memory = ChatMemory(
 ```
 
 #### Factory Methods Implementation
+
 ```python
 @classmethod
 def threaded(cls, model: str = "gpt-4o-mini", **kwargs) -> "ChatMemory":
@@ -122,12 +127,14 @@ def __init__(self, node_selector, summarizer, context_depth=5):
 ```
 
 **Result**: You get a `ChatMemory` instance that:
+
 - Uses LLM-based intelligent threading instead of linear memory
 - Automatically generates message summaries for better thread selection
 - Maintains a conversation graph with parent-child relationships
 - Can retrieve context by traversing conversation threads
 
 **Equivalent Manual Creation:**
+
 ```python
 # This is exactly what .threaded() does internally
 memory = ChatMemory(
@@ -142,6 +149,7 @@ memory = ChatMemory(
 ### Data Model
 
 #### ConversationNode
+
 ```python
 @dataclass
 class ConversationNode:
@@ -153,6 +161,7 @@ class ConversationNode:
 ```
 
 **Key Points:**
+
 - Each node represents a single message (human or assistant)
 - **id**: Auto-incremented integer providing natural ordering
 - **parent_id**: Creates threading relationships (None for root)
@@ -162,6 +171,7 @@ class ConversationNode:
 - Immutable once created
 
 #### MessageSummary
+
 ```python
 class MessageSummary(BaseModel):
     title: str = Field(..., description="Title of the message")
@@ -348,20 +358,21 @@ response = bot("What did we just talk about?")  # Bot won't remember
 ### Storage Operations
 
 #### append(human_message: BaseMessage, assistant_message: BaseMessage)
+
 - Adds both messages to the graph
 - Creates parent-child relationship between messages
 - Uses node selector to determine threading (linear vs graph mode)
 - Prevents cycles and orphaned nodes
 
-
-
 #### reset()
+
 - Clears all stored messages
 - Resets graph to empty state
 
 ### Retrieval Operations
 
 #### retrieve(query: str, n_results: int = 10, context_depth: int = 5) -> List[BaseMessage]
+
 - Smart retrieval that adapts based on memory configuration
 - **Linear memory**: Ignores query, returns recent messages (fast)
 - **Graph memory**: Uses semantic search with BM25 or similar algorithm, then traverses up thread paths
@@ -371,7 +382,8 @@ response = bot("What did we just talk about?")  # Bot won't remember
 - Works like existing docstore implementations
 
 **Context Depth Example:**
-```
+
+```text
 H1: "Let's talk about Python" (root)
 └── A1: "Python is great for data science"
     ├── H2: "What about machine learning?"
@@ -387,9 +399,10 @@ memory.retrieve(query="machine learning", n_results=1, context_depth=2)
 ## Threading Model
 
 ### Conversation Structure
+
 The graph memory uses a **tree structure** where all nodes are connected in a single conversation tree:
 
-```
+```text
 H1: "Let's talk about Python" (root - first human message)
 └── A1: "Python is great for data science"
     ├── H2: "What about machine learning?"
@@ -416,6 +429,7 @@ H1: "Let's talk about Python" (root - first human message)
 ### Node Selection Strategies
 
 #### LinearNodeSelector
+
 - Always selects the leaf assistant node (node with no out-edges that is an assistant message)
 - Creates linear conversation flow
 - No LLM calls required
@@ -423,6 +437,7 @@ H1: "Let's talk about Python" (root - first human message)
 - **Constraint**: Can only select assistant messages as parents for human messages
 
 #### LLMNodeSelector
+
 - Uses LLM to intelligently select which assistant message to branch from
 - Considers message content and conversation context
 - Supports retry logic with feedback
@@ -431,6 +446,7 @@ H1: "Let's talk about Python" (root - first human message)
 - **First message handling**: If no assistant messages exist, creates root node (parent_id = None)
 
 #### Node Selection Logic
+
 - **First message**: If no assistant nodes exist, message becomes root (`parent_id = None`)
 - **Subsequent messages**: LLM selects best assistant message as parent
 - **No fallbacks**: LLM selection should be reliable; if it fails, message becomes root
@@ -470,6 +486,7 @@ def __call__(self, *human_messages):
 ```
 
 **Key Points:**
+
 - **Retrieval happens before response generation** to provide context
 - **Storage happens after response generation** to save the conversation turn
 - **Memory is self-aware** - the `retrieve()` method automatically chooses the best strategy based on memory type
@@ -483,6 +500,7 @@ def __call__(self, *human_messages):
 ### Export and Visualization
 
 #### Mermaid Export
+
 ```python
 # Export conversation graph
 mermaid_diagram = memory.to_mermaid()
@@ -498,7 +516,7 @@ assistant_nodes = [n for n in memory.graph.nodes()
 
 The implementation uses a modular approach to keep the main `ChatMemory` class clean and focused:
 
-```
+```text
 llamabot/components/chat_memory/
 ├── __init__.py        # Exports main classes and functions
 ├── memory.py          # Main ChatMemory class
@@ -509,6 +527,7 @@ llamabot/components/chat_memory/
 ```
 
 **Module Exports in `__init__.py`:**
+
 ```python
 # Main classes
 from .memory import ChatMemory
@@ -530,7 +549,8 @@ __all__ = [
 ```
 
 **Test Structure Should Mirror Components:**
-```
+
+```text
 tests/components/chat_memory/
 ├── test_memory.py     # Test main ChatMemory class
 ├── test_retrieval.py  # Test retrieval functions
@@ -540,6 +560,7 @@ tests/components/chat_memory/
 ```
 
 #### Main Class (Clean and Focused)
+
 ```python
 class ChatMemory:
     def __init__(self,
@@ -589,6 +610,7 @@ class ChatMemory:
 ```
 
 #### Separate Functions (Implementation Details)
+
 ```python
 # retrieval.py
 def get_recent_messages(graph: nx.DiGraph, n_results: int) -> List[BaseMessage]:
@@ -656,6 +678,7 @@ def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:
 ```
 
 **Benefits:**
+
 - **Cleaner main class** - focuses on high-level API
 - **Easier testing** - can test functions independently
 - **Better separation of concerns** - each function has one job
@@ -663,6 +686,7 @@ def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:
 - **Easier to understand** - main class shows the "what", functions show the "how"
 
 **Testing Benefits:**
+
 - **Unit tests** for each function in isolation
 - **Integration tests** for the main ChatMemory class
 - **Mock testing** of LLM components without real API calls
@@ -670,12 +694,14 @@ def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:
 - **Regression testing** when modifying individual functions
 
 **Import Benefits:**
+
 - **Clean imports**: `from llamabot.components.chat_memory import ChatMemory`
 - **Function access**: `from llamabot.components.chat_memory import append_linear`
 - **Selector access**: `from llamabot.components.chat_memory import LLMNodeSelector`
 - **Top-level exports**: All main functionality available from module root
 
 ### NetworkX Backend
+
 - Direct use of NetworkX DiGraph for storage
 - No abstraction layer needed
 - Leverages NetworkX algorithms for graph operations
@@ -684,18 +710,21 @@ def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:
 ### Implementation Details
 
 #### Auto-Incremented IDs
+
 - Node IDs start at 1 and increment for each new node
 - Provides natural chronological ordering
 - Simple integer-based identification
 - No UUID complexity or collision concerns
 
 #### NetworkX Graph Storage
+
 - Each node stores a `ConversationNode` object as node data
 - Node ID is the NetworkX node identifier
 - Edges represent parent-child relationships
 - Graph maintains conversation tree structure
 
 #### Node Selection Process
+
 1. **Linear Mode**: Find leaf assistant node (no out-edges, role="assistant")
 2. **Graph Mode**:
    - Get all assistant nodes as candidates
@@ -708,11 +737,13 @@ def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:
 The system uses **actionable error handling** - only raising errors for issues that humans can actually fix:
 
 #### Actionable Errors (User Can Fix)
+
 - **Configuration errors**: Invalid parameters like negative `context_depth`
 - **File system errors**: Permission denied, disk full, invalid file paths
 - **Input validation**: Wrong message types, empty message content
 
 #### Graceful Handling (No Errors)
+
 - **Empty memory**: Returns empty list instead of error
 - **LLM selection failures**: Falls back to most recent valid node
 - **Summarization failures**: Continues without summary
@@ -721,6 +752,7 @@ The system uses **actionable error handling** - only raising errors for issues t
 #### Error Message Examples
 
 **Configuration Error (Actionable):**
+
 ```python
 # Validated at instantiation
 if context_depth < 0:
@@ -728,6 +760,7 @@ if context_depth < 0:
 ```
 
 **File System Error (Actionable):**
+
 ```python
 if "Permission denied" in str(e):
     raise PersistenceError(
@@ -740,6 +773,7 @@ elif "No space left" in str(e):
 ```
 
 **Graph Corruption (Actionable):**
+
 ```python
 raise InvalidGraphStateError(
     "Conversation graph has become corrupted. "
@@ -749,6 +783,7 @@ raise InvalidGraphStateError(
 ```
 
 **Graceful Handling Examples:**
+
 ```python
 # Empty memory - no error, just empty result
 if not graph.nodes():
@@ -766,6 +801,7 @@ except Exception:
 ```
 
 ### Performance Considerations
+
 - Optional summarization for linear mode
 - Lazy loading of summaries when needed
 - Efficient graph traversal for retrieval
@@ -830,18 +866,21 @@ The conversation memory uses a **JSON-based format** for persistence that is eas
 ### Persistence Operations
 
 #### save(file_path: str) -> None
+
 - Serializes conversation memory to JSON file
 - Includes metadata for versioning and tracking
 - Preserves all node data and edge relationships
 - Handles BaseMessage serialization
 
 #### load(file_path: str) -> ChatMemory
+
 - Deserializes JSON file to recreate memory
 - Validates graph structure integrity
 - Reconstructs NetworkX graph from JSON data
 - Handles version compatibility
 
 #### export(format: str = "json") -> str
+
 - Exports conversation in various formats
 - **JSON**: Full conversation with metadata
 - **JSONL**: OpenAI-compatible format for fine-tuning
@@ -851,6 +890,7 @@ The conversation memory uses a **JSON-based format** for persistence that is eas
 ### Implementation Details
 
 #### JSON Serialization Strategy
+
 ```python
 def to_json(self) -> dict:
     """Convert conversation memory to JSON-serializable dict."""
@@ -881,6 +921,7 @@ def to_json(self) -> dict:
 ```
 
 #### Graph Reconstruction
+
 ```python
 def from_json(data: dict) -> ChatMemory:
     """Reconstruct conversation memory from JSON data."""
@@ -916,7 +957,7 @@ def from_json(data: dict) -> ChatMemory:
 
 ### File Naming Convention
 
-```
+```text
 conversations/
 ├── session_2024-01-15_10-30-00.json
 ├── session_2024-01-15_14-45-00.json
@@ -926,23 +967,27 @@ conversations/
 ## Open Questions and Future Enhancements
 
 ### Concurrency Handling
+
 - How should multiple threads/processes access the same memory file?
 - Should we use file locking or database backend for concurrent access?
 - What happens if two processes try to append simultaneously?
 
 ### Advanced Retrieval Strategies
+
 - Semantic search across message content
 - Time-based retrieval (messages from last hour/day)
 - User-specific retrieval (only messages from specific user)
 - Context-aware retrieval (messages related to current topic)
 
 ### Performance Optimizations
+
 - Lazy loading of large conversation histories
 - Caching frequently accessed message paths
 - Compression for long conversations
 - Incremental graph updates
 
 ### Integration with External Systems
+
 - Export to chat platforms (Slack, Discord, etc.)
 - Integration with vector databases for semantic search
 - Webhook support for real-time updates
@@ -951,6 +996,7 @@ conversations/
 ## Migration Strategy
 
 ### Phase 1: Deprecation (v0.13.0)
+
 - Add deprecation warnings to existing `ChatMemory` class
 - Document new `ChatMemory` API
 - Update examples to use new API
@@ -958,11 +1004,13 @@ conversations/
 - **Update tests to reflect modular component structure** ✅
 
 ### Phase 2: Transition (v0.14.0)
+
 - Make `ChatMemory` the default
 - Keep `ChatMemory` as alias with deprecation warning
 - Update all internal usage
 
 ### Phase 3: Removal (v0.15.0)
+
 - Remove `ChatMemory` class entirely
 - Remove deprecated methods
 - Clean up imports and references
@@ -970,6 +1018,7 @@ conversations/
 ### Migration Guide
 
 **Old API:**
+
 ```python
 from llamabot.components.chat_memory import ChatMemory
 
@@ -979,6 +1028,7 @@ messages = memory.get_messages()
 ```
 
 **New API:**
+
 ```python
 from llamabot.components.chat_memory import ChatMemory
 
@@ -988,6 +1038,7 @@ messages = memory.retrieve()
 ```
 
 **Key Changes:**
+
 - `ChatMemory` → `ChatMemory` (same name, new implementation)
 - `add_message()` → `append()`
 - `get_messages()` → `retrieve()`

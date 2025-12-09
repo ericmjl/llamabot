@@ -135,6 +135,7 @@ results = docstore.retrieve("python")  # Searches all partitions
 **Note:** Currently, `QueryBot` doesn't support partition filtering directly. If you need to query specific partitions with QueryBot, you have a few options:
 
 1. **Access the docstore directly** before creating the bot:
+
    ```python
    # Get partition-filtered results
    relevant_docs = docstore.retrieve("python", partitions=["tutorials"])
@@ -144,6 +145,7 @@ results = docstore.retrieve("python")  # Searches all partitions
    ```
 
 2. **Create separate QueryBot instances** for different partitions:
+
    ```python
    # Create separate docstores or filter results per partition
    tutorial_bot = QueryBot(

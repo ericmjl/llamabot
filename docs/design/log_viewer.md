@@ -1,11 +1,13 @@
 # LlamaBot Log Viewer Design Document
 
 ## Overview
+
 The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing LlamaBot call logs. It provides a comprehensive view of all interactions with the bot, including prompts, responses, and tool usage.
 
 ## Core Features
 
 ### 1. Log Inspection ✅
+
 - **Split Panel Layout**
   - Left panel: List of log entries
   - Right panel: Detailed view of selected log
@@ -33,6 +35,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Rating controls (helpful/not helpful)
 
 ### 2. Filtering and Search ✅
+
 - **Text Search**
   - Real-time filtering as you type
   - Search across all fields
@@ -44,6 +47,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Multi-select capability
 
 ### 3. Export Functionality ✅
+
 - **Export Formats**
   - OpenAI format (JSONL)
   - Support for additional formats in future
@@ -55,6 +59,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Include/exclude specific fields
 
 ### 4. Prompt Comparison ✅
+
 - **Version Comparison**
   - Side-by-side diff view
   - Syntax highlighting
@@ -67,6 +72,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Easy switching between versions
 
 ### 5. Experiment View ✅
+
 - **Experiment List**
   - Name and run count
   - Timestamp of last run
@@ -86,17 +92,20 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
 ## Technical Implementation
 
 ### Data Structures
+
 - Maintain existing database schema
 - No changes to current data models
 - Leverage existing relationships between tables
 
 ### UI Components
+
 - Use HTMX for dynamic updates
 - Bootstrap for responsive layout
 - Custom CSS for specialized components
 - Jinja2 templates for server-side rendering
 
 ### Templates Structure
+
 - **Base Template** (`base.html`)
   - Common layout structure
   - Navigation bar with links to each page
@@ -132,6 +141,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - `column_visibility`: Column visibility controls component
 
 ### Router Structure
+
 - **Log Router** (`/logs`)
   - `GET /`: Main log viewer page with split panel layout
   - `GET /filtered_logs`: HTMX endpoint for filtered log list
@@ -162,6 +172,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Logging for debugging and monitoring
 
 ### Static Files Structure
+
 - **CSS** (`static/styles.css`)
   - Base styles for layout and components
   - Responsive design utilities
@@ -202,6 +213,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
   - Easy to maintain and extend
 
 ### Performance Considerations
+
 - Pagination for large log sets
 - Lazy loading of log details
 - Efficient database queries
@@ -210,30 +222,35 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
 ## User Experience
 
 ### Navigation
+
 - Clear visual hierarchy
 - Consistent layout across views
 - Intuitive filtering controls
 - Quick access to common actions
 
 ### Responsiveness
+
 - Mobile-friendly design
 - Adaptive layout for different screen sizes
 - Touch-friendly controls
 - Keyboard shortcuts for power users
 
 ### Visual Feedback
+
 - Loading indicators
 - Success/error messages
 - Clear status indicators
 - Helpful tooltips
 
 ## Security
+
 - Input sanitization
 - SQL injection prevention
 - XSS protection
 - Rate limiting
 
 ## Accessibility
+
 - ARIA labels
 - Keyboard navigation
 - Screen reader support
@@ -242,6 +259,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
 ## Implementation Plan
 
 ### Phase 1: Core Infrastructure
+
 1. **Base Setup**
    - Set up FastAPI application structure
    - Configure database connections
@@ -255,6 +273,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
    - Add Bootstrap base styles
 
 ### Phase 2: Log Viewing
+
 1. **Log List View**
    - Implement log table component
    - Add basic filtering
@@ -268,6 +287,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
    - Set up rating system
 
 ### Phase 3: Advanced Features
+
 1. **Search and Filter**
    - Implement text search
    - Add function name filtering
@@ -281,6 +301,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
    - Add progress indicators
 
 ### Phase 4: Prompt Management
+
 1. **Prompt Comparison**
    - Create prompt version list
    - Implement diff view
@@ -294,6 +315,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
    - Set up experiment navigation
 
 ### Phase 5: Polish and Optimization
+
 1. **Performance**
    - Implement caching
    - Optimize database queries
@@ -307,6 +329,7 @@ The LlamaBot Log Viewer is a web-based interface for inspecting and analyzing Ll
    - Improve accessibility
 
 ### Phase 6: Testing and Documentation
+
 1. **Testing**
    - Write unit tests
    - Add integration tests

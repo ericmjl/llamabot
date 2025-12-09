@@ -357,6 +357,7 @@ bot = lmb.StructuredBot(
 StructuredBot provides a powerful way to get reliable, validated structured outputs from LLMs. By combining Pydantic models with automatic validation and retry logic, StructuredBot ensures that your applications receive data in the exact format you expect.
 
 Key takeaways:
+
 - Use StructuredBot when you need guaranteed structured outputs
 - Design clear, well-validated Pydantic models
 - Leverage automatic retry logic for robust data extraction
