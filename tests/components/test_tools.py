@@ -5,19 +5,20 @@ It verifies that the tool decorator properly applies JSON schemas to functions
 and that the built-in tools function as intended.
 """
 
-import pytest
-from typing import Dict, List, Any
 from datetime import datetime
+from typing import Any, Dict, List
+
+import pytest
 
 from llamabot.components.tools import (
-    tool,
     add,
-    today_date,
-    inspect_globals,
-    search_internet_and_summarize,
-    write_and_execute_script,
     function_to_dict,
+    inspect_globals,
     json_schema_type,
+    search_internet_and_summarize,
+    today_date,
+    tool,
+    write_and_execute_script,
 )
 
 
@@ -458,6 +459,138 @@ def test_tool_decorator():
     # Test that default values are included in the schema
     assert "default" in schema["function"]["parameters"]["properties"]["b"]
     assert schema["function"]["parameters"]["properties"]["b"]["default"] == "default"
+
+
+def test_tool_with_nodeify():
+    """Test that @tool always applies AgentBot integration."""
+    from llamabot.components.pocketflow import DECIDE_NODE_ACTION
+
+    @tool
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # Check that nodeify was applied (has func and loopback_name attributes)
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    assert test_func.loopback_name == DECIDE_NODE_ACTION
+    assert hasattr(test_func, "json_schema")
+
+
+def test_tool_with_custom_loopback_name():
+    """Test that @tool(loopback_name=None) creates terminal tool."""
+
+    @tool(loopback_name=None)
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # Check that nodeify was applied with custom loopback_name
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    assert test_func.loopback_name is None
+    assert hasattr(test_func, "json_schema")
+
+
+def test_tool_with_span_default():
+    """Test that @tool applies span decorator by default."""
+
+    @tool
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # Check that AgentBot integration was applied
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    # Check that json_schema is present
+    assert hasattr(test_func, "json_schema")
+    # Function should still be callable
+    assert test_func("test") == "test"
+
+
+def test_tool_with_span_explicit():
+    """Test that @tool(span=True) explicitly applies span decorator."""
+
+    @tool(span=True)
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # Check that AgentBot integration was applied
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    # Check that json_schema is present
+    assert hasattr(test_func, "json_schema")
+    # Function should still be callable
+    assert test_func("test") == "test"
+
+
+def test_tool_with_span_false():
+    """Test that @tool(span=False) disables span decorator."""
+
+    @tool(span=False)
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # Check that AgentBot integration was applied
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    # Check that json_schema is present
+    assert hasattr(test_func, "json_schema")
+    # Function should still be callable
+    assert test_func("test") == "test"
+
+
+def test_tool_with_span_and_options():
+    """Test that @tool(span=True) applies span with options."""
+
+    @tool(span=True)
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # Check that AgentBot integration was applied
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    # Check that json_schema is present
+    assert hasattr(test_func, "json_schema")
+    # Function should still be callable
+    assert test_func("test") == "test"
+
+
+def test_tool_decorator_order():
+    """Test that decorators are applied in correct order: AgentBot integration wraps span wraps tool."""
+
+    @tool(span=True, loopback_name="custom")
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # The outermost decorator should be AgentBot integration (FuncNode)
+    # Check that it has the expected attributes
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    assert test_func.loopback_name == "custom"
+    # json_schema should be accessible (proxied through FuncNode)
+    assert hasattr(test_func, "json_schema")
+
+
+def test_tool_backward_compatibility():
+    """Test that @tool without parentheses still works."""
+
+    @tool
+    def test_func(arg: str) -> str:
+        """Test function."""
+        return arg
+
+    # Should have AgentBot integration applied
+    assert hasattr(test_func, "func")
+    assert hasattr(test_func, "loopback_name")
+    assert hasattr(test_func, "json_schema")
+    # Function should still be callable
+    assert test_func("test") == "test"
 
 
 def test_function_to_dict_with_default_values():

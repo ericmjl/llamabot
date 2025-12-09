@@ -12,6 +12,7 @@ ToolBot is a specialized bot that focuses on **tool selection and execution** ra
 - Return a single function call with the proper arguments to execute
 
 This makes ToolBot ideal for:
+
 - **Automation workflows** where you need to execute specific functions
 - **Data analysis tasks** that require custom code execution
 - **API integrations** that need to call external services
@@ -226,6 +227,7 @@ response2 = bot("Now analyze the data you just created")  # Bot remembers the Da
 ```
 
 **Memory Options:**
+
 - `lmb.ChatMemory()` - Linear memory (fast, no LLM calls)
 - `lmb.ChatMemory.threaded(model="gpt-4o-mini")` - Intelligent threading (uses LLM for smart connections)
 

@@ -55,6 +55,7 @@ The simplest way to create an AgentBot is to provide a list of callable function
 ```python
 import llamabot as lmb
 
+@lmb.tool
 def get_weather(city: str) -> str:
     """Get the current weather for a city.
 
@@ -77,9 +78,8 @@ print(result)
 
 **What happens behind the scenes:**
 
-1. AgentBot automatically wraps `get_weather` with `@tool` and
-   `@nodeify` decorators
-2. Default tools (`today_date`, `respond_to_user`, and `return_object_to_user`) are added
+1. The function `get_weather` should be decorated with `@tool`
+2. Default tools (`today_date`, `respond_to_user`, `return_object_to_user`, and `inspect_globals`) are added
    automatically
 3. A `DecideNode` is created to decide which tool to use
 4. The flow graph is built connecting the decision node to all tools
@@ -107,6 +107,7 @@ result = agent("What's today's date?")
 ```
 
 **When to use `respond_to_user` vs `return_object_to_user`:**
+
 - Use `respond_to_user` for text responses, explanations, or conversational replies
 - Use `return_object_to_user` when you want to return actual Python objects (DataFrames,
   lists, dicts, etc.) from your notebook's or script's globals
@@ -388,15 +389,13 @@ agent = lmb.AgentBot(
 
 By default, all tools loop back to the decision node. However,
 `respond_to_user` is a terminal tool that ends the flow. You can
-create your own terminal tools using the `nodeify` decorator:
+create your own terminal tools using `@tool` with `loopback_name=None`:
 
 ```python
-from llamabot.components.pocketflow import nodeify
 from llamabot.components.tools import tool
 
 # Terminal node - no loopback
-@nodeify(loopback_name=None)
-@tool
+@tool(loopback_name=None)
 def final_answer(message: str) -> str:
     """Provide the final answer to the user.
 
@@ -417,7 +416,7 @@ def my_tool(arg: str) -> str:
     """My tool function."""
     return f"Result: {arg}"
 
-# AgentBot will still wrap it with @nodeify
+# AgentBot accepts tools decorated with @tool
 agent = lmb.AgentBot(tools=[my_tool])
 ```
 
@@ -520,7 +519,7 @@ def safe_api_call(url: str, timeout: int = 10) -> dict:
 When you provide a function to AgentBot:
 
 1. The function is wrapped with `@tool` to create a tool schema
-2. The tool is wrapped with `@nodeify` to create a PocketFlow node
+2. The `@tool` decorator enables AgentBot integration
 3. The node is connected to the decision node
 4. If not terminal, the node loops back to the decision node
 

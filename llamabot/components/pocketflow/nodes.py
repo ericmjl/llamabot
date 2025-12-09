@@ -20,23 +20,17 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
     a decision node in the flow graph.
 
     **Interaction with @tool decorator:**
-    The `nodeify` decorator works seamlessly with `@tool` decorated functions.
-    When wrapping a `@tool` function, the FuncNode preserves access to the tool's
-    `json_schema` attribute (via `__getattr__` proxying), allowing ToolBot to
-    discover and use the tool. **Important:** `@nodeify` must be applied last
-    (outermost decorator) so it wraps the `@tool`-decorated function. The typical
-    pattern is:
-    ```python
-    @nodeify(loopback_name="decide")
-    @tool
-    def my_tool(arg: str) -> str:
-        return arg
-    ```
+    The `@tool` decorator automatically applies `@nodeify` internally, so you
+    typically don't need to use `@nodeify` directly. However, if you need to
+    manually nodeify a function, `@nodeify` works seamlessly with `@tool` decorated
+    functions. When wrapping a `@tool` function, the FuncNode preserves access to
+    the tool's `json_schema` attribute (via `__getattr__` proxying), allowing ToolBot
+    to discover and use the tool. **Important:** `@nodeify` must be applied last
+    (outermost decorator) so it wraps the `@tool`-decorated function.
 
-    **Decorator Order:**
-    - `@tool` is applied first (innermost)
-    - `@nodeify` is applied last (outermost)
-    - This ensures the FuncNode can proxy to the tool-decorated function
+    **Note:** For most use cases, use `@tool` which handles nodeification automatically.
+    Only use `@nodeify` directly if you need fine-grained control over the nodeification
+    process.
 
     **Decorator usage patterns:**
     - Without parentheses: `@nodeify` or `@nodeify(loopback_name=None)`
@@ -52,6 +46,11 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
     The returned FuncNode is a subclass of PocketFlow's `Node` base class, implementing
     the required `prep`, `exec`, and `post` methods. The `exec` method calls the
     wrapped function with arguments from the shared state's `func_call` dictionary.
+
+    **Observability:**
+    Span tracking is handled by the `@span` decorator (typically applied via `@tool`),
+    not by `nodeify` itself. This maintains single responsibility: `nodeify` handles
+    PocketFlow integration, while `@tool` handles observability.
 
     :param func: The function to wrap (when used without parentheses)
     :param loopback_name: The action name to use when looping back to the decide node.
@@ -109,33 +108,8 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
                 if "_globals_dict" in sig.parameters:
                     func_call["_globals_dict"] = globals_dict
 
-                # Add span support for tool execution
-                if is_span_recording_enabled():
-                    current_span = get_current_span()
-                    if current_span:
-                        tool_span = current_span.span(
-                            "tool_call", tool_name=self.func.__name__, **func_call
-                        )
-                        with tool_span:
-                            result = self.func(**func_call)
-                            tool_span.log("tool_completed", result=str(result)[:200])
-                            return result
-                    else:
-                        # No parent span, create root span
-                        trace_id = prep_result.get("trace_id")
-                        tool_span = Span(
-                            "tool_call",
-                            trace_id=trace_id,
-                            tool_name=self.func.__name__,
-                            **func_call,
-                        )
-                        with tool_span:
-                            result = self.func(**func_call)
-                            tool_span.log("tool_completed", result=str(result)[:200])
-                            return result
-                else:
-                    # No span recording, execute normally
-                    return self.func(**func_call)
+                # Execute the function
+                return self.func(**func_call)
 
             def post(self, shared, prep_result, exec_res):
                 """Post-process the execution result.
@@ -238,7 +212,7 @@ class DecideNode(Node):
     This node uses ToolBot to analyze the conversation history and decide
     which tool should be executed next based on the user's query.
 
-    :param tools: List of tool functions (already wrapped with @tool and @nodeify)
+    :param tools: List of tool functions (decorated with @tool, which handles nodeification)
     :param model_name: The name of the model to use for decision making
     :param system_prompt: System prompt string to use for decision-making
     :param max_iterations: Maximum number of tool calls before forcing termination.

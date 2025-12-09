@@ -61,9 +61,11 @@ def __init__(
 Process a message and return tool calls.
 
 **Parameters:**
+
 - `message`: The message to process
 
 **Returns:**
+
 - List of tool calls to execute
 
 ## Available Tools
@@ -163,9 +165,11 @@ def toolbot_sysprompt(globals_dict: dict = {}) -> str:
 This function generates a comprehensive system prompt that includes information about available global variables in the current session.
 
 **Parameters:**
+
 - `globals_dict` (dict): Dictionary of global variables to include in the prompt
 
 **Returns:**
+
 - str: A formatted system prompt with global variable information
 
 ## Integration with Other Components
@@ -202,6 +206,45 @@ bot = ToolBot(
     model_name="gpt-4.1",
     tools=[my_custom_tool],
 )
+```
+
+### The `@tool` Decorator
+
+The `@tool` decorator makes it easy to create tools for AgentBot with built-in observability.
+
+**Parameters:**
+
+- `loopback_name` (Optional[str], default="decide"): Controls whether execution continues after this tool. Set to `None` for terminal tools that end the workflow.
+- `span` (bool, default=True): Whether to apply `@span` decorator for observability.
+- `exclude_args` (Optional[List[str]], default=None): Span parameter: exclude args from logging.
+- `operation_name` (Optional[str], default=None): Span parameter: custom operation name.
+- `**span_attributes`: Additional span attributes passed to `@span`.
+
+**Examples:**
+
+```python
+# Basic usage
+@tool
+def my_tool(arg: str) -> str:
+    return arg
+
+# Terminal tool
+@tool(loopback_name=None)
+def respond_to_user(response: str) -> str:
+    return response
+
+# Customize span options (exclude sensitive args from logging)
+@tool(exclude_args=["api_key", "password"])
+def secure_tool(api_key: str, password: str, data: str) -> str:
+    """Process data securely.
+
+    :param api_key: API key (excluded from span logs)
+    :param password: Password (excluded from span logs)
+    :param data: Data to process
+    :return: Processed data
+    """
+    return f"Processed: {data}"
+
 ```
 
 ## Best Practices

@@ -8,7 +8,7 @@
 # ]
 #
 # [tool.uv.sources]
-# llamabot = { path = "../../../", editable = true }
+# llamabot = { path = "../../", editable = true }
 # ///
 
 import marimo
@@ -70,7 +70,6 @@ def _():
 
 @app.cell
 def _(nodeify, tool):
-    @nodeify(loopback_name="decide")
     @tool
     def check_expense(amount: float, category: str, _globals_dict: dict = None) -> str:
         """Check if an expense is within budget for a given category.
@@ -102,7 +101,6 @@ def _(nodeify, tool):
 
 @app.cell
 def _(nodeify, tool):
-    @nodeify(loopback_name="decide")
     @tool
     def generate_report(
         report_type: str, date_range: str, _globals_dict: dict = None
@@ -124,7 +122,6 @@ def _(nodeify, tool):
 
 @app.cell
 def _(nodeify, tool):
-    @nodeify(loopback_name="decide")
     @tool
     def lookup_employee(employee_id: str, _globals_dict: dict = None) -> str:
         """Look up employee information by employee ID.
@@ -166,7 +163,6 @@ def _(nodeify, tool):
 
 @app.cell
 def _(nodeify, tool):
-    @nodeify(loopback_name="decide")
     @tool
     def calculate_budget(
         department: str, quarter: str, _globals_dict: dict = None
@@ -212,7 +208,7 @@ def _(mo):
     3. **lookup_employee**: Retrieves employee information by ID
     4. **calculate_budget**: Calculates department budgets for quarters
 
-    Each tool is decorated with `@tool` and `@nodeify(loopback_name="decide")` to work with AgentBot.
+    Each tool is decorated with `@tool` to work with AgentBot.
     """)
     return
 

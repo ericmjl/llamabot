@@ -779,9 +779,8 @@ class Span:
 class SpanFactory:
     """Factory that can work as both decorator and context manager."""
 
-    def __init__(self, operation_name, log_return, exclude_args, db_path, attributes):
+    def __init__(self, operation_name, exclude_args, db_path, attributes):
         self.operation_name = operation_name
-        self.log_return = log_return
         self.exclude_args = exclude_args
         self.db_path = db_path
         self.attributes = attributes
@@ -792,7 +791,6 @@ class SpanFactory:
         if func is not None:
             return _span_decorator(
                 operation_name=self.operation_name or func.__name__,
-                log_return=self.log_return,
                 exclude_args=self.exclude_args or [],
                 db_path=self.db_path,
                 **self.attributes,
@@ -823,12 +821,13 @@ class SpanFactory:
 
 def span(
     operation_name: Optional[Union[str, Callable]] = None,
-    log_return: bool = False,
     exclude_args: Optional[List[str]] = None,
     db_path: Optional[Path] = None,
     **attributes,
 ):
     """Create a span context manager or decorator.
+
+    Spans automatically log function inputs and outputs when used as decorators.
 
     Can be used in two ways:
     1. As context manager: with span("op_name") as s: ...
@@ -836,7 +835,6 @@ def span(
 
     :param operation_name: Name of operation. If None and used as decorator, uses function.__name__
         If callable, treated as function to decorate (for @span usage)
-    :param log_return: If True (when used as decorator), log return value
     :param exclude_args: List of argument names to exclude from logging
     :param db_path: Database path for saving spans
     :param attributes: Additional span attributes
@@ -847,7 +845,6 @@ def span(
         func = operation_name
         return _span_decorator(
             operation_name=func.__name__,
-            log_return=log_return,
             exclude_args=exclude_args or [],
             db_path=db_path,
             **attributes,
@@ -856,7 +853,6 @@ def span(
     # Return factory that works as both decorator and context manager
     return SpanFactory(
         operation_name=operation_name,
-        log_return=log_return,
         exclude_args=exclude_args or [],
         db_path=db_path,
         attributes=attributes,
@@ -865,7 +861,6 @@ def span(
 
 def _span_decorator(
     operation_name: Optional[str] = None,
-    log_return: bool = False,
     exclude_args: Optional[List[str]] = None,
     db_path: Optional[Path] = None,
     **attributes,
@@ -949,7 +944,7 @@ def _span_decorator(
             with span_obj:
                 try:
                     result = func(*args, **kwargs)
-                    # Always log output as attribute (coerce to string)
+                    # Always log output as attribute (spans automatically log inputs and outputs)
                     try:
                         span_obj["output"] = str(result)
                     except Exception:
