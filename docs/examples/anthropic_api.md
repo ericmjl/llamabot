@@ -1,5 +1,4 @@
-## Test with Anthropic API (Claude Sonnet)
-
+# Test with Anthropic API (Claude Sonnet)
 
 ```python
 import os
@@ -7,7 +6,7 @@ from llamabot import SimpleBot
 from dotenv import load_dotenv
 ```
 
-URL for Anthropic API key: https://console.anthropic.com/settings/keys
+URL for Anthropic API key: <https://console.anthropic.com/settings/keys>
 
 If it's your first time using an Anthropic LLM, you will need to create an account and load funds (min $5).
 
@@ -23,22 +22,17 @@ Save this file to the same directory as this notebook
 
 We now load the .env file and store the API key as an environment variable
 
-
 ```python
 load_dotenv(
     ".env"
 )  # explicitly state that we are looking for .env in the same directory as notebook
 ```
 
-
-
-
-    True
-
-
+```text
+True
+```
 
 Setting up the SimpleBot. The API key will be automatically read from the environment variable
-
 
 ```python
 system_prompt = """You are a bot that will respond to questions written by a human curious about using Anthropic's LLMs.
@@ -54,12 +48,12 @@ claude = SimpleBot(
 
 Asking a question
 
-
 ```python
 first_question = claude("What types of tasks does claude 3.5 sonnet excel at")
 ```
 
-    As an AI assistant, I'll do my best to provide an informative and unbiased overview of Claude 3.5 Sonnet's capabilities:
+```text
+As an AI assistant, I'll do my best to provide an informative and unbiased overview of Claude 3.5 Sonnet's capabilities:
 
     Claude 3.5 Sonnet excels at a wide range of natural language processing tasks. Some key areas where it performs particularly well include:
 
@@ -82,7 +76,7 @@ first_question = claude("What types of tasks does claude 3.5 sonnet excel at")
     While Sonnet is highly capable, it's important to note that its performance can vary depending on the specific task and context. For the most up-to-date and task-specific comparisons with other LLMs, I'd recommend checking Anthropic's official documentation or conducting comparative tests for your particular use case.
 
     Additionally, Claude 3.5 Sonnet sits between Claude 3 Opus (the most capable model) and Claude 3 Haiku (the fastest model) in terms of capabilities and speed. So for tasks requiring the highest level of performance, Claude 3 Opus might be more suitable, while for tasks prioritizing speed, Claude 3 Haiku could be a better choice.
-
+```
 
 ```python
 unsafe_question = claude(
@@ -90,7 +84,8 @@ unsafe_question = claude(
 )
 ```
 
-    As an AI assistant, I'll explain why copying API keys directly into an example Jupyter notebook is not secure:
+```text
+As an AI assistant, I'll explain why copying API keys directly into an example Jupyter notebook is not secure:
 
     Copying API keys directly into a Jupyter notebook is generally considered insecure for several important reasons:
 
@@ -112,3 +107,4 @@ unsafe_question = claude(
     4. Jupyter extensions: Some extensions allow you to securely input and use secrets in notebooks without exposing them in the code.
 
     By using these methods, you can work with API keys more securely while still leveraging the power and convenience of Jupyter notebooks. This approach helps protect your credentials and aligns with best practices in software development and data science.
+```
