@@ -76,7 +76,7 @@ def test_agentbot_rejects_unwrapped_tools():
     assert "not properly decorated" in error_message
     assert "unwrapped_function" in error_message
     assert "missing @tool decorator" in error_message
-    assert "missing @nodeify decorator" in error_message
+    assert "missing AgentBot integration" in error_message
     assert "To fix this" in error_message
 
 
