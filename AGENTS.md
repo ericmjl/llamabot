@@ -87,6 +87,20 @@ them complete - this catches critical errors like duplicate variable definitions
 and other Marimo-specific issues. **CRITICAL**: Fix ALL issues found by marimo check,
 including warnings. Do not leave any warnings unfixed.
 
+**Marimo to Markdown Conversion and Linting**: When working with Marimo notebooks
+in `docs/how-to/` that are converted to markdown for documentation:
+
+1. Run the conversion script: `pixi run python scripts/convert_marimo_to_markdown.py`
+2. Run markdownlint on the generated files: `markdownlint docs/how-to/*.md`
+3. Fix any linting errors by editing the source `.py` files (not the generated `.md` files)
+4. Common fixes needed:
+   - Add blank lines before lists (MD032)
+   - Change H1 headings to H2 to avoid multiple top-level headings (MD025)
+   - Ensure proper trailing newlines (handled automatically by conversion script)
+
+The conversion script automatically ensures markdown files end with a single newline,
+and the MkDocs build hook runs the conversion automatically before building docs.
+
 **Launching Marimo Notebooks**: When launching marimo notebooks for editing,
 always use the `--watch` flag: `uvx marimo edit --watch /path/to/notebook.py`.
 The `--watch` flag ensures that edits to the notebook file are automatically

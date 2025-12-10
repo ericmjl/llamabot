@@ -20,54 +20,57 @@ theme:
 nav:
   - Home: index.md
   - Getting Started:
-    - getting-started/which-bot.md
+    - "Which Bot Should I Use?": getting-started/which-bot.md
   - How-To Guides:
-    - how-to/cli-powered-by-llm.md
-    - how-to/receipt-processing.md
-    - how-to/data-analysis-agentbot.md
+    - "Build an LLM-Powered CLI": how-to/cli-powered-by-llm.md
+    - "Process Receipts with LLM Agents": how-to/receipt-processing.md
+    - "Build a Data Analysis Chatbot": how-to/data-analysis-agentbot.md
   - Tutorials:
-    - tutorials/simplebot.md
-    - tutorials/structuredbot.md
-    - tutorials/toolbot.md
-    - tutorials/agentbot.md
-    - tutorials/querybot.md
-    - tutorials/ollama.md
-    - tutorials/prompts.md
-    - tutorials/recording_prompts.md
+    - "SimpleBot Tutorial": tutorials/simplebot.md
+    - "StructuredBot Tutorial": tutorials/structuredbot.md
+    - "ToolBot Tutorial": tutorials/toolbot.md
+    - "AgentBot Tutorial": tutorials/agentbot.md
+    - "QueryBot Tutorial": tutorials/querybot.md
+    - "Using Ollama": tutorials/ollama.md
+    - "Working with Prompts": tutorials/prompts.md
+    - "Recording Prompts": tutorials/recording_prompts.md
     - Chat UI:
-      - tutorials/chat-ui/simplebot-and-chatbot.md
-      - tutorials/chat-ui/querybot.md
+      - "SimpleBot and ChatBot": tutorials/chat-ui/simplebot-and-chatbot.md
+      - "QueryBot Chat UI": tutorials/chat-ui/querybot.md
   - Reference:
     - Bots:
-      - reference/bots/simplebot.md
-      - reference/bots/structuredbot.md
-      - reference/bots/toolbot.md
-      - reference/bots/agentbot.md
-      - reference/bots/querybot.md
-      - reference/bots/imagebot.md
+      - "SimpleBot": reference/bots/simplebot.md
+      - "StructuredBot": reference/bots/structuredbot.md
+      - "ToolBot": reference/bots/toolbot.md
+      - "AgentBot": reference/bots/agentbot.md
+      - "QueryBot": reference/bots/querybot.md
+      - "ImageBot": reference/bots/imagebot.md
     - Components:
-      - reference/components/messages.md
-      - reference/components/tools.md
-      - reference/components/docstore.md
-      - reference/components/chat_memory.md
+      - "Messages": reference/components/messages.md
+      - "Tools": reference/components/tools.md
+      - "DocStore": reference/components/docstore.md
+      - "Chat Memory": reference/components/chat_memory.md
   - CLI:
-    - cli/llamabot.md
-    - cli/git.md
-    - cli/doc.md
-    - cli/docs.md
-    - cli/repo.md
-    - cli/blog.md
-    - cli/notebook.md
-    - cli/python.md
-    - cli/log-viewer.md
-    - cli/mcp.md
+    - "LlamaBot CLI": cli/llamabot.md
+    - "Git Commands": cli/git.md
+    - "Documentation Commands": cli/doc.md
+    - "Docs Server": cli/docs.md
+    - "Repository Commands": cli/repo.md
+    - "Blog Commands": cli/blog.md
+    - "Notebook Commands": cli/notebook.md
+    - "Python Commands": cli/python.md
+    - "Log Viewer": cli/log-viewer.md
+    - "MCP Server": cli/mcp.md
   - Design & Explanation:
-    - design/unified_chat_memory.md
-    - design/log_viewer.md
-    - design/observability.md
-    - design/agents-build-own-tools.md
+    - "Unified Chat Memory": design/unified_chat_memory.md
+    - "Log Viewer": design/log_viewer.md
+    - "Observability": design/observability.md
+    - "Agents Build Own Tools": design/agents-build-own-tools.md
   - Contributing:
-    - contributing/setup.md
+    - "Setup Guide": contributing/setup.md
+
+hooks:
+  - docs/hooks.py
 
 plugins:
   - search
