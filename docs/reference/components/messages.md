@@ -427,6 +427,6 @@ BaseMessage (base class)
 
 ## See Also
 
-- [SimpleBot Reference](../reference/bots/simplebot.md)
+- [SimpleBot Reference](../bots/simplebot.md)
 - [Chat Memory Reference](./chat_memory.md)
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)

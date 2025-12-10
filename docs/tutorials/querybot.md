@@ -253,5 +253,5 @@ tutorial_only_results = docstore.retrieve(
   - `embedding_registry`: "sentence-transformers"
   - `embedding_model`: "minishlab/potion-base-8M"
   You can customize these settings when initializing the store to use different embedding models.
-- For more details, see the source code in [`llamabot/bot/querybot.py`](../../llamabot/bot/querybot.py) and [`llamabot/components/docstore.py`](../../llamabot/components/docstore.py).
+- For more details, see the source code in [`llamabot/bot/querybot.py`](https://github.com/ericmjl/llamabot/blob/main/llamabot/bot/querybot.py) and [`llamabot/components/docstore.py`](https://github.com/ericmjl/llamabot/blob/main/llamabot/components/docstore.py).
 - This pattern is ideal for interactive apps, notebooks, or production bots where you want persistent memory and document storage.

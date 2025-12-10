@@ -211,6 +211,6 @@ response = bot("Tell me a long story.")
 
 ## See Also
 
-- [SimpleBot Tutorial](../tutorials/simplebot.md)
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
+- [SimpleBot Tutorial](../../tutorials/simplebot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)
 - [Chat Memory Component](../components/chat_memory.md)

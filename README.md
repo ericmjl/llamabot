@@ -474,7 +474,7 @@ with lmb.Experiment(name="llama_jokes") as exp:
 
 And now they will be viewable in the locally-stored message logs:
 
-![](./docs/cli/log-viewer/experiments.webp)
+![](cli/log-viewer/experiments.webp)
 
 ## CLI Demos
 

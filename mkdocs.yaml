@@ -53,7 +53,6 @@ nav:
   - CLI:
     - "LlamaBot CLI": cli/llamabot.md
     - "Git Commands": cli/git.md
-    - "Documentation Commands": cli/doc.md
     - "Docs Server": cli/docs.md
     - "Repository Commands": cli/repo.md
     - "Blog Commands": cli/blog.md

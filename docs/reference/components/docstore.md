@@ -315,6 +315,6 @@ response = bot("What is the main topic?")
 
 ## See Also
 
-- [QueryBot Reference](../reference/bots/querybot.md)
-- [QueryBot Tutorial](../tutorials/querybot.md)
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
+- [QueryBot Reference](../bots/querybot.md)
+- [QueryBot Tutorial](../../tutorials/querybot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)

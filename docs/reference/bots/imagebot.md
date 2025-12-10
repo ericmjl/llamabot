@@ -187,5 +187,5 @@ image_paths = [bot("A cat wearing sunglasses") for _ in range(3)]
 
 ## See Also
 
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)
 - [OpenAI DALL-E Documentation](https://platform.openai.com/docs/guides/images)

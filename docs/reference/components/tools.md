@@ -316,7 +316,7 @@ llamabot logviewer
 
 ## See Also
 
-- [ToolBot Reference](../reference/bots/toolbot.md)
-- [AgentBot Reference](../reference/bots/agentbot.md)
-- [ToolBot Tutorial](../tutorials/toolbot.md)
-- [AgentBot Tutorial](../tutorials/agentbot.md)
+- [ToolBot Reference](../bots/toolbot.md)
+- [AgentBot Reference](../bots/agentbot.md)
+- [ToolBot Tutorial](../../tutorials/toolbot.md)
+- [AgentBot Tutorial](../../tutorials/agentbot.md)

@@ -220,7 +220,7 @@ pixi run python -c "import llamabot; print(llamabot.__file__)"
 
 ## Getting Help
 
-- Check the [AGENTS.md](../../AGENTS.md) file for detailed development patterns
+- Check the [AGENTS.md](https://github.com/ericmjl/llamabot/blob/main/AGENTS.md) file for detailed development patterns
 - Review existing code in the repository for examples
 - Open an issue on GitHub for questions or problems
 
@@ -229,7 +229,7 @@ pixi run python -c "import llamabot; print(llamabot.__file__)"
 Once your environment is set up:
 
 1. Explore the codebase structure
-2. Read the [AGENTS.md](../../AGENTS.md) for development patterns
+2. Read the [AGENTS.md](https://github.com/ericmjl/llamabot/blob/main/AGENTS.md) for development patterns
 3. Pick an issue or feature to work on
 4. Write tests for your changes
 5. Submit a pull request
