@@ -25,7 +25,7 @@ def _():
 def _(mo):
     mo.md(
         """
-    # How to Build an LLM-Powered CLI
+    ## How to Build an LLM-Powered CLI
 
     Learn how to build a command-line interface that uses LLMs to generate structured outputs.
     This guide shows you how to create a CLI tool that automatically generates commit messages
@@ -61,6 +61,7 @@ def _(mo):
     ## Goal
 
     By the end of this guide, you'll have built a CLI command that:
+
     - Takes a git diff as input
     - Uses StructuredBot to generate a conventional commit message
     - Returns a validated, structured commit message
@@ -248,6 +249,7 @@ def _(mo):
     mo.md(
         """
     The spans show:
+
     - **query**: The input (git diff)
     - **model**: Which model was used
     - **validation_attempts**: How many times validation was attempted
@@ -382,6 +384,7 @@ def _(mo):
     - Handles validation retries automatically
 
     **Key Takeaways:**
+
     - Define your Pydantic schema first
     - Use StructuredBot for guaranteed schema compliance
     - Leverage spans for debugging and observability

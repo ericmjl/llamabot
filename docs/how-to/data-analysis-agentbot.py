@@ -25,7 +25,7 @@ def _():
 def _(mo):
     mo.md(
         """
-    # How to Build a Data Analysis Chatbot with AgentBot
+    ## How to Build a Data Analysis Chatbot with AgentBot
 
     Learn how to build a chatbot that executes code for data analysis using AgentBot.
     Unlike ToolBot which handles single-turn function calls, AgentBot can orchestrate
@@ -61,6 +61,7 @@ def _(mo):
     ## Goal
 
     By the end of this guide, you'll have built a data analysis chatbot that:
+
     - Executes Python code to analyze data
     - Makes multi-step decisions about which analyses to perform
     - Returns DataFrames and visualizations
@@ -283,6 +284,7 @@ def _(mo):
     mo.md(
         """
     The mermaid diagram shows:
+
     - **Decision node**: Where the agent decides which tool to use
     - **Tool nodes (blue)**: Tools that can loop back for multi-step workflows
     - **Terminal nodes (green)**: Tools like `respond_to_user` that end the workflow
@@ -343,12 +345,14 @@ def _(mo):
     mo.md(
         """
     The spans show:
+
     - **agentbot_call**: The main agent call with query and max_iterations
     - **iterations**: How many tool calls were made
     - **result**: The final result
     - **Nested spans**: Each tool execution creates its own span
 
     This observability helps you understand:
+
     - Which tools the agent chose to use
     - How many steps were needed
     - What decisions were made at each step
@@ -424,6 +428,7 @@ def _(mo):
     - Offers an interactive chat interface
 
     **Key Takeaways:**
+
     - AgentBot orchestrates multiple tools in a graph-based workflow
     - Tools decorated with `@tool` become agent-callable
     - Display the agent to see the workflow graph visualization

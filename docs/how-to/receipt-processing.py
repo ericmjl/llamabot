@@ -25,7 +25,7 @@ def _():
 def _(mo):
     mo.md(
         """
-    # How to Process Receipts with LLM Agents
+    ## How to Process Receipts with LLM Agents
 
     Learn how to extract structured data from receipt PDFs and images using a two-step
     OCR and structuring pattern with llamabot's SimpleBot and StructuredBot.
@@ -62,6 +62,7 @@ def _(mo):
     ## Goal
 
     By the end of this guide, you'll have built a receipt processing system that:
+
     - Converts receipt PDFs to images
     - Extracts text using vision models (OCR)
     - Structures the extracted data into a validated Pydantic model
@@ -240,6 +241,7 @@ def _(mo):
     ## Step 4: Process a Receipt
 
     Now let's process a receipt through the complete workflow:
+
     1. Convert PDF to images
     2. Extract text with OCR
     3. Structure the data
@@ -303,10 +305,12 @@ def _(mo):
     mo.md(
         """
     The spans show:
+
     - **OCR Bot**: query, model, input_message_count, duration_ms
     - **Structuring Bot**: query, model, validation_attempts, validation_success, schema_fields, duration_ms
 
     You can also see nested spans from the `convert_pdf_to_images` function showing:
+
     - file_path, file_extension, page_count, conversion_success
 
     This observability helps you debug issues and understand the workflow execution.
@@ -414,6 +418,7 @@ def _(mo):
     - Can be used as a tool in agent workflows
 
     **Key Takeaways:**
+
     - Define your Pydantic schema first
     - Use SimpleBot for vision/OCR tasks
     - Use StructuredBot for validated structured outputs

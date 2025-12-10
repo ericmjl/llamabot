@@ -85,6 +85,13 @@ def convert_marimo_to_markdown():
                 # No frontmatter, just prepend
                 content = molab_shield + content
 
+            # Ensure file ends with a single newline
+            if not content.endswith("\n"):
+                content += "\n"
+            elif content.endswith("\n\n"):
+                # Remove extra newlines, keep only one
+                content = content.rstrip("\n") + "\n"
+
             md_file.write_text(content)
             print(f"  Successfully converted {notebook.name}")
 
