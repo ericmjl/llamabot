@@ -46,10 +46,13 @@ def convert_marimo_to_markdown():
             # Read generated markdown
             content = md_file.read_text()
 
-            # Check if Molab shield already exists
-            if "[![Open in molab]" in content:
+            # Check if Molab shield and command already exist
+            if (
+                "[![Open in molab]" in content
+                and "uvx marimo edit --sandbox --mcp --no-token --watch" in content
+            ):
                 print(
-                    f"  Molab shield already exists in {md_file.name}, skipping injection."
+                    f"  Molab shield and command already exist in {md_file.name}, skipping injection."
                 )
                 continue
 
@@ -57,7 +60,18 @@ def convert_marimo_to_markdown():
             repo_path = f"docs/how-to/{notebook.name}"
             molab_shield = (
                 f"[![Open in molab](https://marimo.io/molab-shield.svg)]"
-                f"(https://molab.marimo.io/github/ericmjl/llamabot/blob/main/{repo_path})\n\n"
+                f"(https://molab.marimo.io/github/ericmjl/llamabot/blob/main/{repo_path})"
+            )
+
+            # Generate command for local execution
+            github_url = f"https://github.com/ericmjl/llamabot/blob/main/{repo_path}"
+            command = f"uvx marimo edit --sandbox --mcp --no-token --watch {github_url}"
+
+            # Create instruction text with shield and command
+            instruction_text = (
+                f"{molab_shield}\n\n"
+                f"To run this notebook, click on the molab shield above or run the following command at the terminal:\n\n"
+                f"```bash\n{command}\n```\n\n"
             )
 
             # Prepend shield (preserve frontmatter if present)
@@ -75,15 +89,15 @@ def convert_marimo_to_markdown():
                         frontmatter_end += 1
                     content = (
                         content[:frontmatter_end]
-                        + molab_shield
+                        + instruction_text
                         + content[frontmatter_end:]
                     )
                 else:
                     # Malformed frontmatter, just prepend
-                    content = molab_shield + content
+                    content = instruction_text + content
             else:
                 # No frontmatter, just prepend
-                content = molab_shield + content
+                content = instruction_text + content
 
             # Ensure file ends with a single newline
             if not content.endswith("\n"):
