@@ -21,7 +21,8 @@ app = marimo.App(width="columns")
 
 @app.cell(column=0)
 def _():
-    from pocketflow import Node, Flow
+    from pocketflow import Flow, Node
+
     import llamabot as lmb
 
     return Flow, Node, lmb
@@ -243,8 +244,8 @@ def _(ExtractTopics, Flow, GenerateQuestions, txt):
     shared_topics = dict(txt=txt)
 
     two_node_flow = Flow(start=extract_topics)
-    # result = two_node_flow.run(shared_topics)
-    # result
+    result = two_node_flow.run(shared_topics)
+    result
     return (two_node_flow,)
 
 
@@ -275,10 +276,10 @@ def _(mo):
 
 @app.cell
 def _():
-    from llamabot.components.pocketflow import flow_to_mermaid as _flow_to_mermaid
-
     def flow_to_mermaid(flow):
-        """Override flow_to_mermaid to use function names for FuncNode instances."""
+        """Convert a PocketFlow Flow object to a Mermaid diagram.
+        Uses FuncNode `name` property if available, otherwise class name.
+        """
         lines = ["graph TD"]
         node_styles = []
 
@@ -313,7 +314,7 @@ def _():
 
         # Generate node definitions
         for node, node_id in node_id_map.items():
-            # Check if node has a 'name' property (FuncNode instances)
+            # Prefer FuncNode .name if present, fallback to class name
             if hasattr(node, "name"):
                 node_name = node.name
             else:
@@ -390,13 +391,15 @@ def _(execute_shell_command):
 
 @app.cell
 def _(lmb):
+    from typing import Literal
+
+    from pydantic import BaseModel, Field
+
     from llamabot.components.tools import (
         respond_to_user,
         search_internet,
         today_date,
     )
-    from pydantic import BaseModel, Field
-    from typing import Literal
 
     search_internet = lmb.tool(search_internet)
 
@@ -450,7 +453,7 @@ def _(Node, ToolChoice, decision_bot_system_prompt, lmb):
             shared["memory"].append(f"Chosen Tool: {exec_result}")
             return exec_result
 
-    return (Decide,)
+    return Decide, today_date
 
 
 @app.cell
@@ -526,13 +529,10 @@ def _(Flow, decide, shared):
 
 
 @app.cell
-def _(flow2):
-    flow2.run({"query": "Hey what's up?", "memory": []})
+def _(flow2, mo):
+    # Visualize the agent flow
+    mo.mermaid(flow_to_mermaid(flow2))
     return
-
-
-@app.cell
-def _(flow2, flow_to_mermaid, mo):
     # Visualize the agent flow
     mo.mermaid(flow_to_mermaid(flow2))
     return
@@ -679,8 +679,7 @@ def _(mo):
 
 @app.cell
 def _(Flow, Node, flow_to_mermaid, mo):
-    from typing import List, Callable
-    from llamabot.components.chat_memory import ChatMemory
+    from typing import Callable, List
 
     class AgentBot:
         def __init__(self, tools: List[Callable], decide_node: Node):
