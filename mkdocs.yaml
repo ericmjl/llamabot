@@ -23,6 +23,7 @@ nav:
     - "Which Bot Should I Use?": getting-started/which-bot.md
   - How-To Guides:
     - "Build an LLM-Powered CLI": how-to/cli-powered-by-llm.md
+    - "Generate Blog Banner Images": how-to/generate-blog-banner-images.md
     - "Process Receipts with LLM Agents": how-to/receipt-processing.md
     - "Build a Data Analysis Chatbot": how-to/data-analysis-agentbot.md
   - Tutorials:
