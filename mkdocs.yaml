@@ -87,13 +87,17 @@ plugins:
 markdown_extensions:
   - codehilite
   - admonition
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
   - markdown.extensions.attr_list
 
 extra_css:
   - apidocs.css
 
 extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
   - config.js
 
 repo_name: "ericmjl/llamabot"
