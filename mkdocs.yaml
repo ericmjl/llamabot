@@ -17,6 +17,60 @@ theme:
 # We customize the navigation by hand to control the order
 # in which pages show up.
 
+nav:
+  - Home: index.md
+  - Getting Started:
+    - "Which Bot Should I Use?": getting-started/which-bot.md
+  - How-To Guides:
+    - "Build an LLM-Powered CLI": how-to/cli-powered-by-llm.md
+    - "Process Receipts with LLM Agents": how-to/receipt-processing.md
+    - "Build a Data Analysis Chatbot": how-to/data-analysis-agentbot.md
+  - Tutorials:
+    - "SimpleBot Tutorial": tutorials/simplebot.md
+    - "StructuredBot Tutorial": tutorials/structuredbot.md
+    - "ToolBot Tutorial": tutorials/toolbot.md
+    - "AgentBot Tutorial": tutorials/agentbot.md
+    - "QueryBot Tutorial": tutorials/querybot.md
+    - "Using Ollama": tutorials/ollama.md
+    - "Working with Prompts": tutorials/prompts.md
+    - "Recording Prompts": tutorials/recording_prompts.md
+    - Chat UI:
+      - "SimpleBot and ChatBot": tutorials/chat-ui/simplebot-and-chatbot.md
+      - "QueryBot Chat UI": tutorials/chat-ui/querybot.md
+  - Reference:
+    - Bots:
+      - "SimpleBot": reference/bots/simplebot.md
+      - "StructuredBot": reference/bots/structuredbot.md
+      - "ToolBot": reference/bots/toolbot.md
+      - "AgentBot": reference/bots/agentbot.md
+      - "QueryBot": reference/bots/querybot.md
+      - "ImageBot": reference/bots/imagebot.md
+    - Components:
+      - "Messages": reference/components/messages.md
+      - "Tools": reference/components/tools.md
+      - "DocStore": reference/components/docstore.md
+      - "Chat Memory": reference/components/chat_memory.md
+  - CLI:
+    - "LlamaBot CLI": cli/llamabot.md
+    - "Git Commands": cli/git.md
+    - "Docs Server": cli/docs.md
+    - "Repository Commands": cli/repo.md
+    - "Blog Commands": cli/blog.md
+    - "Notebook Commands": cli/notebook.md
+    - "Python Commands": cli/python.md
+    - "Log Viewer": cli/log-viewer.md
+    - "MCP Server": cli/mcp.md
+  - Design & Explanation:
+    - "Unified Chat Memory": design/unified_chat_memory.md
+    - "Log Viewer": design/log_viewer.md
+    - "Observability": design/observability.md
+    - "Agents Build Own Tools": design/agents-build-own-tools.md
+  - Contributing:
+    - "Setup Guide": contributing/setup.md
+
+hooks:
+  - docs/hooks.py
+
 plugins:
   - search
   - mknotebooks:

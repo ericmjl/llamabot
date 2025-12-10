@@ -261,6 +261,6 @@ def my_tool(api_key: str, data: str) -> str:
 
 ## See Also
 
-- [AgentBot Tutorial](../tutorials/agentbot.md)
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
-- [Tools Component](../reference/components/tools.md)
+- [AgentBot Tutorial](../../tutorials/agentbot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)
+- [Tools Component](../components/tools.md)

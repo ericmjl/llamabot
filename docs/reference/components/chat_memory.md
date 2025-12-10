@@ -290,5 +290,5 @@ print(diagram)
 
 ## See Also
 
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
-- [SimpleBot Reference](../reference/bots/simplebot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)
+- [SimpleBot Reference](../bots/simplebot.md)

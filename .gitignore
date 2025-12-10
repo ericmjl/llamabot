@@ -175,3 +175,6 @@ __marimo__
 
 # SQLite database
 test_spans.db
+
+# Generated markdown files from Marimo notebooks
+docs/how-to/*.md

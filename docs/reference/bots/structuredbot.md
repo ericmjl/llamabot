@@ -250,6 +250,6 @@ except ValidationError:
 
 ## See Also
 
-- [StructuredBot Tutorial](../tutorials/structuredbot.md)
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
+- [StructuredBot Tutorial](../../tutorials/structuredbot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)
 - [Pydantic Documentation](https://docs.pydantic.dev/)
