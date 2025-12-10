@@ -29,6 +29,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.9.3
         with:
