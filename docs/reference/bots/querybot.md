@@ -224,7 +224,7 @@ docstore.extend(documents)
 
 ## See Also
 
-- [QueryBot Tutorial](../tutorials/querybot.md)
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
+- [QueryBot Tutorial](../../tutorials/querybot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)
 - [DocStore Component](../components/docstore.md)
 - [Chat Memory Component](../components/chat_memory.md)

@@ -201,6 +201,6 @@ tool_calls2 = bot("Now analyze the data you just created")
 
 ## See Also
 
-- [ToolBot Tutorial](../tutorials/toolbot.md)
-- [Which Bot Should I Use?](../getting-started/which-bot.md)
-- [Tools Component](../reference/components/tools.md)
+- [ToolBot Tutorial](../../tutorials/toolbot.md)
+- [Which Bot Should I Use?](../../getting-started/which-bot.md)
+- [Tools Component](../components/tools.md)

@@ -8,6 +8,8 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
 
 jobs:
   build-docs:
@@ -22,6 +24,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.9.3
@@ -32,6 +37,22 @@ jobs:
 
       - name: Build docs
         run: pixi run build-docs
+
+      - name: Commit generated markdown files
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          # Force add the generated markdown files (they're in .gitignore)
+          git add -f docs/how-to/*.md || true
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update generated markdown files from Marimo notebooks" || true
+            # Push to the current branch
+            # For PRs: github.head_ref is the PR branch name
+            # For pushes: github.ref_name is the branch name (e.g., "main")
+            BRANCH="${{ github.head_ref || github.ref_name }}"
+            git push origin HEAD:$BRANCH || true
+          fi
 
       - name: Deploy website
         if: github.ref_name == 'main'
