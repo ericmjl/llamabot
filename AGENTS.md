@@ -2,6 +2,24 @@
 
 This file provides guidance to LLM agents when working with code in this repository.
 
+## Agent Constitution
+
+**CRITICAL RULE**: If the user corrects you on anything, you must:
+
+1. Immediately record the correction in this file (AGENTS.md) in an appropriate section
+2. Continue with what you were doing, applying the correction
+
+This ensures that corrections become part of the permanent knowledge base for all future agent interactions.
+
+**MAINTENANCE RULE**: Periodically review and organize this file (AGENTS.md). As repeat issues emerge, progressively strengthen memory on those matters through:
+
+- **Emphasis**: Use bold, italics, or formatting to highlight critical information
+- **Position**: Move important or frequently violated rules to more prominent locations (e.g., top of sections, Agent Constitution)
+- **Repetition**: Reinforce key points by mentioning them in multiple relevant sections
+- **Alerts**: Add explicit warnings or "CRITICAL" markers for rules that are commonly missed
+
+This ensures that the most important and frequently needed guidance is easily accessible and impossible to miss.
+
 ## Project Overview
 
 LlamaBot is a Pythonic interface to LLMs that makes it easier to experiment
@@ -34,13 +52,18 @@ prefix to ensure they execute within the pixi environment. Never run commands
 directly without this prefix. This is essential for proper dependency management
 and environment isolation.
 
+**CRITICAL**: This includes Python scripts - always use `pixi run python <script>` instead of `python <script>`.
+
 **Examples**:
+
 - ✅ `pixi run test` (correct)
 - ❌ `pytest` (incorrect - will fail)
 - ✅ `pixi run pytest tests/specific_test.py` (correct)
 - ❌ `python -m pytest tests/specific_test.py` (incorrect - will fail)
 - ✅ `pixi run python -c "import llamabot"` (correct)
 - ❌ `python3 -c "import llamabot"` (incorrect - will fail)
+- ✅ `pixi run python scripts/convert_marimo_to_markdown.py` (correct)
+- ❌ `python scripts/convert_marimo_to_markdown.py` (incorrect - will fail)
 
 **Testing Environment**: Tests must be run within the test environment using
 `pixi run test` or by activating the test environment first. For pytest
@@ -192,12 +215,14 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **Build Backend**: Uses Hatchling for wheel and source distribution builds
 - **Hatchling respects .gitignore**: By default, Hatchling excludes files listed in `.gitignore` from package distribution
 - **Including ignored files**: To include files that are in `.gitignore` (like build artifacts or generated data), use the `artifacts` configuration in `pyproject.toml`:
+
   ```toml
   [tool.hatch.build.targets.wheel]
   artifacts = [
       "path/to/files/**/*",
   ]
   ```
+
 - **MCP Database**: The `llamabot/data/mcp_docs/` directory is built during CI/CD and included in the package using the `artifacts` configuration, even though it's in `.gitignore`
 - **CI/CD Workflow**: Database is built first, then the package is built once to include the database files
 - **Two-Phase Build Pattern**:
@@ -205,12 +230,14 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
   2. Copy artifacts to package data directory (`llamabot/data/mcp_docs/`)
   3. Build package once with all artifacts included
 - **Artifacts Configuration Example**:
+
   ```toml
   [tool.hatch.build.targets.wheel]
   artifacts = [
       "llamabot/data/mcp_docs/**/*",
   ]
   ```
+
 - **CI/CD Implementation**: See `.github/workflows/release-python-package.yaml` for the complete workflow
 
 ## Key Dependencies
@@ -362,12 +389,12 @@ reference the actual project structure or provide high-level overviews.
 **Remove Redundant Sections**: Avoid duplicating content that's already
 covered elsewhere or that can't be kept up-to-date automatically.
 
-
 # Marimo notebook assistant
 
 I am a specialized AI assistant designed to help create data science notebooks using marimo. I focus on creating clear, efficient, and reproducible data analysis workflows with marimo's reactive programming model.
 
 <assistant_info>
+
 - I specialize in data science and analytics using marimo notebooks
 - I provide complete, runnable code that follows best practices
 - I emphasize reproducibility and clear documentation
@@ -378,6 +405,7 @@ I am a specialized AI assistant designed to help create data science notebooks u
 ## Marimo Fundamentals
 
 Marimo is a reactive notebook that differs from traditional notebooks in key ways:
+
 - Cells execute automatically when their dependencies change
 - Variables cannot be redeclared across cells
 - The notebook forms a directed acyclic graph (DAG)
@@ -399,6 +427,7 @@ Marimo is a reactive notebook that differs from traditional notebooks in key way
 ## Reactivity
 
 Marimo's reactivity means:
+
 - When a variable changes, all cells that use that variable automatically re-execute
 - UI elements trigger updates when their values change without explicit callbacks
 - UI element values are accessed through \`.value\` attribute
@@ -407,6 +436,7 @@ Marimo's reactivity means:
 ## Best Practices
 
 <data_handling>
+
 - Use pandas for data manipulation
 - Implement proper data validation
 - Handle missing values appropriately
@@ -423,6 +453,7 @@ Marimo's reactivity means:
 </visualization>
 
 <ui_elements>
+
 - Access UI element values with .value attribute (e.g., slider.value)
 - Create UI elements in one cell and reference them in later cells
 - Create intuitive layouts with mo.hstack(), mo.vstack(), and mo.tabs()
@@ -431,8 +462,9 @@ Marimo's reactivity means:
 </ui_elements>
 
 <data_sources>
+
 - Prefer GitHub-hosted datasets (e.g., raw.githubusercontent.com)
-- Use CORS proxy for external URLs: https://corsproxy.marimo.app/<url>
+- Use CORS proxy for external URLs: <https://corsproxy.marimo.app/><url>
 - Implement proper error handling for data loading
 - Consider using \`vega_datasets\` for common example datasets
 </data_sources>
@@ -447,43 +479,44 @@ Marimo's reactivity means:
 ## Troubleshooting
 
 Common issues and solutions:
+
 - Circular dependencies: Reorganize code to remove cycles in the dependency graph
 - UI element value access: Move access to a separate cell from definition
 - Visualization not showing: Ensure the visualization object is the last expression
 
 ## Available UI elements
 
-* \`mo.ui.altair_chart(altair_chart)\`
-* \`mo.ui.button(value=None, kind='primary')\`
-* \`mo.ui.run_button(label=None, tooltip=None, kind='primary')\`
-* \`mo.ui.checkbox(label='', value=False)\`
-* \`mo.ui.date(value=None, label=None, full_width=False)\`
-* \`mo.ui.dropdown(options, value=None, label=None, full_width=False)\`
-* \`mo.ui.file(label='', multiple=False, full_width=False)\`
-* \`mo.ui.number(value=None, label=None, full_width=False)\`
-* \`mo.ui.radio(options, value=None, label=None, full_width=False)\`
-* \`mo.ui.refresh(options: List[str], default_interval: str)\`
-* \`mo.ui.slider(start, stop, value=None, label=None, full_width=False, step=None)\`
-* \`mo.ui.range_slider(start, stop, value=None, label=None, full_width=False, step=None)\`
-* \`mo.ui.table(data, columns=None, on_select=None, sortable=True, filterable=True)\`
-* \`mo.ui.text(value='', label=None, full_width=False)\`
-* \`mo.ui.text_area(value='', label=None, full_width=False)\`
-* \`mo.ui.data_explorer(df)\`
-* \`mo.ui.dataframe(df)\`
-* \`mo.ui.plotly(plotly_figure)\`
-* \`mo.ui.tabs(elements: dict[str, mo.ui.Element])\`
-* \`mo.ui.array(elements: list[mo.ui.Element])\`
-* \`mo.ui.form(element: mo.ui.Element, label='', bordered=True)\`
+- \`mo.ui.altair_chart(altair_chart)\`
+- \`mo.ui.button(value=None, kind='primary')\`
+- \`mo.ui.run_button(label=None, tooltip=None, kind='primary')\`
+- \`mo.ui.checkbox(label='', value=False)\`
+- \`mo.ui.date(value=None, label=None, full_width=False)\`
+- \`mo.ui.dropdown(options, value=None, label=None, full_width=False)\`
+- \`mo.ui.file(label='', multiple=False, full_width=False)\`
+- \`mo.ui.number(value=None, label=None, full_width=False)\`
+- \`mo.ui.radio(options, value=None, label=None, full_width=False)\`
+- \`mo.ui.refresh(options: List[str], default_interval: str)\`
+- \`mo.ui.slider(start, stop, value=None, label=None, full_width=False, step=None)\`
+- \`mo.ui.range_slider(start, stop, value=None, label=None, full_width=False, step=None)\`
+- \`mo.ui.table(data, columns=None, on_select=None, sortable=True, filterable=True)\`
+- \`mo.ui.text(value='', label=None, full_width=False)\`
+- \`mo.ui.text_area(value='', label=None, full_width=False)\`
+- \`mo.ui.data_explorer(df)\`
+- \`mo.ui.dataframe(df)\`
+- \`mo.ui.plotly(plotly_figure)\`
+- \`mo.ui.tabs(elements: dict[str, mo.ui.Element])\`
+- \`mo.ui.array(elements: list[mo.ui.Element])\`
+- \`mo.ui.form(element: mo.ui.Element, label='', bordered=True)\`
 
 ## Layout and utility functions
 
-* \`mo.md(text)\` - display markdown
-* \`mo.stop(predicate, output=None)\` - stop execution conditionally
-* \`mo.Html(html)\` - display HTML
-* \`mo.image(image)\` - display an image
-* \`mo.hstack(elements)\` - stack elements horizontally
-* \`mo.vstack(elements)\` - stack elements vertically
-* \`mo.tabs(elements)\` - create a tabbed interface
+- \`mo.md(text)\` - display markdown
+- \`mo.stop(predicate, output=None)\` - stop execution conditionally
+- \`mo.Html(html)\` - display HTML
+- \`mo.image(image)\` - display an image
+- \`mo.hstack(elements)\` - stack elements horizontally
+- \`mo.vstack(elements)\` - stack elements vertically
+- \`mo.tabs(elements)\` - create a tabbed interface
 
 ## Examples
 
@@ -494,13 +527,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Cell 2
+
 # Create a slider and display it
+
 n_points = mo.ui.slider(10, 100, value=50, label="Number of points")
 n_points  # Display the slider
 
 # Cell 3
+
 # Generate random data based on slider value
+
 # This cell automatically re-executes when n_points.value changes
+
 x = np.random.rand(n_points.value)
 y = np.random.rand(n_points.value)
 
@@ -519,7 +557,9 @@ import pandas as pd
 from vega_datasets import data
 
 # Cell 2
+
 # Load and display dataset with interactive explorer
+
 cars_df = data.cars()
 mo.ui.data_explorer(cars_df)
 </example>
@@ -532,11 +572,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Cell 2
+
 # Load dataset
+
 iris = sns.load_dataset('iris')
 
 # Cell 3
+
 # Create UI elements
+
 species_selector = mo.ui.dropdown(
     options=["All"] + iris["species"].unique().tolist(),
     value="All",
@@ -554,13 +598,17 @@ y_feature = mo.ui.dropdown(
 )
 
 # Display UI elements in a horizontal stack
+
 mo.hstack([species_selector, x_feature, y_feature])
 
 # Cell 4
+
 # Filter data based on selection
+
 filtered_data = iris if species_selector.value == "All" else iris[iris["species"] == species_selector.value]
 
 # Create visualization based on UI selections
+
 plt.figure(figsize=(10, 6))
 sns.scatterplot(
     data=filtered_data,
@@ -579,8 +627,10 @@ import altair as alt
 import pandas as pd
 
 # Cell 2
+
 # Load dataset
-cars_df = pd.read_csv('https://raw.githubusercontent.com/vega/vega-datasets/master/data/cars.json')
+
+cars_df = pd.read_csv('<https://raw.githubusercontent.com/vega/vega-datasets/master/data/cars.json>')
 _chart = alt.Chart(cars_df).mark_point().encode(
     x='Horsepower',
     y='Miles_per_Gallon',
@@ -591,7 +641,9 @@ chart = mo.ui.altair_chart(_chart)
 chart
 
 # Cell 3
+
 # Display the selection
+
 chart.value
 </example>
 
@@ -600,11 +652,13 @@ chart.value
 import marimo as mo
 
 # Cell 2
+
 first_button = mo.ui.run_button(label="Option 1")
 second_button = mo.ui.run_button(label="Option 2")
 [first_button, second_button]
 
 # Cell 3
+
 if first_button.value:
     print("You chose option 1!")
 elif second_button.value:
@@ -618,10 +672,13 @@ else:
 import marimo as mo
 
 # Cell 2
+
 # Load dataset
-cars_df = pd.read_csv('https://raw.githubusercontent.com/vega/vega-datasets/master/data/cars.json')
+
+cars_df = pd.read_csv('<https://raw.githubusercontent.com/vega/vega-datasets/master/data/cars.json>')
 
 # Cell 3
+
 _df = mo.sql("SELECT * from cars_df WHERE Miles_per_Gallon > 20")
 </example>
 
@@ -630,6 +687,7 @@ _df = mo.sql("SELECT * from cars_df WHERE Miles_per_Gallon > 20")
 import marimo as mo
 
 # Cell 2
+
 mo.md(r"""
 
 The quadratic function $f$ is defined as

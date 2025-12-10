@@ -30,6 +30,9 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
+      - name: Convert Marimo notebooks to Markdown
+        run: pixi run python scripts/convert_marimo_to_markdown.py
+
       - name: Build docs
         run: pixi run build-docs
 

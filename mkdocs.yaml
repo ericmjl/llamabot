@@ -17,6 +17,58 @@ theme:
 # We customize the navigation by hand to control the order
 # in which pages show up.
 
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/which-bot.md
+  - How-To Guides:
+    - how-to/cli-powered-by-llm.md
+    - how-to/receipt-processing.md
+    - how-to/data-analysis-agentbot.md
+  - Tutorials:
+    - tutorials/simplebot.md
+    - tutorials/structuredbot.md
+    - tutorials/toolbot.md
+    - tutorials/agentbot.md
+    - tutorials/querybot.md
+    - tutorials/ollama.md
+    - tutorials/prompts.md
+    - tutorials/recording_prompts.md
+    - Chat UI:
+      - tutorials/chat-ui/simplebot-and-chatbot.md
+      - tutorials/chat-ui/querybot.md
+  - Reference:
+    - Bots:
+      - reference/bots/simplebot.md
+      - reference/bots/structuredbot.md
+      - reference/bots/toolbot.md
+      - reference/bots/agentbot.md
+      - reference/bots/querybot.md
+      - reference/bots/imagebot.md
+    - Components:
+      - reference/components/messages.md
+      - reference/components/tools.md
+      - reference/components/docstore.md
+      - reference/components/chat_memory.md
+  - CLI:
+    - cli/llamabot.md
+    - cli/git.md
+    - cli/doc.md
+    - cli/docs.md
+    - cli/repo.md
+    - cli/blog.md
+    - cli/notebook.md
+    - cli/python.md
+    - cli/log-viewer.md
+    - cli/mcp.md
+  - Design & Explanation:
+    - design/unified_chat_memory.md
+    - design/log_viewer.md
+    - design/observability.md
+    - design/agents-build-own-tools.md
+  - Contributing:
+    - contributing/setup.md
+
 plugins:
   - search
   - mknotebooks:

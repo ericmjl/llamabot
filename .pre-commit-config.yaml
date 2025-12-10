@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: interrogate
         args: [-c, pyproject.toml]
-        exclude: ^talks/|^talks/.+|talks/.*$|^notebooks/.*\.py$|^docs/examples/.*\.py$|^tutorials/.*\.py$|^archive/.*\.py$
+        exclude: ^talks/|^talks/.+|talks/.*$|^notebooks/.*\.py$|^docs/examples/.*\.py$|^docs/how-to/.*\.py$|^tutorials/.*\.py$|^archive/.*\.py$
   - repo: https://github.com/jsh9/pydoclint
     rev: 0.6.6
     hooks:
@@ -34,7 +34,7 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         types_or: [python]
-        exclude: ^notebooks/.*\.py$|^tutorials/.*\.py$|^archive/.*\.py$
+        exclude: ^notebooks/.*\.py$|^docs/how-to/.*\.py$|^tutorials/.*\.py$|^archive/.*\.py$
   - repo: https://github.com/ericmjl/webp-pre-commit
     rev: v0.0.9
     hooks:
