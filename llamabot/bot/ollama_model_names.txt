@@ -1,5 +1,8 @@
+nomic-embed-text-v2-moe
+devstral-small-2
 rnj-1
 deepseek-v3.2
+devstral-2
 qwen3-next
 mistral-large-3
 ministral-3
