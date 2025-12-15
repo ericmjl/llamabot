@@ -94,7 +94,7 @@ jobs:
       # Install Gemma model for bare package test
       - name: Cache Ollama
         if: ${{ matrix.test-type == 'bare-package' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.ollama
           key: ${{ runner.os }}-ollama
