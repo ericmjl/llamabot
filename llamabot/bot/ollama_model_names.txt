@@ -1,3 +1,6 @@
+nemotron-3-nano
+olmo-3.1
+olmo-3
 nomic-embed-text-v2-moe
 devstral-small-2
 rnj-1
