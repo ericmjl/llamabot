@@ -1,5 +1,6 @@
 gemini-3-flash-preview
 nemotron-3-nano
+functiongemma
 olmo-3.1
 olmo-3
 nomic-embed-text-v2-moe
