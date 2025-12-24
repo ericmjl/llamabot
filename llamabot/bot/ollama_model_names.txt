@@ -1,3 +1,4 @@
+glm-4.7
 minimax-m2.1
 gemini-3-flash-preview
 nemotron-3-nano
