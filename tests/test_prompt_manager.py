@@ -208,6 +208,44 @@ def test_version_prompt_error_handling(db_session, monkeypatch):
         version_prompt("Test template", "test_function")
 
 
+def test_prompt_without_parentheses_raises_error():
+    """Test that using @prompt without parentheses raises a clear error.
+
+    When the decorator is used as @prompt instead of @prompt("role"),
+    it should raise a TypeError with a helpful message.
+    """
+    with pytest.raises(TypeError) as exc_info:
+
+        @prompt
+        def test_func():
+            """This is a test function."""
+
+    error_message = str(exc_info.value)
+    assert "must be called with a role argument" in error_message
+    assert "@prompt('user')" in error_message
+    assert "Incorrect usage" in error_message
+    assert "Correct usage" in error_message
+
+
+def test_prompt_with_invalid_role_raises_error():
+    """Test that using @prompt with an invalid role raises a clear error.
+
+    When the decorator is used with a role that is not 'system', 'user',
+    or 'assistant', it should raise a ValueError.
+    """
+    with pytest.raises(ValueError) as exc_info:
+
+        @prompt("invalid_role")
+        def test_func():
+            """This is a test function."""
+
+    error_message = str(exc_info.value)
+    assert "Invalid role 'invalid_role'" in error_message
+    assert "system" in error_message
+    assert "user" in error_message
+    assert "assistant" in error_message
+
+
 def test_user_message_with_string():
     """Test that user() correctly creates a HumanMessage from a string.
 
