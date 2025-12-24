@@ -104,10 +104,41 @@ def version_prompt(
 class prompt:
     """Wrap a Python function into a Jinja2-templated prompt with version control.
 
-    :param role: The role of the prompt.
+    :param role: The role of the prompt. Must be one of "system", "user", or "assistant".
+
+    Usage::
+
+        @prompt("user")
+        def my_prompt(code: str) -> str:
+            '''Analyze this code: {{ code }}'''
+
+    Note: The decorator must always be called with a role argument.
+    Using @prompt without parentheses (i.e., @prompt instead of @prompt("system"))
+    is not supported.
     """
 
     def __init__(self, role: Literal["system", "user", "assistant"] = "system"):
+        # Check if the decorator was used without parentheses (i.e., @prompt instead of @prompt("system"))
+        # In that case, `role` will be the decorated function, not a string
+        if callable(role):
+            raise TypeError(
+                "The @prompt decorator must be called with a role argument.\n\n"
+                "Incorrect usage:\n"
+                "    @prompt\n"
+                "    def my_prompt(...):\n"
+                "        ...\n\n"
+                "Correct usage:\n"
+                "    @prompt('user')  # or 'system' or 'assistant'\n"
+                "    def my_prompt(...):\n"
+                "        ..."
+            )
+
+        valid_roles = ("system", "user", "assistant")
+        if role not in valid_roles:
+            raise ValueError(
+                f"Invalid role '{role}'. Must be one of: {', '.join(valid_roles)}"
+            )
+
         self.role = role
 
     def __call__(self, func: Callable) -> Callable:
