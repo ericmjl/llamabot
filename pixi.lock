@@ -8822,8 +8822,8 @@ packages:
   requires_python: '>=3.9,<4.0'
 - pypi: ./
   name: llamabot
-  version: 0.17.9
-  sha256: 96ed612303b47beab5f32faf153de98ea6014b402fa1df6ff5ca21c4fe00ff20
+  version: 0.17.10
+  sha256: 18f8bfe1a6648aad439a3c92ecfadaf3eff0a1591e055732cbebc1407229ce81
   requires_dist:
   - openai
   - loguru
@@ -8873,7 +8873,6 @@ packages:
   - pyperclip ; extra == 'cli'
   - llamabot[notebooks,rag,agent,cli] ; extra == 'all'
   requires_python: '>=3.10,<3.14'
-  editable: true
 - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
   name: loguru
   version: 0.7.3
