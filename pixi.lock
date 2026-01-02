@@ -902,7 +902,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/91/fe585b2181bd61efc65e1da410ae8ab7b29a26f156e4ca7d7d616b1234de/lancedb-0.26.0-cp39-abi3-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/45/b5/110651418ceb1fa4ff2eb74ce4bad911ecf49dc765b134f0201d5564aab8/lancedb-0.26.1-cp39-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/86/ce243390535c39d53ea17ccf0240815e6e457e413e40428a658ea4ee4b8d/lupa-2.6-cp312-cp312-macosx_11_0_arm64.whl
@@ -2275,7 +2275,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/91/fe585b2181bd61efc65e1da410ae8ab7b29a26f156e4ca7d7d616b1234de/lancedb-0.26.0-cp39-abi3-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/45/b5/110651418ceb1fa4ff2eb74ce4bad911ecf49dc765b134f0201d5564aab8/lancedb-0.26.1-cp39-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/86/ce243390535c39d53ea17ccf0240815e6e457e413e40428a658ea4ee4b8d/lupa-2.6-cp312-cp312-macosx_11_0_arm64.whl
@@ -3634,7 +3634,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/91/fe585b2181bd61efc65e1da410ae8ab7b29a26f156e4ca7d7d616b1234de/lancedb-0.26.0-cp39-abi3-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/45/b5/110651418ceb1fa4ff2eb74ce4bad911ecf49dc765b134f0201d5564aab8/lancedb-0.26.1-cp39-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/86/ce243390535c39d53ea17ccf0240815e6e457e413e40428a658ea4ee4b8d/lupa-2.6-cp312-cp312-macosx_11_0_arm64.whl
@@ -4896,7 +4896,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/91/fe585b2181bd61efc65e1da410ae8ab7b29a26f156e4ca7d7d616b1234de/lancedb-0.26.0-cp39-abi3-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/45/b5/110651418ceb1fa4ff2eb74ce4bad911ecf49dc765b134f0201d5564aab8/lancedb-0.26.1-cp39-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/86/ce243390535c39d53ea17ccf0240815e6e457e413e40428a658ea4ee4b8d/lupa-2.6-cp312-cp312-macosx_11_0_arm64.whl
@@ -8222,10 +8222,10 @@ packages:
   - sentencepiece ; extra == 'embeddings'
   - adlfs>=2024.2.0 ; extra == 'azure'
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/a8/91/fe585b2181bd61efc65e1da410ae8ab7b29a26f156e4ca7d7d616b1234de/lancedb-0.26.0-cp39-abi3-macosx_11_0_arm64.whl
+- pypi: https://files.pythonhosted.org/packages/45/b5/110651418ceb1fa4ff2eb74ce4bad911ecf49dc765b134f0201d5564aab8/lancedb-0.26.1-cp39-abi3-macosx_11_0_arm64.whl
   name: lancedb
-  version: 0.26.0
-  sha256: 3a0d435fff1392f056c173f695f71d495c691c555daa9802c056ea23f6a3900e
+  version: 0.26.1
+  sha256: b1c4389134ede49e4be0497b9719f573f447e627426bb9e6fc1b642db11fb22d
   requires_dist:
   - deprecation
   - numpy
@@ -8873,6 +8873,7 @@ packages:
   - pyperclip ; extra == 'cli'
   - llamabot[notebooks,rag,agent,cli] ; extra == 'all'
   requires_python: '>=3.10,<3.14'
+  editable: true
 - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
   name: loguru
   version: 0.7.3
