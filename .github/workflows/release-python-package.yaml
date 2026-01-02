@@ -9,6 +9,9 @@ on:
         type: choice
         options: [major, minor, patch]
         default: patch
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - '**'
@@ -37,6 +40,24 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Skip if version bump commit
+        id: check_version_bump
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            # Check if the commit message indicates this is already a version bump
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            if echo "$COMMIT_MSG" | grep -qE "(Bump version|bump version|Add release notes)"; then
+              echo "skip=true" >> $GITHUB_OUTPUT
+              echo "Skipping: This appears to be a version bump commit"
+            else
+              echo "skip=false" >> $GITHUB_OUTPUT
+              echo "Proceeding with automatic patch release"
+            fi
+          else
+            # For non-push events, always proceed
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Python environment
         uses: actions/setup-python@v6
         with:
@@ -56,38 +77,54 @@ jobs:
         run: uv tool install bump2version
 
       - name: Set version name
-        run: echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
+        if: steps.check_version_bump.outputs.skip != 'true'
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            # Automatic patch release on PR merge
+            echo "VERSION_NAME=patch" >> $GITHUB_ENV
+          else
+            # Manual workflow_dispatch or pull_request
+            echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
+          fi
 
       - name: Dry run bump2version
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: bump2version --dry-run ${{ env.VERSION_NAME }} --allow-dirty --verbose
 
       - name: Store new version number
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: echo "version_number=$(bump2version --dry-run --list ${{ env.VERSION_NAME }} | grep new_version | sed -r 's/^.*=//')" >> $GITHUB_ENV
 
       - name: Display new version number
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: |
           echo "version_name: ${{ env.VERSION_NAME }}"
           echo "version_number: v${{ env.version_number }}"
 
       - name: Ensure repo status is clean
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: git status
 
       - name: Configure Git
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
 
       - name: Run bump2version
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: bump2version ${{ env.VERSION_NAME }} --verbose
 
       - name: Ensure tag creation
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: git tag | grep ${{ env.version_number }}
 
       - name: Install llamabot package
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: uv pip install -e .[cli]
 
       - name: Write release notes
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -96,7 +133,7 @@ jobs:
           llamabot git write-release-notes
 
       - name: Commit release notes
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: |
           uv tool install pre-commit
           pre-commit run --all-files || pre-commit run --all-files
@@ -104,28 +141,31 @@ jobs:
           git commit -m "Add release notes for ${{ env.version_number }}"
 
       - name: Build MCP documentation database
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: pixi run python scripts/build_mcp_docs.py
 
       - name: Verify MCP database exists
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: |
           ls -la llamabot/data/mcp_docs/
           echo "MCP database files:"
           find llamabot/data/mcp_docs/ -type f | head -10
 
       - name: Build package
+        if: steps.check_version_bump.outputs.skip != 'true'
         run: uv build --sdist --wheel
 
       - name: Publish package (trusted publishing)
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: uv publish --trusted-publishing always
 
       - name: Push changes with tags
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: |
           git push && git push --tags
 
       - name: Create release in GitHub repo
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         uses: ncipollo/release-action@v1
         with:
           bodyFile: "docs/releases/v${{ env.version_number }}.md"
@@ -133,5 +173,5 @@ jobs:
           tag: v${{ env.version_number }}
 
       - name: Ensure complete
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: echo "Auto-release complete!"
