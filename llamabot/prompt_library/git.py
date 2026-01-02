@@ -142,7 +142,7 @@ def compose_release_notes(commit_log: str) -> str:
 
     Follow the following format:
 
-        ## Version <version number>
+        # Version <version number>
 
         <brief summary of the new version>
 

@@ -40,7 +40,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "## Version 0.1.0\n\nInitial release"
+                            "# Version 0.1.0\n\nInitial release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -57,7 +57,7 @@ class TestWriteReleaseNotes:
                             # Verify the file was written with the correct name
                             expected_file = tmp_path / "v0.1.0.md"
                             assert expected_file.exists()
-                            assert "## Version 0.1.0" in expected_file.read_text()
+                            assert "# Version 0.1.0" in expected_file.read_text()
 
     def test_two_tags_second_release(self, tmp_path):
         """Test handling of second release with two tags."""
@@ -82,7 +82,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "## Version 0.2.0\n\nSecond release"
+                            "# Version 0.2.0\n\nSecond release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -99,7 +99,7 @@ class TestWriteReleaseNotes:
                             # Verify the file was written with the newest tag name
                             expected_file = tmp_path / "v0.2.0.md"
                             assert expected_file.exists()
-                            assert "## Version 0.2.0" in expected_file.read_text()
+                            assert "# Version 0.2.0" in expected_file.read_text()
 
     def test_three_plus_tags_subsequent_release(self, tmp_path):
         """Test handling of subsequent releases with three or more tags."""
@@ -128,7 +128,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "## Version 0.3.0\n\nThird release"
+                            "# Version 0.3.0\n\nThird release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -145,7 +145,7 @@ class TestWriteReleaseNotes:
                             # Verify the file was written with the newest tag name
                             expected_file = tmp_path / "v0.3.0.md"
                             assert expected_file.exists()
-                            assert "## Version 0.3.0" in expected_file.read_text()
+                            assert "# Version 0.3.0" in expected_file.read_text()
 
     def test_custom_release_notes_dir(self, tmp_path):
         """Test that custom release notes directory is created and used."""
@@ -168,7 +168,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "## Version 0.1.0\n\nInitial release"
+                            "# Version 0.1.0\n\nInitial release"
                         )
                         mock_bot_class.return_value = mock_bot
 
