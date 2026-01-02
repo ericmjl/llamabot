@@ -416,7 +416,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/3a/0b/7671c94b27a5aa267b9f1d6db759c9e08070cb8f783828ade04da9dc7d79/lancedb-0.26.0-cp39-abi3-manylinux_2_28_aarch64.whl
+      - pypi: https://files.pythonhosted.org/packages/f5/13/d8db83335ddf28afe1fb814ca995da7f67826f337d547e54471d7d425dd1/lancedb-0.26.1-cp39-abi3-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/4e/e7c0583083db9d7f1fd023800a9767d8e4391e8330d56c2373d890ac971b/lupa-2.6-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
@@ -1721,7 +1721,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/3a/0b/7671c94b27a5aa267b9f1d6db759c9e08070cb8f783828ade04da9dc7d79/lancedb-0.26.0-cp39-abi3-manylinux_2_28_aarch64.whl
+      - pypi: https://files.pythonhosted.org/packages/f5/13/d8db83335ddf28afe1fb814ca995da7f67826f337d547e54471d7d425dd1/lancedb-0.26.1-cp39-abi3-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/4e/e7c0583083db9d7f1fd023800a9767d8e4391e8330d56c2373d890ac971b/lupa-2.6-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
@@ -3118,7 +3118,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/3a/0b/7671c94b27a5aa267b9f1d6db759c9e08070cb8f783828ade04da9dc7d79/lancedb-0.26.0-cp39-abi3-manylinux_2_28_aarch64.whl
+      - pypi: https://files.pythonhosted.org/packages/f5/13/d8db83335ddf28afe1fb814ca995da7f67826f337d547e54471d7d425dd1/lancedb-0.26.1-cp39-abi3-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/4e/e7c0583083db9d7f1fd023800a9767d8e4391e8330d56c2373d890ac971b/lupa-2.6-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
@@ -4424,7 +4424,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/cf/31d478e291ca879e846e67f0cc0700df5fe63373d3897374ee4f5a035221/lance_namespace-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/bc/f30dd5812642a0720092723029170b660d9fd0a6018476927714694c97a9/lance_namespace_urllib3_client-0.4.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/3a/0b/7671c94b27a5aa267b9f1d6db759c9e08070cb8f783828ade04da9dc7d79/lancedb-0.26.0-cp39-abi3-manylinux_2_28_aarch64.whl
+      - pypi: https://files.pythonhosted.org/packages/f5/13/d8db83335ddf28afe1fb814ca995da7f67826f337d547e54471d7d425dd1/lancedb-0.26.1-cp39-abi3-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/97/0b/9e637344f24f3fe0e8039cd2337389fe05e0d31f518bc3e0a5cdbe45784a/litellm-1.80.11-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/4e/e7c0583083db9d7f1fd023800a9767d8e4391e8330d56c2373d890ac971b/lupa-2.6-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
@@ -8098,68 +8098,6 @@ packages:
   - sentencepiece ; extra == 'embeddings'
   - adlfs>=2024.2.0 ; extra == 'azure'
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/3a/0b/7671c94b27a5aa267b9f1d6db759c9e08070cb8f783828ade04da9dc7d79/lancedb-0.26.0-cp39-abi3-manylinux_2_28_aarch64.whl
-  name: lancedb
-  version: 0.26.0
-  sha256: 7f2b8d69a647265b8753576b501354333c3edfd47d12ec9f47e665e8574c92fe
-  requires_dist:
-  - deprecation
-  - numpy
-  - overrides>=0.7 ; python_full_version < '3.12'
-  - packaging
-  - pyarrow>=16
-  - pydantic>=1.10
-  - tqdm>=4.27.0
-  - lance-namespace>=0.3.2
-  - pylance>=1.0.0b14 ; extra == 'pylance'
-  - aiohttp ; extra == 'tests'
-  - boto3 ; extra == 'tests'
-  - pandas>=1.4 ; extra == 'tests'
-  - pytest ; extra == 'tests'
-  - pytest-mock ; extra == 'tests'
-  - pytest-asyncio ; extra == 'tests'
-  - duckdb ; extra == 'tests'
-  - pytz ; extra == 'tests'
-  - polars>=0.19,<=1.3.0 ; extra == 'tests'
-  - tantivy ; extra == 'tests'
-  - pyarrow-stubs ; extra == 'tests'
-  - pylance>=1.0.0b14 ; extra == 'tests'
-  - requests ; extra == 'tests'
-  - datafusion ; extra == 'tests'
-  - ruff ; extra == 'dev'
-  - pre-commit ; extra == 'dev'
-  - pyright ; extra == 'dev'
-  - typing-extensions>=4.0.0 ; python_full_version < '3.11' and extra == 'dev'
-  - mkdocs ; extra == 'docs'
-  - mkdocs-jupyter ; extra == 'docs'
-  - mkdocs-material ; extra == 'docs'
-  - mkdocstrings-python ; extra == 'docs'
-  - torch ; extra == 'clip'
-  - pillow ; extra == 'clip'
-  - open-clip-torch ; extra == 'clip'
-  - torch ; extra == 'siglip'
-  - pillow ; extra == 'siglip'
-  - transformers>=4.41.0 ; extra == 'siglip'
-  - sentencepiece ; extra == 'siglip'
-  - requests>=2.31.0 ; extra == 'embeddings'
-  - openai>=1.6.1 ; extra == 'embeddings'
-  - sentence-transformers ; extra == 'embeddings'
-  - torch ; extra == 'embeddings'
-  - pillow ; extra == 'embeddings'
-  - open-clip-torch ; extra == 'embeddings'
-  - cohere ; extra == 'embeddings'
-  - colpali-engine>=0.3.10 ; extra == 'embeddings'
-  - huggingface-hub ; extra == 'embeddings'
-  - instructorembedding ; extra == 'embeddings'
-  - google-generativeai ; extra == 'embeddings'
-  - boto3>=1.28.57 ; extra == 'embeddings'
-  - awscli>=1.29.57 ; extra == 'embeddings'
-  - botocore>=1.31.57 ; extra == 'embeddings'
-  - ibm-watsonx-ai>=1.1.2 ; python_full_version >= '3.10' and extra == 'embeddings'
-  - ollama>=0.3.0 ; extra == 'embeddings'
-  - sentencepiece ; extra == 'embeddings'
-  - adlfs>=2024.2.0 ; extra == 'azure'
-  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/52/2e/9f720d6ae7bd3a94d096f320a0ec2f277735423af9d16cf5c61c4a70e6ca/lancedb-0.26.0-cp39-abi3-manylinux_2_28_x86_64.whl
   name: lancedb
   version: 0.26.0
@@ -8226,6 +8164,68 @@ packages:
   name: lancedb
   version: 0.26.1
   sha256: b1c4389134ede49e4be0497b9719f573f447e627426bb9e6fc1b642db11fb22d
+  requires_dist:
+  - deprecation
+  - numpy
+  - overrides>=0.7 ; python_full_version < '3.12'
+  - packaging
+  - pyarrow>=16
+  - pydantic>=1.10
+  - tqdm>=4.27.0
+  - lance-namespace>=0.3.2
+  - pylance>=1.0.0b14 ; extra == 'pylance'
+  - aiohttp ; extra == 'tests'
+  - boto3 ; extra == 'tests'
+  - pandas>=1.4 ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - pytest-mock ; extra == 'tests'
+  - pytest-asyncio ; extra == 'tests'
+  - duckdb ; extra == 'tests'
+  - pytz ; extra == 'tests'
+  - polars>=0.19,<=1.3.0 ; extra == 'tests'
+  - tantivy ; extra == 'tests'
+  - pyarrow-stubs ; extra == 'tests'
+  - pylance>=1.0.0b14 ; extra == 'tests'
+  - requests ; extra == 'tests'
+  - datafusion ; extra == 'tests'
+  - ruff ; extra == 'dev'
+  - pre-commit ; extra == 'dev'
+  - pyright ; extra == 'dev'
+  - typing-extensions>=4.0.0 ; python_full_version < '3.11' and extra == 'dev'
+  - mkdocs ; extra == 'docs'
+  - mkdocs-jupyter ; extra == 'docs'
+  - mkdocs-material ; extra == 'docs'
+  - mkdocstrings-python ; extra == 'docs'
+  - torch ; extra == 'clip'
+  - pillow ; extra == 'clip'
+  - open-clip-torch ; extra == 'clip'
+  - torch ; extra == 'siglip'
+  - pillow ; extra == 'siglip'
+  - transformers>=4.41.0 ; extra == 'siglip'
+  - sentencepiece ; extra == 'siglip'
+  - requests>=2.31.0 ; extra == 'embeddings'
+  - openai>=1.6.1 ; extra == 'embeddings'
+  - sentence-transformers ; extra == 'embeddings'
+  - torch ; extra == 'embeddings'
+  - pillow ; extra == 'embeddings'
+  - open-clip-torch ; extra == 'embeddings'
+  - cohere ; extra == 'embeddings'
+  - colpali-engine>=0.3.10 ; extra == 'embeddings'
+  - huggingface-hub ; extra == 'embeddings'
+  - instructorembedding ; extra == 'embeddings'
+  - google-generativeai ; extra == 'embeddings'
+  - boto3>=1.28.57 ; extra == 'embeddings'
+  - awscli>=1.29.57 ; extra == 'embeddings'
+  - botocore>=1.31.57 ; extra == 'embeddings'
+  - ibm-watsonx-ai>=1.1.2 ; python_full_version >= '3.10' and extra == 'embeddings'
+  - ollama>=0.3.0 ; extra == 'embeddings'
+  - sentencepiece ; extra == 'embeddings'
+  - adlfs>=2024.2.0 ; extra == 'azure'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/f5/13/d8db83335ddf28afe1fb814ca995da7f67826f337d547e54471d7d425dd1/lancedb-0.26.1-cp39-abi3-manylinux_2_28_aarch64.whl
+  name: lancedb
+  version: 0.26.1
+  sha256: 2941c9f8aa22244002307c4da5d19f12ab77dcb0569eb4f8a48b60e9c4fdee79
   requires_dist:
   - deprecation
   - numpy
@@ -8822,8 +8822,8 @@ packages:
   requires_python: '>=3.9,<4.0'
 - pypi: ./
   name: llamabot
-  version: 0.17.10
-  sha256: 18f8bfe1a6648aad439a3c92ecfadaf3eff0a1591e055732cbebc1407229ce81
+  version: 0.17.11
+  sha256: 998308f78420fd592357622c7e73d7721ab4660d978ae7b8b9f840ad7540a035
   requires_dist:
   - openai
   - loguru
@@ -8873,7 +8873,6 @@ packages:
   - pyperclip ; extra == 'cli'
   - llamabot[notebooks,rag,agent,cli] ; extra == 'all'
   requires_python: '>=3.10,<3.14'
-  editable: true
 - pypi: https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl
   name: loguru
   version: 0.7.3
