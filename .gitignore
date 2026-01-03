@@ -183,3 +183,9 @@ blog_banner.jpg
 # LanceDB vector database files
 *.lance
 **/*.lance
+
+# ACE implementation and attempt records (experimental/scratch files)
+notebooks/ace_implementation.py
+notebooks/attempt_record.json
+notebooks/ace_context/
+notebooks/test_ace_context/
