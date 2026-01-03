@@ -61,7 +61,7 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
             # Check if the commit message indicates this is already a version bump
             COMMIT_MSG=$(git log -1 --pretty=%B)
-            if echo "$COMMIT_MSG" | grep -qiE "(Bump version|Add release notes)"; then
+            if echo "$COMMIT_MSG" | grep -qE "(Bump version|bump version|Add release notes)"; then
               echo "skip=true" >> $GITHUB_OUTPUT
               echo "Skipping: This appears to be a version bump commit"
             else
@@ -88,6 +88,9 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'workflow_run' }}
 
+      - name: Set up Python tools
+        run: uv tool install bump2version
+
       - name: Set version name
         if: steps.check_version_bump.outputs.skip != 'true'
         run: |
@@ -99,50 +102,19 @@ jobs:
             echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
           fi
 
-      - name: Get current version
+      - name: Dry run bump2version
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: echo "current_version=$(uv version --short)" >> $GITHUB_ENV
+        run: bump2version --dry-run ${{ env.VERSION_NAME }} --allow-dirty --verbose
 
-      - name: Calculate new version number
+      - name: Store new version number
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: |
-          CURRENT="${{ env.current_version }}"
-          BUMP_TYPE="${{ env.VERSION_NAME }}"
+        run: echo "version_number=$(bump2version --dry-run --list ${{ env.VERSION_NAME }} | grep new_version | sed -r 's/^.*=//')" >> $GITHUB_ENV
 
-          # Parse current version
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-
-          # Calculate new version based on bump type
-          case "$BUMP_TYPE" in
-            major)
-              NEW_MAJOR=$((MAJOR + 1))
-              NEW_VERSION="$NEW_MAJOR.0.0"
-              ;;
-            minor)
-              NEW_MINOR=$((MINOR + 1))
-              NEW_VERSION="$MAJOR.$NEW_MINOR.0"
-              ;;
-            patch)
-              NEW_PATCH=$((PATCH + 1))
-              NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-              ;;
-            *)
-              echo "ERROR: Unknown bump type: $BUMP_TYPE"
-              exit 1
-              ;;
-          esac
-
-          echo "version_number=$NEW_VERSION" >> $GITHUB_ENV
-          echo "Current version: $CURRENT"
-          echo "Bump type: $BUMP_TYPE"
-          echo "New version: $NEW_VERSION"
-
-      - name: Display version information
+      - name: Display new version number
         if: steps.check_version_bump.outputs.skip != 'true'
         run: |
           echo "version_name: ${{ env.VERSION_NAME }}"
-          echo "current_version: ${{ env.current_version }}"
-          echo "new_version: ${{ env.version_number }}"
+          echo "version_number: v${{ env.version_number }}"
 
       - name: Ensure repo status is clean
         if: steps.check_version_bump.outputs.skip != 'true'
@@ -154,34 +126,13 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
 
-      - name: Bump version with uv
+      - name: Run bump2version
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: |
-          echo "Bumping version from ${{ env.current_version }} to ${{ env.version_number }}"
-          uv version --bump ${{ env.VERSION_NAME }}
-          echo "✓ Version bumped successfully"
+        run: bump2version ${{ env.VERSION_NAME }} --verbose
 
-      - name: Commit version bump
+      - name: Ensure tag creation
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: |
-          git add pyproject.toml
-          git commit -m "Bump version to ${{ env.version_number }}"
-
-      - name: Create version tag
-        if: steps.check_version_bump.outputs.skip != 'true'
-        run: |
-          git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}"
-          echo "✓ Tag v${{ env.version_number }} created"
-
-      - name: Verify tag creation
-        if: steps.check_version_bump.outputs.skip != 'true'
-        run: |
-          if git tag | grep -q "^v${{ env.version_number }}$"; then
-            echo "✓ Tag v${{ env.version_number }} verified"
-          else
-            echo "ERROR: Tag v${{ env.version_number }} not found"
-            exit 1
-          fi
+        run: git tag | grep ${{ env.version_number }}
 
       - name: Install llamabot package
         if: steps.check_version_bump.outputs.skip != 'true'
