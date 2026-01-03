@@ -113,10 +113,10 @@ jobs:
         run: |
           CURRENT="${{ env.current_version }}"
           BUMP_TYPE="${{ env.VERSION_NAME }}"
-          
+
           # Parse current version
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          
+
           # Calculate new version based on bump type
           case "$BUMP_TYPE" in
             major)
@@ -136,7 +136,7 @@ jobs:
               exit 1
               ;;
           esac
-          
+
           echo "version_number=$NEW_VERSION" >> $GITHUB_ENV
           echo "Current version: $CURRENT"
           echo "Bump type: $BUMP_TYPE"
