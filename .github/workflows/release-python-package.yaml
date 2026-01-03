@@ -72,6 +72,8 @@ jobs:
             # For non-workflow_run events (workflow_dispatch, pull_request), always proceed
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
+          # Set default VERSION_NAME even when skipping to prevent issues if future steps reference it
+          echo "VERSION_NAME=${{ env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
 
       - name: Setup Python environment
         uses: actions/setup-python@v6
@@ -94,9 +96,12 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
             # Automatic patch release on PR merge (workflow_run ensures tests passed)
             echo "VERSION_NAME=patch" >> $GITHUB_ENV
-          else
-            # Manual workflow_dispatch or pull_request
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual workflow_dispatch - use input or default
             echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
+          else
+            # pull_request or other events - use default
+            echo "VERSION_NAME=${{ env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
           fi
 
       - name: Get current version
