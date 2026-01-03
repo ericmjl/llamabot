@@ -9,7 +9,10 @@ on:
         type: choice
         options: [major, minor, patch]
         default: patch
-  push:
+  workflow_run:
+    workflows: ["Run tests on pull requests"]
+    types:
+      - completed
     branches:
       - main
   pull_request:
@@ -34,27 +37,39 @@ jobs:
         shell: bash -l {0}
 
     steps:
+      - name: Verify test workflow succeeded
+        if: github.event_name == 'workflow_run'
+        run: |
+          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+            echo "ERROR: Test workflow did not succeed. Conclusion: ${{ github.event.workflow_run.conclusion }}"
+            echo "Skipping release to prevent releasing untested code."
+            exit 1
+          fi
+          echo "✓ Test workflow succeeded, proceeding with release"
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
+          # For workflow_run events, checkout the commit that triggered the test workflow
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Skip if version bump commit
         id: check_version_bump
         run: |
-          if [ "${{ github.event_name }}" == "push" ]; then
+          if [ "${{ github.event_name }}" == "workflow_run" ]; then
             # Check if the commit message indicates this is already a version bump
             COMMIT_MSG=$(git log -1 --pretty=%B)
-            if echo "$COMMIT_MSG" | grep -qE "(Bump version|bump version|Add release notes)"; then
+            if echo "$COMMIT_MSG" | grep -qiE "(Bump version|Add release notes)"; then
               echo "skip=true" >> $GITHUB_OUTPUT
               echo "Skipping: This appears to be a version bump commit"
             else
               echo "skip=false" >> $GITHUB_OUTPUT
-              echo "Proceeding with automatic patch release"
+              echo "Proceeding with automatic patch release (triggered by successful test workflow)"
             fi
           else
-            # For non-push events, always proceed
+            # For non-workflow_run events (workflow_dispatch, pull_request), always proceed
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
@@ -71,35 +86,63 @@ jobs:
         with:
           pixi-version: latest
           cache: true
-          cache-write: ${{ github.event_name == 'push' }}
-
-      - name: Set up Python tools
-        run: uv tool install bump2version
+          cache-write: ${{ github.event_name == 'workflow_run' }}
 
       - name: Set version name
         if: steps.check_version_bump.outputs.skip != 'true'
         run: |
-          if [ "${{ github.event_name }}" == "push" ]; then
-            # Automatic patch release on PR merge
+          if [ "${{ github.event_name }}" == "workflow_run" ]; then
+            # Automatic patch release on PR merge (workflow_run ensures tests passed)
             echo "VERSION_NAME=patch" >> $GITHUB_ENV
           else
             # Manual workflow_dispatch or pull_request
             echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
           fi
 
-      - name: Dry run bump2version
+      - name: Get current version
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: bump2version --dry-run ${{ env.VERSION_NAME }} --allow-dirty --verbose
+        run: echo "current_version=$(uv version --short)" >> $GITHUB_ENV
 
-      - name: Store new version number
+      - name: Calculate new version number
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: echo "version_number=$(bump2version --dry-run --list ${{ env.VERSION_NAME }} | grep new_version | sed -r 's/^.*=//')" >> $GITHUB_ENV
+        run: |
+          CURRENT="${{ env.current_version }}"
+          BUMP_TYPE="${{ env.VERSION_NAME }}"
 
-      - name: Display new version number
+          # Parse current version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          # Calculate new version based on bump type
+          case "$BUMP_TYPE" in
+            major)
+              NEW_MAJOR=$((MAJOR + 1))
+              NEW_VERSION="$NEW_MAJOR.0.0"
+              ;;
+            minor)
+              NEW_MINOR=$((MINOR + 1))
+              NEW_VERSION="$MAJOR.$NEW_MINOR.0"
+              ;;
+            patch)
+              NEW_PATCH=$((PATCH + 1))
+              NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+              ;;
+            *)
+              echo "ERROR: Unknown bump type: $BUMP_TYPE"
+              exit 1
+              ;;
+          esac
+
+          echo "version_number=$NEW_VERSION" >> $GITHUB_ENV
+          echo "Current version: $CURRENT"
+          echo "Bump type: $BUMP_TYPE"
+          echo "New version: $NEW_VERSION"
+
+      - name: Display version information
         if: steps.check_version_bump.outputs.skip != 'true'
         run: |
           echo "version_name: ${{ env.VERSION_NAME }}"
-          echo "version_number: v${{ env.version_number }}"
+          echo "current_version: ${{ env.current_version }}"
+          echo "new_version: ${{ env.version_number }}"
 
       - name: Ensure repo status is clean
         if: steps.check_version_bump.outputs.skip != 'true'
@@ -111,13 +154,34 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
 
-      - name: Run bump2version
+      - name: Bump version with uv
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: bump2version ${{ env.VERSION_NAME }} --verbose
+        run: |
+          echo "Bumping version from ${{ env.current_version }} to ${{ env.version_number }}"
+          uv version --bump ${{ env.VERSION_NAME }}
+          echo "✓ Version bumped successfully"
 
-      - name: Ensure tag creation
+      - name: Commit version bump
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: git tag | grep ${{ env.version_number }}
+        run: |
+          git add pyproject.toml
+          git commit -m "Bump version to ${{ env.version_number }}"
+
+      - name: Create version tag
+        if: steps.check_version_bump.outputs.skip != 'true'
+        run: |
+          git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}"
+          echo "✓ Tag v${{ env.version_number }} created"
+
+      - name: Verify tag creation
+        if: steps.check_version_bump.outputs.skip != 'true'
+        run: |
+          if git tag | grep -q "^v${{ env.version_number }}$"; then
+            echo "✓ Tag v${{ env.version_number }} verified"
+          else
+            echo "ERROR: Tag v${{ env.version_number }} not found"
+            exit 1
+          fi
 
       - name: Install llamabot package
         if: steps.check_version_bump.outputs.skip != 'true'
@@ -162,7 +226,21 @@ jobs:
       - name: Push changes with tags
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: |
-          git push && git push --tags
+          # Fetch latest changes from main to handle concurrent PR merges
+          git fetch origin main
+          # Rebase our commits (version bump + release notes) on top of latest main
+          # This handles the case where another PR was merged while this workflow was running
+          if ! git rebase origin/main; then
+            echo "ERROR: Rebase failed - this may indicate a conflict with concurrent changes"
+            echo "Current git status:"
+            git status
+            echo "Recent commits:"
+            git log --oneline -5
+            exit 1
+          fi
+          # Push commits and tags
+          git push origin main
+          git push --tags
 
       - name: Create release in GitHub repo
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
