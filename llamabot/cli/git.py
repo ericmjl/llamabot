@@ -272,10 +272,13 @@ def write_release_notes(
         )
 
     # Determine version string
-    # Check if version is actually a string (not OptionInfo object)
     if version is not None and isinstance(version, str):
-        # Explicit version provided - use it for filename
-        version_str = version
+        # Explicit version provided - normalize it (strip whitespace and 'v' prefix)
+        version_str = version.strip().lstrip("v")
+        # If the version is empty after stripping, fall back to inferring from tag
+        if not version_str:
+            newest_tag = tags[-1]
+            version_str = newest_tag.name.lstrip("v")
     else:
         # Backward compatibility - infer from newest tag
         newest_tag = tags[-1]
