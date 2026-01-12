@@ -40,7 +40,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version 0.1.0\n\nInitial release"
+                            "# Version v0.1.0\n\nInitial release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -57,7 +57,7 @@ class TestWriteReleaseNotes:
                             # Verify the file was written with the correct name
                             expected_file = tmp_path / "v0.1.0.md"
                             assert expected_file.exists()
-                            assert "# Version 0.1.0" in expected_file.read_text()
+                            assert "# Version v0.1.0" in expected_file.read_text()
 
     def test_two_tags_second_release(self, tmp_path):
         """Test handling of second release with two tags."""
@@ -82,7 +82,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version 0.2.0\n\nSecond release"
+                            "# Version v0.2.0\n\nSecond release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -99,7 +99,7 @@ class TestWriteReleaseNotes:
                             # Verify the file was written with the newest tag name
                             expected_file = tmp_path / "v0.2.0.md"
                             assert expected_file.exists()
-                            assert "# Version 0.2.0" in expected_file.read_text()
+                            assert "# Version v0.2.0" in expected_file.read_text()
 
     def test_three_plus_tags_subsequent_release(self, tmp_path):
         """Test handling of subsequent releases with three or more tags."""
@@ -128,7 +128,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version 0.3.0\n\nThird release"
+                            "# Version v0.3.0\n\nThird release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -145,7 +145,7 @@ class TestWriteReleaseNotes:
                             # Verify the file was written with the newest tag name
                             expected_file = tmp_path / "v0.3.0.md"
                             assert expected_file.exists()
-                            assert "# Version 0.3.0" in expected_file.read_text()
+                            assert "# Version v0.3.0" in expected_file.read_text()
 
     def test_custom_release_notes_dir(self, tmp_path):
         """Test that custom release notes directory is created and used."""
@@ -168,7 +168,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version 0.1.0\n\nInitial release"
+                            "# Version v0.1.0\n\nInitial release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -239,13 +239,13 @@ class TestWriteReleaseNotes:
                             args = mock_compose.call_args[0]
                             assert args[1] == "0.3.0"  # Second arg should be version
 
-                            # Verify file was written with explicit version
-                            expected_file = tmp_path / "v0.3.0.md"
+                            # Verify file was written with explicit version (no 'v' prefix added)
+                            expected_file = tmp_path / "0.3.0.md"
                             assert expected_file.exists()
                             assert "# Version 0.3.0" in expected_file.read_text()
 
     def test_explicit_version_with_v_prefix(self, tmp_path):
-        """Test that explicit --version flag handles 'v' prefix correctly."""
+        """Test that explicit --version flag respects 'v' prefix as-is."""
         with patch("llamabot.cli.git.here", return_value=str(tmp_path)):
             with patch("git.Repo") as mock_repo_class:
                 # Mock repository with one tag
@@ -262,7 +262,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version 0.2.0\n\nSecond release"
+                            "# Version v0.2.0\n\nSecond release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -276,12 +276,12 @@ class TestWriteReleaseNotes:
                                 release_notes_dir=tmp_path, version="v0.2.0"
                             )
 
-                            # Verify compose_release_notes was called with normalized version (without 'v' prefix)
+                            # Verify compose_release_notes was called with version as-is (with 'v' prefix)
                             mock_compose.assert_called_once()
                             args = mock_compose.call_args[0]
-                            assert args[1] == "0.2.0"
+                            assert args[1] == "v0.2.0"
 
-                            # Verify file was written without duplicate 'v'
+                            # Verify file was written with 'v' prefix
                             expected_file = tmp_path / "v0.2.0.md"
                             assert expected_file.exists()
 
@@ -311,7 +311,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version 0.3.0\n\nThird release"
+                            "# Version v0.3.0\n\nThird release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -329,12 +329,14 @@ class TestWriteReleaseNotes:
                             # Verify compose_release_notes was called with version from newest tag
                             mock_compose.assert_called_once()
                             args = mock_compose.call_args[0]
-                            assert args[1] == "0.3.0"  # Version from v0.3.0 tag
+                            assert (
+                                args[1] == "v0.3.0"
+                            )  # Version from v0.3.0 tag (as-is)
 
                             # Verify the file was written with the newest tag name
                             expected_file = tmp_path / "v0.3.0.md"
                             assert expected_file.exists()
-                            assert "# Version 0.3.0" in expected_file.read_text()
+                            assert "# Version v0.3.0" in expected_file.read_text()
 
     def test_empty_version_string_falls_back_to_tag(self, tmp_path):
         """Test that empty/whitespace version string falls back to tag inference."""
@@ -362,7 +364,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version 0.3.0\n\nThird release"
+                            "# Version v0.3.0\n\nThird release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -383,10 +385,10 @@ class TestWriteReleaseNotes:
                             mock_compose.assert_called_once()
                             args = mock_compose.call_args[0]
                             assert (
-                                args[1] == "0.3.0"
-                            )  # Version from v0.3.0 tag, not empty string
+                                args[1] == "v0.3.0"
+                            )  # Version from v0.3.0 tag (as-is), not empty string
 
                             # Verify the file was written with the tag name
                             expected_file = tmp_path / "v0.3.0.md"
                             assert expected_file.exists()
-                            assert "# Version 0.3.0" in expected_file.read_text()
+                            assert "# Version v0.3.0" in expected_file.read_text()
