@@ -240,11 +240,21 @@ def compose(model_name: str = default_language_model()):
 
 
 @gitapp.command()
-def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
+def write_release_notes(
+    release_notes_dir: Path = typer.Option(
+        Path("./docs/releases"),
+        help="The directory to write the release notes to.",
+    ),
+    version: Optional[str] = typer.Option(
+        None,
+        help="Version number (e.g., '0.1.56'). If provided, used for filename and passed to LLM. If not provided, inferred from newest git tag (current behavior).",
+    ),
+):
     """Write release notes for the latest two tags to the release notes directory.
 
     :param release_notes_dir: The directory to write the release notes to.
         Defaults to "./docs/releases".
+    :param version: Explicit version number. If not provided, inferred from git tags.
     """
     try:
         import git
@@ -256,24 +266,43 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
     repo = git.Repo(here())
     tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
 
-    # The newest tag (just created by bump2version) is always used for the filename
     if len(tags) == 0:
         raise ValueError(
             "No tags found. Please ensure bump2version has run and created a tag before generating release notes."
         )
 
-    newest_tag = tags[-1]
-
-    if len(tags) == 1:
-        # First release: get all commit messages from the very first commit
-        log_info = repo.git.log()
-    elif len(tags) == 2:
-        # Second release: get commits from first tag to second tag
-        log_info = repo.git.log(f"{tags[0].commit.hexsha}..{tags[1].commit.hexsha}")
+    # Determine version and commit range
+    # Check if version is actually a string (not OptionInfo object)
+    if version is not None and isinstance(version, str):
+        # Explicit version provided - use it for filename
+        version_str = version
+        # Still need tags to determine commit range
+        if len(tags) == 1:
+            log_info = repo.git.log()
+        elif len(tags) == 2:
+            log_info = repo.git.log(f"{tags[0].commit.hexsha}..{tags[1].commit.hexsha}")
+        else:
+            log_info = repo.git.log(
+                f"{tags[-2].commit.hexsha}..{tags[-1].commit.hexsha}"
+            )
     else:
-        # Third+ release: get commits between the last two tags
-        log_info = repo.git.log(f"{tags[-2].commit.hexsha}..{tags[-1].commit.hexsha}")
+        # Backward compatibility - infer from newest tag
+        newest_tag = tags[-1]
+        version_str = newest_tag.name.lstrip("v")  # Remove 'v' prefix if present
 
+        if len(tags) == 1:
+            # First release: get all commit messages from the very first commit
+            log_info = repo.git.log()
+        elif len(tags) == 2:
+            # Second release: get commits from first tag to second tag
+            log_info = repo.git.log(f"{tags[0].commit.hexsha}..{tags[1].commit.hexsha}")
+        else:
+            # Third+ release: get commits between the last two tags
+            log_info = repo.git.log(
+                f"{tags[-2].commit.hexsha}..{tags[-1].commit.hexsha}"
+            )
+
+    # Generate release notes with explicit version
     console = Console()
     bot = SimpleBot(
         "You are an expert software developer "
@@ -281,16 +310,20 @@ def write_release_notes(release_notes_dir: Path = Path("./docs/releases")):
         model_name=default_language_model(),
         stream_target="none",
     )
-    with console.status("[bold green]Generating release notes...", spinner="dots"):
-        notes = bot(compose_release_notes(log_info))
 
-    # Create release_notes_dir if it doesn't exist:
+    with console.status("[bold green]Generating release notes...", spinner="dots"):
+        notes = bot(compose_release_notes(log_info, version_str))
+
+    # Write to file using explicit version
     release_notes_dir.mkdir(parents=True, exist_ok=True)
     # Ensure only one newline at the end of the file
     trimmed_notes = notes.content.rstrip() + "\n"
 
-    # Write release notes using the newest tag
-    with open(release_notes_dir / f"{newest_tag.name}.md", "w+") as f:
+    # Write release notes using the explicit version
+    filename = (
+        f"v{version_str}.md" if not version_str.startswith("v") else f"{version_str}.md"
+    )
+    with open(release_notes_dir / filename, "w+") as f:
         f.write(trimmed_notes)
 
 

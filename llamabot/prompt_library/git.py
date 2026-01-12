@@ -129,20 +129,22 @@ def compose_git_activity_report(log_info: str, hours: int) -> str:
 
 
 @prompt(role="user")
-def compose_release_notes(commit_log: str) -> str:
-    """Here is a commit log:
+def compose_release_notes(commit_log: str, version: str) -> str:
+    """You are writing release notes for version {{ version }}.
 
     # noqa: DAR101
 
+    Here is the commit log:
+
     {{ commit_log }}
 
-    Please write for me the release notes.
+    Please write release notes for this version.
     The notes should contain a human-readable summary
     of each new feature that was added.
 
     Follow the following format:
 
-        # Version <version number>
+        # Version {{ version }}
 
         <brief summary of the new version>
 

@@ -194,3 +194,144 @@ class TestWriteReleaseNotes:
             ):
                 with pytest.raises(ImportError, match="git is not installed"):
                     write_release_notes()
+
+    def test_explicit_version_flag(self, tmp_path):
+        """Test that explicit --version flag works correctly."""
+        with patch("llamabot.cli.git.here", return_value=str(tmp_path)):
+            with patch("git.Repo") as mock_repo_class:
+                # Mock repository with two tags
+                mock_repo = Mock()
+                mock_tag1 = Mock()
+                mock_tag1.name = "v0.1.0"
+                mock_tag1.commit.hexsha = "abc123"
+                mock_tag1.commit.committed_datetime = "2023-01-01T00:00:00"
+                mock_tag2 = Mock()
+                mock_tag2.name = "v0.2.0"
+                mock_tag2.commit.hexsha = "def456"
+                mock_tag2.commit.committed_datetime = "2023-01-02T00:00:00"
+                mock_repo.tags = [mock_tag1, mock_tag2]
+                mock_repo.git.log.return_value = (
+                    "commit def456\nBump version: 0.1.0 → 0.2.0"
+                )
+                mock_repo_class.return_value = mock_repo
+
+                with patch("llamabot.cli.git.Console"):
+                    with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
+                        mock_bot = Mock()
+                        # LLM should use the explicit version (0.3.0) not what's in commits (0.2.0)
+                        mock_bot.return_value.content = (
+                            "# Version 0.3.0\n\nThird release"
+                        )
+                        mock_bot_class.return_value = mock_bot
+
+                        with patch(
+                            "llamabot.cli.git.compose_release_notes"
+                        ) as mock_compose:
+                            mock_compose.return_value = "prompt"
+
+                            # Call with explicit version
+                            write_release_notes(
+                                release_notes_dir=tmp_path, version="0.3.0"
+                            )
+
+                            # Verify compose_release_notes was called with version parameter
+                            mock_compose.assert_called_once()
+                            args = mock_compose.call_args[0]
+                            assert args[1] == "0.3.0"  # Second arg should be version
+
+                            # Verify file was written with explicit version
+                            expected_file = tmp_path / "v0.3.0.md"
+                            assert expected_file.exists()
+                            assert "# Version 0.3.0" in expected_file.read_text()
+
+    def test_explicit_version_with_v_prefix(self, tmp_path):
+        """Test that explicit --version flag handles 'v' prefix correctly."""
+        with patch("llamabot.cli.git.here", return_value=str(tmp_path)):
+            with patch("git.Repo") as mock_repo_class:
+                # Mock repository with one tag
+                mock_repo = Mock()
+                mock_tag = Mock()
+                mock_tag.name = "v0.1.0"
+                mock_tag.commit.hexsha = "abc123"
+                mock_tag.commit.committed_datetime = "2023-01-01T00:00:00"
+                mock_repo.tags = [mock_tag]
+                mock_repo.git.log.return_value = "commit abc123\nInitial commit"
+                mock_repo_class.return_value = mock_repo
+
+                with patch("llamabot.cli.git.Console"):
+                    with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
+                        mock_bot = Mock()
+                        mock_bot.return_value.content = (
+                            "# Version v0.2.0\n\nSecond release"
+                        )
+                        mock_bot_class.return_value = mock_bot
+
+                        with patch(
+                            "llamabot.cli.git.compose_release_notes"
+                        ) as mock_compose:
+                            mock_compose.return_value = "prompt"
+
+                            # Call with explicit version that has 'v' prefix
+                            write_release_notes(
+                                release_notes_dir=tmp_path, version="v0.2.0"
+                            )
+
+                            # Verify compose_release_notes was called with version (with v prefix)
+                            mock_compose.assert_called_once()
+                            args = mock_compose.call_args[0]
+                            assert args[1] == "v0.2.0"
+
+                            # Verify file was written without duplicate 'v'
+                            expected_file = tmp_path / "v0.2.0.md"
+                            assert expected_file.exists()
+
+    def test_backward_compatibility_without_version_flag(self, tmp_path):
+        """Test that omitting --version maintains backward compatibility."""
+        with patch("llamabot.cli.git.here", return_value=str(tmp_path)):
+            with patch("git.Repo") as mock_repo_class:
+                # Mock repository with three tags (same as test_three_plus_tags_subsequent_release)
+                mock_repo = Mock()
+                mock_tag1 = Mock()
+                mock_tag1.name = "v0.1.0"
+                mock_tag1.commit.hexsha = "abc123"
+                mock_tag1.commit.committed_datetime = "2023-01-01T00:00:00"
+                mock_tag2 = Mock()
+                mock_tag2.name = "v0.2.0"
+                mock_tag2.commit.hexsha = "def456"
+                mock_tag2.commit.committed_datetime = "2023-01-02T00:00:00"
+                mock_tag3 = Mock()
+                mock_tag3.name = "v0.3.0"
+                mock_tag3.commit.hexsha = "ghi789"
+                mock_tag3.commit.committed_datetime = "2023-01-03T00:00:00"
+                mock_repo.tags = [mock_tag1, mock_tag2, mock_tag3]
+                mock_repo.git.log.return_value = "commit ghi789\nThird release"
+                mock_repo_class.return_value = mock_repo
+
+                with patch("llamabot.cli.git.Console"):
+                    with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
+                        mock_bot = Mock()
+                        mock_bot.return_value.content = (
+                            "# Version 0.3.0\n\nThird release"
+                        )
+                        mock_bot_class.return_value = mock_bot
+
+                        with patch(
+                            "llamabot.cli.git.compose_release_notes"
+                        ) as mock_compose:
+                            mock_compose.return_value = "prompt"
+
+                            # Call without explicit version (backward compatibility mode)
+                            write_release_notes(release_notes_dir=tmp_path)
+
+                            # Verify git.log was called with the correct range (last two tags)
+                            mock_repo.git.log.assert_called_once_with("def456..ghi789")
+
+                            # Verify compose_release_notes was called with version from newest tag
+                            mock_compose.assert_called_once()
+                            args = mock_compose.call_args[0]
+                            assert args[1] == "0.3.0"  # Version from v0.3.0 tag
+
+                            # Verify the file was written with the newest tag name
+                            expected_file = tmp_path / "v0.3.0.md"
+                            assert expected_file.exists()
+                            assert "# Version 0.3.0" in expected_file.read_text()
