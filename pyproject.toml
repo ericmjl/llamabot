@@ -69,7 +69,7 @@ artifacts = [
 
 [project]
 name = "llamabot"
-version = "0.17.13"
+version = "0.17.14"
 # Runtime dependencies below
 dependencies = [
     "openai",
