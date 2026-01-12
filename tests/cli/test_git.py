@@ -262,7 +262,7 @@ class TestWriteReleaseNotes:
                     with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
                         mock_bot = Mock()
                         mock_bot.return_value.content = (
-                            "# Version v0.2.0\n\nSecond release"
+                            "# Version 0.2.0\n\nSecond release"
                         )
                         mock_bot_class.return_value = mock_bot
 
@@ -276,10 +276,10 @@ class TestWriteReleaseNotes:
                                 release_notes_dir=tmp_path, version="v0.2.0"
                             )
 
-                            # Verify compose_release_notes was called with version (with v prefix)
+                            # Verify compose_release_notes was called with normalized version (without 'v' prefix)
                             mock_compose.assert_called_once()
                             args = mock_compose.call_args[0]
-                            assert args[1] == "v0.2.0"
+                            assert args[1] == "0.2.0"
 
                             # Verify file was written without duplicate 'v'
                             expected_file = tmp_path / "v0.2.0.md"
@@ -332,6 +332,61 @@ class TestWriteReleaseNotes:
                             assert args[1] == "0.3.0"  # Version from v0.3.0 tag
 
                             # Verify the file was written with the newest tag name
+                            expected_file = tmp_path / "v0.3.0.md"
+                            assert expected_file.exists()
+                            assert "# Version 0.3.0" in expected_file.read_text()
+
+    def test_empty_version_string_falls_back_to_tag(self, tmp_path):
+        """Test that empty/whitespace version string falls back to tag inference."""
+        with patch("llamabot.cli.git.here", return_value=str(tmp_path)):
+            with patch("git.Repo") as mock_repo_class:
+                # Mock repository with three tags
+                mock_repo = Mock()
+                mock_tag1 = Mock()
+                mock_tag1.name = "v0.1.0"
+                mock_tag1.commit.hexsha = "abc123"
+                mock_tag1.commit.committed_datetime = "2023-01-01T00:00:00"
+                mock_tag2 = Mock()
+                mock_tag2.name = "v0.2.0"
+                mock_tag2.commit.hexsha = "def456"
+                mock_tag2.commit.committed_datetime = "2023-01-02T00:00:00"
+                mock_tag3 = Mock()
+                mock_tag3.name = "v0.3.0"
+                mock_tag3.commit.hexsha = "ghi789"
+                mock_tag3.commit.committed_datetime = "2023-01-03T00:00:00"
+                mock_repo.tags = [mock_tag1, mock_tag2, mock_tag3]
+                mock_repo.git.log.return_value = "commit ghi789\nThird release"
+                mock_repo_class.return_value = mock_repo
+
+                with patch("llamabot.cli.git.Console"):
+                    with patch("llamabot.cli.git.SimpleBot") as mock_bot_class:
+                        mock_bot = Mock()
+                        mock_bot.return_value.content = (
+                            "# Version 0.3.0\n\nThird release"
+                        )
+                        mock_bot_class.return_value = mock_bot
+
+                        with patch(
+                            "llamabot.cli.git.compose_release_notes"
+                        ) as mock_compose:
+                            mock_compose.return_value = "prompt"
+
+                            # Call with whitespace-only version string
+                            write_release_notes(
+                                release_notes_dir=tmp_path, version="   "
+                            )
+
+                            # Verify it fell back to tag inference
+                            mock_repo.git.log.assert_called_once_with("def456..ghi789")
+
+                            # Verify compose_release_notes was called with version from newest tag
+                            mock_compose.assert_called_once()
+                            args = mock_compose.call_args[0]
+                            assert (
+                                args[1] == "0.3.0"
+                            )  # Version from v0.3.0 tag, not empty string
+
+                            # Verify the file was written with the tag name
                             expected_file = tmp_path / "v0.3.0.md"
                             assert expected_file.exists()
                             assert "# Version 0.3.0" in expected_file.read_text()
