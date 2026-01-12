@@ -271,36 +271,26 @@ def write_release_notes(
             "No tags found. Please ensure bump2version has run and created a tag before generating release notes."
         )
 
-    # Determine version and commit range
+    # Determine version string
     # Check if version is actually a string (not OptionInfo object)
     if version is not None and isinstance(version, str):
         # Explicit version provided - use it for filename
         version_str = version
-        # Still need tags to determine commit range
-        if len(tags) == 1:
-            log_info = repo.git.log()
-        elif len(tags) == 2:
-            log_info = repo.git.log(f"{tags[0].commit.hexsha}..{tags[1].commit.hexsha}")
-        else:
-            log_info = repo.git.log(
-                f"{tags[-2].commit.hexsha}..{tags[-1].commit.hexsha}"
-            )
     else:
         # Backward compatibility - infer from newest tag
         newest_tag = tags[-1]
         version_str = newest_tag.name.lstrip("v")  # Remove 'v' prefix if present
 
-        if len(tags) == 1:
-            # First release: get all commit messages from the very first commit
-            log_info = repo.git.log()
-        elif len(tags) == 2:
-            # Second release: get commits from first tag to second tag
-            log_info = repo.git.log(f"{tags[0].commit.hexsha}..{tags[1].commit.hexsha}")
-        else:
-            # Third+ release: get commits between the last two tags
-            log_info = repo.git.log(
-                f"{tags[-2].commit.hexsha}..{tags[-1].commit.hexsha}"
-            )
+    # Determine commit range (same logic regardless of version source)
+    if len(tags) == 1:
+        # First release: get all commit messages from the very first commit
+        log_info = repo.git.log()
+    elif len(tags) == 2:
+        # Second release: get commits from first tag to second tag
+        log_info = repo.git.log(f"{tags[0].commit.hexsha}..{tags[1].commit.hexsha}")
+    else:
+        # Third+ release: get commits between the last two tags
+        log_info = repo.git.log(f"{tags[-2].commit.hexsha}..{tags[-1].commit.hexsha}")
 
     # Generate release notes with explicit version
     console = Console()
