@@ -273,16 +273,16 @@ def write_release_notes(
 
     # Determine version string
     if version is not None and isinstance(version, str):
-        # Explicit version provided - normalize it (strip whitespace and 'v' prefix)
-        version_str = version.strip().lstrip("v")
+        # Explicit version provided - use as-is after stripping whitespace
+        version_str = version.strip()
         # If the version is empty after stripping, fall back to inferring from tag
         if not version_str:
             newest_tag = tags[-1]
-            version_str = newest_tag.name.lstrip("v")
+            version_str = newest_tag.name
     else:
         # Backward compatibility - infer from newest tag
         newest_tag = tags[-1]
-        version_str = newest_tag.name.lstrip("v")  # Remove 'v' prefix if present
+        version_str = newest_tag.name
 
     # Determine commit range (same logic regardless of version source)
     if len(tags) == 1:
@@ -312,10 +312,8 @@ def write_release_notes(
     # Ensure only one newline at the end of the file
     trimmed_notes = notes.content.rstrip() + "\n"
 
-    # Write release notes using the explicit version
-    filename = (
-        f"v{version_str}.md" if not version_str.startswith("v") else f"{version_str}.md"
-    )
+    # Write release notes using the version string as-is for filename
+    filename = f"{version_str}.md"
     with open(release_notes_dir / filename, "w+") as f:
         f.write(trimmed_notes)
 
