@@ -1,3 +1,4 @@
+glm-4.7-flash
 translategemma
 glm-4.7
 minimax-m2.1
