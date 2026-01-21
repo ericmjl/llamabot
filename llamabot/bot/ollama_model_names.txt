@@ -1,3 +1,4 @@
+lfm2.5-thinking
 glm-4.7-flash
 translategemma
 glm-4.7
