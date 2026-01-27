@@ -76,7 +76,7 @@ jobs:
 
       - name: Deploy PR Preview
         if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
-        uses: rossjrw/pr-preview-action@v1.8.0
+        uses: rossjrw/pr-preview-action@v1.8.1
         with:
           # Note: This action works similarly - it deploys the contents of source-dir (./site)
           # to create a preview. It also does NOT check .gitignore, but since ./site only
