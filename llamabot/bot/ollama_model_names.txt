@@ -21,7 +21,6 @@ mistral-large-3
 ministral-3
 deepseek-ocr
 cogito-2.1
-gemini-3-pro-preview
 kimi-k2-thinking
 minimax-m2
 gpt-oss-safeguard
