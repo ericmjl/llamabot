@@ -1,3 +1,4 @@
+glm-5
 qwen3-coder-next
 glm-ocr
 kimi-k2.5
