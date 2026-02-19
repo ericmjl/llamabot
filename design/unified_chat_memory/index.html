@@ -1,0 +1,5015 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://ericmjl.github.io/llamabot/design/unified_chat_memory/">
+      
+      
+        <link rel="prev" href="../../cli/mcp/">
+      
+      
+        <link rel="next" href="../log_viewer/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Unified Chat Memory - llamabot</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../apidocs.css">
+    
+      <link rel="stylesheet" href="../../css/ansi-colours.css">
+    
+      <link rel="stylesheet" href="../../css/jupyter-cells.css">
+    
+      <link rel="stylesheet" href="../../css/pandas-dataframe.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#unified-chat-memory-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="llamabot" class="md-header__button md-logo" aria-label="llamabot" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M384 512H96c-53 0-96-43-96-96V96C0 43 43 0 96 0h304c26.5 0 48 21.5 48 48v288c0 20.9-13.4 38.7-32 45.3V448c17.7 0 32 14.3 32 32s-14.3 32-32 32zM96 384c-17.7 0-32 14.3-32 32s14.3 32 32 32h256v-64zm32-232c0 13.3 10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24H152c-13.3 0-24 10.7-24 24m24 72c-13.3 0-24 10.7-24 24s10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            llamabot
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Unified Chat Memory
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ericmjl/llamabot" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ericmjl/llamabot
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="llamabot" class="md-nav__button md-logo" aria-label="llamabot" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M384 512H96c-53 0-96-43-96-96V96C0 43 43 0 96 0h304c26.5 0 48 21.5 48 48v288c0 20.9-13.4 38.7-32 45.3V448c17.7 0 32 14.3 32 32s-14.3 32-32 32zM96 384c-17.7 0-32 14.3-32 32s14.3 32 32 32h256v-64zm32-232c0 13.3 10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24H152c-13.3 0-24 10.7-24 24m24 72c-13.3 0-24 10.7-24 24s10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg>
+
+    </a>
+    llamabot
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ericmjl/llamabot" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ericmjl/llamabot
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/which-bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Which Bot Should I Use?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-To Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-To Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/cli-powered-by-llm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build an LLM-Powered CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/generate-blog-banner-images/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate Blog Banner Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/receipt-processing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Process Receipts with LLM Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/data-analysis-agentbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build a Data Analysis Chatbot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/simplebot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleBot Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/structuredbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    StructuredBot Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/toolbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ToolBot Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/agentbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AgentBot Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/querybot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    QueryBot Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/ollama/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using Ollama
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working with Prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/recording_prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recording Prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat UI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Chat UI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/chat-ui/simplebot-and-chatbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleBot and ChatBot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/chat-ui/querybot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    QueryBot Chat UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bots
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Bots
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bots/simplebot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleBot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bots/structuredbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    StructuredBot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bots/toolbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ToolBot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bots/agentbot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AgentBot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bots/querybot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    QueryBot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bots/imagebot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ImageBot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Components
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Components
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/components/messages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/components/tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/components/docstore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DocStore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/components/chat_memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CLI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/llamabot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LlamaBot CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docs Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/repo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/blog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blog Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/notebook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notebook Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/log-viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Log Viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design & Explanation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design & Explanation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Unified Chat Memory
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Unified Chat Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-design-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Design Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#linear-vs-graph-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linear vs Graph Memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conversation-threading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversation Threading
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Levels
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Levels">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-level-api-opinionated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-Level API (Opinionated)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#low-level-api-full-configurability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low-Level API (Full Configurability)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#factory-methods-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Factory Methods Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#under-the-hood-what-threaded-actually-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Under the Hood: What .threaded() Actually Does
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conversationnode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConversationNode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#messagesummary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MessageSummary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-simplebot-with-linear-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic SimpleBot with Linear Memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simplebot-with-graph-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SimpleBot with Graph Memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-memory-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Memory Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-retrieval-in-chat-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Retrieval in Chat Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-export-and-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Export and Visualization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-each-memory-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Each Memory Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-in-different-bot-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory in Different Bot Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-reset-and-state-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Reset and State Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#storage-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Storage Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#appendhuman_message-basemessage-assistant_message-basemessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        append(human_message: BaseMessage, assistant_message: BaseMessage)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Retrieval Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retrievequery-str-n_results-int-10-context_depth-int-5-listbasemessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        retrieve(query: str, n_results: int = 10, context_depth: int = 5) -&gt; List[BaseMessage]
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Threading Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conversation-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversation Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threading-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-selection-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Selection Strategies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Node Selection Strategies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#linearnodeselector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LinearNodeSelector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llmnodeselector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMNodeSelector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-selection-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Selection Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-usage-in-chat-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Usage in Chat Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export-and-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Export and Visualization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Export and Visualization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid Export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modular-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modular Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Modular Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#main-class-clean-and-focused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main Class (Clean and Focused)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#separate-functions-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Separate Functions (Implementation Details)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#networkx-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NetworkX Backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto-incremented-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-Incremented IDs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#networkx-graph-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NetworkX Graph Storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-selection-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Selection Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#actionable-errors-user-can-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actionable Errors (User Can Fix)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graceful-handling-no-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graceful Handling (No Errors)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-message-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Message Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benefits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benefits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Persistence Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#storage-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#persistence-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Persistence Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#savefile_path-str-none" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save(file_path: str) -&gt; None
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadfile_path-str-chatmemory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load(file_path: str) -&gt; ChatMemory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exportformat-str-json-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        export(format: str = "json") -&gt; str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json-serialization-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON Serialization Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-reconstruction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph Reconstruction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#benefits-of-json-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benefits of JSON Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-naming-convention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Naming Convention
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions-and-future-enhancements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Questions and Future Enhancements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open Questions and Future Enhancements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#concurrency-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-retrieval-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Retrieval Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-optimizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Optimizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-with-external-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with External Systems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-deprecation-v0130" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Deprecation (v0.13.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-transition-v0140" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Transition (v0.14.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-removal-v0150" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Removal (v0.15.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migration-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Guide
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../log_viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Log Viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents-build-own-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agents Build Own Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-design-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Design Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#linear-vs-graph-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linear vs Graph Memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conversation-threading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversation Threading
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Levels
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Levels">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-level-api-opinionated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-Level API (Opinionated)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#low-level-api-full-configurability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low-Level API (Full Configurability)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#factory-methods-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Factory Methods Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#under-the-hood-what-threaded-actually-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Under the Hood: What .threaded() Actually Does
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conversationnode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConversationNode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#messagesummary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MessageSummary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-simplebot-with-linear-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic SimpleBot with Linear Memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simplebot-with-graph-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SimpleBot with Graph Memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-memory-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Memory Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-retrieval-in-chat-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Retrieval in Chat Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-export-and-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Export and Visualization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-each-memory-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Each Memory Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-in-different-bot-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory in Different Bot Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-reset-and-state-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Reset and State Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#storage-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Storage Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#appendhuman_message-basemessage-assistant_message-basemessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        append(human_message: BaseMessage, assistant_message: BaseMessage)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Retrieval Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retrievequery-str-n_results-int-10-context_depth-int-5-listbasemessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        retrieve(query: str, n_results: int = 10, context_depth: int = 5) -&gt; List[BaseMessage]
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Threading Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conversation-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversation Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threading-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-selection-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Selection Strategies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Node Selection Strategies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#linearnodeselector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LinearNodeSelector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llmnodeselector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMNodeSelector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-selection-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Selection Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-usage-in-chat-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Usage in Chat Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export-and-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Export and Visualization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Export and Visualization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid Export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modular-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modular Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Modular Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#main-class-clean-and-focused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main Class (Clean and Focused)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#separate-functions-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Separate Functions (Implementation Details)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#networkx-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NetworkX Backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto-incremented-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-Incremented IDs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#networkx-graph-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NetworkX Graph Storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-selection-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Selection Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#actionable-errors-user-can-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actionable Errors (User Can Fix)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graceful-handling-no-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graceful Handling (No Errors)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-message-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Message Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benefits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benefits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Persistence Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#storage-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#persistence-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Persistence Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#savefile_path-str-none" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save(file_path: str) -&gt; None
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadfile_path-str-chatmemory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load(file_path: str) -&gt; ChatMemory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exportformat-str-json-str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        export(format: str = "json") -&gt; str
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json-serialization-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON Serialization Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-reconstruction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph Reconstruction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#benefits-of-json-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benefits of JSON Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-naming-convention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Naming Convention
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions-and-future-enhancements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Questions and Future Enhancements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open Questions and Future Enhancements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#concurrency-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-retrieval-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Retrieval Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-optimizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Optimizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-with-external-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with External Systems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-deprecation-v0130" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Deprecation (v0.13.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-transition-v0140" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Transition (v0.14.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-removal-v0150" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Removal (v0.15.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migration-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Guide
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="unified-chat-memory-design">Unified Chat Memory Design</h1>
+<h2 id="overview">Overview</h2>
+<p>This document outlines the design for a unified chat memory system that consolidates linear and graph-based memory into a single, configurable class. The system separates storage and retrieval concerns while providing multiple API levels for different use cases.</p>
+<h2 id="quick-start">Quick Start</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">llamabot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lmb</span>
+
+<span class="c1"># Simple linear memory (fast, no LLM calls)</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="p">()</span>
+
+<span class="c1"># Intelligent graph memory with threading</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="o">.</span><span class="n">threaded</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+
+<span class="c1"># Use with any bot</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">SimpleBot</span><span class="p">(</span><span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are helpful&quot;</span><span class="p">,</span> <span class="n">memory</span><span class="o">=</span><span class="n">memory</span><span class="p">)</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>  <span class="c1"># Memory automatically stores and retrieves context</span>
+</code></pre></div>
+<h2 id="core-design-principles">Core Design Principles</h2>
+<ol>
+<li><strong>Unified Interface</strong>: Single class handles both linear and graph-based memory</li>
+<li><strong>Separation of Concerns</strong>: Storage operations (append) are separate from retrieval operations (search/context)</li>
+<li><strong>Configuration at Instantiation</strong>: Memory mode and behavior are set once and never change</li>
+<li><strong>NetworkX Backend</strong>: Direct use of NetworkX for graph operations without over-abstraction</li>
+<li><strong>Optional Summarization</strong>: Summarization is optional and can be disabled for performance</li>
+</ol>
+<h2 id="key-concepts">Key Concepts</h2>
+<h3 id="linear-vs-graph-memory">Linear vs Graph Memory</h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Linear Memory</th>
+<th>Graph Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Speed</strong></td>
+<td>Fast (no LLM calls)</td>
+<td>Slower (LLM for threading)</td>
+</tr>
+<tr>
+<td><strong>Intelligence</strong></td>
+<td>Simple (last N messages)</td>
+<td>Smart (semantic threading)</td>
+</tr>
+<tr>
+<td><strong>Use Case</strong></td>
+<td>Simple conversations</td>
+<td>Complex multi-threaded chats</td>
+</tr>
+<tr>
+<td><strong>LLM Calls</strong></td>
+<td>None</td>
+<td>1-2 per message (optional)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="conversation-threading">Conversation Threading</h3>
+<p><strong>Linear Memory</strong>: Messages are stored in order, retrieved as recent history</p>
+<div class="highlight"><pre><span></span><code>H1 → A1 → H2 → A2 → H3 → A3
+</code></pre></div>
+<p><strong>Graph Memory</strong>: Messages are intelligently connected based on content</p>
+<div class="highlight"><pre><span></span><code>H1: &quot;Let&#39;s talk about Python&quot;
+└── A1: &quot;Python is great for data science&quot;
+    ├── H2: &quot;What about machine learning?&quot; → A2: &quot;ML libraries include...&quot;
+    └── H3: &quot;Tell me about databases&quot; → A3: &quot;SQL databases are...&quot;
+</code></pre></div>
+<h2 id="architecture">Architecture</h2>
+<h3 id="api-levels">API Levels</h3>
+<h4 id="high-level-api-opinionated">High-Level API (Opinionated)</h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Default linear memory</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">()</span>  <span class="c1"># Uses LinearNodeSelector by default</span>
+
+<span class="c1"># Graph memory with LLM-based threading</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="o">.</span><span class="n">threaded</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="low-level-api-full-configurability">Low-Level API (Full Configurability)</h4>
+<div class="highlight"><pre><span></span><code><span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">(</span>
+    <span class="n">node_selector</span><span class="o">=</span><span class="n">LLMNodeSelector</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>
+    <span class="n">summarizer</span><span class="o">=</span><span class="n">LLMSummarizer</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>  <span class="c1"># Optional</span>
+    <span class="n">context_depth</span><span class="o">=</span><span class="mi">5</span>  <span class="c1"># Default context depth for retrieval</span>
+<span class="p">)</span>
+</code></pre></div>
+<h4 id="factory-methods-implementation">Factory Methods Implementation</h4>
+<div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">threaded</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ChatMemory&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create ChatMemory with LLM-based threading.</span>
+
+<span class="sd">    :param model: LLM model name for node selection and summarization</span>
+<span class="sd">    :param kwargs: Additional arguments passed to ChatMemory constructor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">node_selector</span><span class="o">=</span><span class="n">LLMNodeSelector</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">),</span>
+        <span class="n">summarizer</span><span class="o">=</span><span class="n">LLMSummarizer</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">),</span>  <span class="c1"># Optional but recommended for threading</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+</code></pre></div>
+<h4 id="under-the-hood-what-threaded-actually-does">Under the Hood: What <code>.threaded()</code> Actually Does</h4>
+<p>When you call <code>ChatMemory.threaded(model="gpt-4o-mini")</code>, here's exactly what happens:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Factory method creates LLMNodeSelector</span>
+<span class="n">llm_selector</span> <span class="o">=</span> <span class="n">LLMNodeSelector</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<span class="c1"># This creates a selector that will use GPT-4o-mini to choose conversation threads</span>
+
+<span class="c1"># 2. Factory method creates LLMSummarizer</span>
+<span class="n">llm_summarizer</span> <span class="o">=</span> <span class="n">LLMSummarizer</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<span class="c1"># This creates a summarizer that will generate message summaries for better threading</span>
+
+<span class="c1"># 3. Factory method calls the main constructor</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">(</span>
+    <span class="n">node_selector</span><span class="o">=</span><span class="n">llm_selector</span><span class="p">,</span>
+    <span class="n">summarizer</span><span class="o">=</span><span class="n">llm_summarizer</span><span class="p">,</span>
+    <span class="n">context_depth</span><span class="o">=</span><span class="mi">5</span>  <span class="c1"># Default value</span>
+<span class="p">)</span>
+
+<span class="c1"># 4. Constructor initializes the memory system</span>
+<span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_selector</span><span class="p">,</span> <span class="n">summarizer</span><span class="p">,</span> <span class="n">context_depth</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>  <span class="c1"># Empty conversation graph</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">node_selector</span> <span class="o">=</span> <span class="n">llm_selector</span>  <span class="c1"># Will use LLM for thread selection</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">summarizer</span> <span class="o">=</span> <span class="n">llm_summarizer</span>   <span class="c1"># Will generate message summaries</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">context_depth</span> <span class="o">=</span> <span class="n">context_depth</span> <span class="c1"># How far back to look for context</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_next_node_id</span> <span class="o">=</span> <span class="mi">1</span>             <span class="c1"># Start numbering nodes from 1</span>
+</code></pre></div>
+<p><strong>Result</strong>: You get a <code>ChatMemory</code> instance that:</p>
+<ul>
+<li>Uses LLM-based intelligent threading instead of linear memory</li>
+<li>Automatically generates message summaries for better thread selection</li>
+<li>Maintains a conversation graph with parent-child relationships</li>
+<li>Can retrieve context by traversing conversation threads</li>
+</ul>
+<p><strong>Equivalent Manual Creation:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># This is exactly what .threaded() does internally</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">(</span>
+    <span class="n">node_selector</span><span class="o">=</span><span class="n">LLMNodeSelector</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>
+    <span class="n">summarizer</span><span class="o">=</span><span class="n">LLMSummarizer</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>
+    <span class="n">context_depth</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><strong>Note:</strong> We chose the factory method pattern over alternatives like constructor with mode parameters or separate classes. The factory pattern provides clearer intent through descriptive method names while keeping the <code>__init__</code> method clean and focused on low-level configuration. This approach makes the API more readable and maintainable, especially as we add more memory modes and configuration options.</p>
+<h3 id="data-model">Data Model</h3>
+<h4 id="conversationnode">ConversationNode</h4>
+<div class="highlight"><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConversationNode</span><span class="p">:</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>  <span class="c1"># Auto-incremented based on number of nodes in graph</span>
+    <span class="n">message</span><span class="p">:</span> <span class="n">BaseMessage</span>  <span class="c1"># Single message (not conversation turn)</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MessageSummary</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">parent_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">timestamp</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Key Points:</strong></p>
+<ul>
+<li>Each node represents a single message (human or assistant)</li>
+<li><strong>id</strong>: Auto-incremented integer providing natural ordering</li>
+<li><strong>parent_id</strong>: Creates threading relationships (None for root)</li>
+<li><strong>message</strong>: Contains role information (human/assistant) via BaseMessage</li>
+<li><strong>timestamp</strong>: Metadata for when the message was created</li>
+<li><strong>summary</strong>: Optional for performance</li>
+<li>Immutable once created</li>
+</ul>
+<h4 id="messagesummary">MessageSummary</h4>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MessageSummary</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Title of the message&quot;</span><span class="p">)</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Summary of the message. Two sentences max.&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="usage-examples">Usage Examples</h2>
+<h3 id="basic-simplebot-with-linear-memory">Basic SimpleBot with Linear Memory</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">llamabot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lmb</span>
+
+<span class="c1"># Create a bot with simple linear memory (fast, no LLM calls)</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="p">()</span>  <span class="c1"># Default linear</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">SimpleBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">memory</span>
+<span class="p">)</span>
+
+<span class="c1"># Chat loop automatically uses memory</span>
+<span class="n">response1</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Hello! How are you?&quot;</span><span class="p">)</span>
+<span class="n">response2</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;What did I just ask you?&quot;</span><span class="p">)</span>  <span class="c1"># Bot can reference previous conversation</span>
+</code></pre></div>
+<h3 id="simplebot-with-graph-memory">SimpleBot with Graph Memory</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">llamabot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lmb</span>
+
+<span class="c1"># Create a bot with intelligent threading (uses LLM for smart connections)</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="o">.</span><span class="n">threaded</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">SimpleBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">memory</span>
+<span class="p">)</span>
+
+<span class="c1"># Bot can now handle conversation threading intelligently</span>
+<span class="n">response1</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Let&#39;s talk about Python programming.&quot;</span><span class="p">)</span>
+<span class="n">response2</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;What are the benefits of using Python?&quot;</span><span class="p">)</span>  <span class="c1"># Continues Python thread</span>
+<span class="n">response3</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Now let&#39;s discuss machine learning.&quot;</span><span class="p">)</span>  <span class="c1"># Starts new thread</span>
+<span class="n">response4</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;What libraries should I use for ML in Python?&quot;</span><span class="p">)</span>  <span class="c1"># Connects back to Python thread</span>
+</code></pre></div>
+<h3 id="custom-memory-configuration">Custom Memory Configuration</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">llamabot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lmb</span>
+
+<span class="c1"># Custom memory configuration (advanced users)</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="p">(</span>
+    <span class="n">node_selector</span><span class="o">=</span><span class="n">lmb</span><span class="o">.</span><span class="n">LLMNodeSelector</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>
+    <span class="n">summarizer</span><span class="o">=</span><span class="n">lmb</span><span class="o">.</span><span class="n">LLMSummarizer</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>  <span class="c1"># Optional for better threading</span>
+    <span class="n">context_depth</span><span class="o">=</span><span class="mi">10</span>  <span class="c1"># How far back to look for context</span>
+<span class="p">)</span>
+
+<span class="n">bot</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">SimpleBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a coding assistant.&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">memory</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="memory-retrieval-in-chat-loop">Memory Retrieval in Chat Loop</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">llamabot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lmb</span>
+
+<span class="c1"># Bot with memory that can retrieve context</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="o">.</span><span class="n">threaded</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">SimpleBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">memory</span>
+<span class="p">)</span>
+
+<span class="c1"># Simulate a conversation</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;I&#39;m working on a Python project.&quot;</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;I need to handle file I/O.&quot;</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;What&#39;s the best way to read CSV files?&quot;</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Can you remind me what we discussed about file I/O?&quot;</span><span class="p">)</span>  <span class="c1"># Bot retrieves relevant context</span>
+</code></pre></div>
+<h3 id="memory-export-and-visualization">Memory Export and Visualization</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">llamabot.bot.simplebot</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleBot</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llamabot.components.chat_memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatMemory</span>
+
+<span class="c1"># Create bot with graph memory</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="o">.</span><span class="n">threaded</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">SimpleBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">memory</span>
+<span class="p">)</span>
+
+<span class="c1"># Have a conversation</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Let&#39;s discuss Python.&quot;</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;What about data structures?&quot;</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Now let&#39;s talk about machine learning.&quot;</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;What ML libraries work well with Python?&quot;</span><span class="p">)</span>
+
+<span class="c1"># Export conversation graph</span>
+<span class="n">mermaid_diagram</span> <span class="o">=</span> <span class="n">memory</span><span class="o">.</span><span class="n">to_mermaid</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mermaid_diagram</span><span class="p">)</span>
+
+<span class="c1"># Get conversation statistics</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total messages: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">memory</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conversation threads: </span><span class="si">{</span><span class="nb">len</span><span class="p">([</span><span class="n">n</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="when-to-use-each-memory-type">When to Use Each Memory Type</h3>
+<table>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>Memory Type</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Simple Q&amp;A</strong></td>
+<td><code>lmb.ChatMemory()</code></td>
+<td>Fast, no LLM calls needed</td>
+</tr>
+<tr>
+<td><strong>Multi-topic conversations</strong></td>
+<td><code>lmb.ChatMemory.threaded()</code></td>
+<td>Smart threading connects related topics</td>
+</tr>
+<tr>
+<td><strong>Performance critical</strong></td>
+<td><code>lmb.ChatMemory()</code></td>
+<td>No additional LLM latency</td>
+</tr>
+<tr>
+<td><strong>Complex discussions</strong></td>
+<td><code>lmb.ChatMemory.threaded()</code></td>
+<td>Maintains conversation context across topics</td>
+</tr>
+<tr>
+<td><strong>Real-time chat</strong></td>
+<td><code>lmb.ChatMemory()</code></td>
+<td>Immediate responses</td>
+</tr>
+<tr>
+<td><strong>Research/analysis</strong></td>
+<td><code>lmb.ChatMemory.threaded()</code></td>
+<td>Can reference earlier parts of conversation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="memory-in-different-bot-types">Memory in Different Bot Types</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">llamabot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lmb</span>
+
+<span class="c1"># Linear memory for simple conversations (fast)</span>
+<span class="n">linear_memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="p">()</span>  <span class="c1"># Default linear</span>
+<span class="n">simple_bot</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">SimpleBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">linear_memory</span>
+<span class="p">)</span>
+
+<span class="c1"># Graph memory for complex conversations with threading (smart)</span>
+<span class="n">graph_memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="o">.</span><span class="n">threaded</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+<span class="n">query_bot</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">QueryBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">graph_memory</span>
+<span class="p">)</span>
+
+<span class="c1"># Custom memory for specific needs (advanced)</span>
+<span class="n">custom_memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="p">(</span>
+    <span class="n">node_selector</span><span class="o">=</span><span class="n">lmb</span><span class="o">.</span><span class="n">LLMNodeSelector</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>
+    <span class="n">summarizer</span><span class="o">=</span><span class="kc">None</span>  <span class="c1"># No summarization for performance</span>
+<span class="p">)</span>
+<span class="n">structured_bot</span> <span class="o">=</span> <span class="n">StructuredBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">pydantic_model</span><span class="o">=</span><span class="n">SomeModel</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">custom_memory</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="memory-reset-and-state-management">Memory Reset and State Management</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">llamabot.bot.simplebot</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleBot</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llamabot.components.chat_memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatMemory</span>
+
+<span class="c1"># Create bot with memory</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">()</span>  <span class="c1"># Default linear</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">SimpleBot</span><span class="p">(</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="n">memory</span>
+<span class="p">)</span>
+
+<span class="c1"># Have a conversation</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">(</span><span class="s2">&quot;How are you?&quot;</span><span class="p">)</span>
+
+<span class="c1"># Reset memory for new conversation</span>
+<span class="n">memory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+<span class="c1"># Bot no longer remembers previous conversation</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">bot</span><span class="p">(</span><span class="s2">&quot;What did we just talk about?&quot;</span><span class="p">)</span>  <span class="c1"># Bot won&#39;t remember</span>
+</code></pre></div>
+<h2 id="core-operations">Core Operations</h2>
+<h3 id="storage-operations">Storage Operations</h3>
+<h4 id="appendhuman_message-basemessage-assistant_message-basemessage">append(human_message: BaseMessage, assistant_message: BaseMessage)</h4>
+<ul>
+<li>Adds both messages to the graph</li>
+<li>Creates parent-child relationship between messages</li>
+<li>Uses node selector to determine threading (linear vs graph mode)</li>
+<li>Prevents cycles and orphaned nodes</li>
+</ul>
+<h4 id="reset">reset()</h4>
+<ul>
+<li>Clears all stored messages</li>
+<li>Resets graph to empty state</li>
+</ul>
+<h3 id="retrieval-operations">Retrieval Operations</h3>
+<h4 id="retrievequery-str-n_results-int-10-context_depth-int-5-listbasemessage">retrieve(query: str, n_results: int = 10, context_depth: int = 5) -&gt; List[BaseMessage]</h4>
+<ul>
+<li>Smart retrieval that adapts based on memory configuration</li>
+<li><strong>Linear memory</strong>: Ignores query, returns recent messages (fast)</li>
+<li><strong>Graph memory</strong>: Uses semantic search with BM25 or similar algorithm, then traverses up thread paths</li>
+<li><strong>n_results</strong>: Number of relevant messages to find via semantic search</li>
+<li><strong>context_depth</strong>: Number of nodes to traverse up each thread path for context</li>
+<li>Returns most relevant messages with their conversation context</li>
+<li>Works like existing docstore implementations</li>
+</ul>
+<p><strong>Context Depth Example:</strong></p>
+<div class="highlight"><pre><span></span><code>H1: &quot;Let&#39;s talk about Python&quot; (root)
+└── A1: &quot;Python is great for data science&quot;
+    ├── H2: &quot;What about machine learning?&quot;
+    │   └── A2: &quot;ML libraries include scikit-learn&quot;
+    └── H3: &quot;Tell me about databases&quot;
+        └── A3: &quot;SQL databases are...&quot;
+
+# Thread path for A2: A2 ← H2 ← A1 ← H1 (root)
+memory.retrieve(query=&quot;machine learning&quot;, n_results=1, context_depth=2)
+# Returns: [A2, H2, A1] (relevant message + 2 messages up thread path)
+</code></pre></div>
+<h2 id="threading-model">Threading Model</h2>
+<h3 id="conversation-structure">Conversation Structure</h3>
+<p>The graph memory uses a <strong>tree structure</strong> where all nodes are connected in a single conversation tree:</p>
+<div class="highlight"><pre><span></span><code>H1: &quot;Let&#39;s talk about Python&quot; (root - first human message)
+└── A1: &quot;Python is great for data science&quot;
+    ├── H2: &quot;What about machine learning?&quot;
+    │   └── A2: &quot;ML libraries include scikit-learn&quot;
+    └── H3: &quot;Tell me about databases&quot;
+        └── A3: &quot;SQL databases are...&quot;
+
+# Thread paths:
+# Thread 1: H1 → A1 → H2 → A2
+# Thread 2: H1 → A1 → H3 → A3
+</code></pre></div>
+<h3 id="threading-rules">Threading Rules</h3>
+<ol>
+<li><strong>Root Node</strong>: The first human message becomes the root of the conversation tree</li>
+<li><strong>Branching Rules</strong>:</li>
+<li><strong>Human messages</strong> can only branch from <strong>assistant messages</strong></li>
+<li><strong>Assistant messages</strong> can only branch from <strong>human messages</strong></li>
+<li>This enforces the conversation turn structure: Human → Assistant → Human → Assistant...</li>
+<li><strong>Thread Definition</strong>: Threads are paths from root to leaf nodes (active conversation endpoints)</li>
+<li><strong>Leaf nodes</strong>: Nodes with no out-edges (no children)</li>
+<li><strong>Root node</strong>: First human message with no parent (parent_id = None)</li>
+</ol>
+<h3 id="node-selection-strategies">Node Selection Strategies</h3>
+<h4 id="linearnodeselector">LinearNodeSelector</h4>
+<ul>
+<li>Always selects the leaf assistant node (node with no out-edges that is an assistant message)</li>
+<li>Creates linear conversation flow</li>
+<li>No LLM calls required</li>
+<li>Used in linear mode</li>
+<li><strong>Constraint</strong>: Can only select assistant messages as parents for human messages</li>
+</ul>
+<h4 id="llmnodeselector">LLMNodeSelector</h4>
+<ul>
+<li>Uses LLM to intelligently select which assistant message to branch from</li>
+<li>Considers message content and conversation context</li>
+<li>Supports retry logic with feedback</li>
+<li>Used in graph mode</li>
+<li><strong>Constraint</strong>: Can only select assistant messages as parents for human messages</li>
+<li><strong>First message handling</strong>: If no assistant messages exist, creates root node (parent_id = None)</li>
+</ul>
+<h4 id="node-selection-logic">Node Selection Logic</h4>
+<ul>
+<li><strong>First message</strong>: If no assistant nodes exist, message becomes root (<code>parent_id = None</code>)</li>
+<li><strong>Subsequent messages</strong>: LLM selects best assistant message as parent</li>
+<li><strong>No fallbacks</strong>: LLM selection should be reliable; if it fails, message becomes root</li>
+</ul>
+<h2 id="usage-patterns">Usage Patterns</h2>
+<h3 id="memory-usage-in-chat-loop">Memory Usage in Chat Loop</h3>
+<p>The following example shows how memory is used inside a bot's <code>__call__</code> method. This is the standard pattern that all memory types should follow:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">human_messages</span><span class="p">):</span>
+    <span class="c1"># 1. Process incoming messages</span>
+    <span class="n">processed_messages</span> <span class="o">=</span> <span class="n">to_basemessage</span><span class="p">(</span><span class="n">human_messages</span><span class="p">)</span>
+
+    <span class="c1"># 2. RETRIEVAL: Get relevant context from memory</span>
+    <span class="n">memory_messages</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">:</span>
+        <span class="c1"># Memory system handles the complexity internally</span>
+        <span class="n">memory_messages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
+            <span class="n">query</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;From our conversation history, give me the most relevant information to the query, </span><span class="si">{</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">content</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">processed_messages</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">n_results</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+            <span class="n">context_depth</span><span class="o">=</span><span class="mi">5</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 3. Build message list with context</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span><span class="p">]</span> <span class="o">+</span> <span class="n">memory_messages</span> <span class="o">+</span> <span class="n">processed_messages</span>
+
+    <span class="c1"># 4. Generate response</span>
+    <span class="n">response_message</span> <span class="o">=</span> <span class="n">AIMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">tool_calls</span><span class="o">=</span><span class="n">tool_calls</span><span class="p">)</span>
+
+    <span class="c1"># 5. STORAGE: Save conversation turn to memory</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed_messages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">response_message</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">response_message</span>
+</code></pre></div>
+<p><strong>Key Points:</strong></p>
+<ul>
+<li><strong>Retrieval happens before response generation</strong> to provide context</li>
+<li><strong>Storage happens after response generation</strong> to save the conversation turn</li>
+<li><strong>Memory is self-aware</strong> - the <code>retrieve()</code> method automatically chooses the best strategy based on memory type</li>
+<li><strong>No mode checking needed</strong> - bot implementers don't need to know about memory internals</li>
+<li><strong>Performance optimization is automatic</strong> - linear memory skips expensive semantic search</li>
+<li><strong>Memory is optional</strong> - bot works without memory, just with less context</li>
+<li><strong>Unified API</strong> - same method calls work for all memory types</li>
+</ul>
+<p><strong>Note:</strong> This example shows the core memory operations with logging stripped out for clarity. Real implementations should include appropriate logging and error handling.</p>
+<h3 id="export-and-visualization">Export and Visualization</h3>
+<h4 id="mermaid-export">Mermaid Export</h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Export conversation graph</span>
+<span class="n">mermaid_diagram</span> <span class="o">=</span> <span class="n">memory</span><span class="o">.</span><span class="n">to_mermaid</span><span class="p">()</span>
+
+<span class="c1"># Filter by role for cleaner visualization</span>
+<span class="n">assistant_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">memory</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+                  <span class="k">if</span> <span class="n">memory</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;node&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s1">&#39;assistant&#39;</span><span class="p">]</span>
+</code></pre></div>
+<h2 id="implementation-details">Implementation Details</h2>
+<h3 id="modular-architecture">Modular Architecture</h3>
+<p>The implementation uses a modular approach to keep the main <code>ChatMemory</code> class clean and focused:</p>
+<div class="highlight"><pre><span></span><code>llamabot/components/chat_memory/
+├── __init__.py        # Exports main classes and functions
+├── memory.py          # Main ChatMemory class
+├── retrieval.py       # Retrieval functions
+├── storage.py         # Storage functions
+├── visualization.py   # Visualization functions
+└── selectors.py       # Node selection strategies
+</code></pre></div>
+<p><strong>Module Exports in <code>__init__.py</code>:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Main classes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatMemory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.selectors</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearNodeSelector</span><span class="p">,</span> <span class="n">LLMNodeSelector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.storage</span><span class="w"> </span><span class="kn">import</span> <span class="n">append_linear</span><span class="p">,</span> <span class="n">append_with_threading</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.retrieval</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_recent_messages</span><span class="p">,</span> <span class="n">semantic_search_with_context</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_mermaid</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;ChatMemory&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LinearNodeSelector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LLMNodeSelector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;append_linear&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;append_with_threading&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;get_recent_messages&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;semantic_search_with_context&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;to_mermaid&quot;</span>
+<span class="p">]</span>
+</code></pre></div>
+<p><strong>Test Structure Should Mirror Components:</strong></p>
+<div class="highlight"><pre><span></span><code>tests/components/chat_memory/
+├── test_memory.py     # Test main ChatMemory class
+├── test_retrieval.py  # Test retrieval functions
+├── test_storage.py    # Test storage functions
+├── test_visualization.py  # Test visualization functions
+└── test_selectors.py  # Test node selection strategies
+</code></pre></div>
+<h4 id="main-class-clean-and-focused">Main Class (Clean and Focused)</h4>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ChatMemory</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">node_selector</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NodeSelector</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">summarizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Summarizer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">context_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize chat memory with configuration.</span>
+
+<span class="sd">        :param node_selector: Strategy for selecting parent nodes (None = LinearNodeSelector)</span>
+<span class="sd">        :param summarizer: Optional summarization strategy (None = no summarization)</span>
+<span class="sd">        :param context_depth: Default depth for context retrieval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize NetworkX graph for storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+
+        <span class="c1"># Set node selector (linear by default, LLM-based if provided)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_selector</span> <span class="o">=</span> <span class="n">node_selector</span> <span class="ow">or</span> <span class="n">LinearNodeSelector</span><span class="p">()</span>
+
+        <span class="c1"># Set optional summarizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summarizer</span> <span class="o">=</span> <span class="n">summarizer</span>
+
+        <span class="c1"># Validate and store context depth</span>
+        <span class="k">if</span> <span class="n">context_depth</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;context_depth must be non-negative&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context_depth</span> <span class="o">=</span> <span class="n">context_depth</span>
+
+        <span class="c1"># Track next node ID for auto-incrementing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next_node_id</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">retrieve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">context_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Smart retrieval that adapts based on memory configuration.&quot;&quot;&quot;</span>
+        <span class="n">context_depth</span> <span class="o">=</span> <span class="n">context_depth</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_depth</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_selector</span><span class="p">,</span> <span class="n">LinearNodeSelector</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">get_recent_messages</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">n_results</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">semantic_search_with_context</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">n_results</span><span class="p">,</span> <span class="n">context_depth</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">human_message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">assistant_message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add conversation turn to memory.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_selector</span><span class="p">,</span> <span class="n">LinearNodeSelector</span><span class="p">):</span>
+            <span class="n">append_linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">human_message</span><span class="p">,</span> <span class="n">assistant_message</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_node_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_next_node_id</span> <span class="o">+=</span> <span class="mi">2</span>  <span class="c1"># Increment for both messages</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">append_with_threading</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">human_message</span><span class="p">,</span> <span class="n">assistant_message</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_selector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_node_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_next_node_id</span> <span class="o">+=</span> <span class="mi">2</span>  <span class="c1"># Increment for both messages</span>
+</code></pre></div>
+<h4 id="separate-functions-implementation-details">Separate Functions (Implementation Details)</h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># retrieval.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_recent_messages</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="n">n_results</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the most recent N messages from linear memory.&quot;&quot;&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">semantic_search_with_context</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_results</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">context_depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find relevant nodes via semantic search, then traverse up their thread paths for context.&quot;&quot;&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">traverse_thread_path</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Traverse up a conversation thread path from a given node.&quot;&quot;&quot;</span>
+
+<span class="c1"># storage.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">append_linear</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="n">human_message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">assistant_message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">next_node_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Append messages to linear memory.&quot;&quot;&quot;</span>
+    <span class="c1"># Create human node</span>
+    <span class="n">human_node</span> <span class="o">=</span> <span class="n">ConversationNode</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">next_node_id</span><span class="p">,</span>
+        <span class="n">message</span><span class="o">=</span><span class="n">human_message</span><span class="p">,</span>
+        <span class="n">parent_id</span><span class="o">=</span><span class="n">find_leaf_assistant_node</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span> <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">next_node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">human_node</span><span class="p">)</span>
+
+    <span class="c1"># Create assistant node</span>
+    <span class="n">assistant_node</span> <span class="o">=</span> <span class="n">ConversationNode</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">next_node_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">message</span><span class="o">=</span><span class="n">assistant_message</span><span class="p">,</span>
+        <span class="n">parent_id</span><span class="o">=</span><span class="n">next_node_id</span>
+    <span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">next_node_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">assistant_node</span><span class="p">)</span>
+
+    <span class="c1"># Add edges</span>
+    <span class="k">if</span> <span class="n">human_node</span><span class="o">.</span><span class="n">parent_id</span><span class="p">:</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">human_node</span><span class="o">.</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">next_node_id</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">next_node_id</span><span class="p">,</span> <span class="n">next_node_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">append_with_threading</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="n">human_message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">assistant_message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">node_selector</span><span class="p">,</span> <span class="n">next_node_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Append messages with intelligent threading following conversation turn structure.&quot;&quot;&quot;</span>
+    <span class="c1"># Use node selector to find best parent for human message</span>
+    <span class="n">parent_id</span> <span class="o">=</span> <span class="n">node_selector</span><span class="o">.</span><span class="n">select_parent</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">human_message</span><span class="p">)</span>
+
+    <span class="c1"># Create human node</span>
+    <span class="n">human_node</span> <span class="o">=</span> <span class="n">ConversationNode</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">next_node_id</span><span class="p">,</span>
+        <span class="n">message</span><span class="o">=</span><span class="n">human_message</span><span class="p">,</span>
+        <span class="n">parent_id</span><span class="o">=</span><span class="n">parent_id</span>
+    <span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">next_node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">human_node</span><span class="p">)</span>
+
+    <span class="c1"># Create assistant node</span>
+    <span class="n">assistant_node</span> <span class="o">=</span> <span class="n">ConversationNode</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">next_node_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">message</span><span class="o">=</span><span class="n">assistant_message</span><span class="p">,</span>
+        <span class="n">parent_id</span><span class="o">=</span><span class="n">next_node_id</span>
+    <span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">next_node_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">assistant_node</span><span class="p">)</span>
+
+    <span class="c1"># Add edges</span>
+    <span class="k">if</span> <span class="n">parent_id</span><span class="p">:</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">next_node_id</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">next_node_id</span><span class="p">,</span> <span class="n">next_node_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># visualization.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_mermaid</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert graph to Mermaid diagram.&quot;&quot;&quot;</span>
+</code></pre></div>
+<p><strong>Benefits:</strong></p>
+<ul>
+<li><strong>Cleaner main class</strong> - focuses on high-level API</li>
+<li><strong>Easier testing</strong> - can test functions independently</li>
+<li><strong>Better separation of concerns</strong> - each function has one job</li>
+<li><strong>More modular</strong> - functions can be reused or swapped</li>
+<li><strong>Easier to understand</strong> - main class shows the "what", functions show the "how"</li>
+</ul>
+<p><strong>Testing Benefits:</strong></p>
+<ul>
+<li><strong>Unit tests</strong> for each function in isolation</li>
+<li><strong>Integration tests</strong> for the main ChatMemory class</li>
+<li><strong>Mock testing</strong> of LLM components without real API calls</li>
+<li><strong>Test coverage</strong> for each component independently</li>
+<li><strong>Regression testing</strong> when modifying individual functions</li>
+</ul>
+<p><strong>Import Benefits:</strong></p>
+<ul>
+<li><strong>Clean imports</strong>: <code>from llamabot.components.chat_memory import ChatMemory</code></li>
+<li><strong>Function access</strong>: <code>from llamabot.components.chat_memory import append_linear</code></li>
+<li><strong>Selector access</strong>: <code>from llamabot.components.chat_memory import LLMNodeSelector</code></li>
+<li><strong>Top-level exports</strong>: All main functionality available from module root</li>
+</ul>
+<h3 id="networkx-backend">NetworkX Backend</h3>
+<ul>
+<li>Direct use of NetworkX DiGraph for storage</li>
+<li>No abstraction layer needed</li>
+<li>Leverages NetworkX algorithms for graph operations</li>
+<li>Efficient for small to medium conversation graphs</li>
+</ul>
+<h3 id="implementation-details_1">Implementation Details</h3>
+<h4 id="auto-incremented-ids">Auto-Incremented IDs</h4>
+<ul>
+<li>Node IDs start at 1 and increment for each new node</li>
+<li>Provides natural chronological ordering</li>
+<li>Simple integer-based identification</li>
+<li>No UUID complexity or collision concerns</li>
+</ul>
+<h4 id="networkx-graph-storage">NetworkX Graph Storage</h4>
+<ul>
+<li>Each node stores a <code>ConversationNode</code> object as node data</li>
+<li>Node ID is the NetworkX node identifier</li>
+<li>Edges represent parent-child relationships</li>
+<li>Graph maintains conversation tree structure</li>
+</ul>
+<h4 id="node-selection-process">Node Selection Process</h4>
+<ol>
+<li><strong>Linear Mode</strong>: Find leaf assistant node (no out-edges, role="assistant")</li>
+<li><strong>Graph Mode</strong>:</li>
+<li>Get all assistant nodes as candidates</li>
+<li>Use LLM to select best parent based on message content</li>
+<li>Validate selection is an assistant node</li>
+<li>If no candidates exist, message becomes root</li>
+</ol>
+<h3 id="error-handling">Error Handling</h3>
+<p>The system uses <strong>actionable error handling</strong> - only raising errors for issues that humans can actually fix:</p>
+<h4 id="actionable-errors-user-can-fix">Actionable Errors (User Can Fix)</h4>
+<ul>
+<li><strong>Configuration errors</strong>: Invalid parameters like negative <code>context_depth</code></li>
+<li><strong>File system errors</strong>: Permission denied, disk full, invalid file paths</li>
+<li><strong>Input validation</strong>: Wrong message types, empty message content</li>
+</ul>
+<h4 id="graceful-handling-no-errors">Graceful Handling (No Errors)</h4>
+<ul>
+<li><strong>Empty memory</strong>: Returns empty list instead of error</li>
+<li><strong>LLM selection failures</strong>: Falls back to most recent valid node</li>
+<li><strong>Summarization failures</strong>: Continues without summary</li>
+<li><strong>Graph corruption</strong>: Clear error message with reset instruction</li>
+</ul>
+<h4 id="error-message-examples">Error Message Examples</h4>
+<p><strong>Configuration Error (Actionable):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Validated at instantiation</span>
+<span class="k">if</span> <span class="n">context_depth</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;context_depth must be non-negative&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>File System Error (Actionable):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="s2">&quot;Permission denied&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="n">PersistenceError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Cannot save to </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">. Check file permissions or choose a different location.&quot;</span>
+    <span class="p">)</span>
+<span class="k">elif</span> <span class="s2">&quot;No space left&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="n">PersistenceError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Disk is full. Free up space or choose a different location.&quot;</span>
+    <span class="p">)</span>
+</code></pre></div>
+<p><strong>Graph Corruption (Actionable):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="k">raise</span> <span class="n">InvalidGraphStateError</span><span class="p">(</span>
+    <span class="s2">&quot;Conversation graph has become corrupted. &quot;</span>
+    <span class="s2">&quot;This can happen if the same message was processed multiple times. &quot;</span>
+    <span class="s2">&quot;Use memory.reset() to clear the conversation and start fresh.&quot;</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><strong>Graceful Handling Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Empty memory - no error, just empty result</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">[]</span>
+
+<span class="c1"># LLM failure - fallback to most recent node</span>
+<span class="k">if</span> <span class="n">llm_response</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_candidates</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">valid_candidates</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">valid_candidates</span> <span class="k">else</span> <span class="kc">None</span>
+
+<span class="c1"># Summarization failure - continue without summary</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">summarizer</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<h3 id="performance-considerations">Performance Considerations</h3>
+<ul>
+<li>Optional summarization for linear mode</li>
+<li>Lazy loading of summaries when needed</li>
+<li>Efficient graph traversal for retrieval</li>
+<li>Memory-efficient storage of large conversations</li>
+</ul>
+<h2 id="benefits">Benefits</h2>
+<ol>
+<li><strong>Simplified API</strong>: Single class for all memory operations</li>
+<li><strong>Better Performance</strong>: Optional summarization reduces LLM calls</li>
+<li><strong>Clearer Separation</strong>: Storage and retrieval are distinct concerns</li>
+<li><strong>Easier Testing</strong>: Smaller, focused components</li>
+<li><strong>Future Extensibility</strong>: Pluggable node selectors and retrieval strategies</li>
+<li><strong>Type Safety</strong>: Clear interfaces and error handling</li>
+</ol>
+<h2 id="persistence-design">Persistence Design</h2>
+<h3 id="storage-format">Storage Format</h3>
+<p>The conversation memory uses a <strong>JSON-based format</strong> for persistence that is easily parseable and human-readable:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T10:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;last_modified&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T14:45:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;graph&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total_messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Let&#39;s talk about Python&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T10:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Python Discussion Start&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;User wants to discuss Python programming.&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;parent_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Python is great for data science&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T10:30:05Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Python Benefits&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Assistant explains Python&#39;s benefits for data science.&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;parent_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="persistence-operations">Persistence Operations</h3>
+<h4 id="savefile_path-str-none">save(file_path: str) -&gt; None</h4>
+<ul>
+<li>Serializes conversation memory to JSON file</li>
+<li>Includes metadata for versioning and tracking</li>
+<li>Preserves all node data and edge relationships</li>
+<li>Handles BaseMessage serialization</li>
+</ul>
+<h4 id="loadfile_path-str-chatmemory">load(file_path: str) -&gt; ChatMemory</h4>
+<ul>
+<li>Deserializes JSON file to recreate memory</li>
+<li>Validates graph structure integrity</li>
+<li>Reconstructs NetworkX graph from JSON data</li>
+<li>Handles version compatibility</li>
+</ul>
+<h4 id="exportformat-str-json-str">export(format: str = "json") -&gt; str</h4>
+<ul>
+<li>Exports conversation in various formats</li>
+<li><strong>JSON</strong>: Full conversation with metadata</li>
+<li><strong>JSONL</strong>: OpenAI-compatible format for fine-tuning</li>
+<li><strong>Mermaid</strong>: Visualization format</li>
+<li><strong>Plain text</strong>: Simple conversation transcript</li>
+</ul>
+<h3 id="implementation-details_2">Implementation Details</h3>
+<h4 id="json-serialization-strategy">JSON Serialization Strategy</h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert conversation memory to JSON-serializable dict.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;last_modified&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+            <span class="s2">&quot;total_messages&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">node_id</span><span class="p">,</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+                <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span> <span class="k">if</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">summary</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s2">&quot;parent_id&quot;</span><span class="p">:</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parent_id</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">node_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;from&quot;</span><span class="p">:</span> <span class="n">u</span><span class="p">,</span> <span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+</code></pre></div>
+<h4 id="graph-reconstruction">Graph Reconstruction</h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatMemory</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reconstruct conversation memory from JSON data.&quot;&quot;&quot;</span>
+    <span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">][</span><span class="s2">&quot;mode&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Reconstruct nodes</span>
+    <span class="k">for</span> <span class="n">node_data</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">create_message</span><span class="p">(</span><span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;role&quot;</span><span class="p">],</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">])</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">ConversationNode</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+            <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+            <span class="n">summary</span><span class="o">=</span><span class="n">MessageSummary</span><span class="p">(</span><span class="o">**</span><span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">])</span> <span class="k">if</span> <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">parent_id</span><span class="o">=</span><span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;parent_id&quot;</span><span class="p">],</span>
+            <span class="n">timestamp</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">memory</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+
+    <span class="c1"># Reconstruct edges</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;edges&quot;</span><span class="p">]:</span>
+        <span class="n">memory</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">memory</span>
+</code></pre></div>
+<h3 id="benefits-of-json-format">Benefits of JSON Format</h3>
+<ol>
+<li><strong>Human-readable</strong>: Easy to inspect and debug</li>
+<li><strong>Version control friendly</strong>: Diff-able and merge-able</li>
+<li><strong>Language agnostic</strong>: Can be parsed by any language</li>
+<li><strong>Extensible</strong>: Easy to add new fields</li>
+<li><strong>Standard format</strong>: Well-supported across tools</li>
+<li><strong>No security risks</strong>: Unlike pickle, no code execution</li>
+</ol>
+<h3 id="file-naming-convention">File Naming Convention</h3>
+<div class="highlight"><pre><span></span><code>conversations/
+├── session_2024-01-15_10-30-00.json
+├── session_2024-01-15_14-45-00.json
+└── backup_2024-01-15_18-00-00.json
+</code></pre></div>
+<h2 id="open-questions-and-future-enhancements">Open Questions and Future Enhancements</h2>
+<h3 id="concurrency-handling">Concurrency Handling</h3>
+<ul>
+<li>How should multiple threads/processes access the same memory file?</li>
+<li>Should we use file locking or database backend for concurrent access?</li>
+<li>What happens if two processes try to append simultaneously?</li>
+</ul>
+<h3 id="advanced-retrieval-strategies">Advanced Retrieval Strategies</h3>
+<ul>
+<li>Semantic search across message content</li>
+<li>Time-based retrieval (messages from last hour/day)</li>
+<li>User-specific retrieval (only messages from specific user)</li>
+<li>Context-aware retrieval (messages related to current topic)</li>
+</ul>
+<h3 id="performance-optimizations">Performance Optimizations</h3>
+<ul>
+<li>Lazy loading of large conversation histories</li>
+<li>Caching frequently accessed message paths</li>
+<li>Compression for long conversations</li>
+<li>Incremental graph updates</li>
+</ul>
+<h3 id="integration-with-external-systems">Integration with External Systems</h3>
+<ul>
+<li>Export to chat platforms (Slack, Discord, etc.)</li>
+<li>Integration with vector databases for semantic search</li>
+<li>Webhook support for real-time updates</li>
+<li>API endpoints for external access</li>
+</ul>
+<h2 id="migration-strategy">Migration Strategy</h2>
+<h3 id="phase-1-deprecation-v0130">Phase 1: Deprecation (v0.13.0)</h3>
+<ul>
+<li>Add deprecation warnings to existing <code>ChatMemory</code> class</li>
+<li>Document new <code>ChatMemory</code> API</li>
+<li>Update examples to use new API</li>
+<li><strong>Ensure <code>ChatMemory</code> is top-level in <code>llamabot/__init__.py</code></strong> ✅</li>
+<li><strong>Update tests to reflect modular component structure</strong> ✅</li>
+</ul>
+<h3 id="phase-2-transition-v0140">Phase 2: Transition (v0.14.0)</h3>
+<ul>
+<li>Make <code>ChatMemory</code> the default</li>
+<li>Keep <code>ChatMemory</code> as alias with deprecation warning</li>
+<li>Update all internal usage</li>
+</ul>
+<h3 id="phase-3-removal-v0150">Phase 3: Removal (v0.15.0)</h3>
+<ul>
+<li>Remove <code>ChatMemory</code> class entirely</li>
+<li>Remove deprecated methods</li>
+<li>Clean up imports and references</li>
+</ul>
+<h3 id="migration-guide">Migration Guide</h3>
+<p><strong>Old API:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">llamabot.components.chat_memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatMemory</span>
+
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">()</span>
+<span class="n">memory</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello&quot;</span><span class="p">)</span>
+<span class="n">messages</span> <span class="o">=</span> <span class="n">memory</span><span class="o">.</span><span class="n">get_messages</span><span class="p">()</span>
+</code></pre></div>
+<p><strong>New API:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">llamabot.components.chat_memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatMemory</span>
+
+<span class="n">memory</span> <span class="o">=</span> <span class="n">ChatMemory</span><span class="p">()</span>
+<span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello&quot;</span><span class="p">)</span>
+<span class="n">messages</span> <span class="o">=</span> <span class="n">memory</span><span class="o">.</span><span class="n">retrieve</span><span class="p">()</span>
+</code></pre></div>
+<p><strong>Key Changes:</strong></p>
+<ul>
+<li><code>ChatMemory</code> → <code>ChatMemory</code> (same name, new implementation)</li>
+<li><code>add_message()</code> → <code>append()</code></li>
+<li><code>get_messages()</code> → <code>retrieve()</code></li>
+<li>New threading support with <code>ChatMemory.threaded()</code></li>
+<li>New persistence methods: <code>save()</code>, <code>load()</code>, <code>export()</code></li>
+</ul>
+<p><strong>Imports:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">llamabot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lmb</span>
+
+<span class="n">memory</span> <span class="o">=</span> <span class="n">lmb</span><span class="o">.</span><span class="n">ChatMemory</span><span class="o">.</span><span class="n">threaded</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>This unified design addresses the core issues with the current implementation while maintaining the flexibility needed for different use cases. The separation of storage and retrieval concerns makes the system more maintainable and easier to understand, while the multiple API levels provide the right level of abstraction for different users.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/ericmjl" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/ericmjl" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M459.4 151.7c.3 4.5.3 9.1.3 13.6 0 138.7-105.6 298.6-298.6 298.6-59.5 0-114.7-17.2-161.1-47.1 8.4 1 16.6 1.3 25.3 1.3 49.1 0 94.2-16.6 130.3-44.8-46.1-1-84.8-31.2-98.1-72.8 6.5 1 13 1.6 19.8 1.6 9.4 0 18.8-1.3 27.6-3.6-48.1-9.7-84.1-52-84.1-103v-1.3c14 7.8 30.2 12.7 47.4 13.3-28.3-18.8-46.8-51-46.8-87.4 0-19.5 5.2-37.4 14.3-53C87.4 130.8 165 172.4 252.1 176.9c-1.6-7.8-2.6-15.9-2.6-24C249.5 95.1 296.3 48 354.4 48c30.2 0 57.5 12.7 76.7 33.1 23.7-4.5 46.5-13.3 66.6-25.3-7.8 24.4-24.4 44.8-46.1 57.8 21.1-2.3 41.6-8.1 60.4-16.2-14.3 20.8-32.2 39.3-52.6 54.3"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://linkedin.com/in/ericmjl" target="_blank" rel="noopener" title="linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zM102.2 96a38.5 38.5 0 1 1 0 77 38.5 38.5 0 1 1 0-77m282.1 320h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["instant", "tabs", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
+      
+        <script src="../../config.js"></script>
+      
+    
+  </body>
+</html>
