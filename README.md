@@ -83,7 +83,7 @@ Replace `your-model-name` with the actual name of the model you've loaded in LMS
 ## How to use
 
 !!! tip "Not sure which bot to use?"
-    Check out the [**Which Bot Should I Use?**](getting-started/which-bot.md) guide to help you choose the right bot for your needs.
+    Check out the [**Which Bot Should I Use?**](docs/getting-started/which-bot.md) guide to help you choose the right bot for your needs.
 
 ### SimpleBot
 
