@@ -1,3 +1,4 @@
+minimax-m2.7
 lfm2
 nemotron-3-super
 qwen3.5
