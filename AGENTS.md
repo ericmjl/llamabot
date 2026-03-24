@@ -20,6 +20,10 @@ This ensures that corrections become part of the permanent knowledge base for al
 
 This ensures that the most important and frequently needed guidance is easily accessible and impossible to miss.
 
+## User Corrections Log
+
+- 2026-03-24: Keep `uv`-based CI testing in `.github/workflows/pr-tests.yaml`, but do not keep `uv.lock` in the repository.
+
 ## Project Overview
 
 LlamaBot is a Pythonic interface to LLMs that makes it easier to experiment

@@ -8840,7 +8840,7 @@ packages:
 - pypi: ./
   name: llamabot
   version: 0.17.14
-  sha256: 86bf3b541444e9ab086d5e1978f95aeb16246871783c42c04ee79b59c3f09e0c
+  sha256: ec1d937830589e192bf8f6a51240173fa953bc7eb5bc688589c21f5fa5beee7e
   requires_dist:
   - openai
   - loguru
@@ -8848,7 +8848,7 @@ packages:
   - typer>=0.15.3
   - pyprojroot
   - beautifulsoup4
-  - litellm>=1.71.0
+  - litellm>=1.71.0,<1.82.7
   - python-slugify
   - pydantic>=2.0
   - numpy
