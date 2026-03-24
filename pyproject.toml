@@ -78,7 +78,7 @@ dependencies = [
     "typer>=0.15.3",
     "pyprojroot",
     "beautifulsoup4",
-    "litellm>=1.71.0", # this is necessary to guarantee that ollama_chat models are supported for structured outputs
+    "litellm>=1.71.0,<1.82.7", # temporary upper bound due to 2026-03-24 compromised 1.82.7/1.82.8 releases
     "python-slugify",
     "pydantic>=2.0",
     "numpy",

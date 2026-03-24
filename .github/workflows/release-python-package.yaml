@@ -188,9 +188,9 @@ jobs:
             exit 1
           fi
 
-      - name: Install llamabot package
+      - name: Verify llamabot command via pixi lockfile env
         if: steps.check_version_bump.outputs.skip != 'true'
-        run: uv pip install -e .[cli]
+        run: pixi run llamabot-cli
 
       - name: Write release notes
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
