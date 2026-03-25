@@ -150,5 +150,5 @@ For **named** events (`event: message`, `event: done`), extend the parser to acc
 
 - [Async streaming reference](streaming_async.md) - `stream_async` contract and helpers
 - [SimpleBot API Reference](./bots/simplebot.md) - Sync chat bot; use `AsyncSimpleBot` for `stream_async`
-- [SSE Streaming Example](../../examples/sse_streaming.ipynb) - Interactive notebook
+- [SSE Streaming Example](../../examples/sse_streaming.py) - Marimo notebook (`uvx marimo run --sandbox docs/examples/sse_streaming.py`)
 - [FastAPI SSE Example](../../../scripts/fastapi_sse_example.py) - Complete FastAPI example
