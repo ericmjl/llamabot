@@ -100,6 +100,23 @@ class StructuredBot(SimpleBot):
         # Track all trace_ids from this bot instance for span visualization
         self._trace_ids = []
 
+    def compose_structured_first_attempt_messages(
+        self,
+        *user_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
+    ) -> tuple[list[BaseMessage], list[BaseMessage]]:
+        """Build messages for the first structured completion attempt (no retry turns).
+
+        Shared by :meth:`__call__` (initial ``full_messages``) and
+        :class:`~llamabot.bot.async_bots.AsyncStructuredBot`.
+
+        :param user_messages: Same inputs as :meth:`__call__`.
+        :return: ``(full_messages, user_messages)`` where ``full_messages`` includes the
+            system prompt and ``user_messages`` is the normalized user content only.
+        """
+        messages = to_basemessage(user_messages)
+        full_messages = [self.system_prompt] + messages
+        return full_messages, messages
+
     def get_validation_error_message(self, exception: ValidationError) -> HumanMessage:
         """Return a validation error message to feed back to the bot.
 
@@ -123,10 +140,14 @@ class StructuredBot(SimpleBot):
         :param verbose: Whether to show verbose output.
         :return: An instance of the specified Pydantic model.
         """
-        # Compose the full message list
-        messages = to_basemessage(messages)
+        full_messages, user_messages = self.compose_structured_first_attempt_messages(
+            *messages
+        )
         query_content = " ".join(
-            [msg.content if hasattr(msg, "content") else str(msg) for msg in messages]
+            [
+                msg.content if hasattr(msg, "content") else str(msg)
+                for msg in user_messages
+            ]
         )
 
         # Try to get the variable name from the calling frame
@@ -194,13 +215,11 @@ class StructuredBot(SimpleBot):
             query_content = " ".join(
                 [
                     msg.content if hasattr(msg, "content") else str(msg)
-                    for msg in messages
+                    for msg in user_messages
                 ]
             )
             outer_span["query"] = query_content[:500]  # Truncate for storage
             outer_span["temperature"] = self.temperature
-
-            full_messages = [self.system_prompt] + messages
 
             last_response = None
             last_codeblock = None
@@ -227,7 +246,7 @@ class StructuredBot(SimpleBot):
 
                     # parse the response, and validate it against the pydantic model
                     last_response = AIMessage(content=content)
-                    sqlite_log(self, messages + [last_response])
+                    sqlite_log(self, user_messages + [last_response])
 
                     last_codeblock = json.loads(last_response.content)
                     obj = self.pydantic_model.model_validate(last_codeblock)

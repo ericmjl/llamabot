@@ -114,6 +114,59 @@ class ToolBot(SimpleBot):
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
         self.chat_memory = chat_memory or ChatMemory()
 
+    def compose_tool_messages(
+        self,
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
+        execution_history: Optional[List[Dict]] = None,
+    ) -> tuple[list[BaseMessage], list[BaseMessage]]:
+        """Build the message list for tool selection and the user message list for memory.
+
+        Shared by :meth:`__call__` and :class:`~llamabot.bot.async_bots.AsyncToolBot`.
+
+        :param messages: Same as :meth:`__call__`.
+        :param execution_history: Optional prior tool execution context.
+        :return: ``(message_list, user_messages)`` for the model and chat memory updates.
+        """
+        from llamabot.components.messages import (
+            HumanMessage,
+            SystemMessage,
+            to_basemessage,
+        )
+
+        processed_messages = []
+        for msg in messages:
+            if callable(msg):
+                result = msg()
+                if not isinstance(result, str):
+                    raise ValueError("Callable function must return a string")
+                processed_messages.append(HumanMessage(content=result))
+            else:
+                processed_messages.append(msg)
+
+        user_messages = to_basemessage(processed_messages)
+
+        message_list = [self.system_prompt]
+        if self.chat_memory and user_messages:
+            message_list.extend(self.chat_memory.retrieve(user_messages[0].content))
+
+        if execution_history:
+            history_context = "Previously called tools:\n"
+            for call in execution_history[-5:]:
+                tool_name = call.get("tool_name", "unknown")
+                args = call.get("args", {})
+                result = call.get("result", "")
+                was_cached = call.get("was_cached", False)
+                cache_indicator = " (cached)" if was_cached else ""
+                history_context += (
+                    f"- {tool_name}({args}) -> {result}{cache_indicator}\n"
+                )
+
+            history_message = SystemMessage(content=history_context)
+            message_list.append(history_message)
+
+        message_list.extend(user_messages)
+        return message_list, user_messages
+
     def __call__(
         self,
         *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
@@ -125,48 +178,9 @@ class ToolBot(SimpleBot):
         :param execution_history: Optional list of previously executed tool calls for context
         :return: List of tool calls to execute
         """
-        from llamabot.components.messages import to_basemessage, HumanMessage
-
-        # Handle callable functions by calling them and converting to strings
-        processed_messages = []
-        for msg in messages:
-            if callable(msg):
-                # Call the function and validate it returns a string
-                result = msg()
-                if not isinstance(result, str):
-                    raise ValueError("Callable function must return a string")
-                processed_messages.append(HumanMessage(content=result))
-            else:
-                processed_messages.append(msg)
-
-        # Convert messages to BaseMessage objects using the same utility as other bots
-        user_messages = to_basemessage(processed_messages)
-
-        # Build message list: system prompt, chat memory, execution history, then user messages
-        message_list = [self.system_prompt]
-        if self.chat_memory and user_messages:
-            # Use the first message content for chat memory retrieval
-            message_list.extend(self.chat_memory.retrieve(user_messages[0].content))
-
-        # Add execution history context if provided
-        if execution_history:
-            history_context = "Previously called tools:\n"
-            for call in execution_history[-5:]:  # Show last 5 tool calls
-                tool_name = call.get("tool_name", "unknown")
-                args = call.get("args", {})
-                result = call.get("result", "")
-                was_cached = call.get("was_cached", False)
-                cache_indicator = " (cached)" if was_cached else ""
-                history_context += (
-                    f"- {tool_name}({args}) -> {result}{cache_indicator}\n"
-                )
-
-            from llamabot.components.messages import SystemMessage
-
-            history_message = SystemMessage(content=history_context)
-            message_list.append(history_message)
-
-        message_list.extend(user_messages)
+        message_list, user_messages = self.compose_tool_messages(
+            *messages, execution_history=execution_history
+        )
 
         # Execute the plan
         stream = self.stream_target != "none"

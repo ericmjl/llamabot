@@ -17,7 +17,7 @@ Convert bot streaming to SSE event format. Yields dictionaries compatible with `
 
 ### Parameters
 
-- **bot**: A SimpleBot instance (or any object with a `stream_async()` method that accepts messages and returns an `AsyncGenerator[str, None]`).
+- **bot**: An object with a `stream_async()` method (typically `AsyncSimpleBot` from `llamabot`) that accepts messages and returns an `AsyncGenerator[str, None]`.
 - **messages**: Messages to send to the bot. Can be a list of strings, or unpacked as `*messages`.
 - **event_type** (`str`, default: `"message"`): SSE event type for content chunks.
 - **done_event** (`str`, default: `"done"`): SSE event type for completion signal.
@@ -50,11 +50,11 @@ If an error occurs:
 from fastapi import FastAPI
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
-from llamabot import SimpleBot
+from llamabot import AsyncSimpleBot
 from llamabot.sse import sse_stream
 
 app = FastAPI()
-bot = SimpleBot("You are a helpful assistant.", stream_target="none")
+bot = AsyncSimpleBot("You are a helpful assistant.", stream_target="none")
 
 class ChatRequest(BaseModel):
     messages: list[str]
@@ -98,15 +98,15 @@ async for event in sse_stream(bot, ["test"]):
         print(event["data"], end="", flush=True)
 ```
 
-### Integration with SimpleBot
+### Integration with AsyncSimpleBot
 
-This function is designed to work with `SimpleBot.stream_async()`:
+This function is designed to work with `AsyncSimpleBot.stream_async()`:
 
 ```python
-from llamabot import SimpleBot
+from llamabot import AsyncSimpleBot
 from llamabot.sse import sse_stream
 
-bot = SimpleBot("You are helpful.", stream_target="none")
+bot = AsyncSimpleBot("You are helpful.", stream_target="none")
 
 # sse_stream internally calls bot.stream_async(*messages)
 async for event in sse_stream(bot, ["Hello!"]):
@@ -115,31 +115,40 @@ async for event in sse_stream(bot, ["Hello!"]):
 
 ### Client-Side Consumption
 
-On the client side (JavaScript), consume the SSE stream like this:
+The browser `EventSource` API only supports **GET** by default and cannot send a JSON body. For a **POST** chat endpoint (as in the FastAPI example above), use `fetch` with `ReadableStream` and parse SSE frames, or expose a **GET** SSE route that reads session or query parameters.
+
+Example using `fetch` (POST + streaming body):
 
 ```javascript
-const eventSource = new EventSource('/chat', {
-    method: 'POST',
-    body: JSON.stringify({ messages: ["Hello!"] })
+const response = await fetch("/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ messages: ["Hello!"] }),
 });
 
-eventSource.addEventListener('message', (event) => {
-    console.log('Content chunk:', event.data);
-});
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+let buffer = "";
 
-eventSource.addEventListener('done', (event) => {
-    console.log('Streaming complete');
-    eventSource.close();
-});
-
-eventSource.addEventListener('error', (event) => {
-    console.error('Error:', event.data);
-    eventSource.close();
-});
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  buffer += decoder.decode(value, { stream: true });
+  const lines = buffer.split("\n");
+  buffer = lines.pop() ?? "";
+  for (const line of lines) {
+    if (line.startsWith("data:")) {
+      console.log("data:", line.slice(5).trim());
+    }
+  }
+}
 ```
+
+For **named** events (`event: message`, `event: done`), extend the parser to accumulate `event:` and `data:` lines per SSE event (see the MDN documentation for the SSE wire format).
 
 ### See Also
 
-- [SimpleBot API Reference](./bots/simplebot.md#stream_async) - The `stream_async()` method
+- [Async streaming reference](streaming_async.md) - `stream_async` contract and helpers
+- [SimpleBot API Reference](./bots/simplebot.md) - Sync chat bot; use `AsyncSimpleBot` for `stream_async`
 - [SSE Streaming Example](../../examples/sse_streaming.ipynb) - Interactive notebook
 - [FastAPI SSE Example](../../../scripts/fastapi_sse_example.py) - Complete FastAPI example

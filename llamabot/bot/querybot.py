@@ -93,6 +93,55 @@ class QueryBot(SimpleBot):
         self.docstore = docstore
         self.memory = memory
 
+    def compose_rag_messages(
+        self,
+        query: Union[str, HumanMessage, BaseMessage],
+        n_results: int,
+        outer_span: Span,
+    ) -> tuple[list[BaseMessage], list[BaseMessage]]:
+        """Build retrieval-augmented messages for the model and logging.
+
+        Shared by :meth:`__call__` and :class:`~llamabot.bot.async_bots.AsyncQueryBot`.
+
+        :param query: User query.
+        :param n_results: Document retrieval count.
+        :param outer_span: Span used for nested retrieval spans.
+        :return: ``(messages, processed_messages)`` where ``messages`` is the list used
+            for logging and ``processed_messages`` is passed to ``make_response`` / async completion.
+        """
+        query_content = query if isinstance(query, str) else query.content
+        messages = [self.system_prompt]
+
+        with outer_span.span("retrieval", n_results=n_results) as retrieval_span:
+            retreived_messages = set()
+            retrieved_messages = retreived_messages.union(
+                self.docstore.retrieve(query_content, n_results)
+            )
+            retrieved: List = [
+                RetrievedMessage(content=chunk) for chunk in retrieved_messages
+            ]
+            messages.extend(retrieved)
+            retrieval_span["documents_found"] = len(retrieved_messages)
+            outer_span["docstore_results"] = len(retrieved_messages)
+
+        if self.memory:
+            with outer_span.span("memory_retrieval") as memory_span:
+                memory_messages = self.memory.retrieve(query_content, n_results)
+                memories: List = [
+                    RetrievedMessage(content=chunk) for chunk in memory_messages
+                ]
+                messages.extend(memories)
+                memory_span["memory_results"] = len(memory_messages)
+                outer_span["memory_results"] = len(memory_messages)
+
+        messages.append(HumanMessage(content=query_content))
+
+        outer_span["query"] = query_content[:500]
+        outer_span["temperature"] = self.temperature
+
+        processed_messages = to_basemessage(messages)
+        return messages, processed_messages
+
     def __call__(
         self, query: Union[str, HumanMessage, BaseMessage], n_results: int = 20
     ) -> AIMessage:
@@ -138,39 +187,9 @@ class QueryBot(SimpleBot):
             if outer_span.trace_id not in self._trace_ids:
                 self._trace_ids.append(outer_span.trace_id)
         with outer_span:
-            messages = [self.system_prompt]
-
-            # Create span for document retrieval
-            with outer_span.span("retrieval", n_results=n_results) as retrieval_span:
-                retreived_messages = set()
-                retrieved_messages = retreived_messages.union(
-                    self.docstore.retrieve(query_content, n_results)
-                )
-                retrieved: List = [
-                    RetrievedMessage(content=chunk) for chunk in retrieved_messages
-                ]
-                messages.extend(retrieved)
-                retrieval_span["documents_found"] = len(retrieved_messages)
-                outer_span["docstore_results"] = len(retrieved_messages)
-
-            if self.memory:
-                with outer_span.span("memory_retrieval") as memory_span:
-                    memory_messages = self.memory.retrieve(query_content, n_results)
-                    memories: List = [
-                        RetrievedMessage(content=chunk) for chunk in memory_messages
-                    ]
-                    messages.extend(memories)
-                    memory_span["memory_results"] = len(memory_messages)
-                    outer_span["memory_results"] = len(memory_messages)
-
-            messages.append(HumanMessage(content=query_content))
-
-            # Record query and model info directly on outer span
-            outer_span["query"] = query_content[:500]  # Truncate for storage
-            outer_span["temperature"] = self.temperature
-
-            # Make LLM request and process response
-            processed_messages = to_basemessage(messages)
+            messages, processed_messages = self.compose_rag_messages(
+                query, n_results, outer_span
+            )
             response = make_response(
                 self, processed_messages, self.stream_target != "none"
             )
