@@ -231,7 +231,7 @@ jobs:
           trap 'rm -rf "$TMP_DIR"' EXIT
           WHEEL_PATH="$(pwd)/$(ls dist/*.whl | head -n 1)"
           UV_SYSTEM_PYTHON=0 uv venv "$TMP_DIR/package-test-env" --python 3.13
-          UV_SYSTEM_PYTHON=0 uv pip install -c constraints-ci.txt "llamabot[cli] @ file://$WHEEL_PATH"
+          UV_SYSTEM_PYTHON=0 uv pip install --python "$TMP_DIR/package-test-env/bin/python" -c constraints-ci.txt "llamabot[cli] @ file://$WHEEL_PATH"
           "$TMP_DIR/package-test-env/bin/llamabot" --help
           (
             cd "$TMP_DIR"

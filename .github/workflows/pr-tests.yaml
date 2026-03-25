@@ -101,7 +101,15 @@ jobs:
 
       - name: Install gemma2:2b
         if: ${{ matrix.test-type == 'bare-package' }}
-        run: ollama pull gemma2:2b
+        run: |
+          nohup ollama serve >/tmp/ollama.log 2>&1 &
+          for i in {1..30}; do
+            if ollama list >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          ollama pull gemma2:2b
 
       # Run the appropriate test based on matrix variables
       - name: Run unit tests
