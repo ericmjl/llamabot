@@ -1,18 +1,15 @@
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.10,<3.14"
 # dependencies = [
-#     "duckduckgo-search==7.3.0",
-#     "litellm",
-#     "llamabot==0.10.12",
 #     "marimo",
-#     "pydantic==2.10.6",
+#     "llamabot[agent]>=0.17.0",
 # ]
 # ///
 
 import marimo
 
-__generated_with = "0.13.6"
-app = marimo.App(width="medium")
+__generated_with = "0.21.1"
+app = marimo.App()
 
 
 @app.cell(hide_code=True)
@@ -43,7 +40,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _():
     import marimo as mo
     import llamabot as lmb
@@ -88,21 +85,21 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(lmb, mo):
     flight_bot = lmb.SimpleBot(
         system_prompt="""You are a helpful travel assistant.
         You provide information about flights between cities.""",
-        model_name="ollama_chat/gemma2:2b",
+        model_name="ollama_chat/llama3.2:3b",
     )
 
     # Simple interaction
-    _ = flight_bot("Find me the prices for flights from San Francisco to Tokyo.")
+    response = flight_bot("Find me the prices for flights from San Francisco to Tokyo.")
     mo.show_code()
-    return
+    return (response,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -120,15 +117,17 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
-        r"""`SimpleBot`s are heavily reliant on what's in the training data; they are just calling the LLM directly, with no memory of historical chat information. Given the range of regular human experiences in North America, I would venture to guess that it is rare for us to go outside of any base LLM's training data, unless we hit very specialized and niche topics not covered on the internet. (Try thinking of some!)"""
+        r"""
+    `SimpleBot`s are heavily reliant on what's in the training data; they are just calling the LLM directly, with no memory of historical chat information. Given the range of regular human experiences in North America, I would venture to guess that it is rare for us to go outside of any base LLM's training data, unless we hit very specialized and niche topics not covered on the internet. (Try thinking of some!)
+    """
     )
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -140,10 +139,12 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
-        r"""LlamaBot implements structured generation. To use it, you need to provide a Pydantic model, effectively a form that you want the bot to fill, and pair it with a `StructuredBot`. `StructuredBot`s have the same basic requirements as `SimpleBot`s, which are a system prompt and model name, but also need to have a Pydantic model passed in. When called, it will return an instance of that Pydantic model."""
+        r"""
+    LlamaBot implements structured generation. To use it, you need to provide a Pydantic model, effectively a form that you want the bot to fill, and pair it with a `StructuredBot`. `StructuredBot`s have the same basic requirements as `SimpleBot`s, which are a system prompt and model name, but also need to have a Pydantic model passed in. When called, it will return an instance of that Pydantic model.
+    """
     )
     return
 
@@ -182,7 +183,7 @@ def _(lmb, mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -200,7 +201,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -214,7 +215,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -248,7 +249,7 @@ def _(lmb, mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -260,7 +261,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -284,7 +285,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -302,7 +303,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -333,9 +334,13 @@ def _(lmb, mo):
     return calculate_total_with_tip, split_bill
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Then, we create the AgentBot:""")
+    mo.md(
+        r"""
+    Then, we create the AgentBot:
+    """
+    )
     return
 
 
@@ -353,9 +358,13 @@ def _(calculate_total_with_tip, lmb, mo, split_bill):
     return (bot,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Now, let's try a few calculations:""")
+    mo.md(
+        r"""
+    Now, let's try a few calculations:
+    """
+    )
     return
 
 
@@ -381,7 +390,7 @@ def _(bot, mo):
     return (split_bill_only_prompt,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -408,7 +417,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -437,15 +446,17 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
-        r"""Same functionality, but with more flexibility. The scope of inputs is more variable, in the form of almost anything you want with natural language. And this point, by the way, seems to distinguish between an LLM agent and a Python program."""
+        r"""
+    Same functionality, but with more flexibility. The scope of inputs is more variable, in the form of almost anything you want with natural language. And this point, by the way, seems to distinguish between an LLM agent and a Python program.
+    """
     )
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -470,7 +481,7 @@ def _(lmb, mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -501,7 +512,7 @@ def _(lmb, mo, split_bill_only_prompt):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -531,7 +542,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -549,7 +560,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -583,7 +594,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
