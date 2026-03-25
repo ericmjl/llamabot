@@ -1,10 +1,13 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "llamabot[all]==0.12.11",
+#     "llamabot[all]",
 #     "marimo",
 #     "pydantic==2.11.7",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../../", editable = true }
 # ///
 
 import marimo

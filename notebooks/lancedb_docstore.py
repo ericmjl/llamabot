@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "llamabot[all]==0.12.7",
+#     "llamabot[all]",
 #     "marimo",
 #     "pyprojroot==0.3.0",
 #     "rerankers==0.10.0",

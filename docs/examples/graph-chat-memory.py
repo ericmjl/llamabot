@@ -1,8 +1,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "llamabot[all]==0.12.11",
 #     "marimo",
+#     "llamabot[all]",
 # ]
 #
 # [tool.uv.sources]

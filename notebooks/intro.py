@@ -2,7 +2,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "litellm==1.70.0",
-#     "llamabot[all]==0.12.0",
+#     "llamabot[all]",
 #     "marimo",
 #     "nbclient==0.10.2",
 #     "numpydoc==1.8.0",

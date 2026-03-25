@@ -1,10 +1,12 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "llamabot==0.13.11",
+#     "llamabot",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "..", editable = true }
 # ///
-
 # ---
 # title: ReAct Pattern AgentBot Demo
 # description: |

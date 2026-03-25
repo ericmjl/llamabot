@@ -2,10 +2,13 @@
 # requires-python = ">=3.10,<3.14"
 # dependencies = [
 #     "marimo",
-#     "llamabot[rag,cli]>=0.17.0",
+#     "llamabot[rag,cli]",
 #     "chromadb",
 #     "python-slugify",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../../", editable = true }
 # ///
 
 import marimo

@@ -2,9 +2,12 @@
 # requires-python = ">=3.10,<3.14"
 # dependencies = [
 #     "marimo",
-#     "llamabot>=0.17.0",
+#     "llamabot",
 #     "pandas",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../../", editable = true }
 # ///
 
 import marimo

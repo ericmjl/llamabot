@@ -2,10 +2,13 @@
 # requires-python = ">=3.10,<3.14"
 # dependencies = [
 #     "marimo",
-#     "llamabot>=0.17.0",
+#     "llamabot",
 #     "panel",
 #     "python-dotenv",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../../", editable = true }
 # ///
 
 import marimo
