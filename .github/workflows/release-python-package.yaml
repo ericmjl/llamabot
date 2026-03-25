@@ -224,6 +224,15 @@ jobs:
         if: steps.check_version_bump.outputs.skip != 'true'
         run: uv build --sdist --wheel
 
+      - name: Verify wheel install and CLI entrypoint in clean uv venv
+        if: steps.check_version_bump.outputs.skip != 'true'
+        run: |
+          uv venv package-test-env --python 3.13
+          source package-test-env/bin/activate
+          uv pip install -c constraints-ci.txt dist/*.whl
+          llamabot --help
+          python -c "import llamabot; print(llamabot.__file__)"
+
       - name: Publish package (trusted publishing)
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: uv publish --trusted-publishing always
