@@ -4,7 +4,14 @@ import contextvars
 import json
 import uuid
 from types import NoneType
-from typing import Generator, List, Optional, Union
+from typing import (
+    AsyncGenerator,
+    Callable,
+    Generator,
+    List,
+    Optional,
+    Union,
+)
 
 from litellm import (
     ChatCompletionMessageToolCall,
@@ -107,6 +114,57 @@ class SimpleBot:
         # Track all trace_ids from this bot instance for span visualization
         self._trace_ids = []
 
+    def compose_messages_for_human_messages(
+        self,
+        *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
+    ) -> tuple[list[BaseMessage], list[BaseMessage]]:
+        """Build the full message list and processed user messages for a chat turn.
+
+        Shared by :meth:`__call__` and async bot wrappers.
+
+        :param human_messages: Same inputs as :meth:`__call__`.
+        :return: ``(messages, processed_messages)`` where ``messages`` is the full list
+            sent to the model (system, memory, user) and ``processed_messages`` is the
+            normalized user-side input from :func:`~llamabot.components.messages.to_basemessage`.
+        """
+        processed_messages = to_basemessage(human_messages)
+
+        memory_messages = []
+        if self.memory:
+            memory_messages = self.memory.retrieve(
+                query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
+            )
+
+        messages = [self.system_prompt] + memory_messages + processed_messages
+        return messages, processed_messages
+
+    def record_span_message_metadata(
+        self,
+        outer_span: Span,
+        messages: list[BaseMessage],
+        processed_messages: list[BaseMessage],
+    ) -> None:
+        """Record standard input counts and query text on a span.
+
+        :param outer_span: Active span for this call.
+        :param messages: Full message list for the model.
+        :param processed_messages: Normalized user messages for query extraction.
+        """
+        user_count = sum(1 for msg in messages if isinstance(msg, HumanMessage))
+        assistant_count = sum(1 for msg in messages if isinstance(msg, AIMessage))
+        outer_span["input_message_count"] = len(messages)
+        outer_span["input_user_messages"] = user_count
+        outer_span["input_assistant_messages"] = assistant_count
+        outer_span["temperature"] = self.temperature
+
+        query_content = " ".join(
+            [
+                msg.content if hasattr(msg, "content") else str(msg)
+                for msg in processed_messages
+            ]
+        )
+        outer_span["query"] = query_content[:500]
+
     def __call__(
         self, *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]]
     ) -> Union[AIMessage, Generator]:
@@ -156,32 +214,10 @@ class SimpleBot:
             if outer_span.trace_id not in self._trace_ids:
                 self._trace_ids.append(outer_span.trace_id)
         with outer_span:
-            processed_messages = to_basemessage(human_messages)
-
-            memory_messages = []
-            if self.memory:
-                memory_messages = self.memory.retrieve(
-                    query=f"From our conversation history, give me the most relevant information to the query, {[p.content for p in processed_messages]}"
-                )
-
-            messages = [self.system_prompt] + memory_messages + processed_messages
-
-            # Count initial messages and record in span
-            user_count = sum(1 for msg in messages if isinstance(msg, HumanMessage))
-            assistant_count = sum(1 for msg in messages if isinstance(msg, AIMessage))
-            outer_span["input_message_count"] = len(messages)
-            outer_span["input_user_messages"] = user_count
-            outer_span["input_assistant_messages"] = assistant_count
-            outer_span["temperature"] = self.temperature
-
-            # Extract query content from human messages for span
-            query_content = " ".join(
-                [
-                    msg.content if hasattr(msg, "content") else str(msg)
-                    for msg in processed_messages
-                ]
+            messages, processed_messages = self.compose_messages_for_human_messages(
+                *human_messages
             )
-            outer_span["query"] = query_content[:500]  # Truncate for storage
+            self.record_span_message_metadata(outer_span, messages, processed_messages)
 
             # Make LLM request and process response
             stream = self.stream_target != "none"
@@ -323,17 +359,16 @@ class SimpleBot:
         return self.generate_config_html()
 
 
-def make_response(
-    bot: SimpleBot, messages: list[BaseMessage], stream: bool = True
-) -> ModelResponse | CustomStreamWrapper:
-    """Make a response from the given messages.
+def completion_kwargs_for_messages(
+    bot: SimpleBot, messages: list[BaseMessage], stream: bool
+) -> dict:
+    """Build keyword arguments for LiteLLM ``completion`` / ``acompletion``.
 
-    :param bot: A SimpleBot
-    :param messages: A list of Messages.
-    :return: A response object.
+    :param bot: Bot providing model name, temperature, tools, and related settings.
+    :param messages: Chat messages in LlamaBot form.
+    :param stream: Whether to request a streamed completion from the provider.
+    :return: Keyword arguments dict suitable for ``litellm.completion`` / ``acompletion``.
     """
-    from litellm import completion
-
     messages_dumped: list[dict] = [
         {
             k: v
@@ -353,7 +388,6 @@ def make_response(
     if bot.mock_response:
         completion_kwargs["mock_response"] = bot.mock_response
     if bot.json_mode:
-        # Check if bot has pydantic_model attribute and it's a BaseModel
         if not hasattr(bot, "pydantic_model"):
             raise ValueError(
                 "Please set a pydantic_model for this bot to use JSON mode!"
@@ -367,12 +401,96 @@ def make_response(
     if hasattr(bot, "tools"):
         logger.debug(f"Passing in tools: {bot.tools}")
         completion_kwargs["tools"] = bot.tools
-        # Allow bots to specify their own tool_choice, default to "auto"
         tool_choice = getattr(bot, "tool_choice", "auto")
         completion_kwargs["tool_choice"] = tool_choice
 
     logger.debug("Completion kwargs: {}", completion_kwargs)
-    return completion(**completion_kwargs)
+    return completion_kwargs
+
+
+def model_supports_token_streaming(model_name: str) -> bool:
+    """Return whether token-level streaming is requested for the model.
+
+    ``o1-preview`` and ``o1-mini`` use non-streamed completions in LlamaBot.
+
+    :param model_name: LiteLLM model identifier.
+    :return: ``True`` if async streaming should use ``stream=True``.
+    """
+    return model_name not in ("o1-preview", "o1-mini")
+
+
+def make_response(
+    bot: SimpleBot, messages: list[BaseMessage], stream: bool = True
+) -> ModelResponse | CustomStreamWrapper:
+    """Make a response from the given messages.
+
+    :param bot: A SimpleBot
+    :param messages: A list of Messages.
+    :return: A response object.
+    """
+    from litellm import completion
+
+    return completion(**completion_kwargs_for_messages(bot, messages, stream))
+
+
+async def make_async_response(
+    bot: SimpleBot, messages: list[BaseMessage], stream: bool = True
+) -> ModelResponse | CustomStreamWrapper:
+    """Async variant of :func:`make_response` using ``litellm.acompletion``.
+
+    :param bot: A SimpleBot or subclass with the same completion attributes.
+    :param messages: A list of Messages.
+    :param stream: Whether to request a streamed completion from the provider.
+    :return: A ``ModelResponse`` or async stream wrapper from LiteLLM.
+    """
+    from litellm import acompletion
+
+    return await acompletion(**completion_kwargs_for_messages(bot, messages, stream))
+
+
+async def stream_tokens_for_messages(
+    bot: SimpleBot,
+    messages: list[BaseMessage],
+    finalize: Callable[[ModelResponse], None] | None = None,
+) -> AsyncGenerator[str, None]:
+    """Yield assistant text deltas for a fully composed message list (async).
+
+    After streaming completes, ``finalize`` receives the assembled
+    :class:`litellm.types.utils.ModelResponse` from ``stream_chunk_builder``.
+
+    :param bot: Bot instance passed to :func:`make_async_response`.
+    :param messages: Full message list (system, memory, user, etc.).
+    :param finalize: Optional callback invoked with the final assembled response.
+    :return: Async generator of incremental text strings from the assistant.
+    """
+    stream = model_supports_token_streaming(bot.model_name)
+    response = await make_async_response(bot, messages, stream=stream)
+    chunks: list = []
+
+    if isinstance(response, ModelResponse):
+        if finalize:
+            finalize(response)
+        content = extract_content(response)
+        if content:
+            yield content
+        return
+
+    async for chunk in response:
+        chunks.append(chunk)
+        choice = chunk.choices[0]
+        delta_obj = getattr(choice, "delta", None)
+        if delta_obj is None:
+            continue
+        if isinstance(delta_obj, dict):
+            delta = delta_obj.get("content")
+        else:
+            delta = getattr(delta_obj, "content", None)
+        if delta is not None:
+            yield delta
+
+    final = stream_chunk_builder(chunks)
+    if finalize:
+        finalize(final)
 
 
 def stream_chunks(

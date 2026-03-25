@@ -13,13 +13,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from llamabot import SimpleBot
+from llamabot import AsyncSimpleBot
 from llamabot.sse import sse_stream
 
 app = FastAPI(title="LlamaBot SSE Streaming Example")
 
 # Initialize the bot
-bot = SimpleBot(
+bot = AsyncSimpleBot(
     system_prompt="You are a helpful assistant. Be concise and friendly.",
     model_name="ollama/phi3",  # Change to your preferred model
     stream_target="none",  # We handle streaming via SSE

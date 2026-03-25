@@ -51,6 +51,8 @@ nav:
       - "Tools": reference/components/tools.md
       - "DocStore": reference/components/docstore.md
       - "Chat Memory": reference/components/chat_memory.md
+    - "Async streaming": reference/streaming_async.md
+    - "SSE streaming": reference/sse.md
   - CLI:
     - "LlamaBot CLI": cli/llamabot.md
     - "Git Commands": cli/git.md

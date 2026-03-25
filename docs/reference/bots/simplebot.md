@@ -41,7 +41,7 @@ def __init__(
 
 - **model_name** (`str`, default: `default_language_model()`): The name of the model to use. Supports all models from LiteLLM. Examples: `"gpt-4o-mini"`, `"ollama_chat/llama2:13b"`, `"anthropic/claude-3-5-sonnet"`.
 
-- **stream_target** (`str`, default: `"stdout"`): The target to stream the response to. Should be one of `"stdout"`, `"panel"`, `"api"`, or `"none"`.
+- **stream_target** (`str`, default: `"stdout"`): The target to stream the response to. Should be one of `"stdout"`, `"panel"`, `"api"`, or `"none"`. For **async** HTTP servers (FastAPI, SSE), use [`AsyncSimpleBot`](../streaming_async.md) from `llamabot` instead of `"api"` with `__call__`, which returns a synchronous generator.
 
 - **json_mode** (`bool`, default: `False`): Whether to enable JSON mode for structured output. Note: This does not guarantee schema validation (use `StructuredBot` for that).
 
@@ -102,26 +102,11 @@ from llamabot.components.messages import HumanMessage
 response = bot(HumanMessage(content="Hello!"))
 ```
 
-### `generate_response`
+### Async usage: `AsyncSimpleBot`
 
-```python
-def generate_response(
-    self,
-    messages: List[BaseMessage],
-    stream: bool = True,
-) -> AIMessage
-```
-
-Generate a response from a list of messages. This is the internal method used by `__call__`.
-
-#### Parameters
-
-- **messages** (`List[BaseMessage]`): List of message objects to process
-- **stream** (`bool`, default: `True`): Whether to stream the response
-
-#### Returns
-
-- **AIMessage**: The AI's response message
+`SimpleBot` does not define `stream_async`. For async token streaming or `await` completion, construct
+[`AsyncSimpleBot`](../streaming_async.md) with the same parameters: it shares `compose_messages_for_human_messages`
+and uses `stream_tokens_for_messages` under the hood.
 
 ## Attributes
 
@@ -211,6 +196,8 @@ response = bot("Tell me a long story.")
 
 ## See Also
 
+- [Async streaming reference](../streaming_async.md)
+- [SSE streaming reference](../sse.md)
 - [SimpleBot Tutorial](../../tutorials/simplebot.md)
 - [Which Bot Should I Use?](../../getting-started/which-bot.md)
 - [Chat Memory Component](../components/chat_memory.md)
