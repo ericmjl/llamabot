@@ -1,0 +1,3 @@
+# Temporary emergency constraint following the 2026-03-24 LiteLLM PyPI compromise.
+# Remove or relax once the ecosystem response and package provenance are stable.
+litellm<1.82.7
