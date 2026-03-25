@@ -229,11 +229,14 @@ jobs:
         run: |
           TMP_DIR="$(mktemp -d)"
           trap 'rm -rf "$TMP_DIR"' EXIT
-          uv venv "$TMP_DIR/package-test-env" --python 3.13
-          source "$TMP_DIR/package-test-env/bin/activate"
-          uv pip install -c constraints-ci.txt dist/*.whl
-          llamabot --help
-          python -c "import llamabot; print(llamabot.__file__)"
+          WHEEL_PATH="$(pwd)/$(ls dist/*.whl | head -n 1)"
+          UV_SYSTEM_PYTHON=0 uv venv "$TMP_DIR/package-test-env" --python 3.13
+          UV_SYSTEM_PYTHON=0 uv pip install -c constraints-ci.txt "llamabot[cli] @ file://$WHEEL_PATH"
+          "$TMP_DIR/package-test-env/bin/llamabot" --help
+          (
+            cd "$TMP_DIR"
+            "$TMP_DIR/package-test-env/bin/python" -c "import llamabot; print(llamabot.__file__)"
+          )
 
       - name: Publish package (trusted publishing)
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
