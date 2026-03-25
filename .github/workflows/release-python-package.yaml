@@ -227,8 +227,10 @@ jobs:
       - name: Verify wheel install and CLI entrypoint in clean uv venv
         if: steps.check_version_bump.outputs.skip != 'true'
         run: |
-          uv venv package-test-env --python 3.13
-          source package-test-env/bin/activate
+          TMP_DIR="$(mktemp -d)"
+          trap 'rm -rf "$TMP_DIR"' EXIT
+          uv venv "$TMP_DIR/package-test-env" --python 3.13
+          source "$TMP_DIR/package-test-env/bin/activate"
           uv pip install -c constraints-ci.txt dist/*.whl
           llamabot --help
           python -c "import llamabot; print(llamabot.__file__)"
