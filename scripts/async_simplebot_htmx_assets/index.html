@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AsyncSimpleBot · HTMX + SSE</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="{{ url_for('static_demo', path='demo.css') }}" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>AsyncSimpleBot demo</h1>
+      <p class="sub">
+        HTMX posts your message; the assistant reply streams via
+        <code>SSE</code> backed by <code>AsyncSimpleBot.stream_async</code>
+        (<code>llamabot.sse.sse_stream</code>).
+      </p>
+
+      <div id="chat" class="chat" aria-live="polite"></div>
+
+      <form
+        class="row"
+        hx-post="/send"
+        hx-target="#chat"
+        hx-swap="beforeend"
+      >
+        <input
+          type="text"
+          name="message"
+          placeholder="Message…"
+          required
+          autocomplete="off"
+        />
+        <button type="submit">Send</button>
+      </form>
+
+      <footer>
+        Run:
+        <code>pixi run uvicorn scripts.async_simplebot_htmx_demo:app --reload</code>
+      </footer>
+    </div>
+    <script src="{{ url_for('static_demo', path='demo.js') }}" defer></script>
+  </body>
+</html>

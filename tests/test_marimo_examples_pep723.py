@@ -8,6 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Notebooks converted from Jupyter; must stay runnable with `uvx marimo run --sandbox`.
 MARIMO_EXAMPLES = [
+    REPO_ROOT / "docs/examples/async_simplebot.py",
     REPO_ROOT / "docs/examples/chatbot_nb.py",
     REPO_ROOT / "docs/examples/docstring_checker.py",
     REPO_ROOT / "docs/examples/groq.py",
@@ -30,9 +31,13 @@ MARIMO_EXAMPLES = [
 def test_marimo_example_has_pep723_block(path: Path) -> None:
     """Each listed example must start with a PEP 723 script metadata block."""
     text = path.read_text(encoding="utf-8")
+    head = text[:2500]
     assert text.startswith("# /// script\n"), f"{path} missing PEP 723 opening"
+    assert "requires-python" in head, f"{path} missing requires-python in script block"
+    assert "dependencies" in head, f"{path} missing dependencies in script block"
+    assert "# ///\n" in head, f"{path} missing PEP 723 closing"
     assert (
-        "requires-python" in text[:800]
-    ), f"{path} missing requires-python in script block"
-    assert "dependencies" in text[:800], f"{path} missing dependencies in script block"
-    assert "# ///\n" in text[:800], f"{path} missing PEP 723 closing"
+        "[tool.uv.sources]" in head
+    ), f"{path} missing tool.uv.sources for local llamabot"
+    assert "llamabot = { path =" in head, f"{path} missing llamabot path source"
+    assert "editable = true" in head, f"{path} missing editable llamabot source"

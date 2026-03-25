@@ -3,14 +3,13 @@
 # dependencies = [
 #     "anthropic==0.52.2",
 #     "lancedb==0.23.0",
-#     "llamabot[all]==0.12.6",
+#     "llamabot[all]",
 #     "marimo",
 #     "pyprojroot==0.3.0",
 # ]
 #
 # [tool.uv.sources]
 # llamabot = { path = "../../", editable = true }
-#
 # ///
 
 import marimo

@@ -2,7 +2,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "anthropic==0.66.0",
-#     "llamabot[all]==0.13.7",
+#     "llamabot[all]",
 #     "marimo",
 #     "matplotlib==3.10.6",
 #     "numpy==2.3.2",

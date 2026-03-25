@@ -91,6 +91,8 @@ them complete - this catches critical errors like duplicate variable definitions
 and other Marimo-specific issues. **CRITICAL**: Fix ALL issues found by marimo check,
 including warnings. Do not leave any warnings unfixed.
 
+**PEP 723 / local `llamabot` in example notebooks**: Marimo examples that use inline script metadata (`# /// script` … `# ///`) must install **`llamabot` from this repository**, not from PyPI. In the same block, add **`[tool.uv.sources]`** with `llamabot = { path = "<path>", editable = true }`, where **`path` is relative to the notebook file’s directory** (for example `../../` under `docs/examples/`, `../` under `notebooks/`). List `llamabot` (with extras as needed, e.g. `llamabot[rag]`) in `dependencies` **without** a PyPI version pin—the checkout is the source of truth. Commands like `uv run` / `uvx marimo run --sandbox` resolve the package from that path. Curated examples are asserted in `tests/test_marimo_examples_pep723.py`.
+
 **Marimo to Markdown Conversion and Linting**: When working with Marimo notebooks
 in `docs/how-to/` that are converted to markdown for documentation:
 

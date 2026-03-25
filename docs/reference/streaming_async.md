@@ -5,6 +5,8 @@ LlamaBot separates **synchronous** completion via [`SimpleBot.__call__`](bots/si
 classes from `llamabot`) that provide `stream_async` and `await` for FastAPI, SSE, and notebooks
 that use `async`/`await`.
 
+**Example (Marimo):** [AsyncSimpleBot walkthrough](../examples/async_simplebot.py) (`uvx marimo run --sandbox docs/examples/async_simplebot.py`). Example notebooks install **`llamabot` from this repository** using PEP 723 `[tool.uv.sources]` (path relative to each `.py` file), not from PyPI.
+
 ## Canonical contract
 
 Implementations expose:

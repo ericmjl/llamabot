@@ -5,8 +5,10 @@
 #     "marimo>=0.17.0",
 #     "pydantic",
 # ]
+#
+# [tool.uv.sources]
+# llamabot = { path = "../..", editable = true }
 # ///
-
 import marimo
 
 __generated_with = "0.18.4"

@@ -2,7 +2,7 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #     "anthropic==0.64.0",
-#     "llamabot==0.13.5",
+#     "llamabot",
 #     "marimo",
 # ]
 #
