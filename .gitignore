@@ -153,6 +153,9 @@ data/*
 talks/scipy2024/images/blogbot-demo.mp4
 scratch_notebooks/*_files
 scratch_notebooks/*.html
+# uv lockfile (project uses pixi/pixi.lock for dev; do not commit uv.lock)
+uv.lock
+
 # pixi environments
 .pixi
 *.egg-info
