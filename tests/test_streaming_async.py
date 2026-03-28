@@ -5,12 +5,10 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import BaseModel
 
-from llamabot.bot.async_bots import (
-    AsyncQueryBot,
-    AsyncSimpleBot,
-    AsyncStructuredBot,
-    AsyncToolBot,
-)
+from llamabot.bot.querybot import AsyncQueryBot
+from llamabot.bot.simplebot import AsyncSimpleBot
+from llamabot.bot.structuredbot import AsyncStructuredBot
+from llamabot.bot.toolbot import AsyncToolBot
 from llamabot.bot.simplebot import (
     SimpleBot,
     completion_kwargs_for_messages,

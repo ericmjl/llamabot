@@ -69,7 +69,7 @@ Returns the **string name** of the next tool; `prep_res["func_call"]` holds pars
 | `AsyncAgentBot` | `llamabot.bot.async_agentbot` | Same graph with `AsyncFlow` / `arun`; decision uses `AsyncToolBot.__call__`. |
 | `DecideNode` | `llamabot.components.pocketflow.nodes` | `prep` / `exec` / `post`; `exec` invokes `ToolBot`, `aexec` invokes `AsyncToolBot`. |
 | `ToolBot` | `llamabot.bot.toolbot` | Sync single-turn tool-calling LLM; routing in `DecideNode.exec`. |
-| `AsyncToolBot` | `llamabot.bot.async_bots` | Async `__call__` (`acompletion`); routing in `DecideNode.aexec`. |
+| `AsyncToolBot` | `llamabot.bot.toolbot` | Async `__call__` (`acompletion`); routing in `DecideNode.aexec`. |
 | `FuncNode` | `llamabot.components.pocketflow.nodes` | Run tool function; update `memory`; return loopback action or `None`. |
 
 ## API contracts (public surface)
@@ -106,7 +106,7 @@ Returns the **string name** of the next tool; `prep_res["func_call"]` holds pars
 | EARS ID | Code location |
 | ------- | ------------- |
 | AGT-GRAPH-010, 020, 021 | `DecideNode._exec_decision` / `_exec_decision_async` in `llamabot/components/pocketflow/nodes.py` |
-| Async routing | `AsyncToolBot.__call__` in `llamabot/bot/async_bots.py` |
+| Async routing | `AsyncToolBot.__call__` in `llamabot/bot/toolbot.py` |
 
 ## Related Documents
 

@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Protocol, runtime_checkable
 
 @runtime_checkable
 class SupportsStreamAsync(Protocol):
-    """Object that exposes an async text stream (e.g. :meth:`~llamabot.bot.async_bots.AsyncSimpleBot.stream_async`)."""
+    """Object that exposes an async text stream (e.g. :meth:`~llamabot.bot.simplebot.AsyncSimpleBot.stream_async`)."""
 
     def stream_async(self, *args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
         """Yield incremental assistant text chunks."""
@@ -32,7 +32,7 @@ async def sse_stream(
             bot = AsyncSimpleBot(system_prompt="You are helpful.")
             return EventSourceResponse(sse_stream(bot, request.messages))
 
-    :param bot: An object with ``stream_async`` (e.g. :class:`~llamabot.bot.async_bots.AsyncSimpleBot`).
+    :param bot: An object with ``stream_async`` (e.g. :class:`~llamabot.bot.simplebot.AsyncSimpleBot`).
     :param messages: Message list passed as ``*messages`` to ``stream_async`` (e.g. ``list[str]``).
     :param event_type: SSE event type for content chunks (default: "message").
     :param done_event: SSE event type for completion signal (default: "done").
