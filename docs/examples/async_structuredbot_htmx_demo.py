@@ -11,7 +11,7 @@ Run (from repository root)::
     pixi run uvicorn docs.examples.async_structuredbot_htmx_demo:app --reload
 
 Then open http://127.0.0.1:8000/ .  Requires a working LiteLLM model (default
-``ollama/phi3`` — adjust ``model_name`` in :func:`create_app`).
+``ollama_chat/phi3`` for local Ollama — adjust ``model_name`` in :func:`create_app`).
 """
 
 from __future__ import annotations
@@ -30,9 +30,7 @@ from sse_starlette.sse import EventSourceResponse
 from llamabot.bot.async_bots import AsyncStructuredBot
 from llamabot.sse import sse_stream
 
-ASSETS_DIR = (
-    Path(__file__).resolve().parent / "async_structuredbot_htmx_assets"
-)
+ASSETS_DIR = Path(__file__).resolve().parent / "async_structuredbot_htmx_assets"
 
 SYSTEM_PROMPT = """You are a career-profile extractor.
 Given a free-form career description, return a valid JSON object matching the
@@ -91,14 +89,13 @@ def create_app(bot: AsyncStructuredBot | None = None) -> FastAPI:
 
     :param bot: Optional bot instance (for tests / custom models). When
         ``None``, a default :class:`~llamabot.bot.async_bots.AsyncStructuredBot`
-        targeting ``ollama/phi3`` is constructed.
+        targeting ``ollama_chat/phi3`` is constructed.
     :return: Configured :class:`~fastapi.FastAPI` application.
     """
     app = FastAPI(
         title="AsyncStructuredBot HTMX + SSE",
         description=(
-            "Form-filling demo: paste a career blurb, "
-            "watch fields populate via SSE."
+            "Form-filling demo: paste a career blurb, " "watch fields populate via SSE."
         ),
     )
 
@@ -112,7 +109,7 @@ def create_app(bot: AsyncStructuredBot | None = None) -> FastAPI:
     resolved_bot: Any = bot or AsyncStructuredBot(
         system_prompt=SYSTEM_PROMPT,
         pydantic_model=JobProfile,
-        model_name="ollama/phi3",
+        model_name="ollama_chat/phi3",
         stream_target="none",
     )
 
@@ -125,9 +122,7 @@ def create_app(bot: AsyncStructuredBot | None = None) -> FastAPI:
         return templates.TemplateResponse(request, "index.html")
 
     @app.post("/extract", response_class=HTMLResponse)
-    async def extract(
-        request: Request, description: str = Form(...)
-    ) -> HTMLResponse:
+    async def extract(request: Request, description: str = Form(...)) -> HTMLResponse:
         """Store the pending description and return an SSE-ready panel fragment.
 
         :param request: Incoming HTTP request (needed by Jinja2Templates).
