@@ -65,6 +65,18 @@ nav:
     - "MCP Server": cli/mcp.md
   - Design & Explanation:
     - "High-Level Design (HLD)": high-level-design.md
+    - "SimpleBot":
+      - "LLD": designs/simplebot/LLD.md
+      - "EARS": designs/simplebot/simplebot-EARS.md
+    - "StructuredBot":
+      - "LLD": designs/structuredbot/LLD.md
+      - "EARS": designs/structuredbot/structuredbot-EARS.md
+    - "ToolBot":
+      - "LLD": designs/toolbot/LLD.md
+      - "EARS": designs/toolbot/toolbot-EARS.md
+    - "QueryBot (RAG)":
+      - "LLD": designs/querybot/LLD.md
+      - "EARS": designs/querybot/querybot-EARS.md
     - "AgentBot reference graph":
       - "LLD": designs/agentbot/LLD.md
       - "EARS": designs/agentbot/reference-graph-EARS.md

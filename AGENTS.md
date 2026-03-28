@@ -325,6 +325,8 @@ For substantial features, follow the **design-driven-dev** skill (`.agents/skill
 - **`docs/designs/<feature>/LLD.md`** — low-level design per feature
 - **`docs/designs/<feature>/<subfeature>-EARS.md`** — testable requirements (EARS IDs, status markers)
 
+Bot classes use **one folder per bot** under `docs/designs/` (e.g. `simplebot/`, `structuredbot/`, `toolbot/`, `querybot/`, `agentbot/`), each with an LLD and EARS file(s).
+
 **Cross-links**: HLD → LLDs; each LLD → HLD and its EARS files; each EARS → parent LLD. **Bug fixes** usually skip new docs but should **verify intent coherence** with existing specs.
 
 Topic notes that predate this layout remain under **`docs/design/`**; new work should prefer **`docs/designs/<feature>/`** when adding a full HLD/LLD/EARS chain.
