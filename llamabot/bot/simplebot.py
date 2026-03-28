@@ -546,6 +546,41 @@ def stream_chunks(
     return stream_chunk_builder(chunks)
 
 
+async def async_stream_chunks(
+    bot: SimpleBot,
+    response: ModelResponse | CustomStreamWrapper,
+    target: str = "stdout",
+) -> ModelResponse:
+    """Assemble an async streamed completion into a single :class:`ModelResponse`.
+
+    Mirrors :func:`stream_chunks` for responses from :func:`make_async_response`
+    (non-streaming responses pass through unchanged).
+
+    :param bot: Bot whose ``stream_target`` informs printing behavior.
+    :param response: LiteLLM async stream or a completed model response.
+    :param target: Same semantics as :func:`stream_chunks` (``stdout``, ``panel``, ``api``).
+    :return: A fully assembled :class:`ModelResponse`.
+    """
+    if isinstance(response, ModelResponse):
+        return response
+
+    chunks: list = []
+    async for chunk in response:
+        chunks.append(chunk)
+        choice0 = chunk.choices[0]
+        delta_obj = getattr(choice0, "delta", None)
+        if delta_obj is None:
+            continue
+        if isinstance(delta_obj, dict):
+            delta = delta_obj.get("content")
+        else:
+            delta = getattr(delta_obj, "content", None)
+        if delta is not None and target == "stdout":
+            print(delta, end="")
+
+    return stream_chunk_builder(chunks)
+
+
 def serialize_tool_arguments(args: Union[dict, str, None]) -> str:
     """Safely serialize tool arguments to JSON string.
 

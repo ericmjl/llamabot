@@ -8,7 +8,9 @@ from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.components.tools import DEFAULT_TOOLS
 from llamabot.bot.simplebot import (
     SimpleBot,
+    async_stream_chunks,
     extract_tool_calls,
+    make_async_response,
     make_response,
     stream_chunks,
 )
@@ -223,6 +225,68 @@ class ToolBot(SimpleBot):
                         )
         except (TypeError, AttributeError):
             # Skip logging if response doesn't support len() (e.g., Mock objects in tests)
+            pass
+
+        if user_messages:
+            self.chat_memory.append(user_messages[0])
+            self.chat_memory.append(AIMessage(content=str(tool_calls)))
+
+        return tool_calls
+
+    async def acall(
+        self,
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
+        execution_history: Optional[List[Dict]] = None,
+    ):
+        """Async tool selection using :func:`~llamabot.bot.simplebot.make_async_response`.
+
+        Same role as :meth:`__call__` for agent decision steps, but awaits the
+        LiteLLM async completion so the event loop is not blocked.
+
+        :param messages: Same as :meth:`__call__`.
+        :param execution_history: Same as :meth:`__call__`.
+        :return: List of tool calls to execute.
+        """
+        message_list, user_messages = self.compose_tool_messages(
+            *messages, execution_history=execution_history
+        )
+
+        stream = self.stream_target != "none"
+        logger.debug("Message list: {}", message_list)
+        response = await make_async_response(self, message_list, stream=stream)
+        final = await async_stream_chunks(self, response, target=self.stream_target)
+        logger.debug("Response: {}", final)
+
+        try:
+            if hasattr(final, "choices") and hasattr(final.choices, "__len__"):
+                choices_len = len(final.choices)
+                if choices_len > 0:
+                    message = final.choices[0].message
+                    tool_calls_attr = getattr(message, "tool_calls", None)
+                    content_attr = getattr(message, "content", None)
+                    logger.debug("Response message.tool_calls: {}", tool_calls_attr)
+                    logger.debug("Response message.content: {}", content_attr)
+        except (TypeError, AttributeError):
+            pass
+
+        tool_calls = extract_tool_calls(final)
+
+        try:
+            if (
+                tool_calls
+                and hasattr(final, "choices")
+                and hasattr(final.choices, "__len__")
+            ):
+                choices_len = len(final.choices)
+                if choices_len > 0:
+                    message = final.choices[0].message
+                    if message.tool_calls is None and message.content:
+                        logger.debug(
+                            "Parsed tool calls from JSON content for model {}: {}",
+                            self.model_name,
+                            [tc.function.name for tc in tool_calls],
+                        )
+        except (TypeError, AttributeError):
             pass
 
         if user_messages:

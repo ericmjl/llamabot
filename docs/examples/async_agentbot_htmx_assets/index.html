@@ -3,19 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AgentBot · HTMX + SSE</title>
+    <title>AsyncAgentBot · HTMX + SSE</title>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <link rel="stylesheet" href="{{ url_for('static_demo', path='demo.css') }}" />
   </head>
   <body>
     <div class="wrap">
-      <h1>AgentBot demo</h1>
+      <h1>AsyncAgentBot demo</h1>
       <p class="sub">
-        <strong>AgentBot</strong> runs a PocketFlow graph (decide → tools → …). The
-        server is not token-streaming the LLM inside the graph; you get a status
-        line, then the <strong>final result</strong> and a <strong>memory trace</strong>
-        after the run. Demo tool: <code>inch_to_cm</code>. Try: “Convert 12 inches
-        to cm” or “What’s the date today?”
+        Same agent graph as <strong>AgentBot</strong>, served over SSE: the server sends a
+        <strong>status</strong> event first, then a <strong>message</strong> with the final
+        reply and memory trace. The decide step uses LiteLLM <code>acompletion</code>;
+        tools still run as sync PocketFlow nodes. No token stream from the graph. Demo
+        tool: <code>inch_to_cm</code>. Try: “Convert 12 inches to cm” or “What’s the date
+        today?”
       </p>
 
       <div id="chat" class="chat" aria-live="polite"></div>

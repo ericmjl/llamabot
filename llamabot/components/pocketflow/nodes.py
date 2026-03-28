@@ -501,6 +501,157 @@ class DecideNode(Node):
         # Return the function name as the action/path
         return func_name
 
+    async def _exec_decision_async(self, prep_res, span_obj: Optional[Span]):
+        """Async counterpart to :meth:`_exec_decision` using :meth:`~llamabot.bot.toolbot.ToolBot.acall`.
+
+        :param prep_res: Prepared result from prep method.
+        :param span_obj: Optional span object for logging.
+        :return: Function name to execute.
+        """
+        if prep_res.get("_force_terminate", False):
+            logger.info(
+                f"Force termination flag detected. "
+                f"Max iterations ({self.max_iterations}) exceeded. "
+                f"Current iteration: {prep_res.get('iteration_count', 'unknown')}"
+            )
+
+            respond_to_user_tool = None
+            for tool in self.tools:
+                tool_name = getattr(tool, "func", tool).__name__
+                if tool_name == "respond_to_user":
+                    respond_to_user_tool = tool
+                    break
+
+            if respond_to_user_tool is None:
+                logger.error(
+                    f"Max iterations ({self.max_iterations}) exceeded but "
+                    f"respond_to_user tool not found. Cannot force termination."
+                )
+                raise RuntimeError(
+                    f"Max iterations ({self.max_iterations}) exceeded and "
+                    f"respond_to_user tool not found. Cannot force termination."
+                )
+
+            prep_res["func_call"] = {
+                "response": (
+                    f"Maximum iteration limit ({self.max_iterations}) reached. "
+                    f"Terminating execution to prevent infinite loop."
+                )
+            }
+            logger.warning(
+                f"Forcing respond_to_user due to max_iterations limit ({self.max_iterations}). "
+                f"Termination message prepared."
+            )
+            if span_obj:
+                span_obj["forced_termination"] = True
+                span_obj.log("forced_termination", reason="max_iterations_exceeded")
+            return "respond_to_user"
+
+        from llamabot.bot.toolbot import ToolBot
+
+        is_ollama_model = self.model_name.startswith(
+            "ollama"
+        ) or self.model_name.startswith("ollama_chat")
+
+        if is_ollama_model:
+            tool_requirement_suffix = """
+
+**CRITICAL FOR OLLAMA MODELS**: You MUST ALWAYS select and call a tool. Never return a response without calling a tool. Every user request requires you to select one of the available tools and execute it. This is mandatory - you cannot skip tool selection."""
+            enhanced_system_prompt = self.system_prompt + tool_requirement_suffix
+            logger.debug(
+                f"Enhanced system prompt for Ollama model {self.model_name} "
+                f"to explicitly require tool calls"
+            )
+        else:
+            enhanced_system_prompt = self.system_prompt
+
+        bot = ToolBot(
+            model_name=self.model_name,
+            tools=self.tools,
+            system_prompt=enhanced_system_prompt,
+            **self.completion_kwargs,
+        )
+        if is_ollama_model:
+            bot.tool_choice = "auto"
+            logger.debug(
+                f"Using tool_choice='auto' for Ollama model {self.model_name} "
+                f"(Ollama doesn't support tool_choice='required')"
+            )
+        else:
+            bot.tool_choice = "required"
+
+        tool_calls = await bot.acall(prep_res["memory"])
+
+        if not tool_calls:
+            error_msg = (
+                f"No tool calls returned from ToolBot. Model: {self.model_name}. "
+            )
+            if self.model_name.startswith("ollama") or self.model_name.startswith(
+                "ollama_chat"
+            ):
+                error_msg += (
+                    "Ollama models don't support tool_choice='required', so tool calls are optional. "
+                    "Ensure your system prompt explicitly requires tool calls and that the model "
+                    "supports function calling."
+                )
+            else:
+                error_msg += (
+                    "This may indicate the model doesn't support tool_choice='required'. "
+                    "Check the system prompt and ensure it explicitly requires tool calls."
+                )
+            raise ValueError(error_msg)
+
+        tool_call = tool_calls[0]
+
+        func_name = tool_call.function.name
+        func_args_json = tool_call.function.arguments
+
+        if span_obj:
+            span_obj["chosen_tool"] = func_name
+            span_obj.log("tool_selected", tool_name=func_name)
+
+        iteration_count = prep_res.get("iteration_count", "unknown")
+        logger.info(
+            f"DecideNode chose tool: {func_name} "
+            f"(iteration: {iteration_count}/{self.max_iterations if self.max_iterations else 'unlimited'})"
+        )
+
+        try:
+            func_args = json.loads(func_args_json)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse tool call arguments: {e}") from e
+
+        prep_res["func_call"] = func_args
+
+        return func_name
+
+    async def aexec(self, prep_res):
+        """Async decision step: same routing as :meth:`exec` but awaits :meth:`_exec_decision_async`.
+
+        :param prep_res: Output from :meth:`prep`.
+        :return: Tool name for PocketFlow routing.
+        """
+        if is_span_recording_enabled():
+            current_span = get_current_span()
+            if current_span:
+                decision_span = current_span.span(
+                    "decision",
+                    iteration=prep_res.get("iteration_count", 0),
+                    model=self.model_name,
+                )
+                with decision_span:
+                    return await self._exec_decision_async(prep_res, decision_span)
+            trace_id = prep_res.get("trace_id")
+            decision_span = Span(
+                "decision",
+                trace_id=trace_id,
+                iteration=prep_res.get("iteration_count", 0),
+                model=self.model_name,
+            )
+            with decision_span:
+                return await self._exec_decision_async(prep_res, decision_span)
+        return await self._exec_decision_async(prep_res, None)
+
     def post(self, shared, prep_res, exec_res):
         """Post-process the execution result.
 

@@ -9,7 +9,7 @@ Use it to control the top-level API of your Python data science project.
 The module provides several high-level functions and classes for working with LLMs:
 
 - Message creation functions: `user()` and `system()`
-- Bot classes: SimpleBot, AsyncSimpleBot, StructuredBot, AsyncStructuredBot, ChatBot, ImageBot, QueryBot, AsyncQueryBot, ToolBot, AsyncToolBot
+- Bot classes: SimpleBot, AsyncSimpleBot, StructuredBot, AsyncStructuredBot, ChatBot, ImageBot, QueryBot, AsyncQueryBot, ToolBot, AsyncToolBot, AgentBot, AsyncAgentBot
 - Prompt management: `prompt` decorator
 - Experimentation: `Experiment` and `metric`
 - Recording: `PromptRecorder`
@@ -21,6 +21,7 @@ from pathlib import Path
 from loguru import logger
 
 from .bot.agentbot import AgentBot
+from .bot.async_agentbot import AsyncAgentBot
 from .bot.async_bots import (
     AsyncQueryBot,
     AsyncSimpleBot,
@@ -78,6 +79,7 @@ logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNI
 
 __all__ = [
     "AgentBot",
+    "AsyncAgentBot",
     "AsyncQueryBot",
     "AsyncSimpleBot",
     "AsyncStructuredBot",

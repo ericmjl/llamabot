@@ -6,6 +6,11 @@
       "sourceType": "github",
       "computedHash": "93a512dc9870809902459881640b041afe5fe460774e9b49a212d8d799922ab5"
     },
+    "design-driven-dev": {
+      "source": "ericmjl/skills",
+      "sourceType": "github",
+      "computedHash": "a51884c57445503bfa8854e2b659889bf4c6bcea02b3ecd0e6c8290e5b9aa8a5"
+    },
     "jupyter-to-marimo": {
       "source": "marimo-team/skills",
       "sourceType": "github",
