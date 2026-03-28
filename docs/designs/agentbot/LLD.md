@@ -97,6 +97,8 @@ Returns the **string name** of the next tool; `prep_res["func_call"]` holds pars
 
 ## Dependencies
 
+- **SimpleBot LLD**: [Shared completion stack](../simplebot/LLD.md).
+- **ToolBot LLD**: [`ToolBot` / `AsyncToolBot`](../toolbot/LLD.md) contracts used by `DecideNode`.
 - **PocketFlow**: graph execution.
 - **LiteLLM**: completions via `SimpleBot` / `ToolBot` / `AsyncToolBot` / other async bots.
 - **`DEFAULT_TOOLS`**: baseline tools (e.g. `respond_to_user`) for the reference graph.

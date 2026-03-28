@@ -2,7 +2,7 @@
 
 **Created**: 2026-03-28
 
-**Last updated**: 2026-03-28 — Decision 3: sync routing uses `ToolBot.__call__`; async routing uses `AsyncToolBot.__call__` (`acompletion`). See [AgentBot LLD](designs/agentbot/LLD.md).
+**Last updated**: 2026-03-28 — Design docs use one folder per bot under `designs/` (e.g. SimpleBot, StructuredBot, ToolBot, QueryBot, AgentBot). Decision 3: sync routing uses `ToolBot.__call__`; async routing uses `AsyncToolBot.__call__` (`acompletion`). See [AgentBot LLD](designs/agentbot/LLD.md).
 
 ## Problem Statement
 
@@ -75,7 +75,13 @@ Researchers and developers need a **Pythonic**, **composable** way to call many 
 
 ## Related Designs
 
-- [AgentBot reference PocketFlow graph (LLD)](designs/agentbot/LLD.md)
+Bot types (each has its own LLD + EARS under `designs/<bot>/`):
+
+- [SimpleBot (LLD)](designs/simplebot/LLD.md)
+- [StructuredBot (LLD)](designs/structuredbot/LLD.md)
+- [ToolBot (LLD)](designs/toolbot/LLD.md)
+- [QueryBot (LLD)](designs/querybot/LLD.md)
+- [AgentBot — reference PocketFlow graph (LLD)](designs/agentbot/LLD.md)
 - [Unified chat memory (topic note)](design/unified_chat_memory.md)
 - [Observability (topic note)](design/observability.md)
 - [Log viewer (topic note)](design/log_viewer.md)
