@@ -2,7 +2,15 @@
 
 **Created**: 2026-03-28
 
+**Last updated**: 2026-03-28 — `DecideNode.aexec` constructs `AsyncToolBot` and awaits `AsyncToolBot.__call__` (removed `ToolBot.acall`).
+
 **HLD Link**: [../../high-level-design.md](../../high-level-design.md)
+
+## Requirements (EARS)
+
+Testable requirements for this feature live in:
+
+- [reference-graph-EARS.md](./reference-graph-EARS.md) — graph topology, decision step (`ToolBot` vs `AsyncToolBot`), async variant.
 
 ## Overview
 
@@ -11,7 +19,7 @@
 ## Context
 
 - **PocketFlow** supplies `Flow` / `AsyncFlow`, `Node` / `AsyncNode`, and action-labeled edges.
-- **Routing** is implemented by `DecideNode`, which uses **`ToolBot`** to map `shared["memory"]` to a single tool call per decision step.
+- **Routing** is implemented by `DecideNode`, which uses **`ToolBot`** in `exec` and **`AsyncToolBot`** in `aexec` to map `shared["memory"]` to a single tool call per decision step.
 - **Execution** uses `@tool`-wrapped **FuncNode** instances, not additional bot classes.
 
 ## Graph topology
@@ -58,9 +66,10 @@ Returns the **string name** of the next tool; `prep_res["func_call"]` holds pars
 | Component | Module | Responsibility |
 | --------- | ------ | ---------------- |
 | `AgentBot` | `llamabot.bot.agentbot` | Build `Flow`, wire edges, `flow.run(shared)`. |
-| `AsyncAgentBot` | `llamabot.bot.async_agentbot` | Same graph with `AsyncFlow` / `arun`; decision uses `ToolBot.acall`. |
-| `DecideNode` | `llamabot.components.pocketflow.nodes` | `prep` / `exec` / `post`; `exec` invokes `ToolBot`. |
-| `ToolBot` | `llamabot.bot.toolbot` | Single-turn tool-calling LLM; **only** used for routing inside `DecideNode`. |
+| `AsyncAgentBot` | `llamabot.bot.async_agentbot` | Same graph with `AsyncFlow` / `arun`; decision uses `AsyncToolBot.__call__`. |
+| `DecideNode` | `llamabot.components.pocketflow.nodes` | `prep` / `exec` / `post`; `exec` invokes `ToolBot`, `aexec` invokes `AsyncToolBot`. |
+| `ToolBot` | `llamabot.bot.toolbot` | Sync single-turn tool-calling LLM; routing in `DecideNode.exec`. |
+| `AsyncToolBot` | `llamabot.bot.async_bots` | Async `__call__` (`acompletion`); routing in `DecideNode.aexec`. |
 | `FuncNode` | `llamabot.components.pocketflow.nodes` | Run tool function; update `memory`; return loopback action or `None`. |
 
 ## API contracts (public surface)
@@ -76,7 +85,7 @@ Returns the **string name** of the next tool; `prep_res["func_call"]` holds pars
 
 | Condition | Behavior |
 | --------- | -------- |
-| `ToolBot` returns no tool calls | `ValueError` from `DecideNode` (with model-specific hints). |
+| Model returns no tool calls (sync or async routing) | `ValueError` from `DecideNode` (with model-specific hints). |
 | Invalid JSON in tool arguments | `ValueError` from `DecideNode`. |
 | `max_iterations` exceeded | Force `respond_to_user` when that tool exists; else `RuntimeError`. |
 
@@ -89,8 +98,15 @@ Returns the **string name** of the next tool; `prep_res["func_call"]` holds pars
 ## Dependencies
 
 - **PocketFlow**: graph execution.
-- **LiteLLM**: completions via `SimpleBot` / `ToolBot` / async variants.
+- **LiteLLM**: completions via `SimpleBot` / `ToolBot` / `AsyncToolBot` / other async bots.
 - **`DEFAULT_TOOLS`**: baseline tools (e.g. `respond_to_user`) for the reference graph.
+
+## Traceability (intent → code)
+
+| EARS ID | Code location |
+| ------- | ------------- |
+| AGT-GRAPH-010, 020, 021 | `DecideNode._exec_decision` / `_exec_decision_async` in `llamabot/components/pocketflow/nodes.py` |
+| Async routing | `AsyncToolBot.__call__` in `llamabot/bot/async_bots.py` |
 
 ## Related Documents
 

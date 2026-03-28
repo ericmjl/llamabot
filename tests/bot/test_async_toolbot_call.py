@@ -1,4 +1,4 @@
-"""Tests for :meth:`~llamabot.bot.toolbot.ToolBot.acall`."""
+"""Tests for :meth:`~llamabot.bot.async_bots.AsyncToolBot.__call__`."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import pytest
 from litellm import ModelResponse
 
-from llamabot.bot.toolbot import ToolBot
+from llamabot.bot.async_bots import AsyncToolBot
 from llamabot.components.tools import tool
 
 
@@ -23,8 +23,8 @@ def demo_add(a: int, b: int) -> int:
 
 
 @pytest.mark.asyncio
-async def test_toolbot_acall_returns_tool_calls_from_mock() -> None:
-    """acall awaits async completion and parses tool calls (mock_response, no network)."""
+async def test_async_toolbot_call_returns_tool_calls_from_mock() -> None:
+    """``await bot(...)`` uses async completion and parses tool calls (mock_response)."""
     args = json.dumps({"a": 1, "b": 2})
     mock = ModelResponse(
         id="mock",
@@ -51,7 +51,7 @@ async def test_toolbot_acall_returns_tool_calls_from_mock() -> None:
         object="chat.completion",
     )
 
-    bot = ToolBot(
+    bot = AsyncToolBot(
         system_prompt="You pick tools.",
         model_name="gpt-4.1",
         tools=[demo_add],
@@ -59,23 +59,23 @@ async def test_toolbot_acall_returns_tool_calls_from_mock() -> None:
         stream_target="none",
     )
 
-    calls = await bot.acall("add 1 and 2")
+    calls = await bot("add 1 and 2")
     assert len(calls) == 1
     assert calls[0].function.name == "demo_add"
     assert json.loads(calls[0].function.arguments) == {"a": 1, "b": 2}
 
 
 @pytest.mark.asyncio
-async def test_decide_node_aexec_uses_acall(monkeypatch: pytest.MonkeyPatch) -> None:
-    """DecideNode.aexec routes through ToolBot.acall."""
+async def test_decide_node_aexec_uses_async_toolbot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """DecideNode.aexec routes through AsyncToolBot.__call__."""
     from llamabot.components.pocketflow.nodes import DecideNode
 
     captured: dict = {}
 
-    class FakeToolBot:
-        """Minimal stand-in for :class:`~llamabot.bot.toolbot.ToolBot`.
-
-        Constructor accepts arbitrary arguments and ignores them.
+    class FakeAsyncToolBot:
+        """Stub :class:`~llamabot.bot.async_bots.AsyncToolBot` for monkeypatching.
 
         :param args: Ignored.
         :param kwargs: Ignored.
@@ -84,10 +84,10 @@ async def test_decide_node_aexec_uses_acall(monkeypatch: pytest.MonkeyPatch) -> 
         def __init__(self, *args, **kwargs) -> None:
             pass
 
-        async def acall(self, memory, **kwargs):
+        async def __call__(self, memory, **kwargs):
             """Record *memory* and return one ``demo_add`` tool call.
 
-            :param memory: Same as :meth:`~llamabot.bot.toolbot.ToolBot.acall`.
+            :param memory: Same as :meth:`~llamabot.bot.async_bots.AsyncToolBot.__call__`.
             :param kwargs: Ignored.
             :return: List of one tool call.
             """
@@ -105,7 +105,10 @@ async def test_decide_node_aexec_uses_acall(monkeypatch: pytest.MonkeyPatch) -> 
                 )
             ]
 
-    monkeypatch.setattr("llamabot.bot.toolbot.ToolBot", FakeToolBot)
+    monkeypatch.setattr(
+        "llamabot.bot.async_bots.AsyncToolBot",
+        FakeAsyncToolBot,
+    )
 
     node = DecideNode(
         tools=[demo_add],
