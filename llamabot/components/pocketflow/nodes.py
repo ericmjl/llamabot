@@ -502,7 +502,7 @@ class DecideNode(Node):
         return func_name
 
     async def _exec_decision_async(self, prep_res, span_obj: Optional[Span]):
-        """Async counterpart to :meth:`_exec_decision` using :meth:`~llamabot.bot.toolbot.ToolBot.acall`.
+        """Async counterpart to :meth:`_exec_decision` using :class:`~llamabot.bot.async_bots.AsyncToolBot`.
 
         :param prep_res: Prepared result from prep method.
         :param span_obj: Optional span object for logging.
@@ -547,7 +547,7 @@ class DecideNode(Node):
                 span_obj.log("forced_termination", reason="max_iterations_exceeded")
             return "respond_to_user"
 
-        from llamabot.bot.toolbot import ToolBot
+        from llamabot.bot.async_bots import AsyncToolBot
 
         is_ollama_model = self.model_name.startswith(
             "ollama"
@@ -565,7 +565,7 @@ class DecideNode(Node):
         else:
             enhanced_system_prompt = self.system_prompt
 
-        bot = ToolBot(
+        bot = AsyncToolBot(
             model_name=self.model_name,
             tools=self.tools,
             system_prompt=enhanced_system_prompt,
@@ -580,11 +580,11 @@ class DecideNode(Node):
         else:
             bot.tool_choice = "required"
 
-        tool_calls = await bot.acall(prep_res["memory"])
+        tool_calls = await bot(prep_res["memory"])
 
         if not tool_calls:
             error_msg = (
-                f"No tool calls returned from ToolBot. Model: {self.model_name}. "
+                f"No tool calls returned from the model. Model: {self.model_name}. "
             )
             if self.model_name.startswith("ollama") or self.model_name.startswith(
                 "ollama_chat"

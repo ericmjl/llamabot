@@ -25,8 +25,10 @@ from pydantic import BaseModel
 from llamabot.bot.querybot import QueryBot
 from llamabot.bot.simplebot import (
     SimpleBot,
+    async_stream_chunks,
     extract_content,
     extract_tool_calls,
+    make_async_response,
     stream_tokens_for_messages,
 )
 from llamabot.bot.structuredbot import StructuredBot
@@ -224,7 +226,12 @@ class AsyncQueryBot(QueryBot):
 
 
 class AsyncToolBot(ToolBot):
-    """Async :class:`~llamabot.bot.toolbot.ToolBot`."""
+    """Async :class:`~llamabot.bot.toolbot.ToolBot`.
+
+    :meth:`__call__` uses LiteLLM ``acompletion`` and :func:`~llamabot.bot.simplebot.async_stream_chunks`
+    (no :func:`asyncio.to_thread` around the completion). For sync tool selection on a worker
+    thread, use :class:`ToolBot` or ``await asyncio.to_thread(bot, ...)``.
+    """
 
     async def stream_async(
         self,
@@ -257,10 +264,54 @@ class AsyncToolBot(ToolBot):
         *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
         execution_history: Optional[List[Dict]] = None,
     ) -> list:
-        """Async tool selection; delegates to the sync implementation on a worker thread."""
-        return await asyncio.to_thread(
-            super().__call__, *messages, execution_history=execution_history
+        """Async tool selection via ``acompletion`` (same contract as :meth:`ToolBot.__call__`)."""
+        message_list, user_messages = self.compose_tool_messages(
+            *messages, execution_history=execution_history
         )
+
+        stream = self.stream_target != "none"
+        logger.debug("Message list: {}", message_list)
+        response = await make_async_response(self, message_list, stream=stream)
+        final = await async_stream_chunks(self, response, target=self.stream_target)
+        logger.debug("Response: {}", final)
+
+        try:
+            if hasattr(final, "choices") and hasattr(final.choices, "__len__"):
+                choices_len = len(final.choices)
+                if choices_len > 0:
+                    message = final.choices[0].message
+                    tool_calls_attr = getattr(message, "tool_calls", None)
+                    content_attr = getattr(message, "content", None)
+                    logger.debug("Response message.tool_calls: {}", tool_calls_attr)
+                    logger.debug("Response message.content: {}", content_attr)
+        except (TypeError, AttributeError):
+            pass
+
+        tool_calls = extract_tool_calls(final)
+
+        try:
+            if (
+                tool_calls
+                and hasattr(final, "choices")
+                and hasattr(final.choices, "__len__")
+            ):
+                choices_len = len(final.choices)
+                if choices_len > 0:
+                    message = final.choices[0].message
+                    if message.tool_calls is None and message.content:
+                        logger.debug(
+                            "Parsed tool calls from JSON content for model {}: {}",
+                            self.model_name,
+                            [tc.function.name for tc in tool_calls],
+                        )
+        except (TypeError, AttributeError):
+            pass
+
+        if user_messages:
+            self.chat_memory.append(user_messages[0])
+            self.chat_memory.append(AIMessage(content=str(tool_calls)))
+
+        return tool_calls
 
 
 class AsyncStructuredBot(StructuredBot):

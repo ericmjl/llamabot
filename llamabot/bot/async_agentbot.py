@@ -5,8 +5,8 @@ This module provides :class:`AsyncAgentBot`, which wires the same ``DecideNode``
 nodes through :class:`~pocketflow.AsyncFlow` with :class:`~pocketflow.AsyncNode` wrappers.
 
 :class:`AsyncDecideNode` runs the decision step natively async: :meth:`~llamabot.components.pocketflow.DecideNode.aexec`
-uses :meth:`~llamabot.bot.toolbot.ToolBot.acall` and LiteLLM ``acompletion`` (no
-:func:`asyncio.to_thread` around the LLM). Tool :class:`~pocketflow.AsyncNode` wrappers still
+uses :class:`~llamabot.bot.async_bots.AsyncToolBot` and :meth:`~llamabot.bot.async_bots.AsyncToolBot.__call__`
+with LiteLLM ``acompletion`` (no :func:`asyncio.to_thread` around the LLM). Tool :class:`~pocketflow.AsyncNode` wrappers still
 run sync ``FuncNode`` bodies in :func:`asyncio.to_thread` so CPU-bound or sync tools do not
 block other async work.
 
@@ -56,7 +56,7 @@ class AsyncDecideNode(AsyncNode):
         return self._inner.prep(shared)
 
     async def exec_async(self, prep_res: object) -> object:
-        """Await :meth:`DecideNode.aexec` (LiteLLM ``acompletion`` via :meth:`ToolBot.acall`).
+        """Await :meth:`DecideNode.aexec` (LiteLLM ``acompletion`` via :class:`~llamabot.bot.async_bots.AsyncToolBot`).
 
         :param prep_res: Output from :meth:`prep_async`.
         :return: Exec result for :meth:`post_async`.

@@ -2,6 +2,8 @@
 
 **Created**: 2026-03-28
 
+**Last updated**: 2026-03-28 — Decision 3: sync routing uses `ToolBot.__call__`; async routing uses `AsyncToolBot.__call__` (`acompletion`). See [AgentBot LLD](designs/agentbot/LLD.md).
+
 ## Problem Statement
 
 Researchers and developers need a **Pythonic**, **composable** way to call many LLM providers (via LiteLLM), experiment in notebooks, and ship small apps (CLI, FastAPI, HTMX) without ad-hoc glue code for every project.
@@ -58,11 +60,11 @@ Researchers and developers need a **Pythonic**, **composable** way to call many 
 
 **Rationale**: Explicit graph, routing labels, and loopback without a custom scheduler; users can fork or replace `DecideNode` / edges.
 
-### Decision 3: Tool routing via `ToolBot` inside `DecideNode`
+### Decision 3: Tool routing via `ToolBot` / `AsyncToolBot` inside `DecideNode`
 
-**Choice**: The decision step uses `ToolBot` (single-turn tool-calling) to pick the next tool name.
+**Choice**: The sync graph uses `ToolBot.__call__`; the async graph uses `AsyncToolBot.__call__` with `acompletion`, both single-turn tool-calling.
 
-**Rationale**: Reuses existing message and schema plumbing; keeps tool execution in `FuncNode` callables.
+**Rationale**: Reuses the same message and schema plumbing as `ToolBot`; async entrypoint matches other `Async*` bots.
 
 ## Risks and Mitigations
 
