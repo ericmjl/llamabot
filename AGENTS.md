@@ -317,6 +317,18 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **Avoid stale content**: Don't include version-specific information that can't
   be automatically updated
 
+### Design-driven development (HLD → LLD → EARS)
+
+For substantial features, follow the **design-driven-dev** skill (`.agents/skills/design-driven-dev/SKILL.md`): **stop between phases** for review when the user wants that rigor; use this **file layout** under `docs/`:
+
+- **`docs/high-level-design.md`** — one project-wide HLD; links to feature LLDs
+- **`docs/designs/<feature>/LLD.md`** — low-level design per feature
+- **`docs/designs/<feature>/<subfeature>-EARS.md`** — testable requirements (EARS IDs, status markers)
+
+**Cross-links**: HLD → LLDs; each LLD → HLD and its EARS files; each EARS → parent LLD. **Bug fixes** usually skip new docs but should **verify intent coherence** with existing specs.
+
+Topic notes that predate this layout remain under **`docs/design/`**; new work should prefer **`docs/designs/<feature>/`** when adding a full HLD/LLD/EARS chain.
+
 ### Code Style Documentation
 
 - **Pre-commit hooks handle formatting**: Don't create separate code-style guides

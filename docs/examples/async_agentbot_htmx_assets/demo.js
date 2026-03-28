@@ -1,4 +1,11 @@
 /**
+ * Append text without wiping existing child nodes (unlike `el.textContent +=`).
+ */
+function appendText(el, text) {
+  el.appendChild(document.createTextNode(text));
+}
+
+/**
  * After HTMX swaps in a .stream-target, open EventSource for /sse/{id}.
  */
 function attachSseStreams(root) {
@@ -18,7 +25,7 @@ function attachSseStreams(root) {
 
     const label = document.createElement("div");
     label.className = "streaming-label";
-    label.textContent = "Agent (SSE)";
+    label.textContent = "AsyncAgentBot (SSE)";
     el.insertBefore(label, el.firstChild);
 
     const body = document.createElement("div");
@@ -26,18 +33,39 @@ function attachSseStreams(root) {
     el.appendChild(body);
 
     const es = new EventSource(`/sse/${sid}`);
+    let streamFailed = false;
+    es.addEventListener("status", (ev) => {
+      const line = document.createElement("div");
+      line.className = "sse-status";
+      line.textContent = ev.data;
+      body.appendChild(line);
+    });
     es.addEventListener("message", (ev) => {
-      body.textContent += ev.data;
+      appendText(body, ev.data);
+    });
+    es.addEventListener("stream_error", (ev) => {
+      streamFailed = true;
+      el.classList.remove("streaming");
+      label.textContent = "Error";
+      const err = document.createElement("div");
+      err.className = "sse-error";
+      err.textContent = ev.data || "(unknown error)";
+      body.appendChild(err);
+      es.close();
     });
     es.addEventListener("done", () => {
       el.classList.remove("streaming");
-      label.textContent = "Agent";
+      if (!streamFailed) label.textContent = "AsyncAgentBot";
       es.close();
     });
     es.addEventListener("error", () => {
+      if (es.readyState === EventSource.CLOSED) return;
+      streamFailed = true;
       el.classList.remove("streaming");
-      label.textContent = "Error";
-      if (!body.textContent) body.textContent = "(stream failed)";
+      label.textContent = "Connection error";
+      if (body.childNodes.length === 0) {
+        appendText(body, "(SSE connection failed)");
+      }
       es.close();
     });
   });

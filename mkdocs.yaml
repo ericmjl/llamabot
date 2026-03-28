@@ -64,6 +64,11 @@ nav:
     - "Log Viewer": cli/log-viewer.md
     - "MCP Server": cli/mcp.md
   - Design & Explanation:
+    - "High-Level Design (HLD)": high-level-design.md
+    - "AgentBot reference graph":
+      - "LLD": designs/agentbot/LLD.md
+      - "EARS": designs/agentbot/reference-graph-EARS.md
+      - "Redirect (old location)": design/agentbot_pocketflow_graph.md
     - "Unified Chat Memory": design/unified_chat_memory.md
     - "Log Viewer": design/log_viewer.md
     - "Observability": design/observability.md

@@ -86,6 +86,18 @@ h1 {
   margin-bottom: 0.35rem;
 }
 
+.sse-status {
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.sse-error {
+  color: #f87171;
+  margin-top: 0.5rem;
+  white-space: pre-wrap;
+}
+
 form.row {
   display: flex;
   gap: 0.5rem;
