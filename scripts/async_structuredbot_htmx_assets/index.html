@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AsyncStructuredBot · Job Profile Extractor</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="{{ url_for('static_demo', path='demo.css') }}" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Job Profile Extractor</h1>
+      <p class="sub">
+        Paste a free-form career description. The server runs
+        <code>AsyncStructuredBot.stream_async</code> to extract structured
+        fields and streams the raw JSON via <code>SSE</code>. When the stream
+        finishes the form populates automatically.
+      </p>
+
+      <div class="layout">
+        <!-- ── Input column ─────────────────────────────── -->
+        <div class="col input-col">
+          <h2>Career Description</h2>
+          <form
+            id="extract-form"
+            hx-post="/extract"
+            hx-target="#stream-container"
+            hx-swap="innerHTML"
+          >
+            <textarea
+              name="description"
+              id="description"
+              placeholder="Paste your career summary, CV snippet, or LinkedIn bio here…"
+              rows="12"
+              required
+            ></textarea>
+            <button type="submit">Extract →</button>
+          </form>
+
+          <!-- Streaming JSON panel injected here by HTMX after submit -->
+          <div id="stream-container"></div>
+        </div>
+
+        <!-- ── Output form column ───────────────────────── -->
+        <div class="col output-col">
+          <h2>Extracted Profile</h2>
+          <div class="profile-form">
+            <div class="field">
+              <label for="f-full_name">Full Name</label>
+              <input id="f-full_name" type="text" readonly placeholder="—" />
+            </div>
+            <div class="field">
+              <label for="f-email">Email</label>
+              <input id="f-email" type="text" readonly placeholder="—" />
+            </div>
+            <div class="field">
+              <label for="f-phone">Phone</label>
+              <input id="f-phone" type="text" readonly placeholder="—" />
+            </div>
+            <div class="field two-col">
+              <div>
+                <label for="f-years_of_experience">Years of Experience</label>
+                <input id="f-years_of_experience" type="text" readonly placeholder="—" />
+              </div>
+              <div>
+                <label for="f-desired_role">Desired Role</label>
+                <input id="f-desired_role" type="text" readonly placeholder="—" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Top Skills</label>
+              <div id="f-top_skills" class="skills-list" aria-label="Top skills"></div>
+            </div>
+            <div class="field">
+              <label for="f-professional_summary">Professional Summary</label>
+              <textarea
+                id="f-professional_summary"
+                readonly
+                rows="4"
+                placeholder="—"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        Run:
+        <code
+          >pixi run uvicorn scripts.async_structuredbot_htmx_demo:app
+          --reload</code
+        >
+      </footer>
+    </div>
+    <script src="{{ url_for('static_demo', path='demo.js') }}" defer></script>
+  </body>
+</html>
