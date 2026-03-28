@@ -163,7 +163,7 @@ jobs:
         if: steps.check_version_bump.outputs.skip != 'true'
         run: |
           echo "Bumping version from ${{ env.current_version }} to ${{ env.version_number }}"
-          uv version --bump ${{ env.VERSION_NAME }}
+          uv version --frozen --bump ${{ env.VERSION_NAME }}
           echo "✓ Version bumped successfully"
 
       - name: Commit version bump
