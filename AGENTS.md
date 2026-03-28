@@ -23,6 +23,8 @@ This ensures that the most important and frequently needed guidance is easily ac
 ## User Corrections Log
 
 - 2026-03-24: Keep `uv`-based CI testing in `.github/workflows/pr-tests.yaml`, but do not keep `uv.lock` in the repository.
+- 2026-03-28: Do not add pytest coverage for standalone demos (e.g. FastAPI + HTMX examples under `docs/examples/`). Tests target library and CLI behavior; demos are exercised manually or via documentation.
+- 2026-03-28: Prefer **not** running the full test suite locally (`pixi run test`, etc.); let **GitHub Actions CI** validate tests. Agents should skip long local pytest runs unless the user explicitly asks for them.
 
 ## Project Overview
 
@@ -38,7 +40,7 @@ environment setup.
 
 **Key Commands**:
 
-- `pixi run test` - Run the test suite with pytest
+- `pixi run test` - Run the test suite with pytest (usually rely on CI instead of running the full suite locally unless asked)
 - `pixi run docs` - Serve documentation locally with mkdocs
 - `pixi run build-docs` - Build documentation
 - `pixi run jlab` - Start Jupyter Lab (requires notebooks feature)
@@ -224,11 +226,13 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 
 ### Testing
 
+- **CI vs local**: For routine work, **do not** run the full `pixi run test` suite locally by default; push and let **PR CI** run tests. Run targeted pytest only when the user asks or when debugging a specific failure.
 - **Framework**: pytest with coverage reporting
 - **Config**: Tests run with `pytest -v --cov --cov-report term-missing -m
   'not llm_eval' --durations=10`
 - **Exclusions**: Tests marked with `llm_eval` are excluded from default runs
 - **Structure**: Tests mirror the source structure in the `tests/` directory
+- **Demos**: Standalone example apps under `docs/examples/` (and similar) do **not** require dedicated pytest modules; avoid adding `tests/test_*_demo*.py` for them unless the maintainer explicitly asks.
 
 ### Packaging
 
