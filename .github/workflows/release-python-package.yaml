@@ -198,8 +198,9 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          llamabot configure default-model --model-name="${{ secrets.DEFAULT_LANGUAGE_MODEL }}"
-          llamabot git write-release-notes
+          # Use pixi so the llamabot console script is on PATH (bare `llamabot` is not installed globally on the runner).
+          pixi run llamabot configure default-model --model-name="${{ secrets.DEFAULT_LANGUAGE_MODEL }}"
+          pixi run llamabot git write-release-notes
 
       - name: Commit release notes
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
