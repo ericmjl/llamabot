@@ -22,17 +22,11 @@ from loguru import logger
 
 from .bot.agentbot import AgentBot
 from .bot.async_agentbot import AsyncAgentBot
-from .bot.async_bots import (
-    AsyncQueryBot,
-    AsyncSimpleBot,
-    AsyncStructuredBot,
-    AsyncToolBot,
-)
 from .bot.imagebot import ImageBot
-from .bot.querybot import QueryBot
-from .bot.simplebot import SimpleBot
-from .bot.structuredbot import StructuredBot
-from .bot.toolbot import ToolBot
+from .bot.querybot import AsyncQueryBot, QueryBot
+from .bot.simplebot import AsyncSimpleBot, SimpleBot
+from .bot.structuredbot import AsyncStructuredBot, StructuredBot
+from .bot.toolbot import AsyncToolBot, ToolBot
 from .components.chat_memory import ChatMemory
 from .components.docstore import BM25DocStore, LanceDBDocStore
 from .components.messages import dev, system, user

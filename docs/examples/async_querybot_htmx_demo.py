@@ -1,4 +1,4 @@
-"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.async_bots.AsyncQueryBot`.
+"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.querybot.AsyncQueryBot`.
 
 Documents are loaded from ``async_querybot_htmx_assets/corpus/*.md`` into a
 :class:`~llamabot.components.docstore.BM25DocStore` (lexical retrieval, no

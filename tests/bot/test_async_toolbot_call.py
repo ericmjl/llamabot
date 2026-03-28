@@ -1,4 +1,4 @@
-"""Tests for :meth:`~llamabot.bot.async_bots.AsyncToolBot.__call__`."""
+"""Tests for :meth:`~llamabot.bot.toolbot.AsyncToolBot.__call__`."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import pytest
 from litellm import ModelResponse
 
-from llamabot.bot.async_bots import AsyncToolBot
+from llamabot.bot.toolbot import AsyncToolBot
 from llamabot.components.tools import tool
 
 
@@ -75,7 +75,7 @@ async def test_decide_node_aexec_uses_async_toolbot(
     captured: dict = {}
 
     class FakeAsyncToolBot:
-        """Stub :class:`~llamabot.bot.async_bots.AsyncToolBot` for monkeypatching.
+        """Stub :class:`~llamabot.bot.toolbot.AsyncToolBot` for monkeypatching.
 
         :param args: Ignored.
         :param kwargs: Ignored.
@@ -87,7 +87,7 @@ async def test_decide_node_aexec_uses_async_toolbot(
         async def __call__(self, memory, **kwargs):
             """Record *memory* and return one ``demo_add`` tool call.
 
-            :param memory: Same as :meth:`~llamabot.bot.async_bots.AsyncToolBot.__call__`.
+            :param memory: Same as :meth:`~llamabot.bot.toolbot.AsyncToolBot.__call__`.
             :param kwargs: Ignored.
             :return: List of one tool call.
             """
@@ -106,7 +106,7 @@ async def test_decide_node_aexec_uses_async_toolbot(
             ]
 
     monkeypatch.setattr(
-        "llamabot.bot.async_bots.AsyncToolBot",
+        "llamabot.bot.toolbot.AsyncToolBot",
         FakeAsyncToolBot,
     )
 

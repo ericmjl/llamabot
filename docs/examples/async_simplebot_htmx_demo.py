@@ -1,4 +1,4 @@
-"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.async_bots.AsyncSimpleBot`.
+"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.simplebot.AsyncSimpleBot`.
 
 The page POSTs chat text with HTMX. The server echoes the user bubble and an
 assistant container; a small external script opens ``EventSource`` to ``/sse/{id}``,
@@ -35,7 +35,7 @@ def create_app(bot: AsyncSimpleBot | None = None) -> FastAPI:
     """Build the demo FastAPI application.
 
     :param bot: Optional bot instance (for tests). When ``None``, a default
-        :class:`~llamabot.bot.async_bots.AsyncSimpleBot` is constructed.
+        :class:`~llamabot.bot.simplebot.AsyncSimpleBot` is constructed.
     :return: Configured :class:`~fastapi.FastAPI` app.
     """
     app = FastAPI(

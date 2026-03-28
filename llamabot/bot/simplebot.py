@@ -1,4 +1,4 @@
-"""Class definition for SimpleBot."""
+"""Class definition for SimpleBot and :class:`AsyncSimpleBot`."""
 
 import contextvars
 import json
@@ -692,3 +692,113 @@ def extract_content(response: ModelResponse) -> str:
     if content is None:
         return ""
     return content
+
+
+class AsyncSimpleBot(SimpleBot):
+    """Async :class:`SimpleBot` with ``await`` and :meth:`stream_async`."""
+
+    async def stream_async(
+        self,
+        *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
+    ) -> AsyncGenerator[str, None]:
+        """Stream assistant text deltas (same inputs as :meth:`SimpleBot.__call__`)."""
+        messages, processed_messages = self.compose_messages_for_human_messages(
+            *human_messages
+        )
+
+        def finalize(final) -> None:
+            """Persist logging and memory after the stream is assembled.
+
+            :param final: Assembled response from LiteLLM ``stream_chunk_builder``.
+            """
+            tool_calls = extract_tool_calls(final)
+            content = extract_content(final)
+            response_message = AIMessage(content=content, tool_calls=tool_calls)
+            sqlite_log(self, messages + [response_message])
+            if self.memory and processed_messages:
+                self.memory.append(processed_messages[-1])
+                self.memory.append(response_message)
+
+        async for delta in stream_tokens_for_messages(
+            self, messages, finalize=finalize
+        ):
+            yield delta
+
+    async def __call__(
+        self,
+        *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
+    ) -> AIMessage:
+        """Async completion: same role as :meth:`SimpleBot.__call__`."""
+        query_content = " ".join(
+            [
+                msg.content if hasattr(msg, "content") else str(msg)
+                for msg in human_messages
+            ]
+        )
+        operation_name = get_caller_variable_name(self)
+        if operation_name is None:
+            operation_name = "simplebot_call"
+
+        current_span = get_current_span()
+        if current_span:
+            outer_span = Span(
+                operation_name,
+                trace_id=current_span.trace_id,
+                parent_span_id=current_span.span_id,
+                query=query_content,
+                model=self.model_name,
+                temperature=self.temperature,
+            )
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+        else:
+            new_trace_id = str(uuid.uuid4())
+            outer_span = Span(
+                operation_name,
+                trace_id=new_trace_id,
+                query=query_content,
+                model=self.model_name,
+                temperature=self.temperature,
+            )
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+
+        with outer_span:
+            messages, processed_messages = self.compose_messages_for_human_messages(
+                *human_messages
+            )
+            self.record_span_message_metadata(outer_span, messages, processed_messages)
+
+            result_holder: dict[str, AIMessage | None] = {"msg": None}
+
+            def finalize(final) -> None:
+                """Record span fields, logging, and memory from the final response.
+
+                :param final: Assembled response from LiteLLM ``stream_chunk_builder``.
+                """
+                tool_calls = extract_tool_calls(final)
+                content = extract_content(final)
+                response_message = AIMessage(content=content, tool_calls=tool_calls)
+                result_holder["msg"] = response_message
+                outer_span["response_length"] = len(content) if content else 0
+                outer_span["response"] = content[:500] if content else None
+                outer_span["tool_calls_count"] = len(tool_calls) if tool_calls else 0
+                if tool_calls:
+                    tool_names = [call.function.name for call in tool_calls]
+                    outer_span["tool_calls"] = ", ".join(tool_names)
+                    outer_span["tool_calls_count"] = len(tool_calls)
+                sqlite_log(self, messages + [response_message])
+                if self.memory and processed_messages:
+                    self.memory.append(processed_messages[-1])
+                    self.memory.append(response_message)
+
+            async for delta in stream_tokens_for_messages(
+                self, messages, finalize=finalize
+            ):
+                if self.stream_target == "stdout":
+                    print(delta, end="")
+
+            response_message = result_holder["msg"]
+            if response_message is None:
+                raise RuntimeError("Async completion produced no assistant message")
+            return response_message

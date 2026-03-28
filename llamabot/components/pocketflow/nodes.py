@@ -502,7 +502,7 @@ class DecideNode(Node):
         return func_name
 
     async def _exec_decision_async(self, prep_res, span_obj: Optional[Span]):
-        """Async counterpart to :meth:`_exec_decision` using :class:`~llamabot.bot.async_bots.AsyncToolBot`.
+        """Async counterpart to :meth:`_exec_decision` using :class:`~llamabot.bot.toolbot.AsyncToolBot`.
 
         :param prep_res: Prepared result from prep method.
         :param span_obj: Optional span object for logging.
@@ -547,7 +547,7 @@ class DecideNode(Node):
                 span_obj.log("forced_termination", reason="max_iterations_exceeded")
             return "respond_to_user"
 
-        from llamabot.bot.async_bots import AsyncToolBot
+        from llamabot.bot.toolbot import AsyncToolBot
 
         is_ollama_model = self.model_name.startswith(
             "ollama"

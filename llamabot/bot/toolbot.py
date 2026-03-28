@@ -1,17 +1,21 @@
-"""ToolBot - A single-turn bot that can execute tools."""
+"""ToolBot - A single-turn bot that can execute tools and :class:`AsyncToolBot`."""
 
-from typing import Callable, Dict, List, Optional, Union
+from typing import AsyncGenerator, Callable, Dict, List, Optional, Union
+
 from loguru import logger
 
+from llamabot.bot.simplebot import (
+    SimpleBot,
+    async_stream_chunks,
+    extract_tool_calls,
+    make_async_response,
+    make_response,
+    stream_chunks,
+    stream_tokens_for_messages,
+)
 from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.components.tools import DEFAULT_TOOLS
-from llamabot.bot.simplebot import (
-    SimpleBot,
-    extract_tool_calls,
-    make_response,
-    stream_chunks,
-)
 from llamabot.prompt_manager import prompt
 
 
@@ -121,7 +125,7 @@ class ToolBot(SimpleBot):
     ) -> tuple[list[BaseMessage], list[BaseMessage]]:
         """Build the message list for tool selection and the user message list for memory.
 
-        Shared by :meth:`__call__` and :class:`~llamabot.bot.async_bots.AsyncToolBot`.
+        Shared by :meth:`__call__` and :class:`AsyncToolBot`.
 
         :param messages: Same as :meth:`__call__`.
         :param execution_history: Optional prior tool execution context.
@@ -223,6 +227,95 @@ class ToolBot(SimpleBot):
                         )
         except (TypeError, AttributeError):
             # Skip logging if response doesn't support len() (e.g., Mock objects in tests)
+            pass
+
+        if user_messages:
+            self.chat_memory.append(user_messages[0])
+            self.chat_memory.append(AIMessage(content=str(tool_calls)))
+
+        return tool_calls
+
+
+class AsyncToolBot(ToolBot):
+    """Async :class:`ToolBot`.
+
+    :meth:`__call__` uses LiteLLM ``acompletion`` and :func:`~llamabot.bot.simplebot.async_stream_chunks`
+    (no :func:`asyncio.to_thread` around the completion). For sync tool selection on a worker
+    thread, use :class:`ToolBot` or ``await asyncio.to_thread(bot, ...)``.
+    """
+
+    async def stream_async(
+        self,
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
+        execution_history: Optional[List[Dict]] = None,
+    ) -> AsyncGenerator[str, None]:
+        """Stream assistant text for tool selection (same inputs as :meth:`ToolBot.__call__`)."""
+        message_list, user_messages = self.compose_tool_messages(
+            *messages, execution_history=execution_history
+        )
+        logger.debug("Message list: {}", message_list)
+
+        def finalize(final) -> None:
+            """Append tool-call results to chat memory after streaming completes.
+
+            :param final: Assembled response from LiteLLM ``stream_chunk_builder``.
+            """
+            tool_calls = extract_tool_calls(final)
+            if user_messages:
+                self.chat_memory.append(user_messages[0])
+                self.chat_memory.append(AIMessage(content=str(tool_calls)))
+
+        async for delta in stream_tokens_for_messages(
+            self, message_list, finalize=finalize
+        ):
+            yield delta
+
+    async def __call__(
+        self,
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]], Callable],
+        execution_history: Optional[List[Dict]] = None,
+    ) -> list:
+        """Async tool selection via ``acompletion`` (same contract as :meth:`ToolBot.__call__`)."""
+        message_list, user_messages = self.compose_tool_messages(
+            *messages, execution_history=execution_history
+        )
+
+        stream = self.stream_target != "none"
+        logger.debug("Message list: {}", message_list)
+        response = await make_async_response(self, message_list, stream=stream)
+        final = await async_stream_chunks(self, response, target=self.stream_target)
+        logger.debug("Response: {}", final)
+
+        try:
+            if hasattr(final, "choices") and hasattr(final.choices, "__len__"):
+                choices_len = len(final.choices)
+                if choices_len > 0:
+                    message = final.choices[0].message
+                    tool_calls_attr = getattr(message, "tool_calls", None)
+                    content_attr = getattr(message, "content", None)
+                    logger.debug("Response message.tool_calls: {}", tool_calls_attr)
+                    logger.debug("Response message.content: {}", content_attr)
+        except (TypeError, AttributeError):
+            pass
+
+        tool_calls = extract_tool_calls(final)
+
+        try:
+            if (
+                tool_calls
+                and hasattr(final, "choices")
+                and hasattr(final.choices, "__len__")
+            ):
+                choices_len = len(final.choices)
+                if choices_len > 0:
+                    message = final.choices[0].message
+                    if message.tool_calls is None and message.content:
+                        logger.debug(
+                            "Parsed tool calls from JSON content for model {}: {}",
+                            self.model_name,
+                            [tc.function.name for tc in tool_calls],
+                        )
+        except (TypeError, AttributeError):
             pass
 
         if user_messages:

@@ -1,9 +1,10 @@
-"""Class definition for QueryBot."""
+"""Class definition for QueryBot and :class:`AsyncQueryBot`."""
 
+import asyncio
 import contextvars
 import uuid
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import AsyncGenerator, List, Optional, Union
 
 from dotenv import load_dotenv
 
@@ -13,6 +14,7 @@ from llamabot.bot.simplebot import (
     extract_tool_calls,
     make_response,
     stream_chunks,
+    stream_tokens_for_messages,
 )
 from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.messages import (
@@ -101,7 +103,7 @@ class QueryBot(SimpleBot):
     ) -> tuple[list[BaseMessage], list[BaseMessage]]:
         """Build retrieval-augmented messages for the model and logging.
 
-        Shared by :meth:`__call__` and :class:`~llamabot.bot.async_bots.AsyncQueryBot`.
+        Shared by :meth:`__call__` and :class:`AsyncQueryBot`.
 
         :param query: User query.
         :param n_results: Document retrieval count.
@@ -211,3 +213,76 @@ class QueryBot(SimpleBot):
                 self.memory.append(response_message.content)
 
             return response_message
+
+
+class AsyncQueryBot(QueryBot):
+    """Async :class:`QueryBot`."""
+
+    async def stream_async(
+        self,
+        query: Union[str, HumanMessage, BaseMessage],
+        n_results: int = 20,
+    ) -> AsyncGenerator[str, None]:
+        """Stream assistant text after RAG retrieval (same shape as sync :meth:`QueryBot.__call__`)."""
+        query_content = query if isinstance(query, str) else query.content
+
+        operation_name = get_caller_variable_name(self)
+        if operation_name is None:
+            operation_name = "querybot_stream_async"
+
+        current_span = get_current_span()
+        if current_span:
+            outer_span = Span(
+                operation_name,
+                trace_id=current_span.trace_id,
+                parent_span_id=current_span.span_id,
+                query=query_content,
+                n_results=n_results,
+                model=self.model_name,
+            )
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+        else:
+            new_trace_id = str(uuid.uuid4())
+            outer_span = Span(
+                operation_name,
+                trace_id=new_trace_id,
+                query=query_content,
+                n_results=n_results,
+                model=self.model_name,
+            )
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+
+        with outer_span:
+            messages, processed_messages = self.compose_rag_messages(
+                query, n_results, outer_span
+            )
+
+            def finalize(final) -> None:
+                """Update span, log, and optional memory docstore after RAG streaming.
+
+                :param final: Assembled response from LiteLLM ``stream_chunk_builder``.
+                """
+                tool_calls = extract_tool_calls(final)
+                content = extract_content(final)
+                response_message = AIMessage(content=content, tool_calls=tool_calls)
+                outer_span["response_length"] = len(content) if content else 0
+                outer_span["response"] = content[:500] if content else None
+                outer_span["tool_calls_count"] = len(tool_calls) if tool_calls else 0
+                sqlite_log(self, messages + [response_message])
+                if self.memory:
+                    self.memory.append(response_message.content)
+
+            async for delta in stream_tokens_for_messages(
+                self, processed_messages, finalize=finalize
+            ):
+                yield delta
+
+    async def __call__(
+        self,
+        query: Union[str, HumanMessage, BaseMessage],
+        n_results: int = 20,
+    ) -> AIMessage:
+        """Async RAG query; delegates to the sync implementation on a worker thread."""
+        return await asyncio.to_thread(super().__call__, query, n_results)

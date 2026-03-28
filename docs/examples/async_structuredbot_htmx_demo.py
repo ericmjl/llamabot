@@ -1,7 +1,7 @@
-"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.async_bots.AsyncStructuredBot`.
+"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.structuredbot.AsyncStructuredBot`.
 
 The page accepts a free-form career description. The server runs
-:class:`~llamabot.bot.async_bots.AsyncStructuredBot` to extract structured
+:class:`~llamabot.bot.structuredbot.AsyncStructuredBot` to extract structured
 fields (name, e-mail, skills, …) and streams the raw JSON via SSE.  When the
 stream finishes the client-side script parses the accumulated JSON and
 populates the read-only profile form.
@@ -27,7 +27,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator
 from sse_starlette.sse import EventSourceResponse
 
-from llamabot.bot.async_bots import AsyncStructuredBot
+from llamabot.bot.structuredbot import AsyncStructuredBot
 from llamabot.sse import sse_stream
 
 ASSETS_DIR = Path(__file__).resolve().parent / "async_structuredbot_htmx_assets"
@@ -88,7 +88,7 @@ def create_app(bot: AsyncStructuredBot | None = None) -> FastAPI:
     """Build the demo FastAPI application.
 
     :param bot: Optional bot instance (for tests / custom models). When
-        ``None``, a default :class:`~llamabot.bot.async_bots.AsyncStructuredBot`
+        ``None``, a default :class:`~llamabot.bot.structuredbot.AsyncStructuredBot`
         targeting ``ollama_chat/phi3`` is constructed.
     :return: Configured :class:`~fastapi.FastAPI` application.
     """

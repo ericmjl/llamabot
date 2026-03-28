@@ -1,15 +1,16 @@
-"""Implementation source code for PydanticBot.
+"""Implementation source code for PydanticBot and :class:`AsyncStructuredBot`.
 
 Courtesey of Elliot Salisbury (@ElliotSalisbury).
 
 Highly inspired by instructor by jxnl (https://github.com/jxnl/instructor).
 """
 
+import asyncio
 import inspect
 import json
 import uuid
 from datetime import datetime
-from typing import Union
+from typing import AsyncGenerator, Union
 
 from litellm import get_supported_openai_params, supports_response_schema
 from loguru import logger
@@ -20,6 +21,7 @@ from llamabot.bot.simplebot import (
     extract_content,
     make_response,
     stream_chunks,
+    stream_tokens_for_messages,
 )
 from llamabot.components.messages import (
     AIMessage,
@@ -107,7 +109,7 @@ class StructuredBot(SimpleBot):
         """Build messages for the first structured completion attempt (no retry turns).
 
         Shared by :meth:`__call__` (initial ``full_messages``) and
-        :class:`~llamabot.bot.async_bots.AsyncStructuredBot`.
+        :class:`AsyncStructuredBot`.
 
         :param user_messages: Same inputs as :meth:`__call__`.
         :return: ``(full_messages, user_messages)`` where ``full_messages`` includes the
@@ -448,3 +450,84 @@ class StructuredBot(SimpleBot):
         )
 
         return combined_html
+
+
+class AsyncStructuredBot(StructuredBot):
+    """Async :class:`StructuredBot`."""
+
+    async def stream_async(
+        self,
+        *user_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
+    ) -> AsyncGenerator[str, None]:
+        """Stream one structured completion attempt (no validation on partial chunks)."""
+        full_messages, messages = self.compose_structured_first_attempt_messages(
+            *user_messages
+        )
+        query_content = " ".join(
+            [msg.content if hasattr(msg, "content") else str(msg) for msg in messages]
+        )
+
+        operation_name = get_caller_variable_name(self)
+        if operation_name is None:
+            operation_name = "structuredbot_stream_async"
+
+        current_span = get_current_span()
+        if current_span:
+            model_name = (
+                self.pydantic_model.__name__
+                if inspect.isclass(self.pydantic_model)
+                else type(self.pydantic_model).__name__
+            )
+            outer_span = Span(
+                operation_name,
+                trace_id=current_span.trace_id,
+                parent_span_id=current_span.span_id,
+                query=query_content,
+                model=self.model_name,
+                pydantic_model=model_name,
+            )
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+        else:
+            model_name = (
+                self.pydantic_model.__name__
+                if inspect.isclass(self.pydantic_model)
+                else type(self.pydantic_model).__name__
+            )
+            new_trace_id = str(uuid.uuid4())
+            outer_span = Span(
+                operation_name,
+                trace_id=new_trace_id,
+                query=query_content,
+                model=self.model_name,
+                pydantic_model=model_name,
+            )
+            if outer_span.trace_id not in self._trace_ids:
+                self._trace_ids.append(outer_span.trace_id)
+
+        with outer_span:
+
+            def finalize(final) -> None:
+                """Log the assembled structured JSON text after streaming completes.
+
+                :param final: Assembled response from LiteLLM ``stream_chunk_builder``.
+                """
+                content = extract_content(final)
+                last_response = AIMessage(content=content)
+                sqlite_log(self, messages + [last_response])
+
+            async for delta in stream_tokens_for_messages(
+                self, full_messages, finalize=finalize
+            ):
+                yield delta
+
+    async def __call__(
+        self,
+        *messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
+        num_attempts: int = 10,
+        verbose: bool = False,
+    ) -> BaseModel | None:
+        """Async structured completion; delegates to the sync implementation on a worker thread."""
+        return await asyncio.to_thread(
+            super().__call__, *messages, num_attempts=num_attempts, verbose=verbose
+        )

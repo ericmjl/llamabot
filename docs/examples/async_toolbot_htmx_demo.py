@@ -1,4 +1,4 @@
-"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.async_bots.AsyncToolBot`.
+"""FastAPI + HTMX + SSE demo using :class:`~llamabot.bot.toolbot.AsyncToolBot`.
 
 The UI posts a natural-language request. The server uses a small custom SSE
 stream (not generic :func:`~llamabot.sse.sse_stream`) because tool completions
