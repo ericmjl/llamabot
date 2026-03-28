@@ -7,7 +7,7 @@ which streams tokens from :func:`~llamabot.sse.sse_stream` (backed by
 
 Run (from repository root)::
 
-    pixi run uvicorn scripts.async_simplebot_htmx_demo:app --reload
+    pixi run uvicorn docs.examples.async_simplebot_htmx_demo:app --reload
 
 Then open http://127.0.0.1:8000/ . Requires a working LiteLLM model (default
 ``ollama/phi3`` — adjust in ``create_app``).

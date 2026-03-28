@@ -8,7 +8,7 @@ populates the read-only profile form.
 
 Run (from repository root)::
 
-    pixi run uvicorn scripts.async_structuredbot_htmx_demo:app --reload
+    pixi run uvicorn docs.examples.async_structuredbot_htmx_demo:app --reload
 
 Then open http://127.0.0.1:8000/ .  Requires a working LiteLLM model (default
 ``ollama/phi3`` — adjust ``model_name`` in :func:`create_app`).
