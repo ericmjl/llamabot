@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AsyncQueryBot · HTMX + SSE</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="{{ url_for('static_demo', path='demo.css') }}" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>AsyncQueryBot demo</h1>
+      <p class="sub">
+        Questions are answered with
+        <strong>BM25 retrieval</strong> over bundled docs, then streamed via
+        <code>SSE</code> from <code>AsyncQueryBot.stream_async</code>
+        (<code>llamabot.sse.sse_stream</code>). Try: “What is QueryBot?” or
+        “How does AsyncQueryBot stream?”
+      </p>
+
+      <div id="chat" class="chat" aria-live="polite"></div>
+
+      <form
+        class="row"
+        hx-post="/send"
+        hx-target="#chat"
+        hx-swap="beforeend"
+      >
+        <input
+          type="text"
+          name="message"
+          placeholder="Ask about LlamaBot…"
+          required
+          autocomplete="off"
+        />
+        <button type="submit">Ask</button>
+      </form>
+
+      <footer>
+        Run:
+        <code>pixi run uvicorn docs.examples.async_querybot_htmx_demo:app --reload</code>
+      </footer>
+    </div>
+    <script src="{{ url_for('static_demo', path='demo.js') }}" defer></script>
+  </body>
+</html>
