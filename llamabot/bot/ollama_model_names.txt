@@ -1,5 +1,6 @@
 nemotron-cascade-2
 minimax-m2.7
+gemma4
 lfm2
 nemotron-3-super
 qwen3.5
