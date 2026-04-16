@@ -1,3 +1,6 @@
+qwen3.6
+medgemma1.5
+medgemma
 glm-5.1
 nemotron-cascade-2
 minimax-m2.7
