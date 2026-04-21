@@ -1,3 +1,4 @@
+kimi-k2.6
 qwen3.6
 medgemma1.5
 medgemma
