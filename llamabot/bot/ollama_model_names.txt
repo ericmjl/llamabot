@@ -1,3 +1,4 @@
+deepseek-v4-flash
 kimi-k2.6
 qwen3.6
 medgemma1.5
