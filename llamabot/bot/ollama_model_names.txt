@@ -1,5 +1,6 @@
 deepseek-v4-flash
 deepseek-v4-pro
+laguna-xs.2
 kimi-k2.6
 qwen3.6
 medgemma1.5
