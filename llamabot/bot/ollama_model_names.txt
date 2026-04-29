@@ -1,3 +1,6 @@
+mistral-medium-3.5
+granite4.1
+nemotron3
 deepseek-v4-flash
 deepseek-v4-pro
 laguna-xs.2
