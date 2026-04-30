@@ -472,6 +472,109 @@ def test_decide_node_uses_system_prompt():
         assert call_args.kwargs["system_prompt"] == custom_prompt
 
 
+def test_decide_node_queues_additional_tool_calls():
+    """Test that DecideNode queues multi-tool responses instead of dropping extras."""
+    from unittest.mock import MagicMock, patch
+
+    from llamabot.components.pocketflow.nodes import DecideNode
+
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        first_call = MagicMock()
+        first_call.function = MagicMock()
+        first_call.function.name = "demo__greet"
+        first_call.function.arguments = '{"name":"Ada"}'
+        second_call = MagicMock()
+        second_call.function = MagicMock()
+        second_call.function.name = "local_uppercase"
+        second_call.function.arguments = '{"text":"hello mcp"}'
+        mock_toolbot.return_value = [first_call, second_call]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        decide_node = DecideNode(
+            tools=[],
+            system_prompt="Pick tools.",
+            model_name="anthropic/claude-sonnet-4-5-20250929",
+        )
+        prep_res = {"memory": ["Use both tools"], "globals_dict": {}}
+
+        first_selected = decide_node.exec(prep_res)
+        assert first_selected == "demo__greet"
+        assert prep_res["func_call"] == {"name": "Ada"}
+        assert prep_res["pending_tool_calls"] == [
+            {"name": "local_uppercase", "arguments": '{"text":"hello mcp"}'}
+        ]
+
+        second_selected = decide_node.exec(prep_res)
+        assert second_selected == "local_uppercase"
+        assert prep_res["func_call"] == {"text": "hello mcp"}
+        assert prep_res["pending_tool_calls"] == []
+
+        # The second selection should consume the queued call without another model request.
+        assert mock_toolbot.call_count == 1
+
+
+def test_decide_node_passes_execution_history_to_toolbot():
+    """Test that DecideNode forwards execution history into ToolBot context."""
+    from unittest.mock import MagicMock, patch
+
+    from llamabot.components.pocketflow.nodes import DecideNode
+
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        only_call = MagicMock()
+        only_call.function = MagicMock()
+        only_call.function.name = "respond_to_user"
+        only_call.function.arguments = '{"response":"done"}'
+        mock_toolbot.return_value = [only_call]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        decide_node = DecideNode(
+            tools=[],
+            system_prompt="Pick tools.",
+            model_name="anthropic/claude-sonnet-4-5-20250929",
+        )
+        prep_res = {
+            "memory": ["Finish the task"],
+            "globals_dict": {},
+            "execution_history": [
+                {
+                    "tool_name": "demo__greet",
+                    "args": {"name": "Ada"},
+                    "result": "Hello, Ada!",
+                    "was_cached": False,
+                }
+            ],
+        }
+
+        selected = decide_node.exec(prep_res)
+        assert selected == "respond_to_user"
+        mock_toolbot.assert_called_once_with(
+            prep_res["memory"], execution_history=prep_res["execution_history"]
+        )
+
+
+def test_funcnode_post_records_execution_history():
+    """Test that tool-node post appends structured execution history."""
+    wrapped_tool = echo_function
+    shared = {"memory": []}
+    prep_result = {"func_call": {"text": "hello history"}}
+    exec_result = "hello history"
+
+    action = wrapped_tool.post(shared, prep_result, exec_result)
+
+    assert action == "decide"
+    assert shared["memory"][-1] == "hello history"
+    assert "execution_history" in shared
+    assert len(shared["execution_history"]) == 1
+    assert shared["execution_history"][0] == {
+        "tool_name": "echo_function",
+        "args": {"text": "hello history"},
+        "result": "hello history",
+        "was_cached": False,
+    }
+
+
 def test_agentbot_with_multiple_tools():
     """Test AgentBot with multiple user-provided tools."""
     bot = AgentBot(tools=[echo_function, add_function])
