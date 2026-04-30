@@ -25,6 +25,7 @@ This ensures that the most important and frequently needed guidance is easily ac
 - 2026-03-24: Keep `uv`-based CI testing in `.github/workflows/pr-tests.yaml`, but do not keep `uv.lock` in the repository.
 - 2026-03-28: Do not add pytest coverage for standalone demos (e.g. FastAPI + HTMX examples under `docs/examples/`). Tests target library and CLI behavior; demos are exercised manually or via documentation.
 - 2026-03-28: Prefer **not** running the full test suite locally (`pixi run test`, etc.); let **GitHub Actions CI** validate tests. Agents should skip long local pytest runs unless the user explicitly asks for them.
+- 2026-04-30: **Marimo notebooks — no disk edits by agents.** Do not use Write, StrReplace, apply_patch, or other repo edit tools on Marimo notebook `.py` files to change cells or notebook structure. Mutate notebooks only via `marimo._code_mode` in the **running** notebook kernel (see `.agents/skills/marimo-pair/` and `scripts/execute-code.sh`). If no session is running, ask the user to start `marimo edit` (or open the notebook) before applying changes.
 
 ## Project Overview
 
@@ -85,8 +86,11 @@ without the "pixi run" prefix. Use `markdownlint filename.md` instead of
 `pixi run markdownlint filename.md`. If markdownlint is not available, install
 it using `pixi global install markdownlint`.
 
-**Notebooks**: All notebooks in this repository are Marimo notebooks. When
-agents create or edit notebooks, they must run `uvx marimo check
+**Notebooks**: All notebooks in this repository are Marimo notebooks.
+
+**CRITICAL — agent edits vs disk**: LLM agents must **not** edit Marimo notebook `.py` files on disk (no Write / StrReplace / apply_patch to notebook sources for cell content or structure). The running marimo kernel owns the notebook; use **`marimo._code_mode`** through an active session instead (marimo-pair skill: `bash .agents/skills/marimo-pair/scripts/execute-code.sh` with a heredoc, `--url`, and `--session` as needed). Humans may still edit notebook files locally with editor workflows; this rule targets **automated agent** changes.
+
+When agents create or edit notebooks via normal workflows, they must run `uvx marimo check
 <path/to/notebook.py>` to validate the notebook and fix any issues raised by
 the check command. Always run `uvx marimo check` on notebooks before considering
 them complete - this catches critical errors like duplicate variable definitions
@@ -100,7 +104,7 @@ in `docs/how-to/` that are converted to markdown for documentation:
 
 1. Run the conversion script: `pixi run python scripts/convert_marimo_to_markdown.py`
 2. Run markdownlint on the generated files: `markdownlint docs/how-to/*.md`
-3. Fix any linting errors by editing the source `.py` files (not the generated `.md` files)
+3. Fix any linting errors by editing the source `.py` files (not the generated `.md` files). **Agents** should follow the **CRITICAL — agent edits vs disk** rule above: prefer `marimo._code_mode` when a session is active rather than patching notebook `.py` files on disk.
 4. Common fixes needed:
    - Add blank lines before lists (MD032)
    - Change H1 headings to H2 to avoid multiple top-level headings (MD025)
