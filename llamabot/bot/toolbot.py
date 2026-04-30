@@ -16,6 +16,8 @@ from llamabot.bot.simplebot import (
 from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.components.tools import DEFAULT_TOOLS
+from llamabot.mcp.manager import MCPClientManager
+from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec
 from llamabot.prompt_manager import prompt
 
 
@@ -81,6 +83,8 @@ class ToolBot(SimpleBot):
     :param tools: Optional list of additional tools to include
     :param chat_memory: Chat memory component for context retrieval
     :param completion_kwargs: Additional keyword arguments for completion
+    :param mcp_servers: Optional MCP servers whose tools are appended after defaults.
+    :param mcp_options: MCP integration options (timeouts, allow/deny lists).
     """
 
     def __init__(
@@ -89,6 +93,8 @@ class ToolBot(SimpleBot):
         model_name: str,
         tools: Optional[List[Callable]] = None,
         chat_memory: Optional[ChatMemory] = None,
+        mcp_servers: Optional[List[MCPServerSpec]] = None,
+        mcp_options: Optional[MCPIntegrationOptions] = None,
         **completion_kwargs,
     ):
         super().__init__(
@@ -96,6 +102,13 @@ class ToolBot(SimpleBot):
             model_name=model_name,
             **completion_kwargs,
         )
+
+        self._mcp_manager: MCPClientManager | None = None
+        mcp_tool_list: List[Callable] = []
+        if mcp_servers:
+            self._mcp_manager = MCPClientManager(mcp_servers, mcp_options)
+            self._mcp_manager.start()
+            mcp_tool_list = self._mcp_manager.llamabot_tools()
 
         # Use tools as-is if provided (they already include DEFAULT_TOOLS from AgentBot)
         # Only add DEFAULT_TOOLS if no tools are provided or if DEFAULT_TOOLS aren't already present
@@ -114,9 +127,16 @@ class ToolBot(SimpleBot):
                 # DEFAULT_TOOLS not included (direct ToolBot call), add them
                 all_tools = DEFAULT_TOOLS + tools
 
+        all_tools = list(all_tools) + mcp_tool_list
         self.tools = [f.json_schema for f in all_tools]
         self.name_to_tool_map = {f.__name__: f for f in all_tools}
         self.chat_memory = chat_memory or ChatMemory()
+
+    def close_mcp(self) -> None:
+        """Close MCP sessions opened via ``mcp_servers``."""
+        if self._mcp_manager is not None:
+            self._mcp_manager.close()
+            self._mcp_manager = None
 
     def compose_tool_messages(
         self,

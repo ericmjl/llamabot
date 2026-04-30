@@ -26,6 +26,7 @@ nav:
     - "Generate Blog Banner Images": how-to/generate-blog-banner-images.md
     - "Process Receipts with LLM Agents": how-to/receipt-processing.md
     - "Build a Data Analysis Chatbot": how-to/data-analysis-agentbot.md
+    - "AgentBot with MCP tools": how-to/agent-mcp-tools.md
   - Tutorials:
     - "SimpleBot Tutorial": tutorials/simplebot.md
     - "StructuredBot Tutorial": tutorials/structuredbot.md

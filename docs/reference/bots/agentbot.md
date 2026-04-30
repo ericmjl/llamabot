@@ -23,7 +23,9 @@ def __init__(
     decide_node: Optional[DecideNode] = None,
     system_prompt: Optional[str] = None,
     model_name: str = "gpt-4o-mini",
-    chat_memory: Optional[ChatMemory] = None,
+    max_iterations: Optional[int] = None,
+    mcp_servers: Optional[List[MCPServerSpec]] = None,
+    mcp_options: Optional[MCPIntegrationOptions] = None,
     **completion_kwargs,
 )
 ```
@@ -41,6 +43,12 @@ def __init__(
 - **chat_memory** (`Optional[ChatMemory]`, default: `None`): Chat memory component for maintaining conversation context.
 
 - **completion_kwargs**: Additional keyword arguments to pass to the completion function.
+
+- **mcp_servers**: Optional list of ``MCPServerSpec``; default ``None``. MCP tools are merged after Python ``tools``. See [AgentBot with MCP tools](../../how-to/agent-mcp-tools.md).
+
+- **mcp_options**: Optional ``MCPIntegrationOptions``; default ``None``. Startup mode, timeouts, allow/deny lists, and tool namespace separator.
+
+When using MCP servers, call ``bot.close_mcp()`` when finished to release subprocess / HTTP sessions.
 
 ### Tool Requirements
 

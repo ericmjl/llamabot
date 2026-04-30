@@ -25,6 +25,8 @@ from pocketflow import AsyncFlow, AsyncNode, Node
 from llamabot.bot.agentbot import _validate_tools
 from llamabot.components.pocketflow import DecideNode
 from llamabot.components.tools import DEFAULT_TOOLS
+from llamabot.mcp.manager import MCPClientManager
+from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec
 
 
 def _tool_routing_name(tool_node: Callable) -> str:
@@ -118,6 +120,9 @@ class AsyncAgentBot:
 
     Graph topology matches :class:`~llamabot.bot.agentbot.AgentBot`; only the flow runner
     and node wrappers differ. Visualization and span APIs mirror :class:`AgentBot`.
+
+    Supports the same ``mcp_servers`` / ``mcp_options`` constructor arguments as
+    :class:`~llamabot.bot.agentbot.AgentBot`; use :meth:`close_mcp` for cleanup.
     """
 
     def __init__(
@@ -127,11 +132,21 @@ class AsyncAgentBot:
         system_prompt: Optional[str] = None,
         model_name: str = "gpt-4.1",
         max_iterations: Optional[int] = None,
+        mcp_servers: Optional[List[MCPServerSpec]] = None,
+        mcp_options: Optional[MCPIntegrationOptions] = None,
         **completion_kwargs,
     ) -> None:
-        _validate_tools(tools)
+        self._mcp_manager: MCPClientManager | None = None
+        mcp_tool_list: List[Callable] = []
+        if mcp_servers:
+            self._mcp_manager = MCPClientManager(mcp_servers, mcp_options)
+            self._mcp_manager.start()
+            mcp_tool_list = self._mcp_manager.llamabot_tools()
 
-        all_tools = list(DEFAULT_TOOLS) + tools
+        _validate_tools(tools)
+        _validate_tools(mcp_tool_list)
+
+        all_tools = list(DEFAULT_TOOLS) + tools + mcp_tool_list
         self.tools = all_tools
 
         if decide_node is None:
@@ -173,6 +188,12 @@ class AsyncAgentBot:
         self.flow = AsyncFlow(start=async_decide)
         self.shared: dict = dict(memory=[], globals_dict={})
         self._trace_ids: list = []
+
+    def close_mcp(self) -> None:
+        """Close MCP sessions opened via ``mcp_servers`` (mirror :meth:`~llamabot.bot.agentbot.AgentBot.close_mcp`)."""
+        if self._mcp_manager is not None:
+            self._mcp_manager.close()
+            self._mcp_manager = None
 
     async def arun(self, query: str, globals_dict: Optional[dict] = None) -> object:
         """Execute the agent asynchronously via :meth:`AsyncFlow.run_async`.

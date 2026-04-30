@@ -2,7 +2,7 @@
 
 EARS (Easy Approach to Requirements Syntax) provides structured patterns for writing unambiguous, testable requirements.
 
-**Source**: https://alistairmavin.com/ears/
+**Source**: <https://alistairmavin.com/ears/>
 
 ## File Location
 
@@ -62,6 +62,7 @@ Each EARS file contains requirements with status markers:
 - **NNN**: Sequential number, zero-padded (001, 002, ...)
 
 **Example IDs:**
+
 - `AUTH-LOGIN-001` - Auth feature, login sub-feature, requirement 1
 - `PAY-CHECKOUT-010` - Payments feature, checkout sub-feature, requirement 10
 - `CART-EDIT-005` - Cart feature, edit sub-feature, requirement 5
@@ -121,11 +122,13 @@ A spec should be interpretable correctly even if found via grep without surround
 ### Examples
 
 **Bad** — sounds universal, actually scoped to one notification channel:
+
 ```
 - **NOTIF-BE-003**: Notifications shall use a 30-second delivery timeout.
 ```
 
 **Good** — scope is explicit:
+
 ```
 - **NOTIF-BE-003**: Both email and push notifications shall use a 30-second delivery timeout.
 ```

@@ -12,6 +12,8 @@ from pocketflow import Flow, Node
 
 from llamabot.components.pocketflow import DecideNode
 from llamabot.components.tools import DEFAULT_TOOLS
+from llamabot.mcp.manager import MCPClientManager
+from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec
 
 
 def _validate_tools(tools: List[Callable]) -> None:
@@ -70,6 +72,10 @@ class AgentBot:
     a decision node that uses ToolBot to select tools and executes them through
     a PocketFlow graph.
 
+    Optionally pass ``mcp_servers`` / ``mcp_options`` to attach FastMCP-discovered
+    tools from stdio or HTTP/SSE servers (see :mod:`llamabot.mcp`). Call
+    :meth:`close_mcp` when the bot is discarded.
+
     **Tool Requirements:**
     Tools must be decorated with `@tool` before being passed to AgentBot. Example:
 
@@ -105,6 +111,8 @@ class AgentBot:
         If None, no limit is enforced. Defaults to None.
     :param completion_kwargs: Additional keyword arguments to pass to the
         completion function of `litellm` (e.g., `api_base`, `api_key`).
+    :param mcp_servers: Optional MCP servers whose tools are merged after Python tools.
+    :param mcp_options: Options for MCP startup and tool namespacing (see :class:`~llamabot.mcp.specs.MCPIntegrationOptions`).
     :raises ValueError: If any tool is not properly decorated with @tool
     """
 
@@ -115,14 +123,23 @@ class AgentBot:
         system_prompt: Optional[str] = None,
         model_name: str = "gpt-4.1",
         max_iterations: Optional[int] = None,
+        mcp_servers: Optional[List[MCPServerSpec]] = None,
+        mcp_options: Optional[MCPIntegrationOptions] = None,
         **completion_kwargs,
     ):
+        self._mcp_manager: MCPClientManager | None = None
+        mcp_tool_list: List[Callable] = []
+        if mcp_servers:
+            self._mcp_manager = MCPClientManager(mcp_servers, mcp_options)
+            self._mcp_manager.start()
+            mcp_tool_list = self._mcp_manager.llamabot_tools()
+
         # Validate that all user-provided tools are properly decorated
         _validate_tools(tools)
+        _validate_tools(mcp_tool_list)
 
-        # Combine default and user-provided tools
-        # Default tools are already configured for AgentBot
-        all_tools = list(DEFAULT_TOOLS) + tools
+        # Combine default, user Python tools, and MCP-backed tools
+        all_tools = list(DEFAULT_TOOLS) + list(tools) + mcp_tool_list
 
         self.tools = all_tools
 
@@ -180,6 +197,15 @@ class AgentBot:
 
         # Track all trace_ids from this bot instance for span visualization
         self._trace_ids = []
+
+    def close_mcp(self) -> None:
+        """Close MCP sessions opened via ``mcp_servers`` constructor arguments.
+
+        Safe to call multiple times. Does not affect Python-only tools.
+        """
+        if self._mcp_manager is not None:
+            self._mcp_manager.close()
+            self._mcp_manager = None
 
     def __call__(self, query: str, globals_dict: Optional[dict] = None):
         """Execute the agent with a query.
