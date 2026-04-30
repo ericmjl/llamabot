@@ -49,3 +49,27 @@ def test_best_effort_records_failure() -> None:
         assert mgr.llamabot_tools() == []
     finally:
         mgr.close()
+
+
+def test_inproc_fastmcp_shortcut_is_coerced() -> None:
+    """Passing FastMCP directly in ``mcp_servers`` is supported."""
+    mcp = FastMCP("shortcut_srv")
+
+    @mcp.tool()
+    def ping() -> str:
+        """Return pong.
+
+        :return: Literal pong.
+        """
+        return "pong"
+
+    mgr = MCPClientManager(
+        [mcp], MCPIntegrationOptions(startup_mode=MCPStartupMode.STRICT)
+    )
+    try:
+        mgr.start()
+        tools = mgr.llamabot_tools()
+        names = {tool.__name__ for tool in tools}
+        assert "shortcut_srv__ping" in names
+    finally:
+        mgr.close()

@@ -8,7 +8,11 @@ from loguru import logger
 
 from llamabot.mcp.adapter import mcp_tools_as_llamabot_tools
 from llamabot.mcp.session import PersistentMCPClientSession, build_fastmcp_client
-from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec, MCPStartupMode
+from llamabot.mcp.specs import (
+    MCPIntegrationOptions,
+    MCPStartupMode,
+    coerce_mcp_server_specs,
+)
 
 
 class MCPClientManager:
@@ -20,10 +24,10 @@ class MCPClientManager:
 
     def __init__(
         self,
-        servers: List[MCPServerSpec],
+        servers: List[Any],
         options: MCPIntegrationOptions | None = None,
     ) -> None:
-        self._servers = list(servers)
+        self._servers = coerce_mcp_server_specs(list(servers))
         self._options = options or MCPIntegrationOptions()
         self._sessions: dict[str, PersistentMCPClientSession] = {}
         self._failures: list[tuple[str, BaseException]] = []

@@ -105,3 +105,49 @@ class MCPServerSpec(BaseModel):
             if not self.url:
                 raise ValueError(f"{self.transport} transport requires 'url'")
         return self
+
+
+def coerce_mcp_server_specs(servers: list[Any]) -> list[MCPServerSpec]:
+    """Normalize user-facing ``mcp_servers`` inputs into ``MCPServerSpec`` objects.
+
+    Supports:
+
+    - ``MCPServerSpec`` instances (returned as-is)
+    - ``dict`` objects accepted by ``MCPServerSpec(**dict)``
+    - ``fastmcp.FastMCP`` instances (auto-wrapped as ``transport='inproc'``)
+
+    :param servers: Mixed server configuration inputs.
+    :return: Normalized list of ``MCPServerSpec`` values.
+    :raises TypeError: If an input entry cannot be interpreted as an MCP server.
+    """
+    fastmcp_cls: Any = None
+    try:
+        from fastmcp import FastMCP
+
+        fastmcp_cls = FastMCP
+    except Exception:
+        fastmcp_cls = None
+
+    normalized: list[MCPServerSpec] = []
+    for index, server in enumerate(servers):
+        if isinstance(server, MCPServerSpec):
+            normalized.append(server)
+            continue
+
+        if isinstance(server, dict):
+            normalized.append(MCPServerSpec(**server))
+            continue
+
+        if fastmcp_cls is not None and isinstance(server, fastmcp_cls):
+            server_name = str(getattr(server, "name", "")).strip() or f"mcp_{index}"
+            normalized.append(
+                MCPServerSpec(name=server_name, transport="inproc", fastmcp=server)
+            )
+            continue
+
+        raise TypeError(
+            "Unsupported mcp_servers entry. Expected MCPServerSpec, dict, or "
+            f"FastMCP instance, got: {type(server).__name__}"
+        )
+
+    return normalized

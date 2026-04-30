@@ -47,7 +47,6 @@ def _(mo):
 
 @app.cell
 def _():
-
     import os
 
     from fastmcp import FastMCP
@@ -55,7 +54,6 @@ def _():
     from llamabot.bot.agentbot import AgentBot
     from llamabot.components.tools import tool
     from llamabot.mcp.manager import MCPClientManager
-    from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec, MCPStartupMode
 
     @tool
     def local_uppercase(text: str) -> str:
@@ -87,32 +85,12 @@ def _():
         """
         return a + b
 
-    return (
-        AgentBot,
-        MCPClientManager,
-        MCPIntegrationOptions,
-        MCPServerSpec,
-        MCPStartupMode,
-        demo_mcp,
-        local_uppercase,
-        os,
-    )
+    return AgentBot, MCPClientManager, demo_mcp, local_uppercase, os
 
 
 @app.cell
-def _(
-    MCPClientManager,
-    MCPIntegrationOptions,
-    MCPServerSpec,
-    MCPStartupMode,
-    demo_mcp,
-    mo,
-):
-
-    spec_preview = MCPServerSpec(name="demo", transport="inproc", fastmcp=demo_mcp)
-    opts_preview = MCPIntegrationOptions(startup_mode=MCPStartupMode.STRICT)
-
-    mgr = MCPClientManager([spec_preview], opts_preview)
+def _(MCPClientManager, demo_mcp, mo):
+    mgr = MCPClientManager([demo_mcp])
     mgr.start()
     try:
         wrapped = mgr.llamabot_tools()
@@ -177,9 +155,6 @@ def _(mo):
 @app.cell
 def _(
     AgentBot,
-    MCPIntegrationOptions,
-    MCPServerSpec,
-    MCPStartupMode,
     demo_mcp,
     local_uppercase,
     mo,
@@ -210,9 +185,6 @@ def _(
         if not os.environ.get("OPENAI_API_KEY"):
             mo.stop(True, mo.md(":warning: Set OPENAI_API_KEY or switch models."))
 
-    spec_agent = MCPServerSpec(name="demo", transport="inproc", fastmcp=demo_mcp)
-    opts_agent = MCPIntegrationOptions(startup_mode=MCPStartupMode.STRICT)
-
     bot = AgentBot(
         tools=[local_uppercase],
         system_prompt=(
@@ -221,8 +193,7 @@ def _(
         ),
         model_name=selected_model,
         max_iterations=8,
-        mcp_servers=[spec_agent],
-        mcp_options=opts_agent,
+        mcp_servers=[demo_mcp],
         **api_kwargs,
     )
 
