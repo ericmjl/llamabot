@@ -12,6 +12,23 @@ from llamabot.recorder import Span, get_current_span, is_span_recording_enabled
 DECIDE_NODE_ACTION = "decide"
 
 
+def format_result_for_history(result):
+    """Create a compact, JSON-safe representation of a tool result.
+
+    :param result: Tool execution result.
+    :return: JSON-serializable primitive or stringified representation.
+    """
+    if isinstance(result, (str, int, float, bool)) or result is None:
+        return result
+    if isinstance(result, list):
+        return [format_result_for_history(item) for item in result]
+    if isinstance(result, dict):
+        return {
+            str(key): format_result_for_history(value) for key, value in result.items()
+        }
+    return str(result)
+
+
 def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
     """Decorator to turn a function into a PocketFlow Node.
 
@@ -151,6 +168,18 @@ def nodeify(func=None, *, loopback_name: str = DECIDE_NODE_ACTION):
                     shared["memory"].append(success_msg)
                 else:
                     shared["memory"].append(exec_res)
+
+                execution_history = shared.setdefault("execution_history", [])
+                execution_history.append(
+                    {
+                        "tool_name": self.func.__name__,
+                        "args": prep_result.get("func_call", {}),
+                        "result": format_result_for_history(exec_res),
+                        "was_cached": False,
+                    }
+                )
+                if len(execution_history) > 20:
+                    shared["execution_history"] = execution_history[-20:]
 
                 if self.loopback_name is None:
                     # For terminal nodes, store result in shared state and return None
@@ -447,35 +476,55 @@ class DecideNode(Node):
         else:
             bot.tool_choice = "required"
 
-        # Get tool calls from ToolBot
-        tool_calls = bot(prep_res["memory"])
+        queued_tool_calls = prep_res.get("pending_tool_calls", [])
 
-        # Handle case where no tool calls are returned
-        if not tool_calls:
-            error_msg = (
-                f"No tool calls returned from ToolBot. Model: {self.model_name}. "
+        if queued_tool_calls:
+            next_tool_call = queued_tool_calls.pop(0)
+            prep_res["pending_tool_calls"] = queued_tool_calls
+            func_name = next_tool_call["name"]
+            func_args_json = next_tool_call["arguments"]
+            logger.info(
+                "DecideNode continuing queued tool call: "
+                f"{func_name} ({len(queued_tool_calls)} queued after this)"
             )
-            if self.model_name.startswith("ollama") or self.model_name.startswith(
-                "ollama_chat"
-            ):
-                error_msg += (
-                    "Ollama models don't support tool_choice='required', so tool calls are optional. "
-                    "Ensure your system prompt explicitly requires tool calls and that the model "
-                    "supports function calling."
-                )
-            else:
-                error_msg += (
-                    "This may indicate the model doesn't support tool_choice='required'. "
-                    "Check the system prompt and ensure it explicitly requires tool calls."
-                )
-            raise ValueError(error_msg)
+        else:
+            # Get tool calls from ToolBot
+            tool_calls = bot(
+                prep_res["memory"],
+                execution_history=prep_res.get("execution_history"),
+            )
 
-        # Get the first tool call (ToolBot typically returns one)
-        tool_call = tool_calls[0]
+            # Handle case where no tool calls are returned
+            if not tool_calls:
+                error_msg = (
+                    f"No tool calls returned from ToolBot. Model: {self.model_name}. "
+                )
+                if self.model_name.startswith("ollama") or self.model_name.startswith(
+                    "ollama_chat"
+                ):
+                    error_msg += (
+                        "Ollama models don't support tool_choice='required', so tool calls are optional. "
+                        "Ensure your system prompt explicitly requires tool calls and that the model "
+                        "supports function calling."
+                    )
+                else:
+                    error_msg += (
+                        "This may indicate the model doesn't support tool_choice='required'. "
+                        "Check the system prompt and ensure it explicitly requires tool calls."
+                    )
+                raise ValueError(error_msg)
 
-        # Extract function name and arguments
-        func_name = tool_call.function.name
-        func_args_json = tool_call.function.arguments
+            normalized_tool_calls = [
+                {
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                }
+                for tool_call in tool_calls
+            ]
+            next_tool_call = normalized_tool_calls.pop(0)
+            prep_res["pending_tool_calls"] = normalized_tool_calls
+            func_name = next_tool_call["name"]
+            func_args_json = next_tool_call["arguments"]
 
         # Log to span if available
         if span_obj:
@@ -580,31 +629,53 @@ class DecideNode(Node):
         else:
             bot.tool_choice = "required"
 
-        tool_calls = await bot(prep_res["memory"])
+        queued_tool_calls = prep_res.get("pending_tool_calls", [])
 
-        if not tool_calls:
-            error_msg = (
-                f"No tool calls returned from the model. Model: {self.model_name}. "
+        if queued_tool_calls:
+            next_tool_call = queued_tool_calls.pop(0)
+            prep_res["pending_tool_calls"] = queued_tool_calls
+            func_name = next_tool_call["name"]
+            func_args_json = next_tool_call["arguments"]
+            logger.info(
+                "DecideNode continuing queued tool call: "
+                f"{func_name} ({len(queued_tool_calls)} queued after this)"
             )
-            if self.model_name.startswith("ollama") or self.model_name.startswith(
-                "ollama_chat"
-            ):
-                error_msg += (
-                    "Ollama models don't support tool_choice='required', so tool calls are optional. "
-                    "Ensure your system prompt explicitly requires tool calls and that the model "
-                    "supports function calling."
-                )
-            else:
-                error_msg += (
-                    "This may indicate the model doesn't support tool_choice='required'. "
-                    "Check the system prompt and ensure it explicitly requires tool calls."
-                )
-            raise ValueError(error_msg)
+        else:
+            tool_calls = await bot(
+                prep_res["memory"],
+                execution_history=prep_res.get("execution_history"),
+            )
 
-        tool_call = tool_calls[0]
+            if not tool_calls:
+                error_msg = (
+                    f"No tool calls returned from the model. Model: {self.model_name}. "
+                )
+                if self.model_name.startswith("ollama") or self.model_name.startswith(
+                    "ollama_chat"
+                ):
+                    error_msg += (
+                        "Ollama models don't support tool_choice='required', so tool calls are optional. "
+                        "Ensure your system prompt explicitly requires tool calls and that the model "
+                        "supports function calling."
+                    )
+                else:
+                    error_msg += (
+                        "This may indicate the model doesn't support tool_choice='required'. "
+                        "Check the system prompt and ensure it explicitly requires tool calls."
+                    )
+                raise ValueError(error_msg)
 
-        func_name = tool_call.function.name
-        func_args_json = tool_call.function.arguments
+            normalized_tool_calls = [
+                {
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                }
+                for tool_call in tool_calls
+            ]
+            next_tool_call = normalized_tool_calls.pop(0)
+            prep_res["pending_tool_calls"] = normalized_tool_calls
+            func_name = next_tool_call["name"]
+            func_args_json = next_tool_call["arguments"]
 
         if span_obj:
             span_obj["chosen_tool"] = func_name
