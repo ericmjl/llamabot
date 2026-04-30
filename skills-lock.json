@@ -21,6 +21,12 @@
       "sourceType": "github",
       "computedHash": "17f16170d948dd845121a49263493b534588db66457c9c47b40ad3868923cba7"
     },
+    "marimo-pair": {
+      "source": "marimo-team/marimo-pair",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "f30a6602d88c5c785708e25d89cf390608fa4573989c28ea63a64696e85772ad"
+    },
     "wasm-compatibility": {
       "source": "marimo-team/skills",
       "sourceType": "github",
