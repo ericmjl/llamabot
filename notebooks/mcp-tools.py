@@ -110,15 +110,13 @@ def _(MCPClientManager, demo_mcp, mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
-
     model_choice = mo.ui.dropdown(
         options={
             "Anthropic Sonnet 4.5": "anthropic/claude-sonnet-4-5-20250929",
-            "LM Studio (OpenAI-compatible local endpoint)": "openai/qwen/qwen3.6-35b-a3b",
-            "OpenAI (requires OPENAI_API_KEY)": "openai/gpt-4.1-mini",
-            "Ollama local": "ollama_chat/qwen2.5:0.5b",
+            "Anthropic Opus 4.5": "anthropic/claude-opus-4-5-20251101",
+            "Anthropic Haiku 4.5 (latest)": "anthropic/claude-haiku-4-5-20251001",
         },
         value="Anthropic Sonnet 4.5",
         label="Model",
@@ -139,10 +137,7 @@ def _(mo):
     mo.vstack(
         [
             mo.md("## Run an AgentBot with MCP + Python tools"),
-            mo.md(
-                "Recommended default: **Anthropic Sonnet 4.5**. "
-                "LM Studio is also available for local testing."
-            ),
+            mo.md("Choose an Anthropic model option for this MCP tool-calling demo."),
             model_choice,
             user_query,
             run_agent,
@@ -152,7 +147,7 @@ def _(mo):
     return model_choice, run_agent, user_query
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(
     AgentBot,
     demo_mcp,
@@ -165,25 +160,13 @@ def _(
 ):
     mo.stop(not run_agent.value, mo.md("Click **Run AgentBot** to execute one run."))
 
-    api_kwargs = {}
     selected_model = model_choice.value
 
-    if selected_model == "anthropic/claude-sonnet-4-5-20250929":
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            mo.stop(True, mo.md(":warning: Set ANTHROPIC_API_KEY for Sonnet 4.5."))
-    elif selected_model == "openai/qwen/qwen3.6-35b-a3b":
-        lmstudio_api_base = os.environ.get(
-            "OPENAI_API_BASE", "http://localhost:1234/v1"
-        )
-        lmstudio_api_key = os.environ.get("OPENAI_API_KEY", "lm-studio")
-        api_kwargs = {
-            "api_base": lmstudio_api_base,
-            "api_key": lmstudio_api_key,
-        }
-        mo.output.append(mo.md(f"Using LM Studio endpoint: `{lmstudio_api_base}`"))
-    elif selected_model == "openai/gpt-4.1-mini":
-        if not os.environ.get("OPENAI_API_KEY"):
-            mo.stop(True, mo.md(":warning: Set OPENAI_API_KEY or switch models."))
+    if not selected_model.startswith("anthropic/"):
+        mo.stop(True, mo.md(":warning: Select an Anthropic model option."))
+
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        mo.stop(True, mo.md(":warning: Set ANTHROPIC_API_KEY for Anthropic models."))
 
     bot = AgentBot(
         tools=[local_uppercase],
@@ -194,14 +177,7 @@ def _(
         model_name=selected_model,
         max_iterations=8,
         mcp_servers=[demo_mcp],
-        **api_kwargs,
     )
-
-    # LM Studio + qwen/qwen3.6-35b-a3b may not emit structured tool_calls when
-    # ToolBot enforces tool_choice='required'. For this model, prefer auto.
-    if selected_model == "openai/qwen/qwen3.6-35b-a3b":
-        if hasattr(bot, "decide_node") and hasattr(bot.decide_node, "toolbot"):
-            bot.decide_node.toolbot.tool_choice = "auto"
 
     try:
         result = bot(user_query.value)
@@ -220,50 +196,21 @@ def _(
 
 @app.cell
 def _(mo):
-
     mo.md(
         r"""
-    ## Model and provider syntax cheatsheet
+    ## Anthropic model IDs in this notebook (LiteLLM)
 
-    ### Anthropic Sonnet 4.5 (recommended)
+    Based on LiteLLM docs / release notes, the dropdown uses:
 
-    - LiteLLM model id: `anthropic/claude-sonnet-4-5-20250929`
-    - Required env var: `ANTHROPIC_API_KEY`
-    - No custom `api_base` needed.
+    - Sonnet 4.5: `anthropic/claude-sonnet-4-5-20250929`
+    - Opus 4.5: `anthropic/claude-opus-4-5-20251101`
+    - Haiku 4.5 (latest): `anthropic/claude-haiku-4-5-20251001`
 
-    ### LM Studio (OpenAI-compatible local)
+    Set this environment variable before running:
 
     ```bash
-    export OPENAI_API_BASE=http://localhost:1234/v1
-    # Optional if your local gateway expects a key:
-    export OPENAI_API_KEY=lm-studio
+    export ANTHROPIC_API_KEY=...
     ```
-
-    Model string in this notebook: `openai/qwen/qwen3.6-35b-a3b`
-
-    ### Stdio MCP server
-
-    ```python
-    docs_spec = MCPServerSpec(
-        name="docs",
-        transport="stdio",
-        command="uvx",
-        args=["--with", "llamabot[all]", "llamabot", "mcp", "launch"],
-    )
-    ```
-
-    ### Remote HTTP / SSE MCP server
-
-    ```python
-    remote_spec = MCPServerSpec(
-        name="remote",
-        transport="http",  # or "sse"
-        url="http://localhost:8765/mcp",
-        headers={"Authorization": "Bearer TOKEN"},
-    )
-    ```
-
-    Use `MCPStartupMode.BEST_EFFORT` if some servers may be offline.
     """
     )
 
