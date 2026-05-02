@@ -3,7 +3,7 @@
 from fastmcp import FastMCP
 
 from llamabot.mcp.manager import MCPClientManager
-from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec, MCPStartupMode
+from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerConfig, MCPStartupMode
 
 
 def test_inproc_mcp_tool_invoke_roundtrip() -> None:
@@ -19,9 +19,9 @@ def test_inproc_mcp_tool_invoke_roundtrip() -> None:
         """
         return text
 
-    spec = MCPServerSpec(name="pytest_srv", transport="inproc", fastmcp=mcp)
+    config = MCPServerConfig(name="pytest_srv", transport="inproc", fastmcp=mcp)
     opts = MCPIntegrationOptions(startup_mode=MCPStartupMode.STRICT)
-    mgr = MCPClientManager([spec], opts)
+    mgr = MCPClientManager([config], opts)
     try:
         mgr.start()
         tools = mgr.llamabot_tools()
@@ -35,14 +35,14 @@ def test_inproc_mcp_tool_invoke_roundtrip() -> None:
 
 def test_best_effort_records_failure() -> None:
     """Unreachable stdio server yields a failure entry without raising."""
-    spec = MCPServerSpec(
+    config = MCPServerConfig(
         name="bad",
         transport="stdio",
         command="/nonexistent_binary_xyz",
         args=[],
     )
     opts = MCPIntegrationOptions(startup_mode=MCPStartupMode.BEST_EFFORT)
-    mgr = MCPClientManager([spec], opts)
+    mgr = MCPClientManager([config], opts)
     try:
         mgr.start()
         assert mgr.failures

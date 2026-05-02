@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 
 from llamabot.bot.agentbot import AgentBot
 from llamabot.components.tools import tool
-from llamabot.mcp.specs import MCPServerSpec, MCPIntegrationOptions, MCPStartupMode
+from llamabot.mcp.specs import MCPServerConfig, MCPIntegrationOptions, MCPStartupMode
 
 
 @tool
@@ -40,7 +40,7 @@ def test_agentbot_merges_inproc_mcp_tools() -> None:
 
     bot = AgentBot(
         tools=[local_stub],
-        mcp_servers=[MCPServerSpec(name="srv", transport="inproc", fastmcp=mcp)],
+        mcp_servers=[MCPServerConfig(name="srv", transport="inproc", fastmcp=mcp)],
         mcp_options=MCPIntegrationOptions(startup_mode=MCPStartupMode.STRICT),
         model_name="gpt-4o-mini",
     )
@@ -123,7 +123,7 @@ def test_agentbot_notebook_like_mcp_flow_terminates_without_max_iterations() -> 
 
         bot = AgentBot(
             tools=[local_uppercase],
-            mcp_servers=[MCPServerSpec(name="srv", transport="inproc", fastmcp=mcp)],
+            mcp_servers=[MCPServerConfig(name="srv", transport="inproc", fastmcp=mcp)],
             mcp_options=MCPIntegrationOptions(startup_mode=MCPStartupMode.STRICT),
             model_name="anthropic/claude-sonnet-4-5-20250929",
             max_iterations=8,

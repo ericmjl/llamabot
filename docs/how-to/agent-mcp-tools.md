@@ -11,7 +11,7 @@ LlamaBot can merge **Python tools** (``@tool`` functions) with tools discovered 
 
 ## Constructor parameters
 
-- ``mcp_servers``: list of :class:`~llamabot.mcp.specs.MCPServerSpec`
+- ``mcp_servers``: list of :class:`~llamabot.mcp.specs.MCPServerConfig`
 - ``mcp_options``: optional :class:`~llamabot.mcp.specs.MCPIntegrationOptions`
 
 MCP tools are registered **after** your Python ``tools=`` list (defaults from ``DEFAULT_TOOLS`` stay first).
@@ -32,7 +32,7 @@ from fastmcp import FastMCP
 
 from llamabot.bot.agentbot import AgentBot
 from llamabot.components.tools import tool
-from llamabot.mcp.specs import MCPServerSpec, MCPIntegrationOptions, MCPStartupMode
+from llamabot.mcp.specs import MCPServerConfig, MCPIntegrationOptions, MCPStartupMode
 
 mcp = FastMCP("demo")
 
@@ -48,7 +48,7 @@ def double(x: int) -> int:
 
 bot = AgentBot(
     tools=[double],
-    mcp_servers=[MCPServerSpec(name="demo", transport="inproc", fastmcp=mcp)],
+    mcp_servers=[MCPServerConfig(name="demo", transport="inproc", fastmcp=mcp)],
     mcp_options=MCPIntegrationOptions(startup_mode=MCPStartupMode.STRICT),
 )
 
@@ -61,9 +61,9 @@ finally:
 ## Remote URL server
 
 ```python
-from llamabot.mcp.specs import MCPServerSpec
+from llamabot.mcp.specs import MCPServerConfig
 
-MCPServerSpec(
+MCPServerConfig(
     name="remote",
     transport="http",
     url="http://localhost:8080/mcp",
@@ -76,7 +76,7 @@ For SSE endpoints, set ``transport="sse"`` (or rely on FastMCP URL path inferenc
 ## Stdio server (same shape as Cursor MCP config)
 
 ```python
-MCPServerSpec(
+MCPServerConfig(
     name="docs",
     transport="stdio",
     command="uvx",

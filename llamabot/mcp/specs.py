@@ -43,7 +43,7 @@ class MCPIntegrationOptions(BaseModel):
     """Optional MCP initialize handshake timeout for :class:`fastmcp.Client` (seconds)."""
 
 
-class MCPServerSpec(BaseModel):
+class MCPServerConfig(BaseModel):
     """Declares one MCP server for use with :class:`~llamabot.mcp.manager.MCPClientManager`.
 
     Supports stdio subprocess servers, remote HTTP / Streamable HTTP / SSE URLs, and
@@ -89,10 +89,10 @@ class MCPServerSpec(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
     @model_validator(mode="after")
-    def validate_transport_fields(self) -> MCPServerSpec:
+    def validate_transport_fields(self) -> MCPServerConfig:
         """Ensure required fields exist for each transport.
 
-        :return: Validated spec.
+        :return: Validated config.
         :raises ValueError: When configuration is inconsistent.
         """
         if self.transport == "stdio":
@@ -107,17 +107,17 @@ class MCPServerSpec(BaseModel):
         return self
 
 
-def coerce_mcp_server_specs(servers: list[Any]) -> list[MCPServerSpec]:
-    """Normalize user-facing ``mcp_servers`` inputs into ``MCPServerSpec`` objects.
+def coerce_mcp_server_configs(servers: list[Any]) -> list[MCPServerConfig]:
+    """Normalize user-facing ``mcp_servers`` inputs into ``MCPServerConfig`` objects.
 
     Supports:
 
-    - ``MCPServerSpec`` instances (returned as-is)
-    - ``dict`` objects accepted by ``MCPServerSpec(**dict)``
+    - ``MCPServerConfig`` instances (returned as-is)
+    - ``dict`` objects accepted by ``MCPServerConfig(**dict)``
     - ``fastmcp.FastMCP`` instances (auto-wrapped as ``transport='inproc'``)
 
     :param servers: Mixed server configuration inputs.
-    :return: Normalized list of ``MCPServerSpec`` values.
+    :return: Normalized list of ``MCPServerConfig`` values.
     :raises TypeError: If an input entry cannot be interpreted as an MCP server.
     """
     fastmcp_cls: Any = None
@@ -128,25 +128,25 @@ def coerce_mcp_server_specs(servers: list[Any]) -> list[MCPServerSpec]:
     except Exception:
         fastmcp_cls = None
 
-    normalized: list[MCPServerSpec] = []
+    normalized: list[MCPServerConfig] = []
     for index, server in enumerate(servers):
-        if isinstance(server, MCPServerSpec):
+        if isinstance(server, MCPServerConfig):
             normalized.append(server)
             continue
 
         if isinstance(server, dict):
-            normalized.append(MCPServerSpec(**server))
+            normalized.append(MCPServerConfig(**server))
             continue
 
         if fastmcp_cls is not None and isinstance(server, fastmcp_cls):
             server_name = str(getattr(server, "name", "")).strip() or f"mcp_{index}"
             normalized.append(
-                MCPServerSpec(name=server_name, transport="inproc", fastmcp=server)
+                MCPServerConfig(name=server_name, transport="inproc", fastmcp=server)
             )
             continue
 
         raise TypeError(
-            "Unsupported mcp_servers entry. Expected MCPServerSpec, dict, or "
+            "Unsupported mcp_servers entry. Expected MCPServerConfig, dict, or "
             f"FastMCP instance, got: {type(server).__name__}"
         )
 

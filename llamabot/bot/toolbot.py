@@ -17,7 +17,7 @@ from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.components.tools import DEFAULT_TOOLS
 from llamabot.mcp.manager import MCPClientManager
-from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec
+from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerConfig
 from llamabot.prompt_manager import prompt
 
 
@@ -93,7 +93,7 @@ class ToolBot(SimpleBot):
         model_name: str,
         tools: Optional[List[Callable]] = None,
         chat_memory: Optional[ChatMemory] = None,
-        mcp_servers: Optional[List[MCPServerSpec]] = None,
+        mcp_servers: Optional[List[MCPServerConfig]] = None,
         mcp_options: Optional[MCPIntegrationOptions] = None,
         **completion_kwargs,
     ):
