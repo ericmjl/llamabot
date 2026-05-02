@@ -13,7 +13,7 @@ from pocketflow import Flow, Node
 from llamabot.components.pocketflow import DecideNode
 from llamabot.components.tools import DEFAULT_TOOLS
 from llamabot.mcp.manager import MCPClientManager
-from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec
+from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerConfig
 
 
 def _validate_tools(tools: List[Callable]) -> None:
@@ -123,7 +123,7 @@ class AgentBot:
         system_prompt: Optional[str] = None,
         model_name: str = "gpt-4.1",
         max_iterations: Optional[int] = None,
-        mcp_servers: Optional[List[MCPServerSpec]] = None,
+        mcp_servers: Optional[List[MCPServerConfig]] = None,
         mcp_options: Optional[MCPIntegrationOptions] = None,
         **completion_kwargs,
     ):

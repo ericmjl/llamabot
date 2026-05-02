@@ -11,7 +11,7 @@ from llamabot.mcp.session import PersistentMCPClientSession, build_fastmcp_clien
 from llamabot.mcp.specs import (
     MCPIntegrationOptions,
     MCPStartupMode,
-    coerce_mcp_server_specs,
+    coerce_mcp_server_configs,
 )
 
 
@@ -27,7 +27,7 @@ class MCPClientManager:
         servers: List[Any],
         options: MCPIntegrationOptions | None = None,
     ) -> None:
-        self._servers = coerce_mcp_server_specs(list(servers))
+        self._servers = coerce_mcp_server_configs(list(servers))
         self._options = options or MCPIntegrationOptions()
         self._sessions: dict[str, PersistentMCPClientSession] = {}
         self._failures: list[tuple[str, BaseException]] = []
@@ -47,19 +47,19 @@ class MCPClientManager:
         :raises RuntimeError: In strict mode when startup fails.
         """
         self._failures.clear()
-        for spec in self._servers:
-            client = build_fastmcp_client(spec, self._options)
+        for config in self._servers:
+            client = build_fastmcp_client(config, self._options)
             session = PersistentMCPClientSession(
                 client,
                 connect_timeout=float(self._options.connect_timeout_seconds),
             )
             try:
                 session.start()
-                self._sessions[spec.name] = session
-                logger.info("Connected MCP server {!r}", spec.name)
+                self._sessions[config.name] = session
+                logger.info("Connected MCP server {!r}", config.name)
             except BaseException as exc:
-                self._failures.append((spec.name, exc))
-                logger.exception("Failed to connect MCP server {!r}", spec.name)
+                self._failures.append((config.name, exc))
+                logger.exception("Failed to connect MCP server {!r}", config.name)
                 if self._options.startup_mode == MCPStartupMode.STRICT:
                     self.close()
                     raise
@@ -80,8 +80,8 @@ class MCPClientManager:
         tools: List[Callable[..., Any]] = []
         sep = self._options.tool_namespace_sep
         call_timeout = self._options.call_timeout_seconds
-        for spec in self._servers:
-            session = self._sessions.get(spec.name)
+        for config in self._servers:
+            session = self._sessions.get(config.name)
             if session is None:
                 continue
 
@@ -92,7 +92,7 @@ class MCPClientManager:
             tools.extend(
                 mcp_tools_as_llamabot_tools(
                     session,
-                    spec.name,
+                    config.name,
                     remote_tools,
                     namespace_sep=sep,
                     options=self._options,

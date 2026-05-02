@@ -24,7 +24,7 @@ def __init__(
     system_prompt: Optional[str] = None,
     model_name: str = "gpt-4o-mini",
     max_iterations: Optional[int] = None,
-    mcp_servers: Optional[List[MCPServerSpec]] = None,
+    mcp_servers: Optional[List[MCPServerConfig]] = None,
     mcp_options: Optional[MCPIntegrationOptions] = None,
     **completion_kwargs,
 )
@@ -44,7 +44,7 @@ def __init__(
 
 - **completion_kwargs**: Additional keyword arguments to pass to the completion function.
 
-- **mcp_servers**: Optional list of ``MCPServerSpec``; default ``None``. MCP tools are merged after Python ``tools``. See [AgentBot with MCP tools](../../how-to/agent-mcp-tools.md).
+- **mcp_servers**: Optional list of ``MCPServerConfig``; default ``None``. MCP tools are merged after Python ``tools``. See [AgentBot with MCP tools](../../how-to/agent-mcp-tools.md).
 
 - **mcp_options**: Optional ``MCPIntegrationOptions``; default ``None``. Startup mode, timeouts, allow/deny lists, and tool namespace separator.
 

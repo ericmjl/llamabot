@@ -12,13 +12,15 @@ from loguru import logger
 from fastmcp import Client
 from fastmcp.mcp_config import RemoteMCPServer, StdioMCPServer
 
-from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerSpec
+from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerConfig
 
 
-def build_fastmcp_client(spec: MCPServerSpec, options: MCPIntegrationOptions) -> Client:
-    """Create a :class:`fastmcp.Client` from a server spec.
+def build_fastmcp_client(
+    config: MCPServerConfig, options: MCPIntegrationOptions
+) -> Client:
+    """Create a :class:`fastmcp.Client` from a server config.
 
-    :param spec: Declared MCP server.
+    :param config: Declared MCP server configuration.
     :param options: Integration timeouts and client options.
     :return: Configured FastMCP client (not yet connected).
     """
@@ -28,42 +30,42 @@ def build_fastmcp_client(spec: MCPServerSpec, options: MCPIntegrationOptions) ->
     if options.client_init_timeout_seconds is not None:
         kwargs["init_timeout"] = float(options.client_init_timeout_seconds)
 
-    if spec.transport == "inproc":
-        return Client(spec.fastmcp, name=spec.name, **kwargs)
+    if config.transport == "inproc":
+        return Client(config.fastmcp, name=config.name, **kwargs)
 
-    if spec.transport == "stdio":
+    if config.transport == "stdio":
         stdio = StdioMCPServer(
-            command=spec.command,
-            args=list(spec.args),
-            env=dict(spec.env),
-            cwd=spec.cwd,
+            command=config.command,
+            args=list(config.args),
+            env=dict(config.env),
+            cwd=config.cwd,
         )
-        return Client(stdio.to_transport(), name=spec.name, **kwargs)
+        return Client(stdio.to_transport(), name=config.name, **kwargs)
 
     remote_transport: str | None
-    if spec.remote_transport is not None:
-        remote_transport = spec.remote_transport
-    elif spec.transport == "http":
+    if config.remote_transport is not None:
+        remote_transport = config.remote_transport
+    elif config.transport == "http":
         remote_transport = None
-    elif spec.transport == "sse":
+    elif config.transport == "sse":
         remote_transport = "sse"
-    elif spec.transport == "streamable-http":
+    elif config.transport == "streamable-http":
         remote_transport = "streamable-http"
     else:
         remote_transport = None
 
     sse_read_timeout = None
-    if spec.sse_read_timeout_seconds is not None:
-        sse_read_timeout = timedelta(seconds=float(spec.sse_read_timeout_seconds))
+    if config.sse_read_timeout_seconds is not None:
+        sse_read_timeout = timedelta(seconds=float(config.sse_read_timeout_seconds))
 
     remote = RemoteMCPServer(
-        url=spec.url,
+        url=config.url,
         transport=remote_transport,
-        headers=dict(spec.headers),
-        auth=spec.auth,
+        headers=dict(config.headers),
+        auth=config.auth,
         sse_read_timeout=sse_read_timeout,
     )
-    return Client(remote.to_transport(), name=spec.name, **kwargs)
+    return Client(remote.to_transport(), name=config.name, **kwargs)
 
 
 class PersistentMCPClientSession:
