@@ -86,7 +86,7 @@ jobs:
       - name: Setup Pixi Environment
         uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: 0.67.2
+          pixi-version: v0.67.2
           cache: true
           cache-write: ${{ github.event_name == 'workflow_run' }}
 

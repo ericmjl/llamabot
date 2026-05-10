@@ -71,7 +71,7 @@ jobs:
         if: ${{ matrix.environment-type == 'pixi' }}
         uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: 0.67.2
+          pixi-version: v0.67.2
           cache: true
           environments: ${{ matrix.test-type == 'bare-package' && 'bare' || '' }}
 
