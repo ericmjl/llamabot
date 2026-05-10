@@ -26,6 +26,7 @@ This ensures that the most important and frequently needed guidance is easily ac
 - 2026-03-28: Do not add pytest coverage for standalone demos (e.g. FastAPI + HTMX examples under `docs/examples/`). Tests target library and CLI behavior; demos are exercised manually or via documentation.
 - 2026-03-28: Prefer **not** running the full test suite locally (`pixi run test`, etc.); let **GitHub Actions CI** validate tests. Agents should skip long local pytest runs unless the user explicitly asks for them.
 - 2026-04-30: **Marimo notebooks — no disk edits by agents.** Do not use Write, StrReplace, apply_patch, or other repo edit tools on Marimo notebook `.py` files to change cells or notebook structure. Mutate notebooks only via `marimo._code_mode` in the **running** notebook kernel (see `.agents/skills/marimo-pair/` and `scripts/execute-code.sh`). If no session is running, ask the user to start `marimo edit` (or open the notebook) before applying changes.
+- 2026-05-10: Documentation examples that need API keys must show users how to set provider keys through environment variables. Do not teach users to paste API keys directly into Python examples.
 
 ## Project Overview
 
@@ -137,6 +138,12 @@ Use `markdownlint filename.md` to check for issues and fix them before committin
 **Documentation Workflow**: When editing any markdown file, always run markdownlint
 after making changes to ensure proper formatting and catch any issues before
 the user sees them.
+
+**API Key Examples**: Documentation should teach users to configure provider API
+keys with environment variables (for example, `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, or `OPENROUTER_API_KEY`). Avoid examples that pass literal
+API key strings or placeholders directly into bot constructors or provider
+clients unless the purpose is to document a low-level parameter reference.
 
 ## Core Architecture
 

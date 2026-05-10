@@ -12,7 +12,7 @@ class ImageBot:
 
     :param model: The model to use. Defaults to "dall-e-3".
     :param size: The size of the image to generate. Defaults to "1024x1024".
-    :param quality: The quality of the image to generate. Defaults to "hd".
+    :param quality: Optional quality setting for models that support it.
     :param n: The number of images to generate. Defaults to 1.
     :param response_format: The LiteLLM image response format to request.
         Defaults to "url".
@@ -32,7 +32,7 @@ def __init__(
     self,
     model: str = "dall-e-3",
     size: str = "1024x1024",
-    quality: str = "hd",
+    quality: Optional[str] = None,
     n: int = 1,
     response_format: str = "url",
     api_key: Optional[str] = None,
@@ -55,9 +55,10 @@ def __init__(
   `"1024x1792"`. For DALL-E 2, valid sizes are `"256x256"`, `"512x512"`, and
   `"1024x1024"`.
 
-- **quality** (`str`, default: `"hd"`): The quality of the image.
-  For DALL-E 3, valid values are `"standard"` and `"hd"`.
-  For DALL-E 2, this parameter is not used.
+- **quality** (`Optional[str]`, default: `None`): Optional image quality setting.
+  This is model-specific; for example, DALL-E 3 accepts `"standard"` and `"hd"`,
+  while other providers may use values such as `"high"`, `"medium"`, or `"low"`.
+  When omitted, LiteLLM lets the provider choose its default.
 
 - **n** (`int`, default: `1`): The number of images to generate.
   For DALL-E 3, this must be 1. For DALL-E 2, can be 1-10.
@@ -138,13 +139,18 @@ Any keyword arguments not listed in the constructor are passed through to
 `litellm.image_generation`, which makes provider options available without
 changing ImageBot's API.
 
+Set provider API keys in environment variables before running Python code:
+
+```bash
+export OPENROUTER_API_KEY="..."
+```
+
 ```python
 import llamabot as lmb
 
 bot = lmb.ImageBot(
     model="openrouter/google/gemini-2.5-flash-image",
     quality="high",
-    api_key="...",
     user="user-123",
 )
 
@@ -183,7 +189,7 @@ import llamabot as lmb
 bot = lmb.ImageBot(
     model="dall-e-3",
     size="1792x1024",
-    quality="hd"
+    quality="hd",
 )
 
 image_path = bot("A detailed landscape painting")
@@ -231,8 +237,8 @@ image_paths = [bot("A cat wearing sunglasses") for _ in range(3)]
 
 ## Requirements
 
-- Set the API key expected by the selected LiteLLM provider, or pass `api_key`
-  to `ImageBot`.
+- Set the API key expected by the selected LiteLLM provider as an environment
+  variable, such as `OPENAI_API_KEY`, `AZURE_API_KEY`, or `OPENROUTER_API_KEY`.
 - Provider-prefixed models may require additional LiteLLM parameters such as
   `api_base`, `api_version`, project IDs, or region settings.
 

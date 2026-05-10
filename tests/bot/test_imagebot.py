@@ -28,7 +28,7 @@ def test_initialization_defaults():
     bot = ImageBot()
     assert bot.model == "dall-e-3"
     assert bot.size == "1024x1024"
-    assert bot.quality == "hd"
+    assert bot.quality is None
     assert bot.n == 1
     assert bot.response_format == "url"
     assert bot.api_key is None
@@ -80,7 +80,6 @@ def test_call_uses_litellm_image_generation(mocker):
         model="dall-e-3",
         prompt="test prompt",
         size="1024x1024",
-        quality="hd",
         n=1,
         response_format="url",
         timeout=600,

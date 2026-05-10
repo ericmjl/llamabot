@@ -15,7 +15,7 @@ class ImageBot:
 
     :param model: The model to use. Defaults to "dall-e-3".
     :param size: The size of the image to generate. Defaults to "1024x1024".
-    :param quality: The quality of the image to generate. Defaults to "hd".
+    :param quality: Optional quality setting for models that support it.
     :param n: The number of images to generate. Defaults to 1.
     :param response_format: The LiteLLM image response format to request.
         Defaults to "url".
@@ -31,7 +31,7 @@ class ImageBot:
         self,
         model: str = "dall-e-3",
         size: str = "1024x1024",
-        quality: str = "hd",
+        quality: Optional[str] = None,
         n: int = 1,
         response_format: str = "url",
         api_key: Optional[str] = None,
@@ -106,13 +106,13 @@ def image_generation_kwargs_for_bot(bot: ImageBot, prompt: str) -> dict[str, Any
     generation_kwargs: dict[str, Any] = {
         "model": bot.model,
         "prompt": prompt,
-        "size": bot.size,
-        "quality": bot.quality,
         "n": bot.n,
-        "response_format": bot.response_format,
         "timeout": bot.timeout,
     }
     optional_kwargs = {
+        "size": bot.size,
+        "quality": bot.quality,
+        "response_format": bot.response_format,
         "api_key": bot.api_key,
         "api_base": bot.api_base,
         "api_version": bot.api_version,
