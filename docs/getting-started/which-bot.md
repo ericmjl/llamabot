@@ -27,7 +27,7 @@ flowchart TD
 | **AgentBot** | Multi-step workflows, complex tasks | Graph-based tool orchestration, multi-turn planning | Built-in |
 | **QueryBot** | Document Q&A, RAG applications | Document retrieval, semantic search | ChatMemory + DocStore |
 | **StructuredBot** | Data extraction, API responses | Pydantic validation, guaranteed schema | ChatMemory (optional) |
-| **ImageBot** | Image generation | DALL-E integration, image saving | None |
+| **ImageBot** | Image generation | LiteLLM image generation, image saving | None |
 
 ## Detailed Use Cases
 
@@ -197,7 +197,7 @@ person = bot("John is 25 years old. Email: john@example.com")
 
 - You need to generate images from text prompts
 - You're building creative applications
-- You need DALL-E integration
+- You need DALL-E or another LiteLLM-supported image generation provider
 
 **Example scenarios:**
 
