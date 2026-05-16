@@ -24,7 +24,8 @@ def imports():
 
 @app.cell(hide_code=True)
 def title(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     # Image Generation with Ollama
 
     This notebook explores image generation using **Ollama's local models** with two approaches:
@@ -37,13 +38,15 @@ def title(mo):
     - call Ollama's `/api/generate` endpoint directly,
     - use `ImageBot` with a `style` parameter for consistent visual direction,
     - compare **watercolor** and **photorealistic** styles on the same absurd subject.
-    """)
+    """
+    )
     return
 
 
 @app.cell(hide_code=True)
 def prerequisites_md(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Prerequisites
 
     Ensure the following before running the notebook:
@@ -54,14 +57,13 @@ def prerequisites_md(mo):
       ollama pull x/flux2-klein:latest
       ollama pull x/z-image-turbo:latest
       ```
-    """)
+    """
+    )
     return
 
 
 @app.cell
 def python_imports():
-    import base64
-    import json
 
     import httpx
     from pathlib import Path
@@ -105,7 +107,8 @@ def model_config():
 
 @app.cell(hide_code=True)
 def concept_md(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Style as a system prompt
 
     `ImageBot` accepts a `style` parameter — a visual-language string
@@ -116,17 +119,20 @@ def concept_md(mo):
 
     We will apply two very different styles to the same delightfully absurd subject
     and see how each model interprets it.
-    """)
+    """
+    )
     return
 
 
 @app.cell(hide_code=True)
 def raw_api_md(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Raw HTTP API with httpx — watercolor
 
     We call Ollama's `/api/generate` directly, manually combining the watercolor style and subject.
-    """)
+    """
+    )
     return
 
 
@@ -173,12 +179,14 @@ def raw_api_generate(
 
 @app.cell(hide_code=True)
 def imagebot_watercolor_md(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## ImageBot — watercolor style
 
     Now we let `ImageBot` handle style + subject. The `style` is set once on the bot;
     each call only needs the subject.
-    """)
+    """
+    )
     return
 
 
@@ -207,12 +215,14 @@ def imagebot_watercolor_flux2(
 
 @app.cell(hide_code=True)
 def photorealistic_md(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Photorealistic style
 
     Same subject, completely different visual language. We swap in the photorealistic style
     and try it with both models.
-    """)
+    """
+    )
     return
 
 
@@ -262,13 +272,15 @@ def imagebot_photorealistic_flux2(
 
 @app.cell(hide_code=True)
 def next_steps_md(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Next steps
 
     - Define your own styles (anime, oil painting, pixel art, pencil sketch) and re-run.
     - Swap in different subjects while keeping a style fixed.
     - Compare the two models on the same style + subject to evaluate quality and latency.
-    """)
+    """
+    )
     return
 
 

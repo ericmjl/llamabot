@@ -1,15 +1,13 @@
 """Test the ImageBot class."""
 
 import base64
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 
-from llamabot import ImageBot, SimpleBot
+from llamabot import ImageBot
 from llamabot.bot.imagebot import ImageReference
-from llamabot.components.messages import AIMessage
 
 
 def image_response(
