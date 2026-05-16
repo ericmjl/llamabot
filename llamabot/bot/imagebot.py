@@ -3,11 +3,24 @@
 import base64
 import binascii
 import html
+from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Optional
 
 import httpx
+from PIL import Image
+
+SUPPORTED_SAVE_EXTENSIONS: dict[str, str] = {
+    ".webp": "WEBP",
+    ".png": "PNG",
+    ".jpg": "JPEG",
+    ".jpeg": "JPEG",
+    ".bmp": "BMP",
+    ".tiff": "TIFF",
+    ".tif": "TIFF",
+    ".gif": "GIF",
+}
 
 from llamabot.components.messages import AIMessage
 
@@ -65,13 +78,26 @@ class ImageReference(str):
         raise ValueError("Cannot extract bytes: reference is not a data URI or URL.")
 
     def save(self, path: Path) -> Path:
-        """Save the image to disk.
+        """Save the image to disk, converting format to match the file extension.
+
+        If the extension maps to a known format (e.g. ``.webp``, ``.jpg``,
+        ``.png``), the image is re-encoded via Pillow.  Otherwise the raw
+        bytes are written unchanged.
 
         :param path: Destination file path.
         :return: The ``path`` argument, for chaining.
         """
         path = Path(path)
-        path.write_bytes(self.to_bytes())
+        fmt = SUPPORTED_SAVE_EXTENSIONS.get(path.suffix.lower())
+        if fmt:
+            img = Image.open(BytesIO(self.to_bytes()))
+            if fmt == "JPEG":
+                img = img.convert("RGB")
+            buffer = BytesIO()
+            img.save(buffer, format=fmt)
+            path.write_bytes(buffer.getvalue())
+        else:
+            path.write_bytes(self.to_bytes())
         return path
 
     def to_html(self, alt: str = "Generated image") -> str:
