@@ -2,12 +2,59 @@
 
 import base64
 import binascii
+import html
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Optional, Union
 
 import httpx
 
 from llamabot.components.messages import AIMessage
+
+
+class ImageReference(str):
+    """Displayable generated-image reference with HTML representation support.
+
+    This type subclasses ``str`` to preserve backward compatibility for callers
+    that compare or serialize plain string image references. It also exposes
+    ``_repr_html_`` so notebook frontends can render the referenced image
+    directly when possible.
+
+    :param value: URL or data URI for the generated image.
+    :param mime_type: MIME type used when constructing data URIs.
+    """
+
+    def __new__(cls, value: str, mime_type: str = "image/png") -> "ImageReference":
+        reference = super().__new__(cls, value)
+        reference.mime_type = mime_type
+        return reference
+
+    def is_data_uri(self) -> bool:
+        """Return whether this image reference is a data URI.
+
+        :return: True if the reference starts with ``data:``, else False.
+        """
+        return self.startswith("data:")
+
+    def to_html(self, alt: str = "Generated image") -> str:
+        """Return an HTML ``img`` element for this image reference.
+
+        :param alt: Alternate text for the rendered image.
+        :return: HTML string with an ``img`` tag.
+        """
+        escaped_src = html.escape(str(self), quote=True)
+        escaped_alt = html.escape(alt, quote=True)
+        return (
+            f'<img src="{escaped_src}" alt="{escaped_alt}" '
+            'style="max-width: 100%; height: auto;" />'
+        )
+
+    def _repr_html_(self) -> str:
+        """Return HTML representation used by notebook renderers.
+
+        :return: HTML representation of this image reference.
+        """
+        return self.to_html()
 
 
 class ImageBot:
@@ -23,6 +70,9 @@ class ImageBot:
     :param api_base: Optional API base URL to pass through to LiteLLM.
     :param api_version: Optional API version to pass through to LiteLLM.
     :param timeout: Maximum time, in seconds, to wait for image generation.
+    :param style: Optional visual-style string prepended to every prompt,
+        acting like a system prompt for image generation. For example
+        ``"cinematic photography, golden-hour lighting, 35mm"``.
     :param image_generation_kwargs: Additional provider-specific keyword arguments
         to pass through to ``litellm.image_generation``.
     """
@@ -38,6 +88,7 @@ class ImageBot:
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         timeout: int = 600,
+        style: Optional[str] = None,
         **image_generation_kwargs: Any,
     ):
         self.model = model
@@ -49,11 +100,12 @@ class ImageBot:
         self.api_base = api_base
         self.api_version = api_version
         self.timeout = timeout
+        self.style = style
         self.image_generation_kwargs = image_generation_kwargs
 
     def __call__(
         self, prompt: str, return_url: bool = False, save_path: Optional[Path] = None
-    ) -> Union[str, Path]:
+    ) -> Union[ImageReference, Path]:
         """Generate an image from a prompt.
 
         :param prompt: The prompt to generate an image from.
@@ -67,7 +119,8 @@ class ImageBot:
             to the generated image.
         :raises ValueError: If no generated image data is found in the response.
         """
-        response = generate_image_response(self, prompt)
+        full_prompt = f"{self.style}, {prompt}" if self.style else prompt
+        response = generate_image_response(self, full_prompt)
         image = first_generated_image(response)
 
         # Check if running in a Jupyter notebook
@@ -131,9 +184,81 @@ def generate_image_response(bot: ImageBot, prompt: str) -> Any:
     :param prompt: The prompt to generate an image from.
     :return: LiteLLM image generation response.
     """
+    if model_uses_ollama_image_api(bot.model):
+        return generate_ollama_image_response(bot, prompt)
+
     from litellm import image_generation
 
     return image_generation(**image_generation_kwargs_for_bot(bot, prompt))
+
+
+def model_uses_ollama_image_api(model_name: str) -> bool:
+    """Return whether a model should be routed to Ollama's native image API.
+
+    :param model_name: Model identifier configured on ImageBot.
+    :return: True when the model uses the ``ollama/`` prefix.
+    """
+    return model_name.startswith("ollama/")
+
+
+def parsed_image_size(size: str) -> tuple[int, int] | None:
+    """Parse ``<width>x<height>`` size text into integers.
+
+    :param size: Image size string (for example ``1024x1024``).
+    :return: ``(width, height)`` when parsing succeeds; otherwise ``None``.
+    """
+    parts = size.lower().split("x", maxsplit=1)
+    if len(parts) != 2:
+        return None
+    if not parts[0].isdigit() or not parts[1].isdigit():
+        return None
+    return int(parts[0]), int(parts[1])
+
+
+def ollama_image_payload(bot: ImageBot, prompt: str) -> dict[str, Any]:
+    """Build the request payload for Ollama image generation.
+
+    :param bot: The ImageBot providing generation settings.
+    :param prompt: The prompt to generate an image from.
+    :return: JSON payload for ``POST /api/generate`` on Ollama.
+    """
+    payload: dict[str, Any] = {
+        "model": bot.model.removeprefix("ollama/"),
+        "prompt": prompt,
+        "stream": False,
+    }
+    size = parsed_image_size(bot.size)
+    if size is not None:
+        payload["width"], payload["height"] = size
+    payload.update(bot.image_generation_kwargs)
+    return payload
+
+
+def generate_ollama_image_response(bot: ImageBot, prompt: str) -> SimpleNamespace:
+    """Generate an image through Ollama's native ``/api/generate`` endpoint.
+
+    :param bot: The ImageBot providing generation settings.
+    :param prompt: The prompt to generate an image from.
+    :return: A response object shaped like LiteLLM image generation responses.
+    :raises ValueError: If the Ollama response does not include image data.
+    """
+    api_base = bot.api_base or "http://localhost:11434"
+    response = httpx.post(
+        f"{api_base.rstrip('/')}/api/generate",
+        json=ollama_image_payload(bot, prompt),
+        timeout=bot.timeout,
+    )
+    response.raise_for_status()
+    response_json = response.json()
+    b64_image = response_json.get("image")
+    if not b64_image:
+        raise ValueError(
+            "No image field returned by Ollama /api/generate response. "
+            f"Response keys: {sorted(response_json.keys())}"
+        )
+    return SimpleNamespace(
+        data=[SimpleNamespace(url=None, b64_json=b64_image)],
+    )
 
 
 def first_generated_image(response: Any) -> Any:
@@ -149,7 +274,7 @@ def first_generated_image(response: Any) -> Any:
     return images[0]
 
 
-def generated_image_reference(image: Any) -> str:
+def generated_image_reference(image: Any) -> ImageReference:
     """Return a displayable reference for a generated image.
 
     :param image: A LiteLLM image object.
@@ -158,11 +283,11 @@ def generated_image_reference(image: Any) -> str:
     """
     image_url = getattr(image, "url", None)
     if image_url:
-        return image_url
+        return ImageReference(image_url)
 
     b64_json = getattr(image, "b64_json", None)
     if b64_json:
-        return f"data:image/png;base64,{b64_json}"
+        return ImageReference(f"data:image/png;base64,{b64_json}")
 
     raise ValueError("No image URL or b64_json found in response! Please try again.")
 

@@ -11,243 +11,291 @@
 
 import marimo
 
-__generated_with = "0.21.1"
+__generated_with = "0.23.6"
 app = marimo.App()
 
 
 @app.cell
-def _():
+def imports():
     import marimo as mo
 
     return (mo,)
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def title(mo):
     mo.md(
         r"""
-    # ImageBot
+    # Image Generation with Ollama
 
-    This notebook shows how to use the ImageBot API to ingest or generate images from text.
+    This notebook explores image generation using **Ollama's local models** with two approaches:
+
+    - the raw HTTP API via `httpx`,
+    - `ImageBot` from `llamabot`.
+
+    By the end you will know how to:
+
+    - call Ollama's `/api/generate` endpoint directly,
+    - use `ImageBot` with a `style` parameter for consistent visual direction,
+    - compare **watercolor** and **photorealistic** styles on the same absurd subject.
     """
     )
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def prerequisites_md(mo):
     mo.md(
         r"""
-    ## Image Ingestion
+    ## Prerequisites
 
-    For image ingestion, we will use the `SimpleBot` class, which can take an iterable of messages and pass them to the LLM.  Making one of the messages an image URL or a local file path will automatically convert it into a format that can be used by the LLM.
+    Ensure the following before running the notebook:
 
-    In this example, we will use a local LLM (Gemma 3n) hosted on LM Studio on an Apple Silicon Mac.  You can choose any LLM that is compatible with your computer architecture (including non-local models) as long as they can process images.
-
-    First you need to set up the environment variable to point to your LM Studio instance.  You can skip this step if you are using a non-local model.
+    - **Ollama** is running locally (`ollama serve` or a system service).
+    - The image models are pulled:
+      ```bash
+      ollama pull x/flux2-klein:latest
+      ollama pull x/z-image-turbo:latest
+      ```
     """
     )
     return
 
 
 @app.cell
-def _():
-    # Define the API base (for LM Studio), API key, and model name
-    #
-    # NOTE: If you are using another service with a real API key,
-    # you should NOT store it in plain text here. You should probably
-    # use environment variables to manage sensitive information.
-    API_BASE = "http://localhost:1234/v1"
-    API_KEY = "lm-studio"  # This is a dummy value to bypass the check
-    MODEL_NAME = "lm_studio/gemma-3n-e4b-it-mlx"
+def python_imports():
+    import base64
 
-    # Define the temperature for the model's responses
-    TEMPERATURE = 0.2
-    return API_BASE, API_KEY, MODEL_NAME, TEMPERATURE
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    Now we can create a `SimpleBot` instance and connect to the LLM.
-    """
-    )
-    return
-
-
-@app.cell
-def _(API_BASE, API_KEY, MODEL_NAME, TEMPERATURE):
-    import llamabot as lmb
-    from llamabot import SimpleBot
+    import httpx
     from pathlib import Path
 
-    # This example code was written and tested on an Apple Silicon Mac
-    # using the LM Studio application to host a Gemma 3n model downloaded
-    # from Hugging Face:
-    # https://huggingface.co/lmstudio-community/gemma-3n-E4B-it-MLX-bf16
-    #
-    # Use lm_studio/ prefix to access local models through LM Studio.
-    # You can also use other models (e.g. OpenAI or Ollama models)
-    # as long as they support image inputs.  See the documentation for details.
+    from llamabot.bot.imagebot import ImageBot, ImageReference
 
-    system_prompt = """You are a helpful assistant that can analyze images and
-    provide detailed descriptions of those images.  You will also try to answer
-    any questions about the images to the best of your ability."""
+    return ImageBot, ImageReference, Path, base64, httpx
 
-    bot = SimpleBot(
-        system_prompt,
-        temperature=TEMPERATURE,
-        api_base=API_BASE,
-        api_key=API_KEY,
-        model_name=MODEL_NAME,
+
+@app.cell
+def model_config():
+    OLLAMA_API_BASE = "http://localhost:11434"
+    FLUX2_MODEL = "x/flux2-klein:latest"
+    TURBO_MODEL = "x/z-image-turbo:latest"
+    IMAGE_SIZE = "1024x1024"
+
+    WATERCOLOR_STYLE = (
+        "vivid watercolor illustration, bold saturated colors, "
+        "soft wet-on-wet edges, paint splatters, white paper showing through"
     )
-    return Path, bot, lmb
+
+    PHOTOREALISTIC_STYLE = (
+        "photorealistic, high-resolution DSLR photo, natural lighting, "
+        "sharp focus, detailed textures, National Geographic quality"
+    )
+
+    SUBJECT = (
+        "a capybara sitting on top of an alligator, "
+        "both eating berries together while watching TV"
+    )
+    return (
+        FLUX2_MODEL,
+        IMAGE_SIZE,
+        OLLAMA_API_BASE,
+        PHOTOREALISTIC_STYLE,
+        SUBJECT,
+        TURBO_MODEL,
+        WATERCOLOR_STYLE,
+    )
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def concept_md(mo):
     mo.md(
         r"""
-    Now we use the bot to process a message that includes an image.  We can do this by passing a list of messages to the bot, one of which is an image file path. The image we will use is shown below:
+    ## Style as a system prompt
 
-    ![Bearly There](./Bearly_There.JPG)
+    `ImageBot` accepts a `style` parameter — a visual-language string
+    prepended to every prompt automatically, like a system prompt for images.
 
-    **Image Credit**: Photo by [Juan Cabanela](http://web.mnstate.edu/cabanela/) and is provided under a [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/).
+    - **`style`** — visual language, lighting, mood, medium (set once on the bot).
+    - **`prompt`** — the specific subject of each scene (set per call).
+
+    We will apply two very different styles to the same delightfully absurd subject
+    and see how each model interprets it.
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def raw_api_md(mo):
+    mo.md(
+        r"""
+    ## Raw HTTP API with httpx — watercolor
+
+    We call Ollama's `/api/generate` directly, manually combining the watercolor style and subject.
     """
     )
     return
 
 
 @app.cell
-def _(Path, bot, lmb):
-    # Ask the bot to describe an image localed at the given path
-    image_path = Path("./Bearly_There.JPG")
+def raw_api_generate(
+    FLUX2_MODEL,
+    ImageReference,
+    OLLAMA_API_BASE,
+    Path,
+    SUBJECT,
+    WATERCOLOR_STYLE,
+    base64,
+    httpx,
+):
+    raw_prompt = f"{WATERCOLOR_STYLE}, {SUBJECT}"
 
-    first_message = [
-        lmb.user("Briefly (in less than 25 words) describe the following image: "),
-        lmb.user(image_path),
-    ]
+    raw_payload = {
+        "model": FLUX2_MODEL,
+        "prompt": raw_prompt,
+        "stream": False,
+        "width": 1024,
+        "height": 1024,
+    }
 
-    response = bot(first_message)
-    return first_message, response
+    raw_response = httpx.post(
+        f"{OLLAMA_API_BASE}/api/generate",
+        json=raw_payload,
+        timeout=120,
+    )
+    raw_response.raise_for_status()
+    raw_json = raw_response.json()
+
+    raw_b64 = raw_json.get("image")
+    if not raw_b64:
+        raise ValueError(
+            "No image field in Ollama response. "
+            f"Response keys: {sorted(raw_json.keys())}"
+        )
+
+    raw_image_bytes = base64.b64decode(raw_b64)
+    raw_save_path = Path("./generated_raw_watercolor.png")
+    raw_save_path.write_bytes(raw_image_bytes)
+
+    ImageReference(f"data:image/png;base64,{raw_b64}")
+    return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def imagebot_watercolor_md(mo):
     mo.md(
         r"""
-    So the previous cell properly ingested the image and passed it to the LLM.  The LLM then generated a response based on the image content.  However, when using `SimpleBot` the context is not saved, so we cannot ask follow-up questions about the image.
+    ## ImageBot — watercolor style
 
-    For example, if we try to ask a follow-up question about the image, the bot will not remember the previous interaction, and thus will respond in a way that does not reference the image.
+    Now we let `ImageBot` handle style + subject. The `style` is set once on the bot;
+    each call only needs the subject.
     """
     )
     return
 
 
 @app.cell
-def _(bot, lmb):
-    # This will not work as you might expect because the bot has no memory
-    followup_message = [lmb.user("What else can you tell me about the bear?")]
-    _response2 = bot(followup_message)
-    return (followup_message,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    We can address this by creating a memory store for the chat which can hold the context of the first conversation and the response.  Here we will use a simple list to hold the chat history.
-    """
-    )
-    return
-
-
-@app.cell
-def _(first_message, response):
-    # Create a memory store for the chat which can hold the context of the
-    # conversation.
-    chat_memory = []
-
-    # Combine the initial message and the response into the chat memory
-    chat_memory.extend([first_message, response])
-    return (chat_memory,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    Now we can ask follow-up questions about the image and the bot will remember the context.  **NOTE**: You may need to increase the number of tokens the model can use to ensure it has enough context to answer the question.
-    """
-    )
-    return
-
-
-@app.cell
-def _(bot, chat_memory, followup_message):
-    # Starting with the chat memory for the previous interaction,
-    # ask a followup question about the image and then send all
-    # of that to the bot with memory.
-    messages = chat_memory + followup_message
-    # Call the bot with the full message history
-    _response2 = bot(messages)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    ## Image Generation
-
-    Image generation, due to the rather large memory requirements, is normally not available on local models. We will need to use an visual language model, which is available through the OpenAI API. It is assumed you have set up your OpenAI API key in the environment variable (as per [OpenAI's best practices](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety) documentation).
-
-    Once we have set up the environment variable, we can load the API key:
-    """
-    )
-    return
-
-
-@app.cell
-def _():
-    # Load an OpenAI API Key from an environment variable and select an
-    # OpenAI model to use
-    import os
-
-    _OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-    # We will use the DALL-E 3 model for image generation, which is not
-    # the newest model but is still quite capable.
-    _OPENAI_MODEL = "dall-e-3"
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    Now let's call the `ImageBot` to generate an image from a text prompt.  The generated image will be returned as a URL that is used to display the image in the notebook.  If you want to save the image locally, you can use the `requests` library to download it.
-    """
-    )
-    return
-
-
-@app.cell
-def _(Path):
-    from llamabot.bot.imagebot import ImageBot
-
-    # Create an ImageBot instance
-    # The supported sizes are: '1024x1024', '1024x1792', and '1792x1024'
-    # with the default being '1024x1024'.
-    img_gen_bot = ImageBot(
-        size="1024x1024",  # The default size is 1024x1024
+def imagebot_watercolor_flux2(
+    FLUX2_MODEL,
+    IMAGE_SIZE,
+    ImageBot,
+    OLLAMA_API_BASE,
+    Path,
+    SUBJECT,
+    WATERCOLOR_STYLE,
+):
+    watercolor_bot = ImageBot(
+        model=f"ollama/{FLUX2_MODEL}",
+        size=IMAGE_SIZE,
+        api_base=OLLAMA_API_BASE,
+        style=WATERCOLOR_STYLE,
     )
 
-    img_gen_bot(
-        "A grizzly bear eating some berries at a picnic table in a forest.",
+    watercolor_flux2_reference = watercolor_bot(
+        SUBJECT,
         return_url=True,
-        save_path=Path("./generated_bear_image.png"),
+        save_path=Path("./generated_watercolor_flux2.png"),
+    )
+
+    watercolor_flux2_reference
+    return
+
+
+@app.cell(hide_code=True)
+def photorealistic_md(mo):
+    mo.md(
+        r"""
+    ## Photorealistic style
+
+    Same subject, completely different visual language. We swap in the photorealistic style
+    and try it with both models.
+    """
+    )
+    return
+
+
+@app.cell
+def imagebot_photorealistic_turbo(
+    IMAGE_SIZE,
+    ImageBot,
+    OLLAMA_API_BASE,
+    PHOTOREALISTIC_STYLE,
+    Path,
+    SUBJECT,
+    TURBO_MODEL,
+):
+    photoreal_bot = ImageBot(
+        model=f"ollama/{TURBO_MODEL}",
+        size=IMAGE_SIZE,
+        api_base=OLLAMA_API_BASE,
+        style=PHOTOREALISTIC_STYLE,
+    )
+
+    photoreal_turbo_reference = photoreal_bot(
+        SUBJECT,
+        return_url=True,
+        save_path=Path("./generated_photorealistic_turbo.png"),
+    )
+
+    photoreal_turbo_reference
+    return
+
+
+@app.cell
+def imagebot_photorealistic_flux2(
+    FLUX2_MODEL,
+    IMAGE_SIZE,
+    ImageBot,
+    OLLAMA_API_BASE,
+    PHOTOREALISTIC_STYLE,
+    Path,
+    SUBJECT,
+):
+    photoreal_flux2_reference = ImageBot(
+        model=f"ollama/{FLUX2_MODEL}",
+        size=IMAGE_SIZE,
+        api_base=OLLAMA_API_BASE,
+        style=PHOTOREALISTIC_STYLE,
+    )(
+        SUBJECT,
+        return_url=True,
+        save_path=Path("./generated_photorealistic_flux2.png"),
+    )
+
+    photoreal_flux2_reference
+    return
+
+
+@app.cell(hide_code=True)
+def next_steps_md(mo):
+    mo.md(
+        r"""
+    ## Next steps
+
+    - Define your own styles (anime, oil painting, pixel art, pencil sketch) and re-run.
+    - Swap in different subjects while keeping a style fixed.
+    - Compare the two models on the same style + subject to evaluate quality and latency.
+    """
     )
     return
 

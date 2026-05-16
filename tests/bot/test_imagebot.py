@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from llamabot import ImageBot, SimpleBot
+from llamabot.bot.imagebot import ImageReference
 from llamabot.components.messages import AIMessage
 
 
@@ -50,7 +51,7 @@ def test_initialization_custom():
         api_base="https://example.com",
         api_version="2024-02-01",
         timeout=30,
-        style="vivid",
+        style="cinematic photography, golden-hour lighting",
     )
     assert bot.model == "custom-model"
     assert bot.size == "800x800"
@@ -61,7 +62,8 @@ def test_initialization_custom():
     assert bot.api_base == "https://example.com"
     assert bot.api_version == "2024-02-01"
     assert bot.timeout == 30
-    assert bot.image_generation_kwargs == {"style": "vivid"}
+    assert bot.style == "cinematic photography, golden-hour lighting"
+    assert bot.image_generation_kwargs == {}
 
 
 def test_call_uses_litellm_image_generation(mocker):
@@ -76,6 +78,7 @@ def test_call_uses_litellm_image_generation(mocker):
     result = bot("test prompt", return_url=True)
 
     assert result == "http://image.url"
+    assert isinstance(result, ImageReference)
     image_generation.assert_called_once_with(
         model="dall-e-3",
         prompt="test prompt",
@@ -107,6 +110,7 @@ def test_call_forwards_litellm_provider_kwargs(mocker):
     result = bot("test prompt", return_url=True)
 
     assert result == "http://image.url"
+    assert isinstance(result, ImageReference)
     image_generation.assert_called_once_with(
         model="openrouter/google/gemini-2.5-flash-image",
         prompt="test prompt",
@@ -251,4 +255,114 @@ def test_call_raises_when_litellm_returns_no_images(mocker):
     bot = ImageBot()
 
     with pytest.raises(ValueError, match="No images found in response"):
+        bot("test prompt", return_url=True)
+
+
+def test_image_reference_has_html_representation_for_url():
+    """Test that image references provide a renderable HTML representation."""
+    reference = ImageReference("http://example.com/image.png")
+
+    assert str(reference) == "http://example.com/image.png"
+    assert "img" in reference._repr_html_()
+    assert 'src="http://example.com/image.png"' in reference._repr_html_()
+
+
+def test_image_reference_has_html_representation_for_data_uri():
+    """Test that base64 image references can render via HTML representation."""
+    encoded_image = base64.b64encode(b"image_data").decode("utf-8")
+    reference = ImageReference(f"data:image/png;base64,{encoded_image}")
+
+    assert reference.is_data_uri()
+    assert "data:image/png;base64" in reference._repr_html_()
+
+
+def test_call_prepends_style_to_prompt(mocker):
+    """Test that the style string is prepended to the prompt."""
+    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
+    image_generation = mocker.patch(
+        "litellm.image_generation",
+        return_value=image_response(),
+    )
+
+    bot = ImageBot(style="cinematic photography, 35mm")
+    result = bot("a red apple on a table", return_url=True)
+
+    assert result == "http://image.url"
+    assert isinstance(result, ImageReference)
+    image_generation.assert_called_once_with(
+        model="dall-e-3",
+        prompt="cinematic photography, 35mm, a red apple on a table",
+        size="1024x1024",
+        n=1,
+        response_format="url",
+        timeout=600,
+    )
+
+
+def test_call_without_style_passes_prompt_unchanged(mocker):
+    """Test that prompts are passed through unchanged when no style is set."""
+    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
+    image_generation = mocker.patch(
+        "litellm.image_generation",
+        return_value=image_response(),
+    )
+
+    bot = ImageBot()
+    bot("test prompt", return_url=True)
+
+    image_generation.assert_called_once_with(
+        model="dall-e-3",
+        prompt="test prompt",
+        size="1024x1024",
+        n=1,
+        response_format="url",
+        timeout=600,
+    )
+
+
+def test_call_routes_ollama_models_to_native_api(mocker):
+    """Test that Ollama image models are routed to /api/generate."""
+    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
+    litellm_image_generation = mocker.patch("litellm.image_generation")
+    encoded_image = base64.b64encode(b"ollama_image_data").decode("utf-8")
+    mock_post_response = mocker.MagicMock()
+    mock_post_response.json.return_value = {"image": encoded_image}
+    mock_post = mocker.patch("httpx.post", return_value=mock_post_response)
+
+    bot = ImageBot(
+        model="ollama/x/flux2-klein:4b-bf16",
+        api_base="http://localhost:11434",
+        response_format="b64_json",
+        style="cinematic photography, 35mm",
+    )
+    result = bot("test prompt", return_url=True)
+
+    assert isinstance(result, ImageReference)
+    assert result.is_data_uri()
+    assert "data:image/png;base64" in result
+    mock_post.assert_called_once_with(
+        "http://localhost:11434/api/generate",
+        json={
+            "model": "x/flux2-klein:4b-bf16",
+            "prompt": "cinematic photography, 35mm, test prompt",
+            "stream": False,
+            "width": 1024,
+            "height": 1024,
+        },
+        timeout=600,
+    )
+    mock_post_response.raise_for_status.assert_called_once_with()
+    litellm_image_generation.assert_not_called()
+
+
+def test_ollama_route_raises_when_response_has_no_image(mocker):
+    """Test that Ollama routing raises when /api/generate has no image field."""
+    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
+    mock_post_response = mocker.MagicMock()
+    mock_post_response.json.return_value = {"response": "done", "done": True}
+    mocker.patch("httpx.post", return_value=mock_post_response)
+
+    bot = ImageBot(model="ollama/x/flux2-klein:4b-bf16")
+
+    with pytest.raises(ValueError, match="No image field returned by Ollama"):
         bot("test prompt", return_url=True)
