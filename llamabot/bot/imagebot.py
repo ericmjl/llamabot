@@ -24,6 +24,12 @@ class ImageReference(str):
     """
 
     def __new__(cls, value: str, mime_type: str = "image/png") -> "ImageReference":
+        """Create a new ImageReference instance.
+
+        :param value: URL or data URI for the generated image.
+        :param mime_type: MIME type used when constructing data URIs.
+        :return: A new ImageReference instance.
+        """
         reference = super().__new__(cls, value)
         reference.mime_type = mime_type
         return reference
