@@ -230,15 +230,15 @@ def _(dalle_prompt_bot):
 @app.cell
 def _(bannerbot, dalle_prompt):
     # Generate the banner image
-    banner_url = bannerbot(dalle_prompt.content, return_url=True)
-    banner_url
-    return (banner_url,)
+    banner_ref = bannerbot(dalle_prompt.content)
+    banner_ref
+    return (banner_ref,)
 
 
 @app.cell
-def _(banner_url, mo):
+def _(banner_ref, mo):
     # Display the generated banner image
-    mo.image(banner_url)
+    mo.image(banner_ref)
     return
 
 
@@ -248,9 +248,8 @@ def _(mo):
         """
     ## Step 5: Save the Image Locally
 
-    You can also save the image to a file instead of just getting the URL.
-    ImageBot will automatically generate a filename from the prompt if you don't
-    specify a save path.
+    Every generated image is returned as an `ImageReference`.
+    Call `.save(path)` on it to write the image to disk.
     """
     )
     return
@@ -260,11 +259,9 @@ def _(mo):
 def _(bannerbot, dalle_prompt):
     from pathlib import Path
 
-    # Save the image to a specific path
-    image_path = bannerbot(
-        dalle_prompt.content,
-        save_path=Path("blog_banner.jpg"),
-    )
+    # The ImageReference can be saved to disk with .save()
+    banner_ref = bannerbot(dalle_prompt.content)
+    image_path = banner_ref.save(Path("blog_banner.jpg"))
     image_path
     return (Path,)
 
@@ -286,23 +283,18 @@ def _(mo):
 def _(Path, bannerbot, dalle_prompt_bot):
     def generate_blog_banner(
         blog_text: str, save_path: Path | None = None
-    ) -> str | Path:
+    ) -> ImageReference:
         """Generate a banner image for a blog post.
 
         :param blog_text: The text content of the blog post
-        :param save_path: Optional path to save the image. If None, returns URL.
-        :return: URL if save_path is None, otherwise the path to saved image
+        :param save_path: Optional path to save the image to disk.
+        :return: An ImageReference for the generated banner image.
         """
-        # Step 1: Generate DALL-E prompt from blog text
         dalle_prompt = dalle_prompt_bot(blog_text)
-
-        # Step 2: Generate the banner image
+        banner_ref = bannerbot(dalle_prompt.content)
         if save_path:
-            image_path = bannerbot(dalle_prompt.content, save_path=save_path)
-            return image_path
-        else:
-            banner_url = bannerbot(dalle_prompt.content, return_url=True)
-            return banner_url
+            banner_ref.save(save_path)
+        return banner_ref
 
     return (generate_blog_banner,)
 
@@ -329,9 +321,9 @@ def _(generate_blog_banner, mo):
     writing efficient Python code.
     """
 
-    technical_banner_url = generate_blog_banner(technical_post)
+    technical_banner_ref = generate_blog_banner(technical_post)
     mo.md(f"**Technical Post Banner:**")
-    mo.image(technical_banner_url)
+    mo.image(technical_banner_ref)
     return
 
 
@@ -598,15 +590,15 @@ def _(blog_post_text, styled_dalle_prompt_bot):
 @app.cell
 def _(bannerbot, styled_dalle_prompt):
     # Generate the banner image with custom styles
-    styled_banner_url = bannerbot(styled_dalle_prompt.content, return_url=True)
-    styled_banner_url
-    return (styled_banner_url,)
+    styled_banner_ref = bannerbot(styled_dalle_prompt.content)
+    styled_banner_ref
+    return (styled_banner_ref,)
 
 
 @app.cell
-def _(mo, styled_banner_url):
+def _(mo, styled_banner_ref):
     # Display the generated banner image with custom styles
-    mo.image(styled_banner_url)
+    mo.image(styled_banner_ref)
     return
 
 

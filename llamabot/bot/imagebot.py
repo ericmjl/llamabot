@@ -5,7 +5,7 @@ import binascii
 import html
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -13,12 +13,11 @@ from llamabot.components.messages import AIMessage
 
 
 class ImageReference(str):
-    """Displayable generated-image reference with HTML representation support.
+    """Displayable and saveable reference to a generated image.
 
-    This type subclasses ``str`` to preserve backward compatibility for callers
-    that compare or serialize plain string image references. It also exposes
-    ``_repr_html_`` so notebook frontends can render the referenced image
-    directly when possible.
+    Subclasses ``str`` so the value is the URL or data URI.
+    Supports notebook rendering via ``_repr_html_`` and
+    disk persistence via ``save``.
 
     :param value: URL or data URI for the generated image.
     :param mime_type: MIME type used when constructing data URIs.
@@ -35,6 +34,39 @@ class ImageReference(str):
         :return: True if the reference starts with ``data:``, else False.
         """
         return self.startswith("data:")
+
+    def to_bytes(self) -> bytes:
+        """Return the raw image bytes.
+
+        Decodes from the base64 payload in a data URI, or downloads
+        from the URL if the reference is a remote link.
+
+        :return: Raw image bytes.
+        :raises ValueError: If the reference is neither a data URI nor a URL.
+        """
+        if self.is_data_uri():
+            _, encoded = str(self).split(",", 1)
+            try:
+                return base64.b64decode(encoded, validate=True)
+            except binascii.Error as error:
+                raise ValueError("Invalid base64 image data.") from error
+
+        if self.startswith(("http://", "https://")):
+            response = httpx.get(str(self))
+            response.raise_for_status()
+            return response.content
+
+        raise ValueError("Cannot extract bytes: reference is not a data URI or URL.")
+
+    def save(self, path: Path) -> Path:
+        """Save the image to disk.
+
+        :param path: Destination file path.
+        :return: The ``path`` argument, for chaining.
+        """
+        path = Path(path)
+        path.write_bytes(self.to_bytes())
+        return path
 
     def to_html(self, alt: str = "Generated image") -> str:
         """Return an HTML ``img`` element for this image reference.
@@ -103,50 +135,30 @@ class ImageBot:
         self.style = style
         self.image_generation_kwargs = image_generation_kwargs
 
-    def __call__(
-        self, prompt: str, return_url: bool = False, save_path: Optional[Path] = None
-    ) -> Union[ImageReference, Path]:
-        """Generate an image from a prompt.
+    def __call__(self, prompt: str) -> ImageReference:
+        """Generate an image from a prompt and return a displayable reference.
 
         :param prompt: The prompt to generate an image from.
-        :param return_url: Whether to return a displayable image reference.
-            Overrides the save_path parameter. Defaults to False. URL responses
-            return a URL; base64 responses return a data URI.
-        :param save_path: The path to save the generated image to.
-            If it is empty, then we will generate a filename from the prompt.
-        :return: The generated image reference if running in a Jupyter notebook
-            or if ``return_url`` is True, otherwise a pathlib.Path object pointing
-            to the generated image.
+        :return: An ``ImageReference`` that can be displayed in notebooks
+            or saved to disk via ``.save(path)``.
         :raises ValueError: If no generated image data is found in the response.
         """
         full_prompt = f"{self.style}, {prompt}" if self.style else prompt
         response = generate_image_response(self, full_prompt)
         image = first_generated_image(response)
 
-        # Check if running in a Jupyter notebook
         if is_running_in_jupyter():
             try:
-                from IPython.display import display, Image
+                from IPython.display import Image, display
 
                 if getattr(image, "url", None):
                     display(Image(url=image.url))
                 else:
                     display(Image(data=generated_image_bytes(image)))
-                return generated_image_reference(image)
             except ImportError:
-                pass  # IPython not available, fall through to normal behavior
+                pass
 
-        if return_url:
-            return generated_image_reference(image)
-
-        image_data = generated_image_bytes(image)
-
-        if not save_path:
-            filename = filename_bot(prompt).content
-            save_path = Path(f"{filename}.jpg")
-        save_path = Path(save_path)
-        save_path.write_bytes(image_data)
-        return save_path
+        return generated_image_reference(image)
 
 
 def image_generation_kwargs_for_bot(bot: ImageBot, prompt: str) -> dict[str, Any]:

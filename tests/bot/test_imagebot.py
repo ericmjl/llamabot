@@ -66,27 +66,19 @@ def test_initialization_custom():
     assert bot.image_generation_kwargs == {}
 
 
-def test_call_uses_litellm_image_generation(mocker):
-    """Test that ImageBot calls LiteLLM's image generation API."""
+def test_call_returns_image_reference(mocker):
+    """Test that ImageBot.__call__ returns an ImageReference."""
     mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
-    image_generation = mocker.patch(
+    mocker.patch(
         "litellm.image_generation",
         return_value=image_response(),
     )
 
     bot = ImageBot()
-    result = bot("test prompt", return_url=True)
+    result = bot("test prompt")
 
-    assert result == "http://image.url"
     assert isinstance(result, ImageReference)
-    image_generation.assert_called_once_with(
-        model="dall-e-3",
-        prompt="test prompt",
-        size="1024x1024",
-        n=1,
-        response_format="url",
-        timeout=600,
-    )
+    assert result == "http://image.url"
 
 
 def test_call_forwards_litellm_provider_kwargs(mocker):
@@ -107,10 +99,10 @@ def test_call_forwards_litellm_provider_kwargs(mocker):
         response_format="url",
         user="user-123",
     )
-    result = bot("test prompt", return_url=True)
+    result = bot("test prompt")
 
-    assert result == "http://image.url"
     assert isinstance(result, ImageReference)
+    assert result == "http://image.url"
     image_generation.assert_called_once_with(
         model="openrouter/google/gemini-2.5-flash-image",
         prompt="test prompt",
@@ -131,149 +123,19 @@ def test_call_in_jupyter():
     with patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=True):
         with patch("IPython.display.Image") as mock_image:
             with patch("IPython.display.display") as mock_display:
-                # Setup
                 bot = ImageBot()
                 test_url = "http://image.url"
 
-                # Action
                 with patch(
                     "litellm.image_generation",
                     return_value=image_response(url=test_url),
                 ):
                     result = bot("test prompt")
 
-                # Assert
+                assert isinstance(result, ImageReference)
                 assert result == test_url
                 mock_image.assert_called_once_with(url=test_url)
                 mock_display.assert_called_once_with(mock_image.return_value)
-
-
-def test_call_outside_jupyter(mocker, tmp_path):
-    """Test the call method when not running in a Jupyter notebook.
-
-    This test tests that the call method returns the path to the generated image
-    when not running in a Jupyter notebook.
-
-    :param mocker: The pytest-mock fixture.
-    :param tmp_path: The pytest tmp_path fixture.
-    """
-    # Mock the is_running_in_jupyter method
-    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
-
-    # Instantiate ImageBot
-    bot = ImageBot()
-
-    # Mock LiteLLM's image generation API to return the desired URL
-    mocker.patch("litellm.image_generation", return_value=image_response())
-
-    # Mock httpx.get to return a mock response with content
-    mock_get_response = mocker.MagicMock()
-    mock_get_response.content = b"image_data"
-    mock_get = mocker.patch("httpx.get", return_value=mock_get_response)
-
-    # Mock the SimpleBot's __call__ method
-    mocker.patch.object(
-        SimpleBot, "__call__", return_value=mocker.MagicMock(message="test_prompt")
-    )
-
-    # Call the method and perform the assertion
-    result = bot("test prompt", save_path=tmp_path / "test_prompt.jpg")
-    assert result == tmp_path / "test_prompt.jpg"
-    mock_get.assert_called_with("http://image.url")
-    mock_get_response.raise_for_status.assert_called_once_with()
-
-
-def test_call_outside_jupyter_no_save_path(mocker, tmp_path):
-    """Test the call method when not running in a Jupyter notebook
-    and no save path is provided.
-
-    This test checks that the call method
-    saves the image to a generated filename based on the prompt
-    when not running in a Jupyter notebook and no save path is provided.
-
-    :param mocker: The pytest-mock fixture.
-    """
-    # Mock the is_running_in_jupyter method
-    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
-
-    # Instantiate ImageBot
-    bot = ImageBot()
-
-    # Mock LiteLLM's image generation API to return the desired URL
-    mocker.patch("litellm.image_generation", return_value=image_response())
-
-    # Mock httpx.get to return a mock response with content
-    mock_get_response = mocker.MagicMock()
-    mock_get_response.content = b"image_data"
-    mock_get = mocker.patch("httpx.get", return_value=mock_get_response)
-
-    # Mock the filename_bot method to return a generated filename
-    generated_filename = str(tmp_path / "generated_filename")
-    mocker.patch(
-        "llamabot.bot.imagebot.filename_bot",
-        return_value=AIMessage(content=generated_filename),
-    )
-
-    # Call the method and perform the assertion
-    result = bot("test prompt")
-    assert result == Path(f"{generated_filename}.jpg")
-    mock_get.assert_called_with("http://image.url")
-    mock_get_response.raise_for_status.assert_called_once_with()
-
-    # Check if the file was saved correctly
-    with open(result, "rb") as file:
-        saved_content = file.read()
-    assert saved_content == b"image_data"
-
-
-def test_call_outside_jupyter_saves_b64_json_without_downloading(mocker, tmp_path):
-    """Test that base64 image responses are saved without an image download."""
-    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
-    encoded_image = base64.b64encode(b"image_data").decode("utf-8")
-    mocker.patch(
-        "litellm.image_generation",
-        return_value=image_response(url=None, b64_json=encoded_image),
-    )
-    mock_get = mocker.patch("httpx.get")
-
-    bot = ImageBot(response_format="b64_json")
-    result = bot("test prompt", save_path=tmp_path / "test_prompt.png")
-
-    assert result == tmp_path / "test_prompt.png"
-    assert result.read_bytes() == b"image_data"
-    mock_get.assert_not_called()
-
-
-def test_call_raises_when_litellm_returns_no_images(mocker):
-    """Test that ImageBot raises when LiteLLM returns no generated images."""
-    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
-    mocker.patch(
-        "litellm.image_generation",
-        return_value=SimpleNamespace(data=[]),
-    )
-
-    bot = ImageBot()
-
-    with pytest.raises(ValueError, match="No images found in response"):
-        bot("test prompt", return_url=True)
-
-
-def test_image_reference_has_html_representation_for_url():
-    """Test that image references provide a renderable HTML representation."""
-    reference = ImageReference("http://example.com/image.png")
-
-    assert str(reference) == "http://example.com/image.png"
-    assert "img" in reference._repr_html_()
-    assert 'src="http://example.com/image.png"' in reference._repr_html_()
-
-
-def test_image_reference_has_html_representation_for_data_uri():
-    """Test that base64 image references can render via HTML representation."""
-    encoded_image = base64.b64encode(b"image_data").decode("utf-8")
-    reference = ImageReference(f"data:image/png;base64,{encoded_image}")
-
-    assert reference.is_data_uri()
-    assert "data:image/png;base64" in reference._repr_html_()
 
 
 def test_call_prepends_style_to_prompt(mocker):
@@ -285,9 +147,8 @@ def test_call_prepends_style_to_prompt(mocker):
     )
 
     bot = ImageBot(style="cinematic photography, 35mm")
-    result = bot("a red apple on a table", return_url=True)
+    result = bot("a red apple on a table")
 
-    assert result == "http://image.url"
     assert isinstance(result, ImageReference)
     image_generation.assert_called_once_with(
         model="dall-e-3",
@@ -308,7 +169,7 @@ def test_call_without_style_passes_prompt_unchanged(mocker):
     )
 
     bot = ImageBot()
-    bot("test prompt", return_url=True)
+    bot("test prompt")
 
     image_generation.assert_called_once_with(
         model="dall-e-3",
@@ -318,6 +179,20 @@ def test_call_without_style_passes_prompt_unchanged(mocker):
         response_format="url",
         timeout=600,
     )
+
+
+def test_call_raises_when_litellm_returns_no_images(mocker):
+    """Test that ImageBot raises when LiteLLM returns no generated images."""
+    mocker.patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=False)
+    mocker.patch(
+        "litellm.image_generation",
+        return_value=SimpleNamespace(data=[]),
+    )
+
+    bot = ImageBot()
+
+    with pytest.raises(ValueError, match="No images found in response"):
+        bot("test prompt")
 
 
 def test_call_routes_ollama_models_to_native_api(mocker):
@@ -335,7 +210,7 @@ def test_call_routes_ollama_models_to_native_api(mocker):
         response_format="b64_json",
         style="cinematic photography, 35mm",
     )
-    result = bot("test prompt", return_url=True)
+    result = bot("test prompt")
 
     assert isinstance(result, ImageReference)
     assert result.is_data_uri()
@@ -365,4 +240,63 @@ def test_ollama_route_raises_when_response_has_no_image(mocker):
     bot = ImageBot(model="ollama/x/flux2-klein:4b-bf16")
 
     with pytest.raises(ValueError, match="No image field returned by Ollama"):
-        bot("test prompt", return_url=True)
+        bot("test prompt")
+
+
+def test_image_reference_html_for_url():
+    """Test that image references provide a renderable HTML representation."""
+    reference = ImageReference("http://example.com/image.png")
+
+    assert str(reference) == "http://example.com/image.png"
+    assert "img" in reference._repr_html_()
+    assert 'src="http://example.com/image.png"' in reference._repr_html_()
+
+
+def test_image_reference_html_for_data_uri():
+    """Test that base64 image references can render via HTML representation."""
+    encoded_image = base64.b64encode(b"image_data").decode("utf-8")
+    reference = ImageReference(f"data:image/png;base64,{encoded_image}")
+
+    assert reference.is_data_uri()
+    assert "data:image/png;base64" in reference._repr_html_()
+
+
+def test_image_reference_to_bytes_from_data_uri():
+    """Test that to_bytes decodes base64 from a data URI."""
+    raw = b"image_data"
+    encoded_image = base64.b64encode(raw).decode("utf-8")
+    reference = ImageReference(f"data:image/png;base64,{encoded_image}")
+
+    assert reference.to_bytes() == raw
+
+
+def test_image_reference_to_bytes_from_url(mocker):
+    """Test that to_bytes downloads from a URL."""
+    mock_response = mocker.MagicMock()
+    mock_response.content = b"downloaded_image"
+    mocker.patch("httpx.get", return_value=mock_response)
+
+    reference = ImageReference("http://example.com/image.png")
+    assert reference.to_bytes() == b"downloaded_image"
+
+
+def test_image_reference_save_writes_file(tmp_path):
+    """Test that save writes the image bytes to disk."""
+    raw = b"image_data"
+    encoded_image = base64.b64encode(raw).decode("utf-8")
+    reference = ImageReference(f"data:image/png;base64,{encoded_image}")
+
+    dest = tmp_path / "output.png"
+    result = reference.save(dest)
+
+    assert result == dest
+    assert dest.read_bytes() == raw
+
+
+def test_image_reference_save_returns_path(tmp_path):
+    """Test that save returns a Path object for chaining."""
+    encoded_image = base64.b64encode(b"data").decode("utf-8")
+    reference = ImageReference(f"data:image/png;base64,{encoded_image}")
+
+    dest = tmp_path / "chain.png"
+    assert reference.save(dest) == dest

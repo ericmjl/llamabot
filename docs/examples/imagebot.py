@@ -24,8 +24,7 @@ def imports():
 
 @app.cell(hide_code=True)
 def title(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Image Generation with Ollama
 
     This notebook explores image generation using **Ollama's local models** with two approaches:
@@ -38,15 +37,13 @@ def title(mo):
     - call Ollama's `/api/generate` endpoint directly,
     - use `ImageBot` with a `style` parameter for consistent visual direction,
     - compare **watercolor** and **photorealistic** styles on the same absurd subject.
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def prerequisites_md(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Prerequisites
 
     Ensure the following before running the notebook:
@@ -57,21 +54,21 @@ def prerequisites_md(mo):
       ollama pull x/flux2-klein:latest
       ollama pull x/z-image-turbo:latest
       ```
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def python_imports():
     import base64
+    import json
 
     import httpx
     from pathlib import Path
 
     from llamabot.bot.imagebot import ImageBot, ImageReference
 
-    return ImageBot, ImageReference, Path, base64, httpx
+    return ImageBot, ImageReference, Path, httpx
 
 
 @app.cell
@@ -108,8 +105,7 @@ def model_config():
 
 @app.cell(hide_code=True)
 def concept_md(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Style as a system prompt
 
     `ImageBot` accepts a `style` parameter — a visual-language string
@@ -120,20 +116,17 @@ def concept_md(mo):
 
     We will apply two very different styles to the same delightfully absurd subject
     and see how each model interprets it.
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def raw_api_md(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Raw HTTP API with httpx — watercolor
 
     We call Ollama's `/api/generate` directly, manually combining the watercolor style and subject.
-    """
-    )
+    """)
     return
 
 
@@ -145,7 +138,6 @@ def raw_api_generate(
     Path,
     SUBJECT,
     WATERCOLOR_STYLE,
-    base64,
     httpx,
 ):
     raw_prompt = f"{WATERCOLOR_STYLE}, {SUBJECT}"
@@ -173,24 +165,20 @@ def raw_api_generate(
             f"Response keys: {sorted(raw_json.keys())}"
         )
 
-    raw_image_bytes = base64.b64decode(raw_b64)
-    raw_save_path = Path("./generated_raw_watercolor.png")
-    raw_save_path.write_bytes(raw_image_bytes)
-
-    ImageReference(f"data:image/png;base64,{raw_b64}")
+    raw_image_ref = ImageReference(f"data:image/png;base64,{raw_b64}")
+    raw_image_ref.save(Path("./generated_raw_watercolor.png"))
+    raw_image_ref
     return
 
 
 @app.cell(hide_code=True)
 def imagebot_watercolor_md(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## ImageBot — watercolor style
 
     Now we let `ImageBot` handle style + subject. The `style` is set once on the bot;
     each call only needs the subject.
-    """
-    )
+    """)
     return
 
 
@@ -211,26 +199,20 @@ def imagebot_watercolor_flux2(
         style=WATERCOLOR_STYLE,
     )
 
-    watercolor_flux2_reference = watercolor_bot(
-        SUBJECT,
-        return_url=True,
-        save_path=Path("./generated_watercolor_flux2.png"),
-    )
-
-    watercolor_flux2_reference
+    watercolor_flux2_ref = watercolor_bot(SUBJECT)
+    watercolor_flux2_ref.save(Path("./generated_watercolor_flux2.png"))
+    watercolor_flux2_ref
     return
 
 
 @app.cell(hide_code=True)
 def photorealistic_md(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Photorealistic style
 
     Same subject, completely different visual language. We swap in the photorealistic style
     and try it with both models.
-    """
-    )
+    """)
     return
 
 
@@ -251,13 +233,9 @@ def imagebot_photorealistic_turbo(
         style=PHOTOREALISTIC_STYLE,
     )
 
-    photoreal_turbo_reference = photoreal_bot(
-        SUBJECT,
-        return_url=True,
-        save_path=Path("./generated_photorealistic_turbo.png"),
-    )
-
-    photoreal_turbo_reference
+    photoreal_turbo_ref = photoreal_bot(SUBJECT)
+    photoreal_turbo_ref.save(Path("./generated_photorealistic_turbo.png"))
+    photoreal_turbo_ref
     return
 
 
@@ -271,32 +249,26 @@ def imagebot_photorealistic_flux2(
     Path,
     SUBJECT,
 ):
-    photoreal_flux2_reference = ImageBot(
+    photoreal_flux2_ref = ImageBot(
         model=f"ollama/{FLUX2_MODEL}",
         size=IMAGE_SIZE,
         api_base=OLLAMA_API_BASE,
         style=PHOTOREALISTIC_STYLE,
-    )(
-        SUBJECT,
-        return_url=True,
-        save_path=Path("./generated_photorealistic_flux2.png"),
-    )
-
-    photoreal_flux2_reference
+    )(SUBJECT)
+    photoreal_flux2_ref.save(Path("./generated_photorealistic_flux2.png"))
+    photoreal_flux2_ref
     return
 
 
 @app.cell(hide_code=True)
 def next_steps_md(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Next steps
 
     - Define your own styles (anime, oil painting, pixel art, pencil sketch) and re-run.
     - Swap in different subjects while keeping a style fixed.
     - Compare the two models on the same style + subject to evaluate quality and latency.
-    """
-    )
+    """)
     return
 
 
