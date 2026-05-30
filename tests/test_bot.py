@@ -3,6 +3,8 @@
 import pytest
 from llamabot import SimpleBot
 
+pytestmark = pytest.mark.requires_ollama
+
 
 @pytest.mark.xfail(reason="Test is flaky due to model availability.")
 def test_ollama_bot():
