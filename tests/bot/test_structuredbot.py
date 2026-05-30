@@ -10,6 +10,8 @@ from llamabot.bot.structuredbot import StructuredBot
 from llamabot.components.messages import SystemMessage
 from llamabot.recorder import SpanList, enable_span_recording
 
+pytestmark = pytest.mark.requires_ollama
+
 
 class TestModel(BaseModel):
     """Test model for StructuredBot tests."""
