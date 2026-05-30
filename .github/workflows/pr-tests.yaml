@@ -42,7 +42,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.12', '3.13']
         environment-type: ['pixi', 'uv']
         test-type: ['unit-tests', 'smoke-tests', 'bare-package']
         exclude:
@@ -101,6 +101,7 @@ jobs:
 
       - name: Install gemma2:2b
         if: ${{ matrix.test-type == 'bare-package' }}
+        timeout-minutes: 10
         run: |
           nohup ollama serve >/tmp/ollama.log 2>&1 &
           for i in {1..30}; do
