@@ -11,6 +11,8 @@ from typing import Any, Optional
 import httpx
 from PIL import Image
 
+from llamabot.components.messages import AIMessage
+
 SUPPORTED_SAVE_EXTENSIONS: dict[str, str] = {
     ".webp": "WEBP",
     ".png": "PNG",
@@ -21,8 +23,6 @@ SUPPORTED_SAVE_EXTENSIONS: dict[str, str] = {
     ".tif": "TIFF",
     ".gif": "GIF",
 }
-
-from llamabot.components.messages import AIMessage
 
 
 class ImageReference(str):
