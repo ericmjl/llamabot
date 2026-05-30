@@ -1,5 +1,35 @@
 name: Release Python Package
 
+# Atomic Release Design
+# =====================
+# Steps are ordered from most reversible to least reversible:
+#
+#   1. Build & verify        – no external side effects
+#   2. Pre-flight check      – verify version is not already on PyPI
+#   3. Git push + tag        – reversible via force-push and tag deletion
+#   4. GitHub release        – reversible via `gh release delete`
+#   5. PyPI upload           – IRREVERSIBLE (version number consumed forever)
+#
+# Key design decisions:
+# - PyPI upload is LAST because it is the only truly irreversible step.
+#   All other steps can be automatically rolled back on failure.
+# - `git push --atomic` ensures branch and tag land together or not at all.
+# - Version tag is created AFTER rebasing on origin/main so it points to the
+#   correct commit in the rebased history (not a pre-rebase orphan).
+# - A pre-flight HTTP check to PyPI catches "file already exists" errors
+#   before any mutations begin.
+# - An automatic rollback step runs on failure and reverses completed
+#   mutation steps in reverse order.
+#
+# Rollback matrix:
+#   rebase fails     → nothing to roll back (no external state changed)
+#   tag create fails → nothing to roll back (local only)
+#   push fails       → nothing to roll back (--atomic means nothing landed)
+#   release fails    → roll back: force-push main, delete remote tag
+#   PyPI fails       → roll back: delete GitHub release, force-push main,
+#                       delete remote tag
+#   PyPI succeeds    → no rollback possible; an error annotation is added
+
 on:
   workflow_dispatch:
     inputs:
@@ -52,14 +82,12 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          # For workflow_run events, checkout the commit that triggered the test workflow
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Skip if version bump commit
         id: check_version_bump
         run: |
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
-            # Check if the commit message indicates this is already a version bump
             COMMIT_MSG=$(git log -1 --pretty=%B)
             if echo "$COMMIT_MSG" | grep -qiE "(Bump version|Add release notes)"; then
               echo "skip=true" >> $GITHUB_OUTPUT
@@ -69,10 +97,8 @@ jobs:
               echo "Proceeding with automatic patch release (triggered by successful test workflow)"
             fi
           else
-            # For non-workflow_run events (workflow_dispatch, pull_request), always proceed
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
-          # Set default VERSION_NAME even when skipping to prevent issues if future steps reference it
           echo "VERSION_NAME=${{ env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
 
       - name: Setup Python environment
@@ -94,13 +120,10 @@ jobs:
         if: steps.check_version_bump.outputs.skip != 'true'
         run: |
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
-            # Automatic patch release on PR merge (workflow_run ensures tests passed)
             echo "VERSION_NAME=patch" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            # Manual workflow_dispatch - use input or default
             echo "VERSION_NAME=${{ github.event.inputs.version_name || env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
           else
-            # pull_request or other events - use default
             echo "VERSION_NAME=${{ env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
           fi
 
@@ -113,11 +136,7 @@ jobs:
         run: |
           CURRENT="${{ env.current_version }}"
           BUMP_TYPE="${{ env.VERSION_NAME }}"
-
-          # Parse current version
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-
-          # Calculate new version based on bump type
           case "$BUMP_TYPE" in
             major)
               NEW_MAJOR=$((MAJOR + 1))
@@ -136,7 +155,6 @@ jobs:
               exit 1
               ;;
           esac
-
           echo "version_number=$NEW_VERSION" >> $GITHUB_ENV
           echo "Current version: $CURRENT"
           echo "Bump type: $BUMP_TYPE"
@@ -172,21 +190,7 @@ jobs:
           git add pyproject.toml
           git commit -m "Bump version to ${{ env.version_number }}"
 
-      - name: Create version tag
-        if: steps.check_version_bump.outputs.skip != 'true'
-        run: |
-          git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}"
-          echo "✓ Tag v${{ env.version_number }} created"
-
-      - name: Verify tag creation
-        if: steps.check_version_bump.outputs.skip != 'true'
-        run: |
-          if git tag | grep -q "^v${{ env.version_number }}$"; then
-            echo "✓ Tag v${{ env.version_number }} verified"
-          else
-            echo "ERROR: Tag v${{ env.version_number }} not found"
-            exit 1
-          fi
+      # ─── BUILD & VERIFY (no external side effects) ────────────────────
 
       - name: Verify llamabot command via pixi lockfile env
         if: steps.check_version_bump.outputs.skip != 'true'
@@ -198,7 +202,6 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          # Use pixi so the llamabot console script is on PATH (bare `llamabot` is not installed globally on the runner).
           pixi run llamabot configure default-model --model-name="${{ secrets.DEFAULT_LANGUAGE_MODEL }}"
           pixi run llamabot git write-release-notes
 
@@ -239,37 +242,94 @@ jobs:
             "$TMP_DIR/package-test-env/bin/python" -c "import llamabot; print(llamabot.__file__)"
           )
 
-      - name: Publish package (trusted publishing)
-        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
-        run: uv publish --trusted-publishing always
+      # ─── PRE-FLIGHT CHECK ─────────────────────────────────────────────
 
-      - name: Push changes with tags
+      - name: Check if version already exists on PyPI
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: |
-          # Fetch latest changes from main to handle concurrent PR merges
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/llamabot/${{ env.version_number }}/json")
+          if [ "$HTTP_CODE" == "200" ]; then
+            echo "::error::Version ${{ env.version_number }} already exists on PyPI. Cannot re-release."
+            exit 1
+          fi
+          echo "✓ Version ${{ env.version_number }} does not exist on PyPI"
+
+      # ─── MUTATIONS (ordered by reversibility: most reversible first) ──
+
+      - name: Capture pre-push state
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: pre_push_state
+        run: |
           git fetch origin main
-          # Rebase our commits (version bump + release notes) on top of latest main
-          # This handles the case where another PR was merged while this workflow was running
+          echo "sha=$(git rev-parse origin/main)" >> $GITHUB_OUTPUT
+          echo "Pre-push origin/main SHA: $(git rev-parse origin/main)"
+
+      - name: Rebase on origin/main
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: rebase
+        run: |
           if ! git rebase origin/main; then
-            echo "ERROR: Rebase failed - this may indicate a conflict with concurrent changes"
-            echo "Current git status:"
+            echo "ERROR: Rebase failed - conflicts with concurrent changes"
             git status
-            echo "Recent commits:"
             git log --oneline -5
             exit 1
           fi
-          # Push commits and tags
-          git push origin main
-          git push --tags
+          echo "✓ Rebase successful"
+
+      - name: Create version tag
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: create_tag
+        run: |
+          git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}"
+          echo "✓ Tag v${{ env.version_number }} created on $(git rev-parse HEAD)"
+
+      - name: Atomic push (branch + tag)
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: git_push
+        run: |
+          git push --atomic origin main "refs/tags/v${{ env.version_number }}"
+          echo "✓ Pushed main and tag v${{ env.version_number }} atomically"
 
       - name: Create release in GitHub repo
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: create_release
         uses: ncipollo/release-action@v1
         with:
           bodyFile: "docs/releases/v${{ env.version_number }}.md"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ env.version_number }}
 
+      - name: Publish package (trusted publishing)
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: pypi_publish
+        run: uv publish --trusted-publishing always
+
       - name: Ensure complete
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: echo "Auto-release complete!"
+
+      # ─── ROLLBACK (runs on any failure during mutation steps) ──────────
+
+      - name: Rollback on failure
+        if: failure() && github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        run: |
+          echo "::error::Release failed! Attempting automatic rollback..."
+          VERSION="v${{ env.version_number }}"
+          PRE_PUSH_SHA="${{ steps.pre_push_state.outputs.sha }}"
+
+          if [ "${{ steps.create_release.outcome }}" == "success" ]; then
+            echo "Rolling back: deleting GitHub release $VERSION..."
+            gh release delete "$VERSION" --yes || echo "::warning::Failed to delete GitHub release"
+          fi
+
+          if [ "${{ steps.git_push.outcome }}" == "success" ]; then
+            echo "Rolling back: removing tag and force-pushing main to $PRE_PUSH_SHA..."
+            git push --delete origin "$VERSION" 2>/dev/null || echo "::warning::Failed to delete remote tag"
+            git push --force origin "$PRE_PUSH_SHA:refs/heads/main" || echo "::warning::Failed to force-push main"
+          fi
+
+          if [ "${{ steps.pypi_publish.outcome }}" == "success" ]; then
+            echo "::error::CRITICAL: PyPI upload succeeded before failure. $VERSION is permanently on PyPI and cannot be removed. You may need to yank it."
+          fi
+
+          echo "Rollback complete. Review warnings above."
