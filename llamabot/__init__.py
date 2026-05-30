@@ -28,7 +28,7 @@ from .bot.simplebot import AsyncSimpleBot, SimpleBot
 from .bot.structuredbot import AsyncStructuredBot, StructuredBot
 from .bot.toolbot import AsyncToolBot, ToolBot
 from .components.chat_memory import ChatMemory
-from .components.docstore import BM25DocStore, LanceDBDocStore
+from .components.docstore import BM25DocStore, LanceDBDocStore, TurboVecDocStore
 from .components.messages import dev, system, user
 from .components.pocketflow import nodeify
 from .components.tools import tool
@@ -92,6 +92,7 @@ __all__ = [
     "dev",
     "BM25DocStore",
     "LanceDBDocStore",
+    "TurboVecDocStore",
     "set_debug_mode",
     "ChatMemory",
     "nodeify",

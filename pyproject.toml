@@ -126,6 +126,10 @@ rag = [
     "sentence-transformers",
     "rerankers",
 ]
+turbovec = [
+    "turbovec",
+    "sentence-transformers",
+]
 agent = [
     "docker",
     "markdownify",
@@ -140,7 +144,7 @@ cli = [
     "pyperclip",
 ]
 all = [
-    "llamabot[notebooks,rag,agent,cli]"
+    "llamabot[notebooks,rag,agent,cli,turbovec]"
 ]
 
 [dependency-groups]

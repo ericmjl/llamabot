@@ -10,8 +10,10 @@ LanceDB is a great default choice because of its simplicity and FOSS nature.
 Hence we use it by default.
 """
 
+import json
 from pathlib import Path
 
+import numpy as np
 import slugify
 
 
@@ -616,3 +618,176 @@ class BM25DocStore(AbstractDocumentStore):
     def reset(self):
         """Reset the document store."""
         self.documents = []
+
+
+class TurboVecDocStore(AbstractDocumentStore):
+    """A document store backed by turbovec's IdMapIndex for fast ANN search.
+
+    Uses turbovec's TurboQuant algorithm for compressed vector storage
+    and SIMD-accelerated search. Embeddings are generated via
+    sentence-transformers (same default model as LanceDBDocStore).
+
+    This store is a good choice when memory efficiency and search speed
+    matter more than hybrid (vector + full-text) search. For hybrid
+    search, use LanceDBDocStore instead.
+
+    :param table_name: Name used for the persisted index files.
+    :param storage_path: Directory where index and document files are stored.
+    :param embedding_model: Sentence-transformers model name for embeddings.
+    :param bit_width: Quantization bit width (2 or 4). Higher = better recall,
+        more memory. Default 4.
+    :raises ImportError: If turbovec or sentence-transformers is not installed.
+    """
+
+    def __init__(
+        self,
+        table_name: str,
+        storage_path: Path = Path.home() / ".llamabot" / "turbovec",
+        embedding_model: str = "minishlab/potion-base-8M",
+        bit_width: int = 4,
+    ):
+        try:
+            from turbovec import IdMapIndex
+        except ImportError:
+            raise ImportError(
+                "turbovec is required for TurboVecDocStore. "
+                "Please `pip install turbovec` to use the TurboVec document store."
+            )
+
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError(
+                "sentence-transformers is required for TurboVecDocStore. "
+                "Please `pip install llamabot[rag]` to use the TurboVec document store."
+            )
+
+        self.embedding_model_name = embedding_model
+        self.embedder = SentenceTransformer(embedding_model)
+        self.dim = self.embedder.get_sentence_embedding_dimension()
+
+        table_name = slugify.slugify(table_name, separator="-")
+        self.table_name = table_name
+        self.storage_path = Path(storage_path)
+        self.storage_path.mkdir(parents=True, exist_ok=True)
+
+        self.index_path = self.storage_path / f"{table_name}.tvim"
+        self.docs_path = self.storage_path / f"{table_name}.json"
+
+        self.bit_width = bit_width
+        self.next_id: int = 1
+
+        if self.index_path.exists() and self.docs_path.exists():
+            self.index = IdMapIndex.load(str(self.index_path))
+            with open(self.docs_path) as f:
+                persisted = json.load(f)
+            self.id_to_doc: dict[int, str] = {
+                int(k): v for k, v in persisted["id_to_doc"].items()
+            }
+            self.existing_records: list[str] = persisted.get("existing_records", [])
+            self.next_id = persisted.get("next_id", 1)
+        else:
+            self.index = IdMapIndex(dim=self.dim, bit_width=bit_width)
+            self.id_to_doc: dict[int, str] = {}
+            self.existing_records: list[str] = []
+
+    def _persist(self):
+        """Write the index and document map to disk."""
+        self.index.write(str(self.index_path))
+        with open(self.docs_path, "w") as f:
+            json.dump(
+                {
+                    "id_to_doc": {str(k): v for k, v in self.id_to_doc.items()},
+                    "existing_records": self.existing_records,
+                    "next_id": self.next_id,
+                },
+                f,
+            )
+
+    def _embed(self, texts: list[str]) -> np.ndarray:
+        """Embed a list of texts into float32 vectors.
+
+        :param texts: Texts to embed.
+        :return: Float32 numpy array of shape (len(texts), dim).
+        """
+        vectors = self.embedder.encode(
+            texts, convert_to_numpy=True, show_progress_bar=False
+        )
+        return np.ascontiguousarray(vectors, dtype=np.float32)
+
+    def __contains__(self, other: str) -> bool:
+        """Check whether a document is in the store.
+
+        :param other: The document to search for.
+        :return: True if the document is in the store.
+        """
+        return other in self.existing_records
+
+    def append(self, document: str):
+        """Append a document to the store.
+
+        :param document: The document to append.
+        """
+        if document in self.existing_records:
+            return
+
+        vector = self._embed([document])
+        doc_id = np.array([self.next_id], dtype=np.uint64)
+        self.index.add_with_ids(vector, doc_id)
+        self.id_to_doc[self.next_id] = document
+        self.existing_records.append(document)
+        self.next_id += 1
+        self._persist()
+
+    def extend(self, documents: list[str]):
+        """Extend the store with a list of documents.
+
+        :param documents: The documents to append.
+        """
+        new_docs = [d for d in documents if d not in self.existing_records]
+        if not new_docs:
+            return
+
+        vectors = self._embed(new_docs)
+        ids = np.array(
+            list(range(self.next_id, self.next_id + len(new_docs))), dtype=np.uint64
+        )
+        self.index.add_with_ids(vectors, ids)
+
+        for i, doc in enumerate(new_docs):
+            self.id_to_doc[int(ids[i])] = doc
+            self.existing_records.append(doc)
+
+        self.next_id += len(new_docs)
+        self._persist()
+
+    def retrieve(self, query: str, n_results: int = 10) -> list[str]:
+        """Retrieve documents from the store using vector similarity.
+
+        :param query: The query to use to retrieve documents.
+        :param n_results: The number of results to retrieve.
+        :return: A list of documents ranked by relevance.
+        """
+        if not self.id_to_doc:
+            return []
+
+        query_vector = self._embed([query])
+        k = min(n_results, len(self.id_to_doc))
+        scores, ids = self.index.search(query_vector, k=k)
+
+        result_ids = ids[0]
+        return [
+            self.id_to_doc[int(doc_id)]
+            for doc_id in result_ids
+            if int(doc_id) in self.id_to_doc
+        ]
+
+    def reset(self):
+        """Reset the document store, clearing all data."""
+        from turbovec import IdMapIndex
+
+        self.index = IdMapIndex(dim=self.dim, bit_width=self.bit_width)
+        self.id_to_doc = {}
+        self.existing_records = []
+        self.next_id = 1
+        self._persist()
