@@ -1,8 +1,11 @@
 """Test the ImageBot class."""
 
 import base64
+from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import patch
+
+from PIL import Image
 
 import pytest
 
@@ -280,7 +283,10 @@ def test_image_reference_to_bytes_from_url(mocker):
 
 def test_image_reference_save_writes_file(tmp_path):
     """Test that save writes the image bytes to disk."""
-    raw = b"image_data"
+    img = Image.new("RGB", (10, 10), color="red")
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    raw = buffer.getvalue()
     encoded_image = base64.b64encode(raw).decode("utf-8")
     reference = ImageReference(f"data:image/png;base64,{encoded_image}")
 
@@ -293,7 +299,11 @@ def test_image_reference_save_writes_file(tmp_path):
 
 def test_image_reference_save_returns_path(tmp_path):
     """Test that save returns a Path object for chaining."""
-    encoded_image = base64.b64encode(b"data").decode("utf-8")
+    img = Image.new("RGB", (10, 10), color="blue")
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    raw = buffer.getvalue()
+    encoded_image = base64.b64encode(raw).decode("utf-8")
     reference = ImageReference(f"data:image/png;base64,{encoded_image}")
 
     dest = tmp_path / "chain.png"
