@@ -5,6 +5,11 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip(
+    "turbovec",
+    reason="turbovec is not installed; install with `pip install llamabot[turbovec]`",
+)
+
 from llamabot.components.docstore import TurboVecDocStore
 
 
