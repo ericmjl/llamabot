@@ -14,8 +14,10 @@ name: Release Python Package
 # - PyPI upload is LAST because it is the only truly irreversible step.
 #   All other steps can be automatically rolled back on failure.
 # - `git push --atomic` ensures branch and tag land together or not at all.
-# - Version tag is created AFTER rebasing on origin/main so it points to the
-#   correct commit in the rebased history (not a pre-rebase orphan).
+# - Version tag is created TWICE: first after the version bump commit (so
+#   write-release-notes sees the correct tags[-1]), then deleted and recreated
+#   after rebasing on origin/main (so the tag points to the correct post-rebase
+#   commit, not a pre-rebase orphan).
 # - A pre-flight HTTP check to PyPI catches "file already exists" errors
 #   before any mutations begin.
 # - An automatic rollback step runs on failure and reverses completed
@@ -190,6 +192,12 @@ jobs:
           git add pyproject.toml
           git commit -m "Bump version to ${{ env.version_number }}"
 
+      - name: Create version tag
+        if: steps.check_version_bump.outputs.skip != 'true'
+        run: |
+          git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}"
+          echo "✓ Tag v${{ env.version_number }} created"
+
       # ─── BUILD & VERIFY (no external side effects) ────────────────────
 
       - name: Verify llamabot command via pixi lockfile env
@@ -264,7 +272,7 @@ jobs:
           echo "sha=$(git rev-parse origin/main)" >> $GITHUB_OUTPUT
           echo "Pre-push origin/main SHA: $(git rev-parse origin/main)"
 
-      - name: Rebase on origin/main
+      - name: Rebase on origin/main and retag
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         id: rebase
         run: |
@@ -275,13 +283,9 @@ jobs:
             exit 1
           fi
           echo "✓ Rebase successful"
-
-      - name: Create version tag
-        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
-        id: create_tag
-        run: |
+          git tag -d "v${{ env.version_number }}" || true
           git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}"
-          echo "✓ Tag v${{ env.version_number }} created on $(git rev-parse HEAD)"
+          echo "✓ Tag v${{ env.version_number }} recreated on $(git rev-parse HEAD)"
 
       - name: Atomic push (branch + tag)
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
