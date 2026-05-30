@@ -3,6 +3,7 @@
 # dependencies = [
 #     "marimo",
 #     "llamabot",
+#     "pillow==12.2.0",
 # ]
 #
 # [tool.uv.sources]
@@ -11,7 +12,7 @@
 
 import marimo
 
-__generated_with = "0.23.6"
+__generated_with = "0.23.8"
 app = marimo.App()
 
 
@@ -64,13 +65,20 @@ def prerequisites_md(mo):
 
 @app.cell
 def python_imports():
-
     import httpx
     from pathlib import Path
+    import tempfile
 
     from llamabot.bot.imagebot import ImageBot, ImageReference
 
-    return ImageBot, ImageReference, Path, httpx
+    return ImageBot, ImageReference, Path, httpx, tempfile
+
+
+@app.cell
+def output_dir(Path, tempfile):
+    OUTPUT_DIR = Path(tempfile.mkdtemp(prefix="imagebot_"))
+    OUTPUT_DIR
+    return (OUTPUT_DIR,)
 
 
 @app.cell
@@ -78,7 +86,7 @@ def model_config():
     OLLAMA_API_BASE = "http://localhost:11434"
     FLUX2_MODEL = "x/flux2-klein:latest"
     TURBO_MODEL = "x/z-image-turbo:latest"
-    IMAGE_SIZE = "1024x1024"
+    IMAGE_SIZE = "     "
 
     WATERCOLOR_STYLE = (
         "vivid watercolor illustration, bold saturated colors, "
@@ -141,7 +149,7 @@ def raw_api_generate(
     FLUX2_MODEL,
     ImageReference,
     OLLAMA_API_BASE,
-    Path,
+    OUTPUT_DIR,
     SUBJECT,
     WATERCOLOR_STYLE,
     httpx,
@@ -153,7 +161,7 @@ def raw_api_generate(
         "prompt": raw_prompt,
         "stream": False,
         "width": 1024,
-        "height": 1024,
+        "height": 768,
     }
 
     raw_response = httpx.post(
@@ -172,7 +180,7 @@ def raw_api_generate(
         )
 
     raw_image_ref = ImageReference(f"data:image/png;base64,{raw_b64}")
-    raw_image_ref.save(Path("./generated_raw_watercolor.png"))
+    raw_image_ref.save(OUTPUT_DIR / "generated_raw_watercolor.png")
     raw_image_ref
     return
 
@@ -196,7 +204,7 @@ def imagebot_watercolor_flux2(
     IMAGE_SIZE,
     ImageBot,
     OLLAMA_API_BASE,
-    Path,
+    OUTPUT_DIR,
     SUBJECT,
     WATERCOLOR_STYLE,
 ):
@@ -208,7 +216,7 @@ def imagebot_watercolor_flux2(
     )
 
     watercolor_flux2_ref = watercolor_bot(SUBJECT)
-    watercolor_flux2_ref.save(Path("./generated_watercolor_flux2.png"))
+    watercolor_flux2_ref.save(OUTPUT_DIR / "generated_watercolor_flux2.png")
     watercolor_flux2_ref
     return
 
@@ -231,8 +239,8 @@ def imagebot_photorealistic_turbo(
     IMAGE_SIZE,
     ImageBot,
     OLLAMA_API_BASE,
+    OUTPUT_DIR,
     PHOTOREALISTIC_STYLE,
-    Path,
     SUBJECT,
     TURBO_MODEL,
 ):
@@ -244,7 +252,7 @@ def imagebot_photorealistic_turbo(
     )
 
     photoreal_turbo_ref = photoreal_bot(SUBJECT)
-    photoreal_turbo_ref.save(Path("./generated_photorealistic_turbo.png"))
+    photoreal_turbo_ref.save(OUTPUT_DIR / "generated_photorealistic_turbo.png")
     photoreal_turbo_ref
     return
 
@@ -255,8 +263,8 @@ def imagebot_photorealistic_flux2(
     IMAGE_SIZE,
     ImageBot,
     OLLAMA_API_BASE,
+    OUTPUT_DIR,
     PHOTOREALISTIC_STYLE,
-    Path,
     SUBJECT,
 ):
     photoreal_flux2_ref = ImageBot(
@@ -265,7 +273,7 @@ def imagebot_photorealistic_flux2(
         api_base=OLLAMA_API_BASE,
         style=PHOTOREALISTIC_STYLE,
     )(SUBJECT)
-    photoreal_flux2_ref.save(Path("./generated_photorealistic_flux2.png"))
+    photoreal_flux2_ref.save(OUTPUT_DIR / "generated_photorealistic_flux2.png")
     photoreal_flux2_ref
     return
 
