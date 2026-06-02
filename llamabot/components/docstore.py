@@ -10,11 +10,16 @@ LanceDB is a great default choice because of its simplicity and FOSS nature.
 Hence we use it by default.
 """
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import numpy as np
 import slugify
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class AbstractDocumentStore:
@@ -710,6 +715,8 @@ class TurboVecDocStore(AbstractDocumentStore):
         :param texts: Texts to embed.
         :return: Float32 numpy array of shape (len(texts), dim).
         """
+        import numpy as np
+
         vectors = self.embedder.encode(
             texts, convert_to_numpy=True, show_progress_bar=False
         )
@@ -732,6 +739,8 @@ class TurboVecDocStore(AbstractDocumentStore):
             return
 
         vector = self._embed([document])
+        import numpy as np
+
         doc_id = np.array([self.next_id], dtype=np.uint64)
         self.index.add_with_ids(vector, doc_id)
         self.id_to_doc[self.next_id] = document
@@ -749,6 +758,8 @@ class TurboVecDocStore(AbstractDocumentStore):
             return
 
         vectors = self._embed(new_docs)
+        import numpy as np
+
         ids = np.array(
             list(range(self.next_id, self.next_id + len(new_docs))), dtype=np.uint64
         )
