@@ -4,7 +4,9 @@ This is the file from which you can do:
 
     from llamabot import some_function
 
-Use it to control the top-level API of your Python data science project.
+All bot classes, components, and utilities are lazily loaded via
+``lazy_loader`` so that ``import llamabot`` is near-instant.
+Heavy dependencies are only pulled in when you actually access a symbol.
 
 The module provides several high-level functions and classes for working with LLMs:
 
@@ -20,29 +22,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from .bot.agentbot import AgentBot
-from .bot.async_agentbot import AsyncAgentBot
-from .bot.imagebot import ImageBot
-from .bot.querybot import AsyncQueryBot, QueryBot
-from .bot.simplebot import AsyncSimpleBot, SimpleBot
-from .bot.structuredbot import AsyncStructuredBot, StructuredBot
-from .bot.toolbot import AsyncToolBot, ToolBot
-from .components.chat_memory import ChatMemory
-from .components.docstore import BM25DocStore, LanceDBDocStore, TurboVecDocStore
-from .components.messages import dev, system, user
-from .components.pocketflow import nodeify
-from .components.tools import tool
-from .experiments import Experiment, metric
-from .prompt_manager import prompt
-from .recorder import (
-    SpanList,
-    dict_to_span,
-    enable_span_recording,
-    get_current_span,
-    get_span_tree,
-    get_spans,
-    span,
-)
+import lazy_loader
 
 
 def set_debug_mode(enabled: bool = True) -> None:
@@ -58,7 +38,6 @@ def set_debug_mode(enabled: bool = True) -> None:
     logger.add(lambda msg: print(msg, end=""), level=level)
 
 
-# Configure logger
 log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
 level_map = {
     "DEBUG": "DEBUG",
@@ -68,42 +47,38 @@ level_map = {
     "CRITICAL": "CRITICAL",
 }
 
-# Remove default logger configuration and set the desired level
 logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNING"))
 
-__all__ = [
-    "AgentBot",
-    "AsyncAgentBot",
-    "AsyncQueryBot",
-    "AsyncSimpleBot",
-    "AsyncStructuredBot",
-    "AsyncToolBot",
-    "ImageBot",
-    "SimpleBot",
-    "QueryBot",
-    "StructuredBot",
-    "ToolBot",
-    "prompt",
-    "Experiment",
-    "metric",
-    "tool",
-    "user",
-    "system",
-    "dev",
-    "BM25DocStore",
-    "LanceDBDocStore",
-    "TurboVecDocStore",
-    "set_debug_mode",
-    "ChatMemory",
-    "nodeify",
-    "span",
-    "get_current_span",
-    "get_spans",
-    "get_span_tree",
-    "enable_span_recording",
-    "dict_to_span",
-    "SpanList",
-]
+__getattr__, __dir__, __all__ = lazy_loader.attach(
+    __name__,
+    submodules=[],
+    submod_attrs={
+        "bot.agentbot": ["AgentBot"],
+        "bot.async_agentbot": ["AsyncAgentBot"],
+        "bot.imagebot": ["ImageBot"],
+        "bot.querybot": ["AsyncQueryBot", "QueryBot"],
+        "bot.simplebot": ["AsyncSimpleBot", "SimpleBot"],
+        "bot.structuredbot": ["AsyncStructuredBot", "StructuredBot"],
+        "bot.toolbot": ["AsyncToolBot", "ToolBot"],
+        "components.chat_memory": ["ChatMemory"],
+        "components.docstore": ["BM25DocStore", "LanceDBDocStore", "TurboVecDocStore"],
+        "components.messages": ["dev", "system", "user"],
+        "components.pocketflow": ["nodeify"],
+        "components.tools": ["tool"],
+        "experiments": ["Experiment", "metric"],
+        "prompt_manager": ["prompt"],
+        "recorder": [
+            "SpanList",
+            "dict_to_span",
+            "enable_span_recording",
+            "get_current_span",
+            "get_span_tree",
+            "get_spans",
+            "span",
+        ],
+    },
+)
 
-# Ensure ~/.llamabot directory exists
+__all__.append("set_debug_mode")
+
 (Path.home() / ".llamabot").mkdir(parents=True, exist_ok=True)

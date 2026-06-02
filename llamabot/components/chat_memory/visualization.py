@@ -1,6 +1,11 @@
 """Visualization functions for chat memory."""
 
-import networkx as nx
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import networkx as nx
 
 
 def to_mermaid(graph: nx.DiGraph, **kwargs) -> str:

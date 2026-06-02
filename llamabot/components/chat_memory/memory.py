@@ -1,14 +1,12 @@
 """Main ChatMemory class for unified chat memory system."""
 
 import json
-import networkx as nx
 from typing import List, Optional
 from datetime import datetime
 from llamabot.components.messages import (
     BaseMessage,
     AIMessage,
 )
-from llamabot.bot.structuredbot import StructuredBot
 from llamabot.components.chat_memory.models import ConversationNode, MessageSummary
 from llamabot.components.chat_memory.selectors import (
     NodeSelector,
@@ -24,23 +22,26 @@ from llamabot.components.chat_memory.retrieval import (
     semantic_search_with_context,
 )
 from llamabot.components.chat_memory.visualization import to_mermaid
-from llamabot.prompt_manager import prompt
 
 
-@prompt("system")
 def message_summarizer_system_prompt() -> str:
-    """You are an expert at summarizing messages. Create concise, informative summaries that capture the key points and intent of each message.
+    """Return the system prompt for the message summarizer.
 
-    Your task is to analyze the content of a message and provide:
-    1. A clear, descriptive title that captures the main topic
-    2. A concise summary (maximum two sentences) that highlights the key points
-
-    Focus on:
-    - The main intent or purpose of the message
-    - Key concepts or topics discussed
-    - Any specific requests or questions
-    - Important details that would be useful for conversation threading
+    :return: The system prompt string.
     """
+    return """\
+You are an expert at summarizing messages. Create concise, informative summaries that capture the key points and intent of each message.
+
+Your task is to analyze the content of a message and provide:
+1. A clear, descriptive title that captures the main topic
+2. A concise summary (maximum two sentences) that highlights the key points
+
+Focus on:
+- The main intent or purpose of the message
+- Key concepts or topics discussed
+- Any specific requests or questions
+- Important details that would be useful for conversation threading
+"""
 
 
 class Summarizer:
@@ -62,6 +63,8 @@ class LLMSummarizer(Summarizer):
     """
 
     def __init__(self, model: str = "gpt-4o-mini"):
+        from llamabot.bot.structuredbot import StructuredBot
+
         self.model = model
         self.bot = StructuredBot(
             system_prompt=message_summarizer_system_prompt(),
@@ -100,6 +103,8 @@ class ChatMemory:
         context_depth: int = 5,
     ):
         # Initialize NetworkX graph for storage
+        import networkx as nx
+
         self.graph = nx.DiGraph()
 
         # Set node selector (linear by default, LLM-based if provided)

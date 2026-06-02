@@ -36,7 +36,7 @@ ignore-private = false
 ignore-property-decorators = false
 ignore-module = false
 fail-under = 100
-exclude = ["setup.py", "docs", "build", "examples"]
+exclude = ["setup.py", "docs", "build", "examples", "scripts", "tests"]
 ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*", "^no_docstring_func$", "^empty_func$"]
 verbose = 2
 quiet = false
@@ -70,37 +70,23 @@ artifacts = [
 [project]
 name = "llamabot"
 version = "0.19.1"
-# Runtime dependencies below
+# Runtime dependencies below — only truly core deps live here.
+# Heavy/feature-specific deps are in [project.optional-dependencies].
 dependencies = [
-    "openai",
-    "loguru",
-    "python-dotenv",
-    "typer>=0.15.3",
-    "pyprojroot",
-    "beautifulsoup4",
+    "lazy_loader",
     "litellm>=1.71.0,<1.82.7", # temporary upper bound due to 2026-03-24 compromised 1.82.7/1.82.8 releases
-    "python-slugify",
+    "loguru",
     "pydantic>=2.0",
-    "numpy",
-    "jinja2",
-    "fastapi>=0.115.9",
-    "uvicorn",
-    "tenacity",
-    "python-multipart",
+    "python-dotenv",
+    "pyprojroot",
+    "python-slugify",
     "httpx",
-    "tqdm",
+    "jinja2",
     "sqlalchemy",
-    "pdfminer.six",
+    "tenacity",
+    "tqdm",
+    "typer>=0.15.3",
     "numpydoc", # Temporarily added on 2025-05-10 to fix LiteLLM's omission of this dependency.
-    "chonkie",
-    "starlette",
-    "duckduckgo-search",
-    "networkx",
-    "docstring-parser>=0.17.0,<0.18",
-    "fastmcp",
-    "python-frontmatter",
-    "pocketflow",
-    "pillow",
 ]
 requires-python = ">=3.10,<3.14"
 description = "A Pythonic interface to LLMs."
@@ -114,26 +100,24 @@ readme = "README.md"
 llamabot = "llamabot.cli:app"
 
 [project.optional-dependencies]
-notebooks = [
-    "ics",
-    "tzlocal",
-    "modal",
-    "ipykernel",
-]
-rag = [
-    "lancedb>=0.22",
-    "rank-bm25",
-    "pylance",
-    "sentence-transformers",
-    "rerankers",
-]
-turbovec = [
-    "turbovec",
-    "sentence-transformers",
-]
+# Feature-specific extras — install only what you need.
+#   pip install llamabot[agent]   — agent bots with tool orchestration
+#   pip install llamabot[rag]     — RAG pipelines (includes turbovec, lancedb)
+#   pip install llamabot[mcp]     — MCP (Model Context Protocol) integration
+#   pip install llamabot[tools]   — built-in agent tools (web search, scraping)
+#   pip install llamabot[image]   — image generation bot
+#   pip install llamabot[web]     — FastAPI web UI and log viewer
+#   pip install llamabot[chat-memory] — graph-based conversation memory
+#   pip install llamabot[cli]     — full CLI with rich output, git helpers, etc.
+#   pip install llamabot[all]     — everything
+
 agent = [
+    "pocketflow",
     "docker",
     "markdownify",
+]
+chat-memory = [
+    "networkx",
 ]
 cli = [
     "nbformat",
@@ -144,8 +128,51 @@ cli = [
     "case-converter",
     "pyperclip",
 ]
+image = [
+    "pillow",
+]
+mcp = [
+    "fastmcp",
+]
+rag = [
+    "beautifulsoup4",
+    "chonkie",
+    "duckduckgo-search",
+    "docstring-parser>=0.17.0,<0.18",
+    "lancedb>=0.22",
+    "numpy",
+    "pdfminer.six",
+    "pylance",
+    "rank-bm25",
+    "rerankers",
+    "sentence-transformers",
+    "turbovec",
+]
+tools = [
+    "beautifulsoup4",
+    "docstring-parser>=0.17.0,<0.18",
+    "duckduckgo-search",
+    "requests",
+]
+web = [
+    "fastapi>=0.115.9",
+    "python-multipart",
+    "starlette",
+    "uvicorn",
+]
+notebooks = [
+    "ics",
+    "tzlocal",
+    "modal",
+    "ipykernel",
+]
 all = [
-    "llamabot[notebooks,rag,agent,cli,turbovec]"
+    "llamabot[agent,chat-memory,cli,image,mcp,rag,tools,web,notebooks]"
+]
+# Shorthand aliases
+turbovec = [
+    "turbovec",
+    "sentence-transformers",
 ]
 
 [dependency-groups]
@@ -160,7 +187,7 @@ channels = ["https://prefix.dev/conda-forge"]
 platforms = ["osx-arm64", "linux-64", "osx-64", "linux-aarch64", "win-64"]
 
 [tool.pixi.pypi-dependencies]
-llamabot = { path = ".", editable = true, extras = ["agent", "cli", "rag", "notebooks"] }
+llamabot = { path = ".", editable = true, extras = ["agent", "cli", "rag", "notebooks", "tools", "mcp", "image", "web", "chat-memory"] }
 
 [tool.pixi.feature.tests.pypi-dependencies]
 pytest = "*"
@@ -208,6 +235,7 @@ bare = ["devtools"]
 python-multipart = "*"
 numpydoc = ">=1.8.0,<2"
 python-frontmatter = ">=1.1.0,<2"
+lazy_loader = "*"
 
 [tool.ty.environment]
 python = "./.pixi/envs/default"

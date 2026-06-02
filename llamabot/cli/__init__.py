@@ -101,5 +101,18 @@ def clear_cache():
     os.system("rm -rf {}".format(CACHE_DIR))
 
 
+@app.command()
+def precache():
+    """Pre-download the default embedding model for RAG.
+
+    This avoids the first-run download penalty (~60 MB).
+    Useful inside Docker containers or CI environments.
+    Requires the ``rag`` extra: ``pip install llamabot[rag]``.
+    """
+    from llamabot.precache import precache_embedding_model
+
+    precache_embedding_model()
+
+
 if __name__ == "__main__":
     app()
