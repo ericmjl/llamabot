@@ -145,3 +145,47 @@ jobs:
         uses: codecov/codecov-action@v6
         with:
           verbose: true
+
+  import-benchmark:
+    needs: check-changes
+    runs-on: ubuntu-latest
+    name: Import time benchmark
+    if: ${{ needs.check-changes.outputs.has-code-changes == 'true' && github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Pixi Environment
+        uses: prefix-dev/setup-pixi@v0.9.6
+        with:
+          pixi-version: v0.69.0
+          cache: true
+
+      - name: Run import benchmarks
+        run: pixi run python scripts/benchmark_imports.py --ci
+
+      - name: Build comment body
+        id: comment
+        run: |
+          python -c "
+          import json
+          with open('benchmark-results.json') as f:
+              results = json.load(f)
+          lines = ['| Import | Time |', '|---|---|']
+          for r in results:
+              t = r['time_s']
+              # Flag anything over 1s
+              marker = ' :warning:' if t > 1.0 else ''
+              lines.append(f\"| \`{r['label']}\` | {t:.3f}s{marker} |\")
+          body = chr(10).join(lines)
+          with open('comment-body.txt', 'w') as f:
+              f.write(body)
+          "
+
+      - name: Post import timings as PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: import-benchmark
+          path: comment-body.txt
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

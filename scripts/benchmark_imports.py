@@ -6,10 +6,13 @@
 
 Run with: pixi run python scripts/benchmark_imports.py
 
+With --ci: output JSON to benchmark-results.json for CI reporting.
+
 Each benchmark is run in a subprocess to get a clean import
 (no cached modules from previous benchmarks).
 """
 
+import json
 import subprocess
 import sys
 import textwrap
@@ -39,38 +42,48 @@ def bench(label: str, code: str) -> float:
     return elapsed
 
 
+BENCHMARKS = [
+    ("import llamabot", "import llamabot"),
+    ("from llamabot import SimpleBot", "from llamabot import SimpleBot"),
+    ("from llamabot import AgentBot", "from llamabot import AgentBot"),
+    ("from llamabot import ToolBot", "from llamabot import ToolBot"),
+    ("from llamabot import tool", "from llamabot import tool"),
+    ("from llamabot import prompt", "from llamabot import prompt"),
+    ("from llamabot import user, system", "from llamabot import user, system"),
+    ("from llamabot import span", "from llamabot import span"),
+    ("from llamabot import ChatMemory", "from llamabot import ChatMemory"),
+    ("from llamabot import Experiment", "from llamabot import Experiment"),
+    ("from llamabot import QueryBot", "from llamabot import QueryBot"),
+    ("from llamabot import ImageBot", "from llamabot import ImageBot"),
+    ("from llamabot import StructuredBot", "from llamabot import StructuredBot"),
+    ("from llamabot.recorder import span", "from llamabot.recorder import span"),
+    (
+        "full (import everything)",
+        "import llamabot; [getattr(llamabot, n) for n in llamabot.__all__]",
+    ),
+]
+
+
 def main():
-    benchmarks = [
-        ("import llamabot", "import llamabot"),
-        ("from llamabot import SimpleBot", "from llamabot import SimpleBot"),
-        ("from llamabot import AgentBot", "from llamabot import AgentBot"),
-        ("from llamabot import ToolBot", "from llamabot import ToolBot"),
-        ("from llamabot import tool", "from llamabot import tool"),
-        ("from llamabot import prompt", "from llamabot import prompt"),
-        ("from llamabot import user, system", "from llamabot import user, system"),
-        ("from llamabot import span", "from llamabot import span"),
-        ("from llamabot import ChatMemory", "from llamabot import ChatMemory"),
-        ("from llamabot import Experiment", "from llamabot import Experiment"),
-        ("from llamabot import QueryBot", "from llamabot import QueryBot"),
-        ("from llamabot import ImageBot", "from llamabot import ImageBot"),
-        ("from llamabot import StructuredBot", "from llamabot import StructuredBot"),
-        ("from llamabot.recorder import span", "from llamabot.recorder import span"),
-        (
-            "full (import everything)",
-            "import llamabot; [getattr(llamabot, n) for n in llamabot.__all__]",
-        ),
-    ]
+    ci_mode = "--ci" in sys.argv
+    results = []
 
     print("=== llamabot Import Benchmarks ===")
     print(f"{'Import':50s} {'Time':>8s}")
     print("-" * 60)
-    for label, code in benchmarks:
+    for label, code in BENCHMARKS:
         elapsed = bench(label, code)
         if elapsed >= 0:
             print(f"  {label:48s} {elapsed:>6.3f}s")
+            results.append({"label": label, "time_s": round(elapsed, 3)})
 
     print()
     print("All benchmarks use fresh subprocesses (no module caching).")
+
+    if ci_mode:
+        with open("benchmark-results.json", "w") as f:
+            json.dump(results, f, indent=2)
+        print("\nResults written to benchmark-results.json")
 
 
 if __name__ == "__main__":
