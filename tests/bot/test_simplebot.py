@@ -152,7 +152,7 @@ def test_simple_bot_init_invalid_stream_target():
 @patch("llamabot.bot.simplebot.stream_chunks")
 @patch("llamabot.bot.simplebot.extract_tool_calls")
 @patch("llamabot.bot.simplebot.extract_content")
-@patch("llamabot.bot.simplebot.sqlite_log")
+@patch("llamabot.recorder.sqlite_log")
 @given(
     system_prompt=st.text(min_size=1),
     human_message=st.text(min_size=1),
@@ -212,7 +212,7 @@ def test_simple_bot_call(
 @patch("llamabot.bot.simplebot.stream_chunks")
 @patch("llamabot.bot.simplebot.extract_tool_calls")
 @patch("llamabot.bot.simplebot.extract_content")
-@patch("llamabot.bot.simplebot.sqlite_log")
+@patch("llamabot.recorder.sqlite_log")
 def test_simple_bot_call_with_chat_memory(
     mock_sqlite_log,
     mock_extract_content,
@@ -436,8 +436,7 @@ def test_stream_chunks_with_model_response():
 
 
 @patch("builtins.print")
-# Patch stream_chunk_builder to prevent sorting errors with mock objects
-@patch("llamabot.bot.simplebot.stream_chunk_builder")
+@patch("litellm.stream_chunk_builder")
 def test_stream_chunks_stdout(mock_stream_chunk_builder, mock_print):
     """Test the stream_chunks function with stdout target."""
     # Create mock generator
@@ -459,7 +458,7 @@ def test_stream_chunks_stdout(mock_stream_chunk_builder, mock_print):
     mock_print.assert_has_calls([call("Hello", end=""), call(" world", end="")])
 
 
-@patch("llamabot.bot.simplebot.stream_chunk_builder")
+@patch("litellm.stream_chunk_builder")
 def test_stream_chunks_panel(mock_stream_chunk_builder):
     """Test the stream_chunks function with panel target."""
     # Create mock generator
@@ -487,7 +486,7 @@ def test_stream_chunks_panel(mock_stream_chunk_builder):
     assert result_list == ["Hello", "Hello world"]
 
 
-@patch("llamabot.bot.simplebot.stream_chunk_builder")
+@patch("litellm.stream_chunk_builder")
 def test_stream_chunks_api(mock_stream_chunk_builder):
     """Test the stream_chunks function with api target."""
     # Create mock generator

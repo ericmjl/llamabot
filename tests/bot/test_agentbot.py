@@ -265,29 +265,22 @@ def test_agentbot_default_decide_node():
     assert bot.decide_node.tools == bot.tools
 
 
-@patch("llamabot.bot.agentbot.Flow")
-def test_agentbot_call_execution(mock_flow_class):
+def test_agentbot_call_execution():
     """Test __call__ method execution."""
-    # Mock the flow
     mock_flow = MagicMock()
 
-    # flow.run() modifies shared state in place, so we need to set up the shared dict
     def mock_run(shared):
         shared["result"] = "test result"
 
     mock_flow.run.side_effect = mock_run
-    mock_flow_class.return_value = mock_flow
 
     bot = AgentBot(tools=[echo_function])
-
-    # Mock the flow attribute since it's created in __init__
     bot.flow = mock_flow
 
     result = bot("test query")
 
     assert result == "test result"
     assert mock_flow.run.called
-    # Check that shared state was set up correctly
     call_args = mock_flow.run.call_args[0][0]
     assert "memory" in call_args
     assert call_args["memory"] == ["test query"]
@@ -295,22 +288,16 @@ def test_agentbot_call_execution(mock_flow_class):
     assert call_args["globals_dict"] == {}
 
 
-@patch("llamabot.bot.agentbot.Flow")
-def test_agentbot_call_with_globals_dict(mock_flow_class):
+def test_agentbot_call_with_globals_dict():
     """Test __call__ method with globals_dict parameter."""
-    # Mock the flow
     mock_flow = MagicMock()
 
-    # flow.run() modifies shared state in place, so we need to set up the shared dict
     def mock_run(shared):
         shared["result"] = "test result"
 
     mock_flow.run.side_effect = mock_run
-    mock_flow_class.return_value = mock_flow
 
     bot = AgentBot(tools=[echo_function])
-
-    # Mock the flow attribute since it's created in __init__
     bot.flow = mock_flow
 
     test_globals = {"my_var": "test_value", "my_number": 42}
@@ -318,7 +305,6 @@ def test_agentbot_call_with_globals_dict(mock_flow_class):
 
     assert result == "test result"
     assert mock_flow.run.called
-    # Check that shared state includes globals_dict
     call_args = mock_flow.run.call_args[0][0]
     assert "memory" in call_args
     assert call_args["memory"] == ["test query"]

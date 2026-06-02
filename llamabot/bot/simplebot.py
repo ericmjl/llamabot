@@ -566,10 +566,10 @@ async def async_stream_chunks(
     :param target: Same semantics as :func:`stream_chunks` (``stdout``, ``panel``, ``api``).
     :return: A fully assembled :class:`ModelResponse`.
     """
+    from litellm import ModelResponse, stream_chunk_builder
+
     if isinstance(response, ModelResponse):
         return response
-
-    from litellm import stream_chunk_builder
 
     chunks: list = []
     async for chunk in response:
