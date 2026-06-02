@@ -6,14 +6,9 @@ The bot uses a decision-making node to determine which tools to call
 and in what order, making it suitable for complex, multi-step tasks.
 """
 
+from __future__ import annotations
+
 from typing import Callable, List, Optional
-
-from pocketflow import Flow, Node
-
-from llamabot.components.pocketflow import DecideNode
-from llamabot.components.tools import DEFAULT_TOOLS
-from llamabot.mcp.manager import MCPClientManager
-from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerConfig
 
 
 def _validate_tools(tools: List[Callable]) -> None:
@@ -119,15 +114,20 @@ class AgentBot:
     def __init__(
         self,
         tools: List[Callable],
-        decide_node: Optional[Node] = None,
+        decide_node=None,
         system_prompt: Optional[str] = None,
         model_name: str = "gpt-4.1",
         max_iterations: Optional[int] = None,
-        mcp_servers: Optional[List[MCPServerConfig]] = None,
-        mcp_options: Optional[MCPIntegrationOptions] = None,
+        mcp_servers=None,
+        mcp_options=None,
         **completion_kwargs,
     ):
-        self._mcp_manager: MCPClientManager | None = None
+        from llamabot.components.pocketflow import DecideNode
+        from llamabot.components.tools import DEFAULT_TOOLS
+        from llamabot.mcp.manager import MCPClientManager
+        from pocketflow import Flow
+
+        self._mcp_manager = None
         mcp_tool_list: List[Callable] = []
         if mcp_servers:
             self._mcp_manager = MCPClientManager(mcp_servers, mcp_options)

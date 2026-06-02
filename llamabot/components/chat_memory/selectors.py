@@ -1,13 +1,16 @@
 """Node selection strategies for chat memory."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import List, Optional
-import networkx as nx
+from typing import TYPE_CHECKING, List, Optional
+
 from pydantic import BaseModel, Field, model_validator
 from llamabot.components.messages import BaseMessage
-from llamabot.bot.structuredbot import StructuredBot
-from llamabot.prompt_manager import prompt
 from loguru import logger
+
+if TYPE_CHECKING:
+    import networkx as nx
 
 
 def get_candidate_nodes(graph: nx.DiGraph) -> List[int]:
@@ -72,24 +75,34 @@ def validate_node_selection(
         return False
 
 
-@prompt("system")
-def node_selection_system_prompt(candidate_nodes: str):
-    """You are an expert at analyzing conversation threads and selecting the most appropriate parent node for new messages.
+def node_selection_system_prompt(candidate_nodes: str) -> str:
+    """Generate the system prompt for node selection.
 
-    Your task is to examine the conversation context and choose which existing assistant message should be the parent of a new user message.
-
-    Consider:
-    1. Direct topic continuation - if the new message directly continues a topic
-    2. Related concepts - if the new message relates to concepts discussed in a previous message
-    3. Temporal relevance - recent messages are often more relevant than older ones
-    4. Contextual flow - maintain logical conversation flow
-
-    You must select a valid assistant node ID from the provided candidates.
-
-    Available candidate nodes: {{candidate_nodes}}
-
-    If your selection is invalid, you will receive feedback and must try again with a valid node ID.
+    :param candidate_nodes: Comma-separated string of candidate node IDs
+    :return: The rendered system prompt string
     """
+    from llamabot.prompt_manager import prompt
+
+    @prompt("system")
+    def _prompt(candidate_nodes: str):
+        """You are an expert at analyzing conversation threads and selecting the most appropriate parent node for new messages.
+
+        Your task is to examine the conversation context and choose which existing assistant message should be the parent of a new user message.
+
+        Consider:
+        1. Direct topic continuation - if the new message directly continues a topic
+        2. Related concepts - if the new message relates to concepts discussed in a previous message
+        3. Temporal relevance - recent messages are often more relevant than older ones
+        4. Contextual flow - maintain logical conversation flow
+
+        You must select a valid assistant node ID from the provided candidates.
+
+        Available candidate nodes: {{candidate_nodes}}
+
+        If your selection is invalid, you will receive feedback and must try again with a valid node ID.
+        """
+
+    return _prompt(candidate_nodes)
 
 
 class NodeSelection(BaseModel):
@@ -192,6 +205,8 @@ class LLMNodeSelector(NodeSelector):
         system_prompt = node_selection_system_prompt(candidate_nodes_str)
 
         if self.bot is None or self.bot.system_prompt != system_prompt:
+            from llamabot.bot.structuredbot import StructuredBot
+
             self.bot = StructuredBot(
                 system_prompt=system_prompt,
                 pydantic_model=NodeSelection,

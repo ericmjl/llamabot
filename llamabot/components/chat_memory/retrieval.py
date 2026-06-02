@@ -1,8 +1,13 @@
 """Retrieval functions for chat memory."""
 
-import networkx as nx
-from typing import List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List
+
 from llamabot.components.messages import BaseMessage
+
+if TYPE_CHECKING:
+    import networkx as nx
 
 
 def get_recent_messages(graph: nx.DiGraph, n_results: int) -> List[BaseMessage]:

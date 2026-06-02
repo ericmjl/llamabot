@@ -5,14 +5,14 @@ from __future__ import annotations
 import asyncio
 import threading
 from datetime import timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
-from fastmcp import Client
-from fastmcp.mcp_config import RemoteMCPServer, StdioMCPServer
-
 from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerConfig
+
+if TYPE_CHECKING:
+    from fastmcp import Client
 
 
 def build_fastmcp_client(
@@ -24,6 +24,9 @@ def build_fastmcp_client(
     :param options: Integration timeouts and client options.
     :return: Configured FastMCP client (not yet connected).
     """
+    from fastmcp import Client
+    from fastmcp.mcp_config import StdioMCPServer
+
     kwargs: dict[str, Any] = {}
     if options.client_timeout_seconds is not None:
         kwargs["timeout"] = timedelta(seconds=float(options.client_timeout_seconds))
@@ -41,6 +44,9 @@ def build_fastmcp_client(
             cwd=config.cwd,
         )
         return Client(stdio.to_transport(), name=config.name, **kwargs)
+
+    from fastmcp import Client
+    from fastmcp.mcp_config import RemoteMCPServer
 
     remote_transport: str | None
     if config.remote_transport is not None:

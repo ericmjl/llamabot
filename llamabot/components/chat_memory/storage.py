@@ -1,7 +1,9 @@
 """Storage functions for chat memory."""
 
-import networkx as nx
-from typing import Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Union
+
 from llamabot.components.messages import (
     BaseMessage,
     HumanMessage,
@@ -11,6 +13,9 @@ from llamabot.components.messages import (
 )
 from llamabot.components.chat_memory.models import ConversationNode
 from llamabot.components.chat_memory.selectors import NodeSelector
+
+if TYPE_CHECKING:
+    import networkx as nx
 
 
 def append_linear(

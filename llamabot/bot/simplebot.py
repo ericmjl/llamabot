@@ -1,10 +1,13 @@
 """Class definition for SimpleBot and :class:`AsyncSimpleBot`."""
 
+from __future__ import annotations
+
 import contextvars
 import json
 import uuid
 from types import NoneType
 from typing import (
+    TYPE_CHECKING,
     AsyncGenerator,
     Callable,
     Generator,
@@ -13,13 +16,6 @@ from typing import (
     Union,
 )
 
-from litellm import (
-    ChatCompletionMessageToolCall,
-    CustomStreamWrapper,
-    Function,
-    ModelResponse,
-    stream_chunk_builder,
-)
 from loguru import logger
 from pydantic import BaseModel
 
@@ -32,14 +28,11 @@ from llamabot.components.messages import (
     to_basemessage,
 )
 from llamabot.config import default_language_model
-from llamabot.recorder import (
-    Span,
-    SpanList,
-    get_caller_variable_name,
-    get_current_span,
-    get_spans,
-    sqlite_log,
-)
+
+if TYPE_CHECKING:
+    from litellm import CustomStreamWrapper, ModelResponse
+
+    from llamabot.recorder import Span, SpanList
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
 
@@ -174,18 +167,23 @@ class SimpleBot:
         :return: The response to the human messages, primed by the system prompt.
         """
         # Create outer span for the entire bot call
+        from llamabot.recorder import (
+            Span,
+            get_caller_variable_name,
+            get_current_span,
+            sqlite_log,
+        )
+
         query_content = " ".join(
             [
                 msg.content if hasattr(msg, "content") else str(msg)
                 for msg in human_messages
             ]
         )
-        # Try to get the variable name from the calling frame
         operation_name = get_caller_variable_name(self)
         if operation_name is None:
             operation_name = "simplebot_call"
 
-        # Check if there's a current span - if so, create a child span
         current_span = get_current_span()
         if current_span:
             # Create child span using parent's trace_id
@@ -257,9 +255,12 @@ class SimpleBot:
         :return: SpanList containing all spans from this bot instance
         """
         if not self._trace_ids:
+            from llamabot.recorder import SpanList
+
             return SpanList([])
 
-        # Collect all spans from all trace_ids for this bot instance
+        from llamabot.recorder import SpanList, get_spans
+
         all_spans_objects = []
         for trace_id in self._trace_ids:
             spans = get_spans(trace_id=trace_id)
@@ -467,6 +468,8 @@ async def stream_tokens_for_messages(
     response = await make_async_response(bot, messages, stream=stream)
     chunks: list = []
 
+    from litellm import ModelResponse, stream_chunk_builder
+
     if isinstance(response, ModelResponse):
         if finalize:
             finalize(response)
@@ -505,6 +508,8 @@ def stream_chunks(
     :return: The response from the `completion` call.
     """
     # Pass through if it's already a ModelResponse
+    from litellm import ModelResponse, stream_chunk_builder
+
     if isinstance(response, ModelResponse):
         return response
 
@@ -564,6 +569,8 @@ async def async_stream_chunks(
     if isinstance(response, ModelResponse):
         return response
 
+    from litellm import stream_chunk_builder
+
     chunks: list = []
     async for chunk in response:
         chunks.append(chunk)
@@ -604,7 +611,7 @@ def serialize_tool_arguments(args: Union[dict, str, None]) -> str:
     return json.dumps(args)
 
 
-def extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToolCall]:
+def extract_tool_calls(response) -> list:
     """Extract the tool calls from the response.
 
     Handles both structured tool_calls (OpenAI-style) and JSON in content field
@@ -613,6 +620,8 @@ def extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToo
     :param response: The response from a `completion` call.
     :return: A list of tool calls.
     """
+    from litellm import ChatCompletionMessageToolCall, Function
+
     message = response.choices[0].message
     tool_calls: List[ChatCompletionMessageToolCall] | NoneType = message.tool_calls
 
@@ -682,7 +691,7 @@ def extract_tool_calls(response: ModelResponse) -> list[ChatCompletionMessageToo
     return []
 
 
-def extract_content(response: ModelResponse) -> str:
+def extract_content(response) -> str:
     """Extract the content from the response.
 
     :param response: The response from a `completion` call.
@@ -702,6 +711,8 @@ class AsyncSimpleBot(SimpleBot):
         *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
     ) -> AsyncGenerator[str, None]:
         """Stream assistant text deltas (same inputs as :meth:`SimpleBot.__call__`)."""
+        from llamabot.recorder import sqlite_log
+
         messages, processed_messages = self.compose_messages_for_human_messages(
             *human_messages
         )
@@ -729,6 +740,13 @@ class AsyncSimpleBot(SimpleBot):
         *human_messages: Union[str, BaseMessage, list[Union[str, BaseMessage]]],
     ) -> AIMessage:
         """Async completion: same role as :meth:`SimpleBot.__call__`."""
+        from llamabot.recorder import (
+            Span,
+            get_caller_variable_name,
+            get_current_span,
+            sqlite_log,
+        )
+
         query_content = " ".join(
             [
                 msg.content if hasattr(msg, "content") else str(msg)

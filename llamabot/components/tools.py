@@ -19,18 +19,7 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from uuid import uuid4
 
-import requests
-from bs4 import BeautifulSoup
-from docstring_parser import parse
-from duckduckgo_search.exceptions import DuckDuckGoSearchException
 from loguru import logger
-
-from llamabot.bot.simplebot import SimpleBot
-from llamabot.components.messages import user
-from llamabot.components.pocketflow import nodeify as nodeify_decorator
-from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
-from llamabot.prompt_manager import prompt
-from llamabot.recorder import span as span_decorator
 
 
 def json_schema_type(type_name: str) -> str:
@@ -112,7 +101,8 @@ def function_to_dict(input_function: Callable) -> Dict[str, Any]:
     name = input_function.__name__
     docstring = inspect.getdoc(input_function) or ""
 
-    # Parse docstring
+    from docstring_parser import parse
+
     parsed = parse(docstring)
 
     # Combine short and long descriptions
@@ -276,6 +266,8 @@ def tool(
 
         # Apply @span decorator if enabled
         if span:
+            from llamabot.recorder import span as span_decorator
+
             wrapper = span_decorator(
                 operation_name=operation_name,
                 exclude_args=exclude_args,
@@ -283,6 +275,8 @@ def tool(
             )(wrapper)
 
         # Always apply AgentBot integration
+        from llamabot.components.pocketflow import nodeify as nodeify_decorator
+
         wrapper = nodeify_decorator(loopback_name=loopback_name)(wrapper)
 
         return wrapper
@@ -377,7 +371,7 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
         from duckduckgo_search import DDGS
     except ImportError:
         raise ImportError(
-            "The Python package `duckduckgo_search` cannot be found. Please install it using `pip install llamabot[agent]`."
+            "The Python package `duckduckgo_search` cannot be found. Please install it using `pip install llamabot[tools]`."
         )
 
     try:
@@ -386,6 +380,8 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
         raise ImportError(
             "The Python package `markdownify` cannot be found. Please install it using `pip install llamabot[agent]`."
         )
+
+    from duckduckgo_search.exceptions import DuckDuckGoSearchException
 
     def perform_search(ddgs, search_term, max_results):
         """
@@ -464,6 +460,9 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
         :return: The content of the URL
         """
         try:
+            import requests
+            from bs4 import BeautifulSoup
+
             response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
             return url, md(soup.get_text())
@@ -483,47 +482,50 @@ def search_internet(search_term: str, max_results: int = 10) -> Dict[str, str]:
     return webpage_contents
 
 
-@prompt("system")
 def summarization_bot_system_prompt() -> str:
+    """Return the system prompt for the summarization bot.
+
+    :return: The system prompt string.
     """
-    ## role
+    return """\
+## role
 
-    You are a precise summarization assistant that creates focused, relevant summaries of web content.
-    Your job is to extract and synthesize the most important information based on the user's query.
+You are a precise summarization assistant that creates focused, relevant summaries of web content.
+Your job is to extract and synthesize the most important information based on the user's query.
 
-    ## summarization guidelines
+## summarization guidelines
 
-    1. Focus on relevance:
-       - Prioritize information directly related to the search term
-       - Filter out tangential or unrelated content
-       - Maintain context while being concise
+1. Focus on relevance:
+   - Prioritize information directly related to the search term
+   - Filter out tangential or unrelated content
+   - Maintain context while being concise
 
-    2. Structure your summary:
-       - Start with the most relevant information
-       - Include key facts, figures, or findings
-       - End with any important implications or conclusions
+2. Structure your summary:
+   - Start with the most relevant information
+   - Include key facts, figures, or findings
+   - End with any important implications or conclusions
 
-    3. Quality standards:
-       - Be factual and objective
-       - Preserve critical context
-       - Avoid redundancy
-       - Use clear, professional language
-       - Keep to one focused paragraph
+3. Quality standards:
+   - Be factual and objective
+   - Preserve critical context
+   - Avoid redundancy
+   - Use clear, professional language
+   - Keep to one focused paragraph
 
-    4. When information is missing or unclear:
-       - Acknowledge gaps explicitly
-       - Don't make assumptions
-       - Focus on what is known with confidence
+4. When information is missing or unclear:
+   - Acknowledge gaps explicitly
+   - Don't make assumptions
+   - Focus on what is known with confidence
 
-    ## output format
+## output format
 
-    Your summary should be:
-    - One paragraph (3-5 sentences)
-    - Directly relevant to the search term
-    - Self-contained and clear
-    - Professional in tone
-    - Free of unnecessary qualifiers or hedging
-    """
+Your summary should be:
+- One paragraph (3-5 sentences)
+- Directly relevant to the search term
+- Self-contained and clear
+- Professional in tone
+- Free of unnecessary qualifiers or hedging
+"""
 
 
 def summarize_web_results(
@@ -535,6 +537,8 @@ def summarize_web_results(
     :param webpage_contents: The content of the webpage
     :return: The summarized content
     """
+    from llamabot.bot.simplebot import SimpleBot
+
     default_model_name = os.getenv(
         "LMB_INTERNET_SUMMARIZER_MODEL_NAME", "ollama_chat/llama3.1:latest"
     )
@@ -556,6 +560,8 @@ def summarize_web_results(
         :return: The summarized content
         """
         logger.debug("Summarizing {}:", url)
+        from llamabot.components.messages import user
+
         return url, bot(user(f"Query: {search_term}"), user(content)).content
 
     summaries = {}
@@ -689,6 +695,8 @@ def write_and_execute_script(
     :param python_version: Python version requirement. Should look like ">=3.11"
     :return: Dictionary containing script execution results
     """
+    from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
+
     # Parse dependencies string into list
     dependencies = list(
         dep.strip()
