@@ -19,7 +19,6 @@ from typing import (
 from loguru import logger
 from pydantic import BaseModel
 
-from llamabot.components.docstore import AbstractDocumentStore
 from llamabot.components.messages import (
     AIMessage,
     BaseMessage,
@@ -32,6 +31,7 @@ from llamabot.config import default_language_model
 if TYPE_CHECKING:
     from litellm import CustomStreamWrapper, ModelResponse
 
+    from llamabot.components.docstore import AbstractDocumentStore
     from llamabot.recorder import Span, SpanList
 
 prompt_recorder_var = contextvars.ContextVar("prompt_recorder")
