@@ -86,7 +86,7 @@ jobs:
           fetch-tags: true
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
-      - name: Skip if version bump commit
+      - name: Skip if already released
         id: check_version_bump
         run: |
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
@@ -94,10 +94,18 @@ jobs:
             if echo "$COMMIT_MSG" | grep -qiE "(Bump version|Add release notes)"; then
               echo "skip=true" >> $GITHUB_OUTPUT
               echo "Skipping: This appears to be a version bump commit"
-            else
-              echo "skip=false" >> $GITHUB_OUTPUT
-              echo "Proceeding with automatic patch release (triggered by successful test workflow)"
+              exit 0
             fi
+            git fetch origin main
+            ORIGIN_HEAD_MSG=$(git log -1 --pretty=%B origin/main)
+            if echo "$ORIGIN_HEAD_MSG" | grep -qiE "(Bump version|Add release notes)"; then
+              echo "skip=true" >> $GITHUB_OUTPUT
+              echo "Skipping: origin/main HEAD is a version bump/release notes commit"
+              echo "origin/main HEAD: $ORIGIN_HEAD_MSG"
+              exit 0
+            fi
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "Proceeding with automatic patch release (triggered by successful test workflow)"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -291,8 +299,8 @@ jobs:
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         id: git_push
         run: |
-          git push --atomic origin main "refs/tags/v${{ env.version_number }}"
-          echo "✓ Pushed main and tag v${{ env.version_number }} atomically"
+          git push --atomic origin HEAD:main "refs/tags/v${{ env.version_number }}"
+          echo "✓ Pushed HEAD to main and tag v${{ env.version_number }} atomically"
 
       - name: Create release in GitHub repo
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'

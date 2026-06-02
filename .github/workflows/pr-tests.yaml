@@ -52,6 +52,9 @@ jobs:
           # Smoke tests only run with uv
           - test-type: smoke-tests
             environment-type: pixi
+          # Bare-package tests only run with uv (pixi workspace deps include all extras)
+          - test-type: bare-package
+            environment-type: pixi
 
     defaults:
       run:
@@ -73,7 +76,7 @@ jobs:
         with:
           pixi-version: v0.69.0
           cache: true
-          environments: ${{ matrix.test-type == 'bare-package' && 'bare' || '' }}
+          environments: ${{ matrix.test-type == 'bare-package' && '' || '' }}
 
       # Setup uv if needed
       - name: Setup uv
@@ -86,31 +89,10 @@ jobs:
 
       # Install Ollama for tests that need it
       - name: Install Ollama
-        if: ${{ matrix.test-type == 'unit-tests' || matrix.test-type == 'bare-package' }}
+        if: ${{ matrix.test-type == 'unit-tests' }}
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           sleep 3
-
-      # Install Gemma model for bare package test
-      - name: Cache Ollama
-        if: ${{ matrix.test-type == 'bare-package' }}
-        uses: actions/cache@v5
-        with:
-          path: ~/.ollama
-          key: ${{ runner.os }}-ollama
-
-      - name: Install gemma2:2b
-        if: ${{ matrix.test-type == 'bare-package' }}
-        timeout-minutes: 10
-        run: |
-          nohup ollama serve >/tmp/ollama.log 2>&1 &
-          for i in {1..30}; do
-            if ollama list >/dev/null 2>&1; then
-              break
-            fi
-            sleep 1
-          done
-          ollama pull gemma2:2b
 
       # Run the appropriate test based on matrix variables
       - name: Run unit tests
@@ -128,16 +110,12 @@ jobs:
           uv pip install .[all]
           llamabot --help
 
-      - name: Run bare package test (pixi)
-        if: ${{ matrix.test-type == 'bare-package' && matrix.environment-type == 'pixi' }}
-        run: pixi run -e bare python scripts/yo.py
-
       - name: Run bare package test (uv)
         if: ${{ matrix.test-type == 'bare-package' && matrix.environment-type == 'uv' }}
         run: |
           source llamabot-env/bin/activate
-          uv pip install .[all]
-          python scripts/yo.py
+          uv pip install .
+          python scripts/test_bare_imports.py
 
       # Upload code coverage only for unit tests
       - name: Upload code coverage

@@ -69,7 +69,7 @@ artifacts = [
 
 [project]
 name = "llamabot"
-version = "0.19.1"
+version = "0.19.3"
 # Runtime dependencies below — only truly core deps live here.
 # Heavy/feature-specific deps are in [project.optional-dependencies].
 dependencies = [
