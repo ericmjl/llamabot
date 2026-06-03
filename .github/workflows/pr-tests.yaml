@@ -169,7 +169,7 @@ jobs:
           "
 
       - name: Post import timings as PR comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: import-benchmark
           path: comment-body.txt
