@@ -87,6 +87,13 @@ jobs:
         if: ${{ matrix.environment-type == 'uv' }}
         run: uv venv llamabot-env --python ${{ matrix.python-version }}
 
+      - name: Cache HuggingFace models
+        if: ${{ matrix.test-type == 'unit-tests' }}
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface/hub
+          key: ${{ runner.os }}-huggingface-hub
+
       # Install Ollama for tests that need it
       - name: Install Ollama
         if: ${{ matrix.test-type == 'unit-tests' }}
