@@ -90,18 +90,18 @@ jobs:
         id: check_version_bump
         run: |
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
-            COMMIT_MSG=$(git log -1 --pretty=%B)
-            if echo "$COMMIT_MSG" | grep -qiE "(Bump version|Add release notes)"; then
+            COMMIT_SUBJECT=$(git log -1 --pretty=%s)
+            if echo "$COMMIT_SUBJECT" | grep -qiE "^(Bump version|Add release notes)"; then
               echo "skip=true" >> $GITHUB_OUTPUT
-              echo "Skipping: This appears to be a version bump commit"
+              echo "Skipping: subject is a version bump/release notes commit"
               exit 0
             fi
             git fetch origin main
-            ORIGIN_HEAD_MSG=$(git log -1 --pretty=%B origin/main)
-            if echo "$ORIGIN_HEAD_MSG" | grep -qiE "(Bump version|Add release notes)"; then
+            ORIGIN_SUBJECT=$(git log -1 --pretty=%s origin/main)
+            if echo "$ORIGIN_SUBJECT" | grep -qiE "^(Bump version|Add release notes)"; then
               echo "skip=true" >> $GITHUB_OUTPUT
-              echo "Skipping: origin/main HEAD is a version bump/release notes commit"
-              echo "origin/main HEAD: $ORIGIN_HEAD_MSG"
+              echo "Skipping: origin/main HEAD subject is a version bump/release notes commit"
+              echo "origin/main subject: $ORIGIN_SUBJECT"
               exit 0
             fi
             echo "skip=false" >> $GITHUB_OUTPUT
