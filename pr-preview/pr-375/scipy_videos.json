@@ -1,0 +1,52 @@
+{
+    "0ALKGR0I5MA": {
+        "name": "Basic Sound Processing in Python | SciPy 2015 | Allen Downey",
+        "description": "",
+        "view_count": 261832
+    },
+    "ZB7BZMhfPgk": {
+        "name": "Introduction to Numerical Computing with NumPy | SciPy 2019 Tutorial | Alex Chabot-Leclerc",
+        "description": "NumPy provides Python with a powerful array processing library and an elegant syntax that is well suited to expressing computational algorithms clearly and efficiently. We'll introduce basic array syntax and array indexing, review some of the available mathematical functions in NumPy, and discuss how to write your own routines. Along the way, we'll learn just enough about matplotlib to display results from our examples.\nSee tutorial materials here: https://www.scipy2019.scipy.org/tutorial-participant-instructions\n\n\nConnect with us!\n*****************\nhttps://twitter.com/enthought\nhttps://www.facebook.com/Enthought/\nhttps://www.linkedin.com/company/enthought",
+        "view_count": 208823
+    },
+    "v5ijNXvlC5A": {
+        "name": "Modern Time Series Analysis | SciPy 2019 Tutorial | Aileen Nielsen",
+        "description": "This tutorial will cover the newest and most successful methods of time series analysis. 1. Bayesian methods for time series 2. Adapting common machine learning methods for time series 3. Deep learning for time series These methods are producing state-of-the-art results in a variety of disciplines, and attendees will learn both the underlying concepts and the Python implementations and uses of these analytical approaches to generate forecasts and estimate uncertainty for a variety of scientific time series.\nTutorial information may be found at https://www.scipy2019.scipy.org/tutorial-participant-instructions\nSee the full SciPy 2019 playlist at https://www.youtube.com/playlist?list=PLYx7XA2nY5GcDQblpQ_M1V3PQPoLWiDAC\nConnect with us!\n*****************\nhttps://twitter.com/enthought\nhttps://www.facebook.com/Enthought/\nhttps://www.linkedin.com/company/enthought",
+        "view_count": 199372
+    },
+    "tYYVSEHq-io": {
+        "name": "Getting Started with TensorFlow and Deep Learning | SciPy 2018 Tutorial | Josh Gordon",
+        "description": "A friendly introduction to Deep Learning, taught at the beginner level. We’ll work through introductory exercises across several domains - including computer vision, natural language processing, and structured data classification. We’ll introduce TensorFlow - the world’s most popular open source machine learning library - preview the latest APIs (including Eager Execution), discuss best practices, and point you to recommended educational resources you can use to learn more.\n\nTutorial instructions may be found at https://scipy2018.scipy.org/ehome/299527/648136/\n\nSee the full SciPy 2018 playlist at https://www.youtube.com/playlist?list=PLYx7XA2nY5Gd-tNhm79CNMe_qvi35PgUR",
+        "view_count": 161483
+    },
+    "xAoljeRJ3lU": {
+        "name": "A Better Default Colormap for Matplotlib | SciPy 2015 | Nathaniel Smith and Stéfan van der Walt",
+        "description": "Complete SciPy 2015 Talk & Tutorial Playlist here: http://ow.ly/PHjEN",
+        "view_count": 160912
+    },
+    "5rNu16O3YNE": {
+        "name": "Introduction to Data Processing in Python with Pandas | SciPy 2019 Tutorial | Daniel Chen",
+        "description": "This is a tutorial for beginners on using the Pandas library in Python for data manipulation. We will go from the basics of how to load and look at a dataset in pandas (python) for the first time, and begin the process of preparing data for analysis. The topics covered are: - Load and look at slices and views of data - Groupby aggregates to summarize data - Tidy and reshape data - Write functions and apply them to data - Plotting data using Seaborn - Encode dummy variables to prepare for analysis and model fit - Fitting a model using sklearn By the end of this tutorial, you should have a solid foundation on working with datasets in Python. The last topic of encoding dummy variables segues into using other libraries, such as scikit-learn and statsmodels to fit models on your data.\n\nTutorial information may be found at https://www.scipy2019.scipy.org/tutorial-participant-instructions\nSee the full SciPy 2019 playlist at https://www.youtube.com/playlist?list=PLYx7XA2nY5GcDQblpQ_M1V3PQPoLWiDAC\n\nConnect with us!\n*****************\nhttps://twitter.com/enthought\nhttps://www.facebook.com/Enthought/\nhttps://www.linkedin.com/company/enthought",
+        "view_count": 117260
+    },
+    "JNfxr4BQrLk": {
+        "name": "Time Series Analysis with Python Intermediate | SciPy 2016 Tutorial | Aileen Nielsen",
+        "description": "Tutorial materials for the Time Series Analysis tutorial including notebooks may be found here: https://github.com/AileenNielsen/TimeSeriesAnalysisWithPython\n\nSee the complete SciPy 2016 Conference talk & tutorial playlist here: https://www.youtube.com/playlist?list=PLYx7XA2nY5Gf37zYZMw6OqGFRPjB1jCy6.",
+        "view_count": 113018
+    },
+    "KhAUfqhLakw": {
+        "name": "Frequentism and Bayesianism: What's the Big Deal? | SciPy 2014 | Jake VanderPlas",
+        "description": "",
+        "view_count": 106990
+    },
+    "gtejJ3RCddE": {
+        "name": "NumPy Beginner | SciPy 2016 Tutorial | Alexandre Chabot LeClerc",
+        "description": "Materials for this tutorial may be found here: https://github.com/enthought/Numpy-Tutorial-SciPyConf-2016\n\nThis course introduces the fundamental concepts for numerical calculation with NumPy. It provides scientists, engineers, and analysts a solid foundation for writing their own analyses and simulations in Python. \n NumPy provides Python with a powerful array processing library and an elegant syntax that is well suited to expressing computational algorithms clearly and efficiently. We'll introduce basic array syntax and array indexing, review some of the available mathematical functions in numpy, and discuss how to write your own routines. Along the way, we'll learn just enough of matplotlib to display results from our examples.\n\nMore info on HDBSCAN here: https://github.com/lmcinnes/hdbscan. \n\nSee the complete SciPy 2016 Conference talk & tutorial playlist here: https://www.youtube.com/playlist?list=PLYx7XA2nY5Gf37zYZMw6OqGFRPjB1jCy6",
+        "view_count": 106043
+    },
+    "nq6iPZVUxZU": {
+        "name": "UMAP Uniform Manifold Approximation and Projection for Dimension Reduction | SciPy 2018 |",
+        "description": "This talk will present a new approach to dimension reduction called UMAP. UMAP is grounded in manifold learning and topology, making an effort to preserve the topological structure of the data. The resulting algorithm can provide both 2D visualisations of data of comparable quality to t-SNE, and general purpose dimension reduction. UMAP has been implemented as a (scikit-learn compatible) python library that can perform efficient dimension reduction, scaling out to much larger datasets than t-SNE or other comparable algorithms (see http://github.com/lmcinnes/umap).\n\nSee the full SciPy 2018 playlist here: https://www.youtube.com/playlist?list=PLYx7XA2nY5Gd-tNhm79CNMe_qvi35PgUR",
+        "view_count": 96781
+    }
+}
