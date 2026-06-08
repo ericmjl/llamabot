@@ -127,7 +127,7 @@ jobs:
       # Upload code coverage only for unit tests
       - name: Upload code coverage
         if: ${{ matrix.test-type == 'unit-tests' }}
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           verbose: true
 
