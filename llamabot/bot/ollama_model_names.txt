@@ -1,3 +1,10 @@
+kimi-k2.7-code
+nemotron-3-ultra
+lfm2.5
+minimax-m3
+minicpm-v4.5
+minicpm-v4.6
+granite4.1-guardian
 mistral-medium-3.5
 granite4.1
 nemotron3
