@@ -920,3 +920,69 @@ def test_decide_node_raises_when_no_tool_calls_and_no_content():
 
         with pytest.raises(ValueError, match="No tool calls and no content"):
             decide_node.exec(prep_res)
+
+
+def test_decide_node_always_creates_decision_span():
+    """DecideNode.exec creates a span unconditionally (not gated behind flag)."""
+    from llamabot.components.pocketflow.nodes import DecideNode
+    from llamabot.recorder import Span
+
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_tool_call = MagicMock()
+        mock_tool_call.function.name = "respond_to_user"
+        mock_tool_call.function.arguments = '{"response": "done"}'
+        mock_toolbot.return_value = [mock_tool_call]
+        mock_toolbot_class.return_value = mock_toolbot
+
+        decide_node = DecideNode(
+            tools=[], system_prompt="Pick tools.", model_name="gpt-4.1"
+        )
+
+        # Create a parent span (simulating AgentBot.__call__)
+        with Span("agentbot_call"):
+            prep_res = {"memory": ["test"], "globals_dict": {}, "iteration_count": 1}
+            result = decide_node.exec(prep_res)
+
+        assert result == "respond_to_user"
+
+
+def test_make_response_creates_llm_request_span():
+    """make_response wraps the litellm call in an llm_request span."""
+    from llamabot.bot.simplebot import make_response
+    from llamabot.recorder import Span
+
+    with (
+        patch("litellm.completion") as mock_completion,
+        patch("llamabot.bot.simplebot.completion_kwargs_for_messages") as mock_kwargs,
+    ):
+        mock_completion.return_value = MagicMock()
+        mock_kwargs.return_value = {"model": "test-model"}
+
+        bot = MagicMock()
+        bot.model_name = "test-model"
+
+        with Span("parent"):
+            make_response(bot, [], stream=False)
+
+        mock_completion.assert_called_once()
+
+
+def test_spanlist_waterfall_toggle_in_html():
+    """SpanList._repr_html_ includes both timeline and waterfall views with toggle."""
+    from llamabot.recorder import Span, SpanList
+
+    # Create a simple span tree
+    with Span("root_op") as root:
+        root["duration_ms"] = 1000
+        with root.span("child_op") as child:
+            pass
+
+    spans = SpanList([root, child])
+    html = spans._repr_html_()
+
+    # Both views should be present
+    assert "timeline-view" in html
+    assert "waterfall-view" in html
+    assert "showView" in html
+    assert "wf-bar" in html

@@ -1618,6 +1618,90 @@ def generate_span_html(
     # Generate pagination controls
     pagination_html = generate_pagination_html(page, total_pages, total_spans, per_page)
 
+    # Compute trace boundaries for waterfall positioning
+    valid_starts = [s.get("start_time") for s in sorted_spans if s.get("start_time")]
+    valid_ends = [s.get("end_time") for s in sorted_spans if s.get("end_time")]
+    from datetime import datetime as _dt
+
+    if valid_starts and valid_ends:
+        trace_start_dt = min(
+            _dt.fromisoformat(s.replace("Z", "+00:00")) for s in valid_starts
+        )
+        trace_end_dt = max(
+            _dt.fromisoformat(s.replace("Z", "+00:00")) for s in valid_ends
+        )
+        trace_duration_ms = max(
+            (trace_end_dt - trace_start_dt).total_seconds() * 1000, 0.001
+        )
+    else:
+        trace_start_dt = None
+        trace_duration_ms = 1.0
+
+    # Generate waterfall rows
+    waterfall_rows = []
+    for span in sorted_spans:
+        nesting = calculate_nesting_level(span, span_dict_lookup)
+        op_name = escape_html(span.get("operation_name", ""))
+        duration_ms = span.get("duration_ms") or 0
+        is_in_progress = (
+            span.get("status") == "started" and span.get("end_time") is None
+        )
+
+        # Compute bar position and width
+        if trace_start_dt and span.get("start_time"):
+            try:
+                span_start = _dt.fromisoformat(
+                    span["start_time"].replace("Z", "+00:00")
+                )
+                offset_pct = max(
+                    (span_start - trace_start_dt).total_seconds()
+                    * 1000
+                    / trace_duration_ms
+                    * 100,
+                    0,
+                )
+            except (ValueError, TypeError):
+                offset_pct = 0
+        else:
+            offset_pct = 0
+
+        width_pct = (
+            max(duration_ms / trace_duration_ms * 100, 0.3) if duration_ms else 0.3
+        )
+        width_pct = min(width_pct, 100 - offset_pct)
+
+        # Color by operation type
+        op = span.get("operation_name", "")
+        if "agentbot" in op or op == "agentbot_call":
+            bar_color = "#5E81AC"
+        elif op == "decision":
+            bar_color = "#88C0D0"
+        elif "llm" in op:
+            bar_color = "#D08770"
+        elif "toolbot" in op:
+            bar_color = "#B48EAD"
+        else:
+            bar_color = "#A3BE8C"
+
+        dur_str = format_duration(duration_ms, is_in_progress)
+        indent_px = nesting * 16
+
+        waterfall_rows.append(
+            f"""
+            <div class="wf-row" style="margin-left: {indent_px}px;"
+                 onclick="selectSpan('{escape_html(span["span_id"])}')">
+                <span class="wf-label">{op_name}</span>
+                <div class="wf-track">
+                    <div class="wf-bar" style="margin-left: {offset_pct:.1f}%; width: {width_pct:.1f}%; background: {bar_color};">
+                        <span class="wf-dur">{dur_str}</span>
+                    </div>
+                </div>
+            </div>
+            """
+        )
+
+    waterfall_html = "\n".join(waterfall_rows)
+
     # Complete HTML with embedded CSS and JavaScript
     html = f"""
     <style>
@@ -1773,8 +1857,88 @@ def generate_span_html(
                 background: #5E81AC;
                 color: white;
             }}
+            /* View toggle */
+            .view-toggle {{
+                display: flex;
+                gap: 0;
+                margin-bottom: 0.5rem;
+            }}
+            .view-toggle button {{
+                padding: 0.4rem 1rem;
+                border: 1px solid #D8DEE9;
+                background: #ECEFF4;
+                color: #2E3440;
+                cursor: pointer;
+                font-size: 0.9rem;
+            }}
+            .view-toggle button.active {{
+                background: #5E81AC;
+                color: white;
+                border-color: #5E81AC;
+            }}
+            .view-toggle button:first-child {{
+                border-radius: 4px 0 0 4px;
+            }}
+            .view-toggle button:last-child {{
+                border-radius: 0 4px 4px 0;
+                border-left: none;
+            }}
+            /* Waterfall chart */
+            .waterfall-view {{
+                background: white;
+                border-radius: 8px;
+                padding: 1rem;
+                overflow-x: auto;
+            }}
+            .wf-row {{
+                display: flex;
+                align-items: center;
+                height: 28px;
+                cursor: pointer;
+                border-radius: 3px;
+            }}
+            .wf-row:hover {{
+                background: #ECEFF4;
+            }}
+            .wf-label {{
+                width: 200px;
+                min-width: 200px;
+                font-size: 0.85rem;
+                color: #2E3440;
+                padding-right: 0.5rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }}
+            .wf-track {{
+                flex: 1;
+                height: 20px;
+                background: #ECEFF4;
+                border-radius: 3px;
+                position: relative;
+                min-width: 300px;
+            }}
+            .wf-bar {{
+                height: 100%;
+                border-radius: 3px;
+                display: flex;
+                align-items: center;
+                padding-left: 4px;
+                min-width: 2px;
+                overflow: hidden;
+            }}
+            .wf-dur {{
+                font-size: 0.75rem;
+                color: #2E3440;
+                font-weight: 600;
+                white-space: nowrap;
+            }}
         </style>
-        <div class="span-container">
+        <div class="view-toggle">
+            <button class="active" onclick="showView('timeline')">Timeline</button>
+            <button onclick="showView('waterfall')">Waterfall</button>
+        </div>
+        <div id="timeline-view" class="span-container">
             <div class="span-timeline">
                 <div class="span-list">
                     {"".join(span_items_html)}
@@ -1784,6 +1948,9 @@ def generate_span_html(
             <div class="span-details" id="span-details-panel">
                 {details_html}
             </div>
+        </div>
+        <div id="waterfall-view" class="waterfall-view" style="display:none">
+            {waterfall_html}
         </div>
         <script>
             // Embed span data for JavaScript access
@@ -1963,6 +2130,22 @@ def generate_span_html(
 
             // Initialize pagination on load
             renderSpans(currentPage);
+
+            function showView(view) {{
+                const timeline = document.getElementById('timeline-view');
+                const waterfall = document.getElementById('waterfall-view');
+                const buttons = document.querySelectorAll('.view-toggle button');
+                buttons.forEach(b => b.classList.remove('active'));
+                if (view === 'waterfall') {{
+                    timeline.style.display = 'none';
+                    waterfall.style.display = 'block';
+                    buttons[1].classList.add('active');
+                }} else {{
+                    timeline.style.display = 'grid';
+                    waterfall.style.display = 'none';
+                    buttons[0].classList.add('active');
+                }}
+            }}
         </script>
     </div>
     """
