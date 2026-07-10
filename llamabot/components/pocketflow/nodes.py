@@ -6,7 +6,7 @@ from typing import Callable, List, Optional
 from loguru import logger
 from pocketflow import Node
 
-from llamabot.recorder import Span, get_current_span, is_span_recording_enabled
+from llamabot.recorder import Span, get_current_span
 
 # Constant for the default loopback action name
 DECIDE_NODE_ACTION = "decide"
@@ -362,30 +362,24 @@ class DecideNode(Node):
         :raises ValueError: If no tool calls are returned from ToolBot or if JSON
                             parsing fails
         """
-        # Add span support for decision making
-        if is_span_recording_enabled():
-            current_span = get_current_span()
-            if current_span:
-                decision_span = current_span.span(
-                    "decision",
-                    iteration=prep_res.get("iteration_count", 0),
-                    model=self.model_name,
-                )
-                with decision_span:
-                    return self._exec_decision(prep_res, decision_span)
-            else:
-                # No parent span, create root span
-                trace_id = prep_res.get("trace_id")
-                decision_span = Span(
-                    "decision",
-                    trace_id=trace_id,
-                    iteration=prep_res.get("iteration_count", 0),
-                    model=self.model_name,
-                )
-                with decision_span:
-                    return self._exec_decision(prep_res, decision_span)
+        # Always create a decision span (matches @tool/@span behaviour).
+        current_span = get_current_span()
+        if current_span:
+            decision_span = current_span.span(
+                "decision",
+                iteration=prep_res.get("iteration_count", 0),
+                model=self.model_name,
+            )
         else:
-            return self._exec_decision(prep_res, None)
+            trace_id = prep_res.get("trace_id")
+            decision_span = Span(
+                "decision",
+                trace_id=trace_id,
+                iteration=prep_res.get("iteration_count", 0),
+                model=self.model_name,
+            )
+        with decision_span:
+            return self._exec_decision(prep_res, decision_span)
 
     def _exec_decision(self, prep_res, span_obj: Optional[Span]):
         """Internal method to execute decision logic.
@@ -705,26 +699,25 @@ class DecideNode(Node):
         :param prep_res: Output from :meth:`prep`.
         :return: Tool name for PocketFlow routing.
         """
-        if is_span_recording_enabled():
-            current_span = get_current_span()
-            if current_span:
-                decision_span = current_span.span(
-                    "decision",
-                    iteration=prep_res.get("iteration_count", 0),
-                    model=self.model_name,
-                )
-                with decision_span:
-                    return await self._exec_decision_async(prep_res, decision_span)
-            trace_id = prep_res.get("trace_id")
-            decision_span = Span(
+        # Always create a decision span (matches @tool/@span behaviour).
+        current_span = get_current_span()
+        if current_span:
+            decision_span = current_span.span(
                 "decision",
-                trace_id=trace_id,
                 iteration=prep_res.get("iteration_count", 0),
                 model=self.model_name,
             )
             with decision_span:
                 return await self._exec_decision_async(prep_res, decision_span)
-        return await self._exec_decision_async(prep_res, None)
+        trace_id = prep_res.get("trace_id")
+        decision_span = Span(
+            "decision",
+            trace_id=trace_id,
+            iteration=prep_res.get("iteration_count", 0),
+            model=self.model_name,
+        )
+        with decision_span:
+            return await self._exec_decision_async(prep_res, decision_span)
 
     def post(self, shared, prep_res, exec_res):
         """Post-process the execution result.

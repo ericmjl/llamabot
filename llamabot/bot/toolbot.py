@@ -202,71 +202,85 @@ class ToolBot(SimpleBot):
         :param execution_history: Optional list of previously executed tool calls for context
         :return: List of tool calls to execute
         """
-        message_list, user_messages = self.compose_tool_messages(
-            *messages, execution_history=execution_history
-        )
+        from llamabot.recorder import Span, get_current_span
 
-        # Execute the plan
-        stream = self.stream_target != "none"
-        logger.debug("Message list: {}", message_list)
-        response = make_response(self, message_list, stream=stream)
-        response = stream_chunks(response, target=self.stream_target)
-        logger.debug("Response: {}", response)
+        current_span = get_current_span()
+        if current_span:
+            llm_span = current_span.span("toolbot_llm_call", model=self.model_name)
+        else:
+            llm_span = Span("toolbot_llm_call", model=self.model_name)
 
-        # Log detailed response structure for debugging tool call issues
-        try:
-            if hasattr(response, "choices") and hasattr(response.choices, "__len__"):
-                choices_len = len(response.choices)
-                if choices_len > 0:
-                    message = response.choices[0].message
-                    tool_calls_attr = getattr(message, "tool_calls", None)
-                    content_attr = getattr(message, "content", None)
-                    logger.debug("Response message.tool_calls: {}", tool_calls_attr)
-                    logger.debug("Response message.content: {}", content_attr)
-        except (TypeError, AttributeError):
-            # Skip logging if response doesn't support len() (e.g., Mock objects in tests)
-            pass
+        with llm_span:
+            message_list, user_messages = self.compose_tool_messages(
+                *messages, execution_history=execution_history
+            )
 
-        tool_calls = extract_tool_calls(response)
+            # Execute the plan
+            stream = self.stream_target != "none"
+            logger.debug("Message list: {}", message_list)
+            response = make_response(self, message_list, stream=stream)
+            response = stream_chunks(response, target=self.stream_target)
+            logger.debug("Response: {}", response)
 
-        # Capture content for auto-route fallback (coding-agent termination):
-        # when the model returns text without a tool call, DecideNode uses
-        # this to auto-route to respond_to_user instead of crashing.
-        try:
-            if hasattr(response, "choices") and response.choices:
-                self._last_content = getattr(
-                    response.choices[0].message, "content", None
-                )
-            else:
+            # Log detailed response structure for debugging tool call issues
+            try:
+                if hasattr(response, "choices") and hasattr(
+                    response.choices, "__len__"
+                ):
+                    choices_len = len(response.choices)
+                    if choices_len > 0:
+                        message = response.choices[0].message
+                        tool_calls_attr = getattr(message, "tool_calls", None)
+                        content_attr = getattr(message, "content", None)
+                        logger.debug("Response message.tool_calls: {}", tool_calls_attr)
+                        logger.debug("Response message.content: {}", content_attr)
+            except (TypeError, AttributeError):
+                # Skip logging if response doesn't support len() (e.g., Mock objects in tests)
+                pass
+
+            tool_calls = extract_tool_calls(response)
+
+            # Capture content for auto-route fallback (coding-agent termination):
+            # when the model returns text without a tool call, DecideNode uses
+            # this to auto-route to respond_to_user instead of crashing.
+            try:
+                if hasattr(response, "choices") and response.choices:
+                    self._last_content = getattr(
+                        response.choices[0].message, "content", None
+                    )
+                else:
+                    self._last_content = None
+            except (TypeError, AttributeError):
                 self._last_content = None
-        except (TypeError, AttributeError):
-            self._last_content = None
 
-        # Log if we parsed tool calls from JSON content (for debugging)
-        try:
-            if (
-                tool_calls
-                and hasattr(response, "choices")
-                and hasattr(response.choices, "__len__")
-            ):
-                choices_len = len(response.choices)
-                if choices_len > 0:
-                    message = response.choices[0].message
-                    if message.tool_calls is None and message.content:
-                        logger.debug(
-                            "Parsed tool calls from JSON content for model {}: {}",
-                            self.model_name,
-                            [tc.function.name for tc in tool_calls],
-                        )
-        except (TypeError, AttributeError):
-            # Skip logging if response doesn't support len() (e.g., Mock objects in tests)
-            pass
+            # Log if we parsed tool calls from JSON content (for debugging)
+            try:
+                if (
+                    tool_calls
+                    and hasattr(response, "choices")
+                    and hasattr(response.choices, "__len__")
+                ):
+                    choices_len = len(response.choices)
+                    if choices_len > 0:
+                        message = response.choices[0].message
+                        if message.tool_calls is None and message.content:
+                            logger.debug(
+                                "Parsed tool calls from JSON content for model {}: {}",
+                                self.model_name,
+                                [tc.function.name for tc in tool_calls],
+                            )
+            except (TypeError, AttributeError):
+                # Skip logging if response doesn't support len() (e.g., Mock objects in tests)
+                pass
 
-        if user_messages:
-            self.chat_memory.append(user_messages[0])
-            self.chat_memory.append(AIMessage(content=str(tool_calls)))
+            if user_messages:
+                self.chat_memory.append(user_messages[0])
+                self.chat_memory.append(AIMessage(content=str(tool_calls)))
 
-        return tool_calls
+            llm_span["chosen_tools"] = str(
+                [tc.function.name for tc in tool_calls] if tool_calls else []
+            )
+            return tool_calls
 
 
 class AsyncToolBot(ToolBot):
@@ -309,59 +323,73 @@ class AsyncToolBot(ToolBot):
         execution_history: Optional[List[Dict]] = None,
     ) -> list:
         """Async tool selection via ``acompletion`` (same contract as :meth:`ToolBot.__call__`)."""
-        message_list, user_messages = self.compose_tool_messages(
-            *messages, execution_history=execution_history
-        )
+        from llamabot.recorder import Span, get_current_span
 
-        stream = self.stream_target != "none"
-        logger.debug("Message list: {}", message_list)
-        response = await make_async_response(self, message_list, stream=stream)
-        final = await async_stream_chunks(self, response, target=self.stream_target)
-        logger.debug("Response: {}", final)
+        current_span = get_current_span()
+        if current_span:
+            llm_span = current_span.span("toolbot_llm_call", model=self.model_name)
+        else:
+            llm_span = Span("toolbot_llm_call", model=self.model_name)
 
-        try:
-            if hasattr(final, "choices") and hasattr(final.choices, "__len__"):
-                choices_len = len(final.choices)
-                if choices_len > 0:
-                    message = final.choices[0].message
-                    tool_calls_attr = getattr(message, "tool_calls", None)
-                    content_attr = getattr(message, "content", None)
-                    logger.debug("Response message.tool_calls: {}", tool_calls_attr)
-                    logger.debug("Response message.content: {}", content_attr)
-        except (TypeError, AttributeError):
-            pass
+        with llm_span:
+            message_list, user_messages = self.compose_tool_messages(
+                *messages, execution_history=execution_history
+            )
 
-        tool_calls = extract_tool_calls(final)
+            stream = self.stream_target != "none"
+            logger.debug("Message list: {}", message_list)
+            response = await make_async_response(self, message_list, stream=stream)
+            final = await async_stream_chunks(self, response, target=self.stream_target)
+            logger.debug("Response: {}", final)
 
-        # Capture content for auto-route fallback (coding-agent termination).
-        try:
-            if hasattr(final, "choices") and final.choices:
-                self._last_content = getattr(final.choices[0].message, "content", None)
-            else:
+            try:
+                if hasattr(final, "choices") and hasattr(final.choices, "__len__"):
+                    choices_len = len(final.choices)
+                    if choices_len > 0:
+                        message = final.choices[0].message
+                        tool_calls_attr = getattr(message, "tool_calls", None)
+                        content_attr = getattr(message, "content", None)
+                        logger.debug("Response message.tool_calls: {}", tool_calls_attr)
+                        logger.debug("Response message.content: {}", content_attr)
+            except (TypeError, AttributeError):
+                pass
+
+            tool_calls = extract_tool_calls(final)
+
+            # Capture content for auto-route fallback (coding-agent termination).
+            try:
+                if hasattr(final, "choices") and final.choices:
+                    self._last_content = getattr(
+                        final.choices[0].message, "content", None
+                    )
+                else:
+                    self._last_content = None
+            except (TypeError, AttributeError):
                 self._last_content = None
-        except (TypeError, AttributeError):
-            self._last_content = None
 
-        try:
-            if (
-                tool_calls
-                and hasattr(final, "choices")
-                and hasattr(final.choices, "__len__")
-            ):
-                choices_len = len(final.choices)
-                if choices_len > 0:
-                    message = final.choices[0].message
-                    if message.tool_calls is None and message.content:
-                        logger.debug(
-                            "Parsed tool calls from JSON content for model {}: {}",
-                            self.model_name,
-                            [tc.function.name for tc in tool_calls],
-                        )
-        except (TypeError, AttributeError):
-            pass
+            try:
+                if (
+                    tool_calls
+                    and hasattr(final, "choices")
+                    and hasattr(final.choices, "__len__")
+                ):
+                    choices_len = len(final.choices)
+                    if choices_len > 0:
+                        message = final.choices[0].message
+                        if message.tool_calls is None and message.content:
+                            logger.debug(
+                                "Parsed tool calls from JSON content for model {}: {}",
+                                self.model_name,
+                                [tc.function.name for tc in tool_calls],
+                            )
+            except (TypeError, AttributeError):
+                pass
 
-        if user_messages:
-            self.chat_memory.append(user_messages[0])
-            self.chat_memory.append(AIMessage(content=str(tool_calls)))
+            if user_messages:
+                self.chat_memory.append(user_messages[0])
+                self.chat_memory.append(AIMessage(content=str(tool_calls)))
 
-        return tool_calls
+            llm_span["chosen_tools"] = str(
+                [tc.function.name for tc in tool_calls] if tool_calls else []
+            )
+            return tool_calls

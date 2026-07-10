@@ -431,7 +431,20 @@ def make_response(
     """
     from litellm import completion
 
-    return completion(**completion_kwargs_for_messages(bot, messages, stream))
+    from llamabot.recorder import Span, get_current_span
+
+    current_span = get_current_span()
+    model_name = getattr(bot, "model_name", "unknown")
+    if current_span:
+        llm_span = current_span.span("llm_request", model=model_name)
+    else:
+        llm_span = Span("llm_request", model=model_name)
+
+    with llm_span:
+        kwargs = completion_kwargs_for_messages(bot, messages, stream)
+        llm_span["num_messages"] = len(messages)
+        llm_span["stream"] = stream
+        return completion(**kwargs)
 
 
 async def make_async_response(
@@ -446,7 +459,20 @@ async def make_async_response(
     """
     from litellm import acompletion
 
-    return await acompletion(**completion_kwargs_for_messages(bot, messages, stream))
+    from llamabot.recorder import Span, get_current_span
+
+    current_span = get_current_span()
+    model_name = getattr(bot, "model_name", "unknown")
+    if current_span:
+        llm_span = current_span.span("llm_request", model=model_name)
+    else:
+        llm_span = Span("llm_request", model=model_name)
+
+    with llm_span:
+        kwargs = completion_kwargs_for_messages(bot, messages, stream)
+        llm_span["num_messages"] = len(messages)
+        llm_span["stream"] = stream
+        return await acompletion(**kwargs)
 
 
 async def stream_tokens_for_messages(
