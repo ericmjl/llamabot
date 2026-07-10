@@ -877,3 +877,46 @@ def test_agentbot_spans_property_has_unified_interface():
     # Verify SpanList is iterable
     assert hasattr(spans, "__iter__")
     assert hasattr(spans, "__len__")
+
+
+def test_decide_node_auto_routes_text_to_respond_to_user():
+    """When the model returns text without a tool call, DecideNode auto-routes to respond_to_user.
+
+    This is the coding-agent pattern: text without a tool call IS the final answer.
+    """
+    from llamabot.components.pocketflow.nodes import DecideNode
+
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_toolbot.return_value = []  # no tool calls
+        mock_toolbot._last_content = "Here is the answer."
+        mock_toolbot_class.return_value = mock_toolbot
+
+        decide_node = DecideNode(
+            tools=[], system_prompt="Pick tools.", model_name="gpt-4.1"
+        )
+        prep_res = {"memory": ["test query"], "globals_dict": {}}
+
+        selected = decide_node.exec(prep_res)
+
+        assert selected == "respond_to_user"
+        assert prep_res["func_call"] == {"response": "Here is the answer."}
+
+
+def test_decide_node_raises_when_no_tool_calls_and_no_content():
+    """When the model returns neither tool calls nor content, ValueError is raised."""
+    from llamabot.components.pocketflow.nodes import DecideNode
+
+    with patch("llamabot.bot.toolbot.ToolBot") as mock_toolbot_class:
+        mock_toolbot = MagicMock()
+        mock_toolbot.return_value = []
+        mock_toolbot._last_content = None
+        mock_toolbot_class.return_value = mock_toolbot
+
+        decide_node = DecideNode(
+            tools=[], system_prompt="Pick tools.", model_name="gpt-4.1"
+        )
+        prep_res = {"memory": ["test query"], "globals_dict": {}}
+
+        with pytest.raises(ValueError, match="No tool calls and no content"):
+            decide_node.exec(prep_res)
