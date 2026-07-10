@@ -229,6 +229,19 @@ class ToolBot(SimpleBot):
 
         tool_calls = extract_tool_calls(response)
 
+        # Capture content for auto-route fallback (coding-agent termination):
+        # when the model returns text without a tool call, DecideNode uses
+        # this to auto-route to respond_to_user instead of crashing.
+        try:
+            if hasattr(response, "choices") and response.choices:
+                self._last_content = getattr(
+                    response.choices[0].message, "content", None
+                )
+            else:
+                self._last_content = None
+        except (TypeError, AttributeError):
+            self._last_content = None
+
         # Log if we parsed tool calls from JSON content (for debugging)
         try:
             if (
@@ -319,6 +332,15 @@ class AsyncToolBot(ToolBot):
             pass
 
         tool_calls = extract_tool_calls(final)
+
+        # Capture content for auto-route fallback (coding-agent termination).
+        try:
+            if hasattr(final, "choices") and final.choices:
+                self._last_content = getattr(final.choices[0].message, "content", None)
+            else:
+                self._last_content = None
+        except (TypeError, AttributeError):
+            self._last_content = None
 
         try:
             if (

@@ -496,23 +496,26 @@ class DecideNode(Node):
 
             # Handle case where no tool calls are returned
             if not tool_calls:
-                error_msg = (
-                    f"No tool calls returned from ToolBot. Model: {self.model_name}. "
+                content = getattr(bot, "_last_content", None)
+                if content:
+                    # Coding-agent termination: the model returned text
+                    # without a tool call. This is the model's final answer —
+                    # auto-route to respond_to_user instead of crashing.
+                    logger.info(
+                        "Model returned text without a tool call; "
+                        "auto-routing to respond_to_user."
+                    )
+                    if span_obj:
+                        span_obj["auto_terminated"] = True
+                        span_obj.log(
+                            "auto_terminated",
+                            reason="model_returned_text_without_tool_call",
+                        )
+                    prep_res["func_call"] = {"response": content}
+                    return "respond_to_user"
+                raise ValueError(
+                    f"No tool calls and no content from model: {self.model_name}."
                 )
-                if self.model_name.startswith("ollama") or self.model_name.startswith(
-                    "ollama_chat"
-                ):
-                    error_msg += (
-                        "Ollama models don't support tool_choice='required', so tool calls are optional. "
-                        "Ensure your system prompt explicitly requires tool calls and that the model "
-                        "supports function calling."
-                    )
-                else:
-                    error_msg += (
-                        "This may indicate the model doesn't support tool_choice='required'. "
-                        "Check the system prompt and ensure it explicitly requires tool calls."
-                    )
-                raise ValueError(error_msg)
 
             normalized_tool_calls = [
                 {
@@ -647,23 +650,23 @@ class DecideNode(Node):
             )
 
             if not tool_calls:
-                error_msg = (
-                    f"No tool calls returned from the model. Model: {self.model_name}. "
+                content = getattr(bot, "_last_content", None)
+                if content:
+                    logger.info(
+                        "Model returned text without a tool call; "
+                        "auto-routing to respond_to_user."
+                    )
+                    if span_obj:
+                        span_obj["auto_terminated"] = True
+                        span_obj.log(
+                            "auto_terminated",
+                            reason="model_returned_text_without_tool_call",
+                        )
+                    prep_res["func_call"] = {"response": content}
+                    return "respond_to_user"
+                raise ValueError(
+                    f"No tool calls and no content from model: {self.model_name}."
                 )
-                if self.model_name.startswith("ollama") or self.model_name.startswith(
-                    "ollama_chat"
-                ):
-                    error_msg += (
-                        "Ollama models don't support tool_choice='required', so tool calls are optional. "
-                        "Ensure your system prompt explicitly requires tool calls and that the model "
-                        "supports function calling."
-                    )
-                else:
-                    error_msg += (
-                        "This may indicate the model doesn't support tool_choice='required'. "
-                        "Check the system prompt and ensure it explicitly requires tool calls."
-                    )
-                raise ValueError(error_msg)
 
             normalized_tool_calls = [
                 {
