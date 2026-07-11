@@ -1618,24 +1618,73 @@ def generate_span_html(
     # Generate pagination controls
     pagination_html = generate_pagination_html(page, total_pages, total_spans, per_page)
 
-    # Compute trace boundaries for waterfall positioning
-    valid_starts = [s.get("start_time") for s in sorted_spans if s.get("start_time")]
-    valid_ends = [s.get("end_time") for s in sorted_spans if s.get("end_time")]
+    # Compute per-root timing for multi-epoch waterfall.
+    # Each root span (no parent) defines its own epoch starting at t=0.
+    # All spans within an epoch are positioned relative to their root's
+    # start time, so sequential turns are left-aligned rather than
+    # cascading right.
     from datetime import datetime as _dt
 
-    if valid_starts and valid_ends:
-        trace_start_dt = min(
-            _dt.fromisoformat(s.replace("Z", "+00:00")) for s in valid_starts
-        )
-        trace_end_dt = max(
-            _dt.fromisoformat(s.replace("Z", "+00:00")) for s in valid_ends
-        )
-        trace_duration_ms = max(
-            (trace_end_dt - trace_start_dt).total_seconds() * 1000, 0.001
-        )
+    def find_root_start(span_dict_item):
+        """Walk parent chain to the root span and return its start_time."""
+        current = span_dict_item
+        visited = set()
+        while (
+            current.get("parent_span_id") and current["parent_span_id"] not in visited
+        ):
+            visited.add(current["span_id"])
+            parent_id = current["parent_span_id"]
+            if parent_id in span_dict_lookup:
+                current = span_dict_lookup[parent_id]
+            else:
+                break
+        return current.get("start_time")
+
+    # Build map: span_id -> root start time
+    root_start_map = {}
+    for s in sorted_spans:
+        sid = s.get("span_id")
+        rs = find_root_start(s)
+        if rs:
+            try:
+                root_start_map[sid] = _dt.fromisoformat(rs.replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                pass
+
+    # The x-axis scale is the longest single-epoch (root span) duration,
+    # NOT the total trace span. This keeps bars proportional within each turn.
+    root_spans = [s for s in sorted_spans if not s.get("parent_span_id")]
+    if root_spans:
+        epoch_duration_ms = max((s.get("duration_ms") or 0.001) for s in root_spans)
     else:
-        trace_start_dt = None
-        trace_duration_ms = 1.0
+        epoch_duration_ms = max((s.get("duration_ms") or 0.001) for s in sorted_spans)
+    epoch_duration_ms = max(epoch_duration_ms, 0.001)
+
+    # Generate time-axis ticks (elapsed seconds from epoch start)
+    epoch_duration_s = epoch_duration_ms / 1000.0
+    if epoch_duration_s <= 1:
+        tick_interval_s = 0.1
+    elif epoch_duration_s <= 5:
+        tick_interval_s = 0.5
+    elif epoch_duration_s <= 20:
+        tick_interval_s = 1.0
+    elif epoch_duration_s <= 60:
+        tick_interval_s = 5.0
+    else:
+        tick_interval_s = 10.0
+
+    axis_ticks_html = ""
+    n_ticks = int(epoch_duration_s / tick_interval_s) + 1
+    for i in range(n_ticks):
+        t = i * tick_interval_s
+        pct = t / epoch_duration_s * 100 if epoch_duration_s > 0 else 0
+        label = f"{t:.1f}s" if tick_interval_s < 1 else f"{t:.0f}s"
+        axis_ticks_html += (
+            f'<div class="wf-axis-tick" style="left: {pct:.1f}%;">'
+            f'<div class="wf-axis-line"></div>'
+            f'<span class="wf-axis-label">{label}</span>'
+            f"</div>"
+        )
 
     # Generate waterfall rows
     waterfall_rows = []
@@ -1646,17 +1695,20 @@ def generate_span_html(
         is_in_progress = (
             span.get("status") == "started" and span.get("end_time") is None
         )
+        sid = span.get("span_id")
 
-        # Compute bar position and width
-        if trace_start_dt and span.get("start_time"):
+        # Compute bar offset relative to the span's ROOT ancestor start time
+        # (not global trace start), so every epoch begins at 0 %.
+        root_start_dt = root_start_map.get(sid)
+        if root_start_dt and span.get("start_time"):
             try:
                 span_start = _dt.fromisoformat(
                     span["start_time"].replace("Z", "+00:00")
                 )
                 offset_pct = max(
-                    (span_start - trace_start_dt).total_seconds()
+                    (span_start - root_start_dt).total_seconds()
                     * 1000
-                    / trace_duration_ms
+                    / epoch_duration_ms
                     * 100,
                     0,
                 )
@@ -1666,7 +1718,7 @@ def generate_span_html(
             offset_pct = 0
 
         width_pct = (
-            max(duration_ms / trace_duration_ms * 100, 0.3) if duration_ms else 0.3
+            max(duration_ms / epoch_duration_ms * 100, 0.3) if duration_ms else 0.3
         )
         width_pct = min(width_pct, 100 - offset_pct)
 
@@ -1688,9 +1740,9 @@ def generate_span_html(
 
         waterfall_rows.append(
             f"""
-            <div class="wf-row" style="margin-left: {indent_px}px;"
+            <div class="wf-row"
                  onclick="selectSpan('{escape_html(span["span_id"])}')">
-                <span class="wf-label">{op_name}</span>
+                <span class="wf-label" style="padding-left: {indent_px}px;">{op_name}</span>
                 <div class="wf-track">
                     <div class="wf-bar" style="margin-left: {offset_pct:.1f}%; width: {width_pct:.1f}%; background: {bar_color};">
                         <span class="wf-dur">{dur_str}</span>
@@ -1700,7 +1752,7 @@ def generate_span_html(
             """
         )
 
-    waterfall_html = "\n".join(waterfall_rows)
+    waterfall_rows_html = "\n".join(waterfall_rows)
 
     # Complete HTML with embedded CSS and JavaScript
     html = f"""
@@ -1913,8 +1965,6 @@ def generate_span_html(
             .wf-track {{
                 flex: 1;
                 height: 20px;
-                background: #ECEFF4;
-                border-radius: 3px;
                 position: relative;
                 min-width: 300px;
             }}
@@ -1933,6 +1983,59 @@ def generate_span_html(
                 font-weight: 600;
                 white-space: nowrap;
             }}
+            /* Time axis */
+            .wf-axis-row {{
+                display: flex;
+                align-items: flex-end;
+                height: 28px;
+                margin-bottom: 4px;
+                position: relative;
+            }}
+            .wf-axis-spacer {{
+                width: 200px;
+                min-width: 200px;
+                padding-right: 0.5rem;
+                font-size: 0.75rem;
+                color: #4C566A;
+                font-weight: 600;
+                text-align: right;
+            }}
+            .wf-axis-track {{
+                flex: 1;
+                position: relative;
+                min-width: 300px;
+                height: 100%;
+            }}
+            .wf-axis-tick {{
+                position: absolute;
+                bottom: 0;
+                transform: translateX(-50%);
+            }}
+            .wf-axis-line {{
+                width: 1px;
+                height: 6px;
+                background: #4C566A;
+                margin: 0 auto;
+            }}
+            .wf-axis-label {{
+                font-size: 0.7rem;
+                color: #4C566A;
+                white-space: nowrap;
+            }}
+            .wf-xaxis-label {{
+                display: flex;
+                margin-top: 4px;
+            }}
+            .wf-xaxis-label span {{
+                flex: 1;
+                text-align: center;
+                min-width: 300px;
+                font-size: 0.75rem;
+                color: #4C566A;
+            }}
+            .wf-xaxis-label .wf-axis-spacer {{
+                flex: none;
+            }}
         </style>
         <div class="view-toggle">
             <button class="active" onclick="showView('timeline')">Timeline</button>
@@ -1950,7 +2053,17 @@ def generate_span_html(
             </div>
         </div>
         <div id="waterfall-view" class="waterfall-view" style="display:none">
-            {waterfall_html}
+            <div class="wf-axis-row">
+                <div class="wf-axis-spacer">Elapsed</div>
+                <div class="wf-axis-track">
+                    {axis_ticks_html}
+                </div>
+            </div>
+            {waterfall_rows_html}
+            <div class="wf-xaxis-label">
+                <div class="wf-axis-spacer"></div>
+                <span>Elapsed time per turn (seconds)</span>
+            </div>
         </div>
         <script>
             // Embed span data for JavaScript access

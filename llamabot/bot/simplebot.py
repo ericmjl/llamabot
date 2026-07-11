@@ -212,18 +212,31 @@ class SimpleBot:
             if outer_span.trace_id not in self._trace_ids:
                 self._trace_ids.append(outer_span.trace_id)
         with outer_span:
-            messages, processed_messages = self.compose_messages_for_human_messages(
-                *human_messages
-            )
-            self.record_span_message_metadata(outer_span, messages, processed_messages)
+            with outer_span.span("compose_messages") as msg_span:
+                messages, processed_messages = self.compose_messages_for_human_messages(
+                    *human_messages
+                )
+                self.record_span_message_metadata(
+                    outer_span, messages, processed_messages
+                )
+                msg_span["num_messages"] = len(messages)
 
-            # Make LLM request and process response
+            # make_response creates an llm_request span around the
+            # litellm.completion() call.  When stream=True the returned
+            # object is a lazy iterator — the actual token generation
+            # happens during iteration, so we measure it separately.
             stream = self.stream_target != "none"
             response = make_response(self, messages, stream)
-            response = stream_chunks(response, target=self.stream_target)
-            tool_calls = extract_tool_calls(response)
-            content = extract_content(response)
-            response_message = AIMessage(content=content, tool_calls=tool_calls)
+
+            with outer_span.span("stream_response") as stream_span:
+                response = stream_chunks(response, target=self.stream_target)
+                stream_span["streamed"] = stream
+
+            with outer_span.span("process_response") as proc_span:
+                tool_calls = extract_tool_calls(response)
+                content = extract_content(response)
+                response_message = AIMessage(content=content, tool_calls=tool_calls)
+                proc_span["content_length"] = len(content) if content else 0
 
             # Record response content and metadata directly on outer span
             outer_span["response_length"] = len(content) if content else 0
