@@ -47,6 +47,7 @@ level_map = {
     "CRITICAL": "CRITICAL",
 }
 
+logger.remove()
 logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNING"))
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(
