@@ -6,6 +6,9 @@ These tests verify that:
 3. No import-time crashes occur for optional extras
 """
 
+import json
+import subprocess
+import sys
 import time
 
 
@@ -148,6 +151,51 @@ def test_set_debug_mode():
     from llamabot import set_debug_mode
 
     assert callable(set_debug_mode)
+
+
+def test_import_removes_default_debug_sink():
+    """Importing llamabot must remove loguru's pre-configured DEBUG sink (id 0).
+
+    Regression test for issue #381: without ``logger.remove(0)`` at import
+    time, loguru's default DEBUG sink stays attached and DEBUG messages leak
+    to stderr regardless of ``LOG_LEVEL``.
+    """
+    script = (
+        "import os, json; "
+        'os.environ["LOG_LEVEL"] = "WARNING"; '
+        "from loguru import logger; "
+        "import llamabot; "
+        "print(json.dumps([h._levelno for h in logger._core.handlers.values()]))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=True
+    )
+    levels = json.loads(result.stdout.strip())
+    assert 10 not in levels, f"DEBUG sink (level 10) should be removed: {levels}"
+    assert 30 in levels, f"WARNING sink (level 30) should be present: {levels}"
+
+
+def test_import_preserves_user_sinks():
+    """Importing llamabot must not clobber sinks added by the user before import.
+
+    Per Copilot review on PR #385: ``logger.remove()`` would remove ALL sinks;
+    ``logger.remove(0)`` targets only loguru's default pre-configured sink.
+    """
+    script = (
+        "import os, json; "
+        'os.environ["LOG_LEVEL"] = "WARNING"; '
+        "from loguru import logger; "
+        "logger.add(lambda msg: None, level='INFO'); "
+        "import llamabot; "
+        "print(json.dumps([h._levelno for h in logger._core.handlers.values()]))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=True
+    )
+    levels = json.loads(result.stdout.strip())
+    assert 10 not in levels, f"DEBUG default sink should be removed: {levels}"
+    assert 20 in levels, f"User INFO sink (level 20) should survive import: {levels}"
+    assert 30 in levels, f"llamabot WARNING sink (level 30) should be present: {levels}"
 
 
 def test_all_exports_importable():
