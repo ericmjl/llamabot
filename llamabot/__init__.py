@@ -24,6 +24,14 @@ from loguru import logger
 
 import lazy_loader
 
+# Silence litellm's noisy "Provider List: ..." banner, printed whenever
+# get_llm_provider() cannot infer a provider from a bare model name (e.g. the
+# default "gpt-4.1"). The banner precedes a BadRequestError that callers
+# already handle, so it is pure noise. Must run before any litellm call.
+import litellm
+
+litellm.suppress_debug_info = True
+
 
 def set_debug_mode(enabled: bool = True) -> None:
     """Set debug mode for llamabot.
