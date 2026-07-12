@@ -47,6 +47,9 @@ level_map = {
     "CRITICAL": "CRITICAL",
 }
 
+# Remove only loguru's pre-configured default sink (always id 0 per loguru docs),
+# leaving any sinks the application added before importing llamabot intact.
+# A bare logger.remove() would clobber those user-defined sinks.
 logger.remove(0)
 logger.add(lambda msg: print(msg, end=""), level=level_map.get(log_level, "WARNING"))
 
