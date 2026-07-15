@@ -12,8 +12,8 @@ granite4.1-guardian
 mistral-medium-3.5
 granite4.1
 nemotron3
-deepseek-v4-flash
 deepseek-v4-pro
+deepseek-v4-flash
 laguna-xs.2
 qwen3.6
 medgemma1.5
@@ -27,14 +27,11 @@ lfm2
 nemotron-3-super
 qwen3.5
 minimax-m2.5
-glm-5
 glm-ocr
 kimi-k2.5
 lfm2.5-thinking
 glm-4.7-flash
 translategemma
-glm-4.7
-minimax-m2.1
 gemini-3-flash-preview
 functiongemma
 olmo-3.1
@@ -44,9 +41,8 @@ nomic-embed-text-v2-moe
 rnj-1
 devstral-small-2
 devstral-2
-ministral-3
-deepseek-v3.2
 mistral-large-3
+ministral-3
 deepseek-ocr
 cogito-2.1
 gpt-oss-safeguard
