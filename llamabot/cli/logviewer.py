@@ -2,7 +2,6 @@
 
 from typing import Optional
 import typer
-import uvicorn
 from pathlib import Path
 
 
@@ -23,6 +22,7 @@ def launch(
     """
     from llamabot.web.app import create_app
     from llamabot.prompt_manager import find_or_set_db_path
+    import uvicorn
 
     db_path = find_or_set_db_path(db_path)
 
