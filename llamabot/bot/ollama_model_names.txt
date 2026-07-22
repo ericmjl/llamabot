@@ -1,3 +1,4 @@
+laguna-s-2.1
 laguna-xs-2.1
 ornith
 north-mini-code-1.0
@@ -38,11 +39,11 @@ olmo-3.1
 nemotron-3-nano
 olmo-3
 nomic-embed-text-v2-moe
-rnj-1
 devstral-small-2
+rnj-1
 devstral-2
-mistral-large-3
 ministral-3
+mistral-large-3
 deepseek-ocr
 cogito-2.1
 gpt-oss-safeguard
