@@ -1,3 +1,8 @@
+qwen3.8
+nemotron-3.5-lightning
+muse-glimmer
+kimi-k3
+laguna-s-2.1
 laguna-xs-2.1
 ornith
 north-mini-code-1.0
@@ -26,13 +31,10 @@ gemma4
 lfm2
 nemotron-3-super
 qwen3.5
-minimax-m2.5
 glm-ocr
-kimi-k2.5
 lfm2.5-thinking
 glm-4.7-flash
 translategemma
-gemini-3-flash-preview
 functiongemma
 olmo-3.1
 nemotron-3-nano
