@@ -1,0 +1,19 @@
+llamabot/mcp/__init__.py
+  s_c68e7716413823::t_f77d329f52d8fc 1-9,13-15,22-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "776e679f05a4f267242efa80bbed186606c3a375",
+  "prompts": {},
+  "sessions": {
+    "s_c68e7716413823": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff5c27b34ffeQM5qlUM0sk9d3N",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
