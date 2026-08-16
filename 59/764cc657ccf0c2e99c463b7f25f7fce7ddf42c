@@ -1,0 +1,28 @@
+llamabot/bot/structuredbot.py
+  s_c68e7716413823::t_66ed15b550b322 32
+  s_c68e7716413823::t_08857aa031acb4 75-76,81-82
+llamabot/bot/simplebot.py
+  s_c68e7716413823::t_a222b272f992a6 473,487-488
+  s_c68e7716413823::t_0c87567de1b519 445,459-460
+llamabot/config.py
+  s_c68e7716413823::t_c0b0ca957000fd 1,13-35
+  s_c68e7716413823::t_3e7af33ebd5ea8 36-37
+llamabot/bot/imagebot.py
+  s_c68e7716413823::t_6816bb5c9de7c8 234,236-237
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "59764cc657ccf0c2e99c463b7f25f7fce7ddf42c",
+  "prompts": {},
+  "sessions": {
+    "s_c68e7716413823": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff5c27b34ffeQM5qlUM0sk9d3N",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
