@@ -49,17 +49,24 @@ jobs:
             Changes:
             - Updated `llamabot/bot/ollama_model_names.txt` with the latest models from https://ollama.ai/library
 
-            This PR will be automatically merged if all checks pass.
+            If auto-merge is enabled for this repository, this PR will be
+            automatically merged once mergeable; otherwise it awaits manual
+            review and merge.
           branch: update-ollama-models
           delete-branch: true
 
       - name: Enable auto-merge
         if: steps.check_changes.outputs.changes == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get the PR number from the create-pull-request step
           PR_URL=$(gh pr list --head update-ollama-models --json url --jq '.[0].url')
           if [ -n "$PR_URL" ]; then
-            gh pr merge "$PR_URL" --auto --squash
+            # This repository only allows rebase merges.
+            # If auto-merge is disabled at the repo level, leave the PR open
+            # for manual merge instead of failing the workflow.
+            if ! gh pr merge "$PR_URL" --auto --rebase; then
+              echo "::warning::Auto-merge is unavailable; leaving PR for manual merge: $PR_URL"
+            fi
           fi
