@@ -1,0 +1,20 @@
+.github/workflows/release-python-package.yaml
+  s_6676e50dedea51::t_620d6d8cbf8e2d 99-103,307,311-325
+  s_6676e50dedea51::t_7d2633e399c624 326
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "23eef19d96f01d0f4a5e258a12d8feb327dc71fe",
+  "prompts": {},
+  "sessions": {
+    "s_6676e50dedea51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff558f962ffeMzfIBS63IsyPKH",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
