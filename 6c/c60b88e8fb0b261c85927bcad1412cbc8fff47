@@ -1,0 +1,19 @@
+.github/workflows/update-ollama-models.yaml
+  s_89b441d5a4708d::t_8ca51bc6af3183 52-54,61,66-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "6cc60b88e8fb0b261c85927bcad1412cbc8fff47",
+  "prompts": {},
+  "sessions": {
+    "s_89b441d5a4708d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff7d72ad2ffeRgBAywaFV0MJw7",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
