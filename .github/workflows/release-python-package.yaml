@@ -96,6 +96,11 @@ jobs:
               echo "Skipping: subject is a version bump/release notes commit"
               exit 0
             fi
+            if echo "$COMMIT_SUBJECT" | grep -qiE "^(chore\(deps\):|chore: update Ollama models list)"; then
+              echo "skip=true" >> $GITHUB_OUTPUT
+              echo "Skipping: bot-maintained dependency commit, no release needed: $COMMIT_SUBJECT"
+              exit 0
+            fi
             git fetch origin main
             ORIGIN_SUBJECT=$(git log -1 --pretty=%s origin/main)
             if echo "$ORIGIN_SUBJECT" | grep -qiE "^(Bump version|Add release notes)"; then
@@ -299,8 +304,25 @@ jobs:
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         id: git_push
         run: |
+          set -euo pipefail
           git push --atomic origin HEAD:main "refs/tags/v${{ env.version_number }}"
           echo "✓ Pushed HEAD to main and tag v${{ env.version_number }} atomically"
+
+      - name: Verify push landed on origin/main
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags --force
+          PUSHED_VERSION=$(git show origin/main:pyproject.toml | sed -n 's/^version *= *"\(.*\)"/\1/p' | head -n 1)
+          if [ -z "$PUSHED_VERSION" ] || [ "$PUSHED_VERSION" != "${{ env.version_number }}" ]; then
+            echo "::error::origin/main reports version '${PUSHED_VERSION:-not found}', expected '${{ env.version_number }}'. The push did not land; refusing to release."
+            exit 1
+          fi
+          if ! git ls-remote --exit-code --tags origin "refs/tags/v${{ env.version_number }}" >/dev/null; then
+            echo "::error::Tag v${{ env.version_number }} does not exist on the remote; refusing to release."
+            exit 1
+          fi
+          echo "✓ origin/main is at version $PUSHED_VERSION and tag v${{ env.version_number }} exists remotely"
 
       - name: Create release in GitHub repo
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
