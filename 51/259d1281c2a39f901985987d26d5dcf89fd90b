@@ -1,0 +1,20 @@
+scripts/benchmark_imports.py
+  s_c68e7716413823::t_349be733a61038 84-97,102-103,114-115
+  s_c68e7716413823::t_875ff9fd2bcfdd 12-19,28-35,45-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "51259d1281c2a39f901985987d26d5dcf89fd90b",
+  "prompts": {},
+  "sessions": {
+    "s_c68e7716413823": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff5c27b34ffeQM5qlUM0sk9d3N",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
