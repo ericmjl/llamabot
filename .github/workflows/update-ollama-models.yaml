@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write # needed to dispatch the test workflow on the bot branch
 
 jobs:
   update-ollama-models:
@@ -54,6 +55,18 @@ jobs:
             review and merge.
           branch: update-ollama-models
           delete-branch: true
+
+      - name: Trigger CI on the PR branch
+        # Pushes made with GITHUB_TOKEN do not trigger workflow runs, so the
+        # required checks on the bot's PR would never report and auto-merge
+        # would stall. Dispatch the test workflow on the PR branch explicitly.
+        if: steps.check_changes.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh workflow run pr-tests.yaml --ref update-ollama-models; then
+            echo "::warning::Could not dispatch pr-tests on update-ollama-models; CI will not run on the bot PR."
+          fi
 
       - name: Enable auto-merge
         if: steps.check_changes.outputs.changes == 'true'
