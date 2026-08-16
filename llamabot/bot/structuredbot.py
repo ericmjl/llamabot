@@ -12,7 +12,6 @@ import uuid
 from datetime import datetime
 from typing import AsyncGenerator, Union
 
-from litellm import get_supported_openai_params, supports_response_schema
 from loguru import logger
 from pydantic import BaseModel, ValidationError
 
@@ -30,7 +29,7 @@ from llamabot.components.messages import (
     SystemMessage,
     to_basemessage,
 )
-from llamabot.config import default_language_model
+from llamabot.config import configured_litellm, default_language_model
 from llamabot.prompt_manager import prompt
 from llamabot.recorder import (
     Span,
@@ -73,12 +72,14 @@ class StructuredBot(SimpleBot):
         allow_failed_validation: bool = False,
         **completion_kwargs,
     ):
-        params = get_supported_openai_params(model=model_name)
+        litellm = configured_litellm()
+        params = litellm.get_supported_openai_params(model=model_name)
         # Special case for ollama_chat - it supports structured outputs
         if "ollama_chat" in model_name:
             pass  # Ollama chat supports structured outputs
         elif not (
-            "response_format" in params and supports_response_schema(model=model_name)
+            "response_format" in params
+            and litellm.supports_response_schema(model=model_name)
         ):
             raise ValueError(
                 f"Model {model_name} does not support structured responses. "
