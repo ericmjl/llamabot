@@ -82,6 +82,11 @@ Bot types (each has its own LLD + EARS under `designs/<bot>/`):
 - [ToolBot (LLD)](designs/toolbot/LLD.md)
 - [QueryBot (LLD)](designs/querybot/LLD.md)
 - [AgentBot — reference PocketFlow graph (LLD)](designs/agentbot/LLD.md)
+
+Cross-cutting infrastructure (each has its own LLD under `designs/<feature>/`):
+
+- [Release pipeline — PR-based, ruleset-compatible (LLD)](designs/release-pipeline/LLD.md)
+- [Git CLI worktree-safe path resolution (LLD)](designs/git-cli/LLD.md)
 - [Unified chat memory (topic note)](design/unified_chat_memory.md)
 - [Observability (topic note)](design/observability.md)
 - [Log viewer (topic note)](design/log_viewer.md)
