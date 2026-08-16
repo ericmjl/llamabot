@@ -1,0 +1,21 @@
+docs/releases/v0.19.13.md
+  s_6676e50dedea51::t_54387a67eb1e15 1-15
+pyproject.toml
+  s_6676e50dedea51::t_fe5ee35e86bc26 72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f898aee479677fc0d33884387a4d18e280b2e3a5",
+  "prompts": {},
+  "sessions": {
+    "s_6676e50dedea51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff558f962ffeMzfIBS63IsyPKH",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
