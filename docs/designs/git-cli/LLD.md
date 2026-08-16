@@ -2,7 +2,7 @@
 
 **Created**: 2026-08-16
 
-**Status**: Proposed — not yet implemented.
+**Status**: Implemented — `llamabot/cli/git.py` (`resolve_git_paths`, `hooks`, `compose`); tests in `tests/cli/test_git.py`.
 
 **HLD Link**: [../../high-level-design.md](../../high-level-design.md)
 
