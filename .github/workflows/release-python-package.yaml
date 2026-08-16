@@ -1,36 +1,48 @@
 name: Release Python Package
 
-# Atomic Release Design
-# =====================
-# Steps are ordered from most reversible to least reversible:
+# Release Design (PR-based, ruleset-compatible)
+# ==============================================
+# Direct pushes to main are blocked by the 'Require CI checks on main'
+# repository ruleset (tags are NOT covered by it). Release commits therefore
+# land on main through a short-lived release PR, which satisfies the required
+# checks naturally. Steps are ordered from most reversible to least:
 #
 #   1. Build & verify        – no external side effects
 #   2. Pre-flight check      – verify version is not already on PyPI
-#   3. Git push + tag        – reversible via force-push and tag deletion
-#   4. GitHub release        – reversible via `gh release delete`
-#   5. PyPI upload           – IRREVERSIBLE (version number consumed forever)
+#   3. Release PR            – auto-merged (--rebase) once checks pass;
+#                              rebased on origin/main first, so main HEAD
+#                              after merge is the release-notes commit
+#   4. Tag push              – tags the notes commit now on main; tags are
+#                              not blocked by the main-branch ruleset
+#   5. GitHub release        – reversible via `gh release delete`
+#   6. PyPI upload           – IRREVERSIBLE (version number consumed forever)
 #
 # Key design decisions:
 # - PyPI upload is LAST because it is the only truly irreversible step.
-#   All other steps can be automatically rolled back on failure.
-# - `git push --atomic` ensures branch and tag land together or not at all.
-# - Version tag is created TWICE: first after the version bump commit (so
-#   write-release-notes sees the correct tags[-1]), then deleted and recreated
-#   after rebasing on origin/main (so the tag points to the correct post-rebase
-#   commit, not a pre-rebase orphan).
+# - A verification step re-checks that origin/main carries the new version
+#   and the tag exists remotely before the GitHub release / PyPI upload run;
+#   the 'bash -l {0}' default shell does NOT enable fail-fast behavior, so
+#   every mutation step sets `set -euo pipefail` explicitly.
+# - A provisional version tag is created before writing release notes (so
+#   write-release-notes sees the correct tags[-1]), then deleted before the
+#   PR merge; the authoritative tag is created on the post-merge main HEAD.
 # - A pre-flight HTTP check to PyPI catches "file already exists" errors
 #   before any mutations begin.
 # - An automatic rollback step runs on failure and reverses completed
 #   mutation steps in reverse order.
 #
 # Rollback matrix:
-#   rebase fails     → nothing to roll back (no external state changed)
-#   tag create fails → nothing to roll back (local only)
-#   push fails       → nothing to roll back (--atomic means nothing landed)
-#   release fails    → roll back: force-push main, delete remote tag
-#   PyPI fails       → roll back: delete GitHub release, force-push main,
-#                       delete remote tag
-#   PyPI succeeds    → no rollback possible; an error annotation is added
+#   rebase fails       → nothing to roll back (no external state changed)
+#   dispatch/PR fails  → delete the pushed release branch
+#   checks/merge fail  → close release PR and delete its branch
+#   tag push fails     → nothing new landed (PR already merged; main bump
+#                        stays, which is safe — PyPI was not touched)
+#   release fails      → roll back: delete remote tag; main keeps the bump
+#                        (force-pushes to main are ruleset-blocked, so the
+#                        failed version number is simply skipped next time)
+#   PyPI fails         → roll back: delete GitHub release, delete remote tag;
+#                        main keeps the bump as above
+#   PyPI succeeds      → no rollback possible; an error annotation is added
 
 on:
   workflow_dispatch:
@@ -54,6 +66,8 @@ on:
 permissions:
   contents: write
   id-token: write
+  pull-requests: write # release PR create/merge/close + rollback
+  actions: write # dispatch pr-tests on the release branch
 
 env:
   UV_SYSTEM_PYTHON: 1
@@ -91,7 +105,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
             COMMIT_SUBJECT=$(git log -1 --pretty=%s)
-            if echo "$COMMIT_SUBJECT" | grep -qiE "^(Bump version|Add release notes)"; then
+            if echo "$COMMIT_SUBJECT" | grep -qiE "^(Bump version to |Add release notes for )"; then
               echo "skip=true" >> $GITHUB_OUTPUT
               echo "Skipping: subject is a version bump/release notes commit"
               exit 0
@@ -103,7 +117,7 @@ jobs:
             fi
             git fetch origin main
             ORIGIN_SUBJECT=$(git log -1 --pretty=%s origin/main)
-            if echo "$ORIGIN_SUBJECT" | grep -qiE "^(Bump version|Add release notes)"; then
+            if echo "$ORIGIN_SUBJECT" | grep -qiE "^(Bump version to |Add release notes for )"; then
               echo "skip=true" >> $GITHUB_OUTPUT
               echo "Skipping: origin/main HEAD subject is a version bump/release notes commit"
               echo "origin/main subject: $ORIGIN_SUBJECT"
@@ -285,7 +299,7 @@ jobs:
           echo "sha=$(git rev-parse origin/main)" >> $GITHUB_OUTPUT
           echo "Pre-push origin/main SHA: $(git rev-parse origin/main)"
 
-      - name: Rebase on origin/main and retag
+      - name: Rebase on origin/main
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         id: rebase
         run: |
@@ -296,30 +310,98 @@ jobs:
             exit 1
           fi
           echo "✓ Rebase successful"
+          # The provisional tag (created before release notes) now points at a
+          # pre-rebase orphan; the authoritative tag is pushed after the PR
+          # merge, on the rebased notes commit that lands on main.
           git tag -d "v${{ env.version_number }}" || true
-          git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}"
-          echo "✓ Tag v${{ env.version_number }} recreated on $(git rev-parse HEAD)"
 
-      - name: Atomic push (branch + tag)
+      - name: Push release branch, dispatch tests, and open release PR
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
-        id: git_push
+        id: release_pr
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git push --atomic origin HEAD:main "refs/tags/v${{ env.version_number }}"
-          echo "✓ Pushed HEAD to main and tag v${{ env.version_number }} atomically"
+          BRANCH="release/v${{ env.version_number }}"
+          git push origin "HEAD:refs/heads/$BRANCH"
+          # Pushes made with GITHUB_TOKEN do not trigger workflow runs, so
+          # the required checks on this PR would never report and auto-merge
+          # would stall. Dispatch the test workflow on the branch explicitly
+          # (same pattern as update-ollama-models).
+          if ! gh workflow run pr-tests.yaml --ref "$BRANCH"; then
+            echo "::error::Could not dispatch pr-tests on $BRANCH; required checks will never report."
+            exit 1
+          fi
+          PR_BODY="Automated release PR for v${{ env.version_number }} (version bump + release notes). Merged automatically once required checks pass; the tag, GitHub release, and PyPI publish steps then run in run ${{ github.run_id }} of the Release Python Package workflow."
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Release v${{ env.version_number }}" \
+            --body "$PR_BODY" \
+            > /dev/null
+          PR_NUMBER=$(gh pr view "$BRANCH" --json number --jq .number)
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "✓ Tests dispatched and release PR #$PR_NUMBER opened from $BRANCH"
 
-      - name: Verify push landed on origin/main
+      - name: Wait for checks and merge release PR
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: pr_merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PR_NUMBER="${{ steps.release_pr.outputs.number }}"
+          if ! gh pr merge "$PR_NUMBER" --rebase --auto --delete-branch=false; then
+            echo "::error::Failed to enable auto-merge on release PR #$PR_NUMBER"
+            exit 1
+          fi
+          echo "Auto-merge enabled; waiting for required checks on PR #$PR_NUMBER..."
+          STATE=""
+          for i in $(seq 1 120); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state --jq .state 2>/dev/null || true)
+            if [ "$STATE" == "MERGED" ] || [ "$STATE" == "CLOSED" ]; then
+              break
+            fi
+            STATE=""
+            sleep 30
+          done
+          if [ "$STATE" != "MERGED" ]; then
+            echo "::error::Release PR #$PR_NUMBER did not merge (state: ${STATE:-unknown})"
+            exit 1
+          fi
+          echo "✓ Release PR #$PR_NUMBER merged"
+
+      - name: Tag release notes commit on main and push tag
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        id: tag_push
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags --force
+          MAIN_SUBJECT=$(git log -1 --pretty=%s origin/main)
+          if [ "$MAIN_SUBJECT" != "Add release notes for ${{ env.version_number }}" ]; then
+            echo "::error::origin/main HEAD is '$MAIN_SUBJECT', expected 'Add release notes for ${{ env.version_number }}'. A concurrent merge may have raced the release PR."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v${{ env.version_number }}" >/dev/null 2>&1; then
+            echo "::error::Tag v${{ env.version_number }} already exists on the remote (leftover from a partial run?). Resolve manually before re-running."
+            exit 1
+          fi
+          git tag -a "v${{ env.version_number }}" -m "Release version ${{ env.version_number }}" origin/main
+          git push origin "refs/tags/v${{ env.version_number }}"
+          echo "✓ Tag v${{ env.version_number }} pushed on $(git rev-parse v${{ env.version_number }}^{commit})"
+
+      - name: Verify release landed on origin/main
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         run: |
           set -euo pipefail
           git fetch origin main --tags --force
           PUSHED_VERSION=$(git show origin/main:pyproject.toml | sed -n 's/^version *= *"\(.*\)"/\1/p' | head -n 1)
           if [ -z "$PUSHED_VERSION" ] || [ "$PUSHED_VERSION" != "${{ env.version_number }}" ]; then
-            echo "::error::origin/main reports version '${PUSHED_VERSION:-not found}', expected '${{ env.version_number }}'. The push did not land; refusing to release."
+            echo "::error::origin/main reports version '${PUSHED_VERSION:-not found}', expected '${{ env.version_number }}'. The release did not land; refusing to publish."
             exit 1
           fi
           if ! git ls-remote --exit-code --tags origin "refs/tags/v${{ env.version_number }}" >/dev/null; then
-            echo "::error::Tag v${{ env.version_number }} does not exist on the remote; refusing to release."
+            echo "::error::Tag v${{ env.version_number }} does not exist on the remote; refusing to publish."
             exit 1
           fi
           echo "✓ origin/main is at version $PUSHED_VERSION and tag v${{ env.version_number }} exists remotely"
@@ -346,20 +428,33 @@ jobs:
 
       - name: Rollback on failure
         if: failure() && github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "::error::Release failed! Attempting automatic rollback..."
           VERSION="v${{ env.version_number }}"
-          PRE_PUSH_SHA="${{ steps.pre_push_state.outputs.sha }}"
+          PR_NUMBER="${{ steps.release_pr.outputs.number }}"
 
           if [ "${{ steps.create_release.outcome }}" == "success" ]; then
             echo "Rolling back: deleting GitHub release $VERSION..."
             gh release delete "$VERSION" --yes || echo "::warning::Failed to delete GitHub release"
           fi
 
-          if [ "${{ steps.git_push.outcome }}" == "success" ]; then
-            echo "Rolling back: removing tag and force-pushing main to $PRE_PUSH_SHA..."
+          if [ "${{ steps.tag_push.outcome }}" == "success" ]; then
+            echo "Rolling back: deleting remote tag $VERSION..."
             git push --delete origin "$VERSION" 2>/dev/null || echo "::warning::Failed to delete remote tag"
-            git push --force origin "$PRE_PUSH_SHA:refs/heads/main" || echo "::warning::Failed to force-push main"
+          fi
+
+          if [ "${{ steps.pr_merge.outcome }}" == "success" ]; then
+            echo "::warning::Release PR already merged, so main carries the version bump. Direct pushes (including force-pushes) to main are blocked by the ruleset, so the bump stays; the failed version number will be skipped by the next release."
+          else
+            if [ -n "$PR_NUMBER" ]; then
+              echo "Rolling back: closing release PR #$PR_NUMBER..."
+              gh pr close "$PR_NUMBER" --delete-branch || echo "::warning::Failed to close release PR"
+            else
+              echo "Rolling back: deleting stale release branch ${{ github.repository }}:release/v${{ env.version_number }} (if pushed)..."
+              git push origin --delete "release/v${{ env.version_number }}" 2>/dev/null || echo "::warning::No remote release branch to delete"
+            fi
           fi
 
           if [ "${{ steps.pypi_publish.outcome }}" == "success" ]; then
