@@ -112,7 +112,7 @@ jobs:
           echo "VERSION_NAME=${{ env.DEFAULT_VERSION_NAME }}" >> $GITHUB_ENV
 
       - name: Setup Python environment
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.13
 
