@@ -1,0 +1,31 @@
+pyproject.toml
+  s_6676e50dedea51::t_fe5ee35e86bc26 72
+docs/releases/v0.19.13.md
+  s_6676e50dedea51::t_54387a67eb1e15 1-15
+.github/workflows/release-python-package.yaml
+  s_6676e50dedea51::t_2b8dc66908245f 108,361,365
+  s_6676e50dedea51::t_8abcc96dfe475a 69-70,120,449-457
+  s_6676e50dedea51::t_c51112f0505834 318,327-335,340,344
+  s_6676e50dedea51::t_dd3972910e64c1 431-432,436,443-444,446-448
+  s_6676e50dedea51::t_19d016201bdeea 3-8,12-18,22-28,35,37-39,45
+  s_6676e50dedea51::t_b38bb2a45e7075 385-391
+  s_6676e50dedea51::t_17e66f37e01efc 302,313-315,319-323,325-326,336-339,341-343,345-346,348-350,353-360,362-364,366-372,374-384,392-393,400,404
+  s_6676e50dedea51::t_2aa19c49f8b966 36,40-44
+  s_6676e50dedea51::t_620d6d8cbf8e2d 324
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2a0dc715e97a0f2806272e921935cf5506cff7a6",
+  "prompts": {},
+  "sessions": {
+    "s_6676e50dedea51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff558f962ffeMzfIBS63IsyPKH",
+        "model": "glm-5.3"
+      },
+      "human_author": null
+    }
+  }
+}
