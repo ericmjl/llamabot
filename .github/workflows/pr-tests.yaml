@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch: # Allow manual trigger, e.g. from the update-ollama-models workflow
 
 env:
   OPENAI_API_KEY: dummy_key
@@ -23,7 +24,7 @@ jobs:
       - name: Check for code changes
         id: changes
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
+          if [[ "${{ github.event_name }}" == "push" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "has-code-changes=true" >> $GITHUB_OUTPUT
           else
             # For pull requests, check if there are non-docs changes
