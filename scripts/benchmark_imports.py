@@ -9,7 +9,14 @@ Run with: pixi run python scripts/benchmark_imports.py
 With --ci: output JSON to benchmark-results.json for CI reporting.
 
 Each benchmark is run in a subprocess to get a clean import
-(no cached modules from previous benchmarks).
+(no cached modules from previous benchmarks). Each import is sampled
+3 times and the fastest sample is reported: CI runners are shared,
+noisy hardware, and single samples wobble by hundreds of milliseconds.
+The minimum is the stable estimate of the import cost itself.
+
+A warmup subprocess (``python -c pass``) runs before the benchmarks so
+that the first timed row does not pay one-time costs (interpreter
+binary + stdlib cold reads) that have nothing to do with llamabot.
 """
 
 import json
@@ -18,8 +25,14 @@ import sys
 import textwrap
 
 
-def bench(label: str, code: str) -> float:
-    """Run *code* in a fresh subprocess and return the elapsed time."""
+def bench(label: str, code: str, samples: int = 3) -> float:
+    """Run *code* in fresh subprocesses and return the fastest elapsed time.
+
+    :param label: Display label for the benchmark.
+    :param code: Python code whose import is timed.
+    :param samples: Number of subprocess samples to take; the minimum is kept.
+    :return: Best elapsed time in seconds, or -1.0 if every sample failed.
+    """
     script = textwrap.dedent(
         f"""\
         import time
@@ -29,17 +42,21 @@ def bench(label: str, code: str) -> float:
         print(f"{{elapsed:.3f}}")
     """
     )
-    result = subprocess.run(
-        [sys.executable, "-c", script],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        print(f"  {label:50s} FAILED")
-        print(f"    stderr: {result.stderr.strip()}")
-        return -1.0
-    elapsed = float(result.stdout.strip().splitlines()[-1])
-    return elapsed
+    best = -1.0
+    for _ in range(samples):
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"  {label:50s} FAILED")
+            print(f"    stderr: {result.stderr.strip()}")
+            continue
+        elapsed = float(result.stdout.strip().splitlines()[-1])
+        if best < 0 or elapsed < best:
+            best = elapsed
+    return best
 
 
 BENCHMARKS = [
@@ -64,9 +81,25 @@ BENCHMARKS = [
 ]
 
 
+def warmup_interpreter() -> None:
+    """Run one untimed subprocess so cold interpreter/stdlib reads do not land on row 1.
+
+    Loading the Python binary and standard library from a cold file system
+    costs hundreds of milliseconds and is identical for every Python
+    program; charging it to the first benchmark row is measurement noise.
+    """
+    subprocess.run(
+        [sys.executable, "-c", "pass"],
+        capture_output=True,
+        text=True,
+    )
+
+
 def main():
     ci_mode = "--ci" in sys.argv
     results = []
+
+    warmup_interpreter()
 
     print("=== llamabot Import Benchmarks ===")
     print(f"{'Import':50s} {'Time':>8s}")
@@ -78,7 +111,8 @@ def main():
             results.append({"label": label, "time_s": round(elapsed, 3)})
 
     print()
-    print("All benchmarks use fresh subprocesses (no module caching).")
+    print("All benchmarks use fresh subprocesses (no module caching);")
+    print("each import is sampled 3 times and the fastest sample is reported.")
 
     if ci_mode:
         with open("benchmark-results.json", "w") as f:
