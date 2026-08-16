@@ -1,0 +1,26 @@
+docs/designs/git-cli/worktree-paths-EARS.md
+  s_6676e50dedea51::t_4b3cc4e87f00cf 1-23
+docs/high-level-design.md
+  s_6676e50dedea51::t_c55fd25878273a 85-89
+docs/designs/git-cli/LLD.md
+  s_6676e50dedea51::t_d3ab62bc8f9f16 1-77
+docs/designs/release-pipeline/LLD.md
+  s_6676e50dedea51::t_9526fae8b033ac 38
+  s_6676e50dedea51::t_102e849dc02cea 1-37,39-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2fdf4c1688d908028588da048387f25c25d80d37",
+  "prompts": {},
+  "sessions": {
+    "s_6676e50dedea51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff558f962ffeMzfIBS63IsyPKH",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
