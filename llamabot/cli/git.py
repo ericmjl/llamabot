@@ -1,6 +1,5 @@
 """Git subcommand for LlamaBot CLI."""
 
-import os
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
@@ -181,23 +180,52 @@ def commitbot(model_name: str = default_language_model()) -> StructuredBot:
     return bot
 
 
+def resolve_git_paths() -> tuple[Path, Path]:
+    """Resolve the git directories of the repository enclosing the cwd.
+
+    Works from any subdirectory and inside linked worktrees, where ``.git``
+    is a file pointing at a per-worktree admin directory rather than the
+    shared repository directory.
+
+    :return: A ``(git_dir, common_dir)`` tuple. ``git_dir`` is the
+        per-worktree admin directory (holds ``HEAD``, ``index``,
+        ``COMMIT_EDITMSG``); ``common_dir`` is the shared repository
+        directory (holds ``config``, ``refs``, ``hooks``). They are equal in
+        a plain checkout.
+    :raises RuntimeError: If the current directory is not inside a git
+        repository.
+    """
+    from git import InvalidGitRepositoryError, Repo
+
+    try:
+        repo = Repo(search_parent_directories=True)
+    except InvalidGitRepositoryError as e:
+        raise RuntimeError(
+            "You must be inside a git repository to use this command. "
+            "Please `cd` into your git repository and try again, "
+            "or use `git init` to create a new repository (if you haven't already)."
+        ) from e
+    return Path(repo.git_dir), Path(repo.common_dir)
+
+
 @gitapp.command()
 def hooks(model_name: str = default_language_model()):
     """Install a commit message hook that runs the commit message through the bot.
 
-    :raises RuntimeError: If the current directory is not a git repository root.
-    """
-    # Check that we are in a repository's root. There should be a ".git" folder.
-    # Use pathlib to verify.
-    if not Path(".git").exists():
-        raise RuntimeError(
-            "You must be in a git repository root folder to use this command. "
-            "Please `cd` into your git repo's root folder and try again, "
-            "or use `git init` to create a new repository (if you haven't already)."
-        )
+    The hook is installed into the shared hooks directory of the enclosing
+    repository, so it is active for the main checkout and all linked
+    worktrees. May be invoked from any subdirectory.
 
-    with open(".git/hooks/prepare-commit-msg", "w+") as f:
-        contents = f"""#!/bin/sh
+    :raises RuntimeError: If the current directory is not inside a git
+        repository.
+    """
+    _, common_dir = resolve_git_paths()
+
+    hooks_dir = common_dir / "hooks"
+    hooks_dir.mkdir(exist_ok=True)
+    hook_path = hooks_dir / "prepare-commit-msg"
+
+    contents = f"""#!/bin/sh
 
 echo "Script started with arguments: $@"
 
@@ -218,20 +246,30 @@ else
     llamabot git compose --model-name {model_name}
 fi
 """
+    with open(hook_path, "w") as f:
         f.write(contents)
-    os.chmod(".git/hooks/prepare-commit-msg", 0o755)
-    typer.echo("Commit message hook successfully installed! 🎉")
+    hook_path.chmod(0o755)
+    typer.echo(f"Commit message hook successfully installed at {hook_path}! 🎉")
 
 
 @gitapp.command()
 def compose(model_name: str = default_language_model()):
-    """Autowrite commit message based on the diff."""
+    """Autowrite commit message based on the diff.
+
+    Writes the composed message to the ``COMMIT_EDITMSG`` of the enclosing
+    repository's per-worktree git directory, so ``git commit`` picks it up
+    in plain checkouts and linked worktrees alike.
+
+    :raises RuntimeError: If the current directory is not inside a git
+        repository.
+    """
     try:
+        git_dir, _ = resolve_git_paths()
         diff = get_git_diff()
         bot = commitbot(model_name)
         response = bot(diff, verbose=True)
         print(response.format())
-        with open(".git/COMMIT_EDITMSG", "w") as f:
+        with open(git_dir / "COMMIT_EDITMSG", "w") as f:
             f.write(response.format().content)
     except Exception as e:
         typer.echo(f"Error encountered: {e}", err=True)
