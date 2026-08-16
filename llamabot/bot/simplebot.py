@@ -442,8 +442,7 @@ def make_response(
     :param messages: A list of Messages.
     :return: A response object.
     """
-    from litellm import completion
-
+    from llamabot.config import configured_litellm
     from llamabot.recorder import Span, get_current_span
 
     current_span = get_current_span()
@@ -457,7 +456,8 @@ def make_response(
         kwargs = completion_kwargs_for_messages(bot, messages, stream)
         llm_span["num_messages"] = len(messages)
         llm_span["stream"] = stream
-        return completion(**kwargs)
+        litellm = configured_litellm()
+        return litellm.completion(**kwargs)
 
 
 async def make_async_response(
@@ -470,8 +470,7 @@ async def make_async_response(
     :param stream: Whether to request a streamed completion from the provider.
     :return: A ``ModelResponse`` or async stream wrapper from LiteLLM.
     """
-    from litellm import acompletion
-
+    from llamabot.config import configured_litellm
     from llamabot.recorder import Span, get_current_span
 
     current_span = get_current_span()
@@ -485,7 +484,8 @@ async def make_async_response(
         kwargs = completion_kwargs_for_messages(bot, messages, stream)
         llm_span["num_messages"] = len(messages)
         llm_span["stream"] = stream
-        return await acompletion(**kwargs)
+        litellm = configured_litellm()
+        return await litellm.acompletion(**kwargs)
 
 
 async def stream_tokens_for_messages(

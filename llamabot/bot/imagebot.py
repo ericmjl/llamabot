@@ -231,9 +231,10 @@ def generate_image_response(bot: ImageBot, prompt: str) -> Any:
     if model_uses_ollama_image_api(bot.model):
         return generate_ollama_image_response(bot, prompt)
 
-    from litellm import image_generation
+    from llamabot.config import configured_litellm
 
-    return image_generation(**image_generation_kwargs_for_bot(bot, prompt))
+    litellm = configured_litellm()
+    return litellm.image_generation(**image_generation_kwargs_for_bot(bot, prompt))
 
 
 def model_uses_ollama_image_api(model_name: str) -> bool:
