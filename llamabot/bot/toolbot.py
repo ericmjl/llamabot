@@ -1,5 +1,7 @@
 """ToolBot - A single-turn bot that can execute tools and :class:`AsyncToolBot`."""
 
+from __future__ import annotations
+
 from typing import AsyncGenerator, Callable, Dict, List, Optional, Union
 
 from loguru import logger
@@ -16,7 +18,6 @@ from llamabot.bot.simplebot import (
 from llamabot.components.chat_memory import ChatMemory
 from llamabot.components.messages import AIMessage, BaseMessage
 from llamabot.components.tools import DEFAULT_TOOLS
-from llamabot.mcp.manager import MCPClientManager
 from llamabot.mcp.specs import MCPIntegrationOptions, MCPServerConfig
 from llamabot.prompt_manager import prompt
 
@@ -103,9 +104,14 @@ class ToolBot(SimpleBot):
             **completion_kwargs,
         )
 
-        self._mcp_manager: MCPClientManager | None = None
+        self._mcp_manager = None
         mcp_tool_list: List[Callable] = []
         if mcp_servers:
+            # Imported lazily: pulling in the MCP client stack at module level
+            # would tax every `from llamabot import ToolBot` even when no MCP
+            # servers are configured.
+            from llamabot.mcp.manager import MCPClientManager
+
             self._mcp_manager = MCPClientManager(mcp_servers, mcp_options)
             self._mcp_manager.start()
             mcp_tool_list = self._mcp_manager.llamabot_tools()
