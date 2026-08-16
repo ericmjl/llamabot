@@ -1,0 +1,20 @@
+.github/workflows/pr-tests.yaml
+  s_caff89419416d5::t_bb607a1119a9d6 139-140
+  s_caff89419416d5::t_c834861f4cce96 179-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2208b59f7332b17077e154fdaced31d7a6877426",
+  "prompts": {},
+  "sessions": {
+    "s_caff89419416d5": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff7d68182ffezAlkeRQ3QblrNf",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
