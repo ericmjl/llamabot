@@ -1,0 +1,20 @@
+llamabot/bot/toolbot.py
+  s_c68e7716413823::t_7474fb449ca144 3-4
+  s_c68e7716413823::t_7b7c0e3a9d62b4 107,110-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d9ca80385f150172dc3e6a6ecfc2117600ec22cd",
+  "prompts": {},
+  "sessions": {
+    "s_c68e7716413823": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ff5c27b34ffeQM5qlUM0sk9d3N",
+        "model": "glm-5.3"
+      },
+      "human_author": "Eric Ma <ericmajinglong@gmail.com>"
+    }
+  }
+}
