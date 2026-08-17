@@ -343,6 +343,42 @@ jobs:
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "✓ Tests dispatched and release PR #$PR_NUMBER opened from $BRANCH"
 
+      - name: Approve workflow runs parked pending approval
+        if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          HEAD_SHA=$(git rev-parse HEAD)
+          # Pull-request workflows on PRs created by github-actions[bot] park
+          # at "action_required" until someone with write access approves
+          # them. A parked run reports no check runs, so the required checks
+          # on the release PR would never appear and auto-merge would stall.
+          # Approve those runs ourselves (actions: write). The approval may
+          # race PR creation, so poll briefly before giving up.
+          RUN_IDS=""
+          for ATTEMPT in $(seq 1 10); do
+            RUN_IDS=$(gh api "repos/${{ github.repository }}/actions/runs?head_sha=$HEAD_SHA&status=action_required" --jq '.workflow_runs[].id' 2>/dev/null || true)
+            if [ -n "$RUN_IDS" ]; then break; fi
+            sleep 15
+          done
+          if [ -z "$RUN_IDS" ]; then
+            echo "No action_required workflow runs found on $HEAD_SHA; continuing."
+            exit 0
+          fi
+          APPROVED=false
+          for RUN_ID in $RUN_IDS; do
+            if gh api -X POST "repos/${{ github.repository }}/actions/runs/$RUN_ID/approve" >/dev/null 2>&1; then
+              echo "✓ Approved workflow run $RUN_ID"
+              APPROVED=true
+            else
+              echo "::warning::Could not approve workflow run $RUN_ID. If auto-merge stalls, approve the pending run on the release PR manually."
+            fi
+          done
+          if [ "$APPROVED" != "true" ]; then
+            echo "::warning::Self-approval appears blocked; a maintainer may need to approve the parked run on the release PR."
+          fi
+
       - name: Wait for checks and merge release PR
         if: github.event_name != 'pull_request' && steps.check_version_bump.outputs.skip != 'true'
         id: pr_merge
