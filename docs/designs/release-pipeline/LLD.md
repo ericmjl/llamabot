@@ -33,7 +33,7 @@ Key invariants and the mechanisms that enforce them:
 | --- | --- |
 | A rejected push/merge can never be swallowed again | Every mutation step sets `set -euo pipefail` (the `bash -l {0}` default shell does not). |
 | PyPI is touched only when `main` actually carries the release | A verification gate re-fetches `origin/main`, asserts its `pyproject.toml` version equals the release version, and asserts the tag exists remotely — before the GitHub release and PyPI steps. |
-| Required checks report on the release PR | `pr-tests.yaml` is dispatched explicitly on the release branch, because pushes made with `GITHUB_TOKEN` do not trigger workflow runs (same pattern as `update-ollama-models`). |
+| Required checks report on the release PR | Pull-request workflows on PRs created by `github-actions[bot]` park at `action_required`; a parked run reports no check runs. The workflow approves its parked runs via the Actions API (`actions: write`) right after opening the PR, so the PR's own `pr-tests` run executes and reports every required check name (the release PR touches `pyproject.toml`, which `check-changes` classifies as code). A `workflow_dispatch` of `pr-tests` on the release branch runs as belt-and-braces, but dispatch check runs are not credited toward the PR's required checks. |
 | The tag points at the notes commit that is `main` HEAD | The tag step asserts `origin/main` HEAD subject is exactly `Add release notes for X` before tagging; rebase merges preserve commit subjects verbatim. |
 | Bot maintenance does not churn releases | The `workflow_run` trigger skips auto-release when the triggering commit subject starts with `Bump version to`, `Add release notes for`, `chore(deps):`, or `chore: update Ollama models list`. |
 
