@@ -45,3 +45,4 @@ Force-pushes to `main` are ruleset-blocked, so rollback never attempts them. If 
 
 - The `v0.19.13` tag points at `f9caad8a` (the commit the original run tagged) rather than a commit carrying the 0.19.13 bump. Cosmetic; a manual retag is optional.
 - After a post-merge failure, the stranded version number is consumed on `main` but never reaches PyPI. The release notes file for it remains in `docs/releases/`.
+- ~~Docs-only PRs could not satisfy the required-checks ruleset~~ — resolved 2026-08-18 by removing the test-matrix skip gate (#402): every PR now receives the full check rollup regardless of which files changed.
