@@ -22,6 +22,7 @@ This ensures that the most important and frequently needed guidance is easily ac
 
 ## User Corrections Log
 
+- 2026-08-18: **Commit messages must state the intent (the "why"), not just the "what".** Every commit message written from now on should explain why the change is being made (the problem, constraint, or goal it serves), in addition to describing what changed.
 - 2026-03-24: Keep `uv`-based CI testing in `.github/workflows/pr-tests.yaml`, but do not keep `uv.lock` in the repository.
 - 2026-03-28: Do not add pytest coverage for standalone demos (e.g. FastAPI + HTMX examples under `docs/examples/`). Tests target library and CLI behavior; demos are exercised manually or via documentation.
 - 2026-03-28: Prefer **not** running the full test suite locally (`pixi run test`, etc.); let **GitHub Actions CI** validate tests. Agents should skip long local pytest runs unless the user explicitly asks for them.
@@ -191,6 +192,8 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 
 - **Functional over OOP**: Prefer functional programming except for Bot
   classes (PyTorch-like parameterized callables)
+- **Commit Messages**: State the intent — why the change is being made (the
+  problem, constraint, or goal it serves) — in addition to what changed.
 - **Docstrings**: Use Sphinx-style arguments (`:param arg: description`)
 - **Testing**: Always add tests when making code changes (tests mirror
   source structure in `tests/` directory)
