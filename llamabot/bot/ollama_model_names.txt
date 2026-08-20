@@ -1,3 +1,4 @@
+ornith-1.5
 qwen3.8
 nemotron-3.5-lightning
 muse-glimmer
@@ -43,8 +44,8 @@ nomic-embed-text-v2-moe
 rnj-1
 devstral-small-2
 devstral-2
-mistral-large-3
 ministral-3
+mistral-large-3
 deepseek-ocr
 cogito-2.1
 gpt-oss-safeguard
