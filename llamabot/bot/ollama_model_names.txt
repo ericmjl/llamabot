@@ -1,3 +1,13 @@
+clef-flash
+clef
+tev1
+nimble
+deepseek-v4.1-flash
+qwen3.8-flash-next
+glm-5.3-flash
+ornith-1.5
+glm-5.3
+granite4.2
 qwen3.8
 nemotron-3.5-lightning
 muse-glimmer
@@ -18,12 +28,10 @@ mistral-medium-3.5
 granite4.1
 nemotron3
 deepseek-v4-pro
-deepseek-v4-flash
 laguna-xs.2
 qwen3.6
 medgemma1.5
 medgemma
-glm-5.1
 kimi-k2.6
 nemotron-cascade-2
 minimax-m2.7
@@ -40,8 +48,8 @@ olmo-3.1
 nemotron-3-nano
 olmo-3
 nomic-embed-text-v2-moe
-rnj-1
 devstral-small-2
+rnj-1
 devstral-2
 mistral-large-3
 ministral-3
