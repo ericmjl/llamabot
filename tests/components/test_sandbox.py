@@ -7,6 +7,8 @@ import pytest
 
 from llamabot.components.sandbox import ScriptExecutor, ScriptMetadata
 
+pytestmark = pytest.mark.requires_docker
+
 
 @pytest.fixture
 def script_metadata():

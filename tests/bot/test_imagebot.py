@@ -1,9 +1,10 @@
 """Test the ImageBot class."""
 
 import base64
+import sys
 from io import BytesIO
-from types import SimpleNamespace
-from unittest.mock import patch
+from types import ModuleType, SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from PIL import Image
 
@@ -121,22 +122,31 @@ def test_call_forwards_litellm_provider_kwargs(mocker):
 
 def test_call_in_jupyter():
     """Test the call method when running in a Jupyter notebook."""
-    with patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=True):
-        with patch("IPython.display.Image") as mock_image:
-            with patch("IPython.display.display") as mock_display:
+    image_display = MagicMock(name="Image")
+    display = MagicMock(name="display")
+    fake_display_module = ModuleType("IPython.display")
+    fake_display_module.Image = image_display
+    fake_display_module.display = display
+    fake_ipython = ModuleType("IPython")
+    fake_ipython.display = fake_display_module
+    test_url = "http://image.url"
+
+    with patch.dict(
+        sys.modules,
+        {"IPython": fake_ipython, "IPython.display": fake_display_module},
+    ):
+        with patch("llamabot.bot.imagebot.is_running_in_jupyter", return_value=True):
+            with patch(
+                "litellm.image_generation",
+                return_value=image_response(url=test_url),
+            ):
                 bot = ImageBot()
-                test_url = "http://image.url"
+                result = bot("test prompt")
 
-                with patch(
-                    "litellm.image_generation",
-                    return_value=image_response(url=test_url),
-                ):
-                    result = bot("test prompt")
-
-                assert isinstance(result, ImageReference)
-                assert result == test_url
-                mock_image.assert_called_once_with(url=test_url)
-                mock_display.assert_called_once_with(mock_image.return_value)
+    assert isinstance(result, ImageReference)
+    assert result == test_url
+    image_display.assert_called_once_with(url=test_url)
+    display.assert_called_once_with(image_display.return_value)
 
 
 def test_call_prepends_style_to_prompt(mocker):

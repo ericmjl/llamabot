@@ -51,19 +51,18 @@ def magic_load_doc(file_path: Path) -> str:
 def split_document(
     doc: str,
 ) -> List[str]:
-    """Split a document into sub-documents using token text splitter.
+    """Split a document into sub-documents with semantic chunking.
 
-    This function is used to split a document
-    into sub-documents using token text splitter,
-    such that each sub-document has a maximum length of `chunk_size` tokens
-    with `chunk_overlap` tokens overlap.
+    Blank text has no sentences to embed. ``SemanticChunker`` returns an empty
+    list for that input, but only after its constructor loads an embedding
+    model, so blank documents return immediately.
 
     :param doc: Document to be split.
-    :param chunk_size: Maximum length of each sub-document.
-    :param chunk_overlap: Number of tokens to overlap between each sub-document.
-    :raises ValueError: If `chunk_overlap` is negative.
     :return: A list of sub-documents.
     """
+    if not doc or doc.isspace():
+        return []
+
     chunker = SemanticChunker(
         threshold=0.5,  # Similarity threshold (0-1)
         chunk_size=2048,  # Maximum tokens per chunk

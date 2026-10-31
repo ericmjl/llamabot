@@ -146,6 +146,76 @@ def test_turbovec_n_results_capped(turbovec_store):
     assert len(results) == 2
 
 
+class FakeTransformer:
+    """Embedder double that records construction and reports a fixed width.
+
+    :param name: Sentence-transformers model name.
+    """
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def get_sentence_embedding_dimension(self) -> int:
+        """Return a fixed vector width.
+
+        :return: Embedding dimension.
+        """
+        return 8
+
+
+def test_shared_sentence_transformer_reuses_loaded_model(monkeypatch):
+    """The same model name must not construct a second transformer."""
+    from llamabot.components import docstore
+
+    constructed: list[str] = []
+
+    class RecordingTransformer(FakeTransformer):
+        """Count how many times the cache constructs a transformer.
+
+        :param name: Sentence-transformers model name.
+        """
+
+        def __init__(self, name: str) -> None:
+            constructed.append(name)
+            super().__init__(name)
+
+    monkeypatch.setattr(docstore, "SENTENCE_TRANSFORMER_CACHE", {})
+    monkeypatch.setattr(
+        "sentence_transformers.SentenceTransformer",
+        RecordingTransformer,
+    )
+
+    first = docstore.shared_sentence_transformer("fake-model")
+    second = docstore.shared_sentence_transformer("fake-model")
+
+    assert first is second
+    assert constructed == ["fake-model"]
+
+
+def test_turbovec_stores_share_sentence_transformer(tmp_path, monkeypatch):
+    """Two stores use the shared transformer instead of loading it twice."""
+    from llamabot.components import docstore
+
+    shared = FakeTransformer("fake-model")
+
+    def loader(model_name: str) -> FakeTransformer:
+        """Return the one shared double for any requested model.
+
+        :param model_name: Model name requested by the store.
+        :return: The shared transformer double.
+        """
+        assert model_name == "minishlab/potion-base-8M"
+        return shared
+
+    monkeypatch.setattr(docstore, "shared_sentence_transformer", loader)
+
+    store1 = TurboVecDocStore(table_name="share-one", storage_path=tmp_path / "one")
+    store2 = TurboVecDocStore(table_name="share-two", storage_path=tmp_path / "two")
+
+    assert store1.embedder is shared
+    assert store2.embedder is shared
+
+
 def test_turbovec_import_error(tmp_path, monkeypatch):
     """Test that missing turbovec raises ImportError with helpful message."""
     import builtins

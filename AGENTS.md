@@ -247,6 +247,7 @@ The CLI is built with Typer and organized in `llamabot/cli/`:
 - **Exclusions**: Tests marked with `llm_eval` are excluded from default runs
 - **Structure**: Tests mirror the source structure in the `tests/` directory
 - **Demos**: Standalone example apps under `docs/examples/` (and similar) do **not** require dedicated pytest modules; avoid adding `tests/test_*_demo*.py` for them unless the maintainer explicitly asks.
+- **Duration**: Unit tests should finish in under 0.5s. Mock embedding-model loads, network calls (including GitHub fetches), and LLM provider calls. Tests that are slow on purpose — Docker sandbox execution, an intentional timeout, and ``requires_ollama`` model calls — stay real. Mark Docker-dependent tests with ``requires_docker`` so they skip when no daemon is running.
 
 ### Packaging
 
