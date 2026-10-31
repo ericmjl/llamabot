@@ -237,7 +237,8 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          pixi run llamabot configure default-model --model-name="${{ secrets.DEFAULT_LANGUAGE_MODEL }}"
+          echo "Release notes model: ${{ vars.RELEASE_NOTES_MODEL || 'gpt-5.2' }}"
+          pixi run llamabot configure default-model --model-name="${{ vars.RELEASE_NOTES_MODEL || 'gpt-5.2' }}"
           pixi run llamabot git write-release-notes
 
       - name: Commit release notes
