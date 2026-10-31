@@ -14,12 +14,37 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import slugify
 
 if TYPE_CHECKING:
     import numpy as np
+
+
+SENTENCE_TRANSFORMER_CACHE: dict[str, Any] = {}
+
+
+def shared_sentence_transformer(model_name: str) -> Any:
+    """Return a process-wide sentence transformer for one model name.
+
+    Constructing ``SentenceTransformer`` reloads the same weights for every
+    store. Stores that use one model share a single instance so opening a
+    second store does not load the model again. Embedding results are unchanged.
+
+    :param model_name: Sentence-transformers model name.
+    :return: Loaded transformer, reused on later calls with the same name.
+    :raises ImportError: If sentence-transformers is not installed.
+    """
+    cached = SENTENCE_TRANSFORMER_CACHE.get(model_name)
+    if cached is not None:
+        return cached
+
+    from sentence_transformers import SentenceTransformer
+
+    transformer = SentenceTransformer(model_name)
+    SENTENCE_TRANSFORMER_CACHE[model_name] = transformer
+    return transformer
 
 
 class AbstractDocumentStore:
@@ -660,7 +685,7 @@ class TurboVecDocStore(AbstractDocumentStore):
             )
 
         try:
-            from sentence_transformers import SentenceTransformer
+            self.embedder = shared_sentence_transformer(embedding_model)
         except ImportError:
             raise ImportError(
                 "sentence-transformers is required for TurboVecDocStore. "
@@ -668,7 +693,6 @@ class TurboVecDocStore(AbstractDocumentStore):
             )
 
         self.embedding_model_name = embedding_model
-        self.embedder = SentenceTransformer(embedding_model)
         self.dim = self.embedder.get_sentence_embedding_dimension()
 
         table_name = slugify.slugify(table_name, separator="-")

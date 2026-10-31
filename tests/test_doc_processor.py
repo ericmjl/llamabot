@@ -1,6 +1,7 @@
 """Tests for doc_processor.py."""
 
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 from pytest_mock import mocker  # noqa: F401
@@ -62,14 +63,32 @@ def test_magic_load_doc_unknown(unknown_file: Path):
     assert result == "This is a test file with an unknown extension."
 
 
-def test_split_document_empty_text():
-    """Test split_document with empty text.
+@pytest.mark.parametrize("doc", ["", "   ", "\n\t"])
+def test_split_document_empty_text(doc: str):
+    """Blank documents return no chunks and do not load an embedding model.
 
-    This test tests that split_document returns an empty list
-    when the text of the Document object is empty.
+    :param doc: Empty or whitespace-only document text.
     """
-    doc = ""
+    with patch("llamabot.doc_processor.SemanticChunker") as chunker_cls:
+        result = split_document(doc)
 
-    result = split_document(doc)
+    assert result == []
+    chunker_cls.assert_not_called()
 
-    assert len(result) == 0
+
+def test_split_document_returns_chunk_texts():
+    """Non-empty documents are the chunk texts produced by SemanticChunker."""
+    first = Mock(text="alpha")
+    second = Mock(text="beta")
+    chunker = Mock()
+    chunker.chunk.return_value = [first, second]
+    document = "Alpha is here. Beta is there."
+
+    with patch(
+        "llamabot.doc_processor.SemanticChunker", return_value=chunker
+    ) as chunker_cls:
+        result = split_document(document)
+
+    assert result == ["alpha", "beta"]
+    chunker_cls.assert_called_once()
+    chunker.chunk.assert_called_once_with(document)

@@ -6,6 +6,7 @@ from llamabot.components.messages import user, assistant
 from llamabot.components.chat_memory.selectors import (
     LinearNodeSelector,
     LLMNodeSelector,
+    NodeSelection,
 )
 from unittest.mock import patch
 
@@ -132,8 +133,23 @@ def test_llm_selector_select_parent_single_candidate():
     assert result == 1
 
 
+def selector_bot_stand_in(call_result=None, call_error: Exception | None = None):
+    """Build a StructuredBot stand-in that does not contact a model provider.
+
+    :param call_result: Value returned when the stand-in is called.
+    :param call_error: Exception raised when the stand-in is called.
+    :return: Mock used as the object returned by ``StructuredBot(...)``.
+    """
+    bot = Mock()
+    if call_error is not None:
+        bot.side_effect = call_error
+    else:
+        bot.return_value = call_result
+    return bot
+
+
 def test_llm_selector_select_parent_multiple_candidates():
-    """Test LLM selector with multiple candidates."""
+    """A valid model choice is returned even when it is not the newest node."""
     selector = LLMNodeSelector(model="gpt-4o-mini")
     graph = nx.DiGraph()
 
@@ -147,9 +163,18 @@ def test_llm_selector_select_parent_multiple_candidates():
     graph.add_node(3, node=Mock(message=a3, parent_id=2))
 
     message = user("What's the weather?")
-    result = selector.select_parent(graph, message)
-    # Should return one of the valid candidates (most likely 3 as most recent)
-    assert result in [1, 2, 3]
+    # Node 1 is valid and is not the fallback (the most recent candidate).
+    selection = NodeSelection(
+        selected_node_id=1, reasoning="The greeting is the relevant parent."
+    )
+    stand_in = selector_bot_stand_in(call_result=selection)
+    with patch(
+        "llamabot.bot.structuredbot.StructuredBot",
+        return_value=stand_in,
+    ):
+        result = selector.select_parent(graph, message)
+    assert result == 1
+    stand_in.assert_called_once()
 
 
 def test_llm_selector_select_parent_llm_invalid_response():
@@ -165,10 +190,13 @@ def test_llm_selector_select_parent_llm_invalid_response():
     graph.add_node(2, node=Mock(message=a2, parent_id=1))
 
     message = user("What's the weather?")
-    # Patch StructuredBot.__call__ so any instance returns an invalid node id
+    # A dict has no selected_node_id attribute, so selection fails closed.
+    stand_in = selector_bot_stand_in(
+        call_result={"selected_node_id": 999, "reasoning": "Invalid node"}
+    )
     with patch(
-        "llamabot.bot.structuredbot.StructuredBot.__call__",
-        return_value={"selected_node_id": 999, "reasoning": "Invalid node"},
+        "llamabot.bot.structuredbot.StructuredBot",
+        return_value=stand_in,
     ):
         result = selector.select_parent(graph, message)
         # Should fall back to most recent valid node
@@ -188,10 +216,10 @@ def test_llm_selector_select_parent_llm_exception():
     graph.add_node(2, node=Mock(message=a2, parent_id=1))
 
     message = user("What's the weather?")
-    # Patch StructuredBot.__call__ to raise an exception
+    stand_in = selector_bot_stand_in(call_error=Exception("LLM error"))
     with patch(
-        "llamabot.bot.structuredbot.StructuredBot.__call__",
-        side_effect=Exception("LLM error"),
+        "llamabot.bot.structuredbot.StructuredBot",
+        return_value=stand_in,
     ):
         result = selector.select_parent(graph, message)
         # Should fall back to most recent valid node

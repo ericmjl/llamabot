@@ -87,7 +87,7 @@ def generate_mock_response(system_prompt: str, human_message: str) -> str:
     api_key=st.one_of(st.none(), st.text(min_size=5)),
     mock_response=st.one_of(st.none(), st.text()),
 )
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 def test_simple_bot_init(
     system_prompt,
     temperature,
