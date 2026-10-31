@@ -124,8 +124,10 @@ jobs:
   import-benchmark:
     runs-on: ubuntu-latest
     name: Import time benchmark
-    # PR-only: the job posts its results as a PR comment.
-    if: ${{ github.event_name == 'pull_request' }}
+    # Required status check. A skipped job does not satisfy the ruleset,
+    # so the benchmark runs on every trigger, including the
+    # workflow_dispatch the Ollama models bot uses. The sticky comment is
+    # the only step that needs a pull request.
     permissions:
       pull-requests: write
 
@@ -144,6 +146,7 @@ jobs:
 
       - name: Build comment body
         id: comment
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           python -c "
           import json
@@ -161,6 +164,7 @@ jobs:
           "
 
       - name: Post import timings as PR comment
+        if: ${{ github.event_name == 'pull_request' }}
         uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: import-benchmark
