@@ -31,7 +31,7 @@ def __init__(
 
 - **system_prompt** (`str`): The system prompt to use for the bot. This defines the bot's behavior and tool selection strategy.
 
-- **model_name** (`str`): The name of the model to use. Must support function calling. Examples: `"gpt-5.2"`, `"gpt-5.2"`, `"anthropic/claude-3-5-sonnet"`.
+- **model_name** (`str`): The name of the model to use. Must support function calling. Examples: `"gpt-5.2"`, `"anthropic/claude-3-5-sonnet"`.
 
 - **tools** (`Optional[List[Callable]]`, default: `None`): Optional list of additional tools to include. Tools should be decorated with `@tool` or be callable functions. Default tools (`today_date`, `respond_to_user`, `return_object_to_user`, `inspect_globals`) are automatically included.
 
