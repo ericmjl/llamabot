@@ -26,9 +26,8 @@ def kgbot_sysprompt() -> str:
 class KGBot(SimpleBot):
     """KGBot is the Knowledge Graph bot.
 
-    Tested with mistral-medium.
-
     It takes in a chunk of text and returns a JSON of triplets.
+    The model comes from :func:`llamabot.config.default_language_model`.
     """
 
     def __init__(self):

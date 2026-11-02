@@ -255,7 +255,7 @@ def calculate_sum(a: int, b: int) -> int:
 
 bot = lmb.ToolBot(
     system_prompt="You are a calculator.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     tools=[calculate_sum]
 )
 
@@ -279,7 +279,7 @@ def respond_to_user(response: str) -> str:
 
 bot = lmb.AgentBot(
     tools=[search_web, respond_to_user],
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 result = bot("Search for AI news and summarize")

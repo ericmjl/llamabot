@@ -80,7 +80,7 @@ def _():
     linkedin = SimpleBot(
         system_prompt=system_prompt,
         stream_target="stdout",  # this is the default!,
-        model_name="gpt-4-0125-preview",
+        model_name="gpt-5.2",
     )
     return SimpleBot, linkedin, system_prompt
 

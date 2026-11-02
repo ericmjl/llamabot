@@ -106,7 +106,7 @@ import llamabot as lmb
 system_prompt = "You are Richard Feynman. You will be given a difficult concept, and your task is to explain it back."
 feynman = lmb.SimpleBot(
   system_prompt,
-  model_name="gpt-4.1-mini"
+  model_name="gpt-5.2"
 )
 ```
 
@@ -207,12 +207,12 @@ system_prompt = "You are Richard Feynman. You will be given a difficult concept,
 memory = lmb.ChatMemory()
 
 # For intelligent threading (uses LLM for smart connections)
-# memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+# memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 
 feynman = lmb.SimpleBot(
     system_prompt,
     memory=memory,
-    model_name="gpt-4.1-mini"
+    model_name="gpt-5.2"
 )
 
 # Have a conversation
@@ -241,7 +241,7 @@ from llamabot.components.tools import write_and_execute_code
 # Create a ToolBot with code execution capabilities
 bot = lmb.ToolBot(
     system_prompt="You are a data analysis assistant.",
-    model_name="gpt-4.1",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())],
     memory=lmb.ChatMemory(),
 )
@@ -289,7 +289,7 @@ bot = lmb.QueryBot(
   system_prompt="You are an expert on Eric Ma's blog.",
   docstore=docstore,
   # Optional:
-  # model_name="gpt-4.1-mini"
+  # model_name="gpt-5.2"
   # or
   # model_name="ollama_chat/mistral"
 )
@@ -310,7 +310,7 @@ bot = lmb.QueryBot(
   system_prompt="You are an expert on Eric Ma's blog",
   docstore=docstore,
   # Optional:
-  # model_name="gpt-4.1-mini"
+  # model_name="gpt-5.2"
   # or
   # model_name="ollama_chat/mistral"
 )
@@ -340,7 +340,7 @@ class Person(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract person information from text.",
     pydantic_model=Person,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 # The bot will return a validated Person object
@@ -389,7 +389,7 @@ import llamabot as lmb
 # Create a bot that can analyze images
 vision_bot = lmb.SimpleBot(
     "You are an expert image analyst. Describe what you see in detail.",
-    model_name="gpt-4o"  # Use a vision-capable model
+    model_name="gpt-5.2"  # Use a vision-capable model
 )
 
 # Pass an image file path using lmb.user()
@@ -418,7 +418,7 @@ import llamabot as lmb
 # Create a bot for code development
 dev_bot = lmb.SimpleBot(
     "You are a helpful coding assistant. Help with development tasks.",
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 # Use dev() for development context
@@ -467,7 +467,7 @@ def response_length(response) -> int:
 
 with lmb.Experiment(name="llama_jokes") as exp:
     # You would have written this outside of the context manager anyways!
-    bot = lmb.SimpleBot(sysprompt(), model_name="gpt-4o")
+    bot = lmb.SimpleBot(sysprompt(), model_name="gpt-5.2")
     response = bot(joke_about("cars"))
     _ = response_length(response)
 ```

@@ -30,7 +30,7 @@ Next, we need to create an instance of the `QueryBot` class. You can do this by 
 
 ```python
 system_message = "You are a helpful assistant that can answer questions based on the provided documents."
-model_name = "gpt-4"
+model_name = "gpt-5.2"
 doc_paths = ["document1.txt", "document2.txt"]
 
 query_bot = QueryBot(system_message, model_name=model_name, document_paths=doc_paths)
@@ -85,7 +85,7 @@ from llamabot.recorder import PromptRecorder, autorecord
 from llamabot.bot.querybot import QueryBot
 
 system_message = "You are a helpful assistant that can answer questions based on the provided documents."
-model_name = "gpt-4"
+model_name = "gpt-5.2"
 doc_paths = ["document1.txt", "document2.txt"]
 
 query_bot = QueryBot(system_message, model_name=model_name, document_paths=doc_paths)

@@ -22,7 +22,7 @@ def __init__(
     tools: List[Callable],
     decide_node: Optional[DecideNode] = None,
     system_prompt: Optional[str] = None,
-    model_name: str = "gpt-4o-mini",
+    model_name: str = "gpt-5.2",
     max_iterations: Optional[int] = None,
     mcp_servers: Optional[List[MCPServerConfig]] = None,
     mcp_options: Optional[MCPIntegrationOptions] = None,
@@ -38,7 +38,7 @@ def __init__(
 
 - **system_prompt** (`Optional[str]`, default: `None`): System prompt string for decision-making. Only used if `decide_node` is not provided. Ignored if `decide_node` is provided.
 
-- **model_name** (`str`, default: `"gpt-4o-mini"`): The name of the model to use for decision-making and tool selection.
+- **model_name** (`str`, default: `"gpt-5.2"`): The name of the model to use for decision-making and tool selection.
 
 - **chat_memory** (`Optional[ChatMemory]`, default: `None`): Chat memory component for maintaining conversation context.
 
@@ -113,7 +113,7 @@ def respond_to_user(response: str) -> str:
 
 bot = lmb.AgentBot(
     tools=[search_web, respond_to_user],
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 result = bot("Research the latest developments in AI and summarize them")
@@ -186,7 +186,7 @@ def respond_to_user(response: str) -> str:
 
 agent = lmb.AgentBot(
     tools=[get_weather, respond_to_user],
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 result = agent("What's the weather in New York?")
@@ -205,7 +205,7 @@ def analyze_data(data: str) -> str:
 agent = lmb.AgentBot(
     tools=[analyze_data],
     system_prompt="You are a data analysis expert.",
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 ```
 
@@ -223,7 +223,7 @@ def my_tool(arg: str) -> str:
 agent = lmb.AgentBot(
     tools=[my_tool],
     chat_memory=memory,
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 ```
 

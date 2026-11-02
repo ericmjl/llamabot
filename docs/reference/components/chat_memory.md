@@ -39,14 +39,14 @@ def __init__(
 
 ```python
 @classmethod
-def threaded(cls, model: str = "gpt-4o-mini", **kwargs) -> "ChatMemory"
+def threaded(cls, model: str = "gpt-5.2", **kwargs) -> "ChatMemory"
 ```
 
 Create ChatMemory with LLM-based threading.
 
 #### Parameters
 
-- **model** (`str`, default: `"gpt-4o-mini"`): LLM model name for node selection and summarization
+- **model** (`str`, default: `"gpt-5.2"`): LLM model name for node selection and summarization
 - **kwargs**: Additional arguments passed to ChatMemory constructor
 
 #### Returns
@@ -59,7 +59,7 @@ Create ChatMemory with LLM-based threading.
 import llamabot as lmb
 
 # Create threaded memory
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 ```
 
 ## Methods
@@ -205,7 +205,7 @@ Intelligent memory that connects related conversation topics:
 ```python
 import llamabot as lmb
 
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 ```
 
 **Characteristics:**
@@ -237,7 +237,7 @@ recent = memory.retrieve("", n_results=5)
 ```python
 import llamabot as lmb
 
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 
 memory.append(HumanMessage(content="What is Python?"))
 memory.append(AIMessage(content="Python is a programming language."))
@@ -259,7 +259,7 @@ memory = lmb.ChatMemory()
 bot = lmb.SimpleBot(
     system_prompt="You are helpful.",
     memory=memory,
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 # Bot automatically uses memory

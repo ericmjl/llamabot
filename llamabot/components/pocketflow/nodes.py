@@ -254,7 +254,7 @@ class DecideNode(Node):
         self,
         tools: List[Callable],
         system_prompt: str,
-        model_name: str = "gpt-4.1",
+        model_name: str = "gpt-5.2",
         max_iterations: Optional[int] = None,
         *args,
         **completion_kwargs,

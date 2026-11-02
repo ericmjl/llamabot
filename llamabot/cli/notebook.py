@@ -23,7 +23,7 @@ explanation_description = """
 The explanation of the code cell. Should be at most one paragraph."""
 
 
-def explainer_bot(model_name: str = "o1-preview") -> SimpleBot:
+def explainer_bot(model_name: str = "gpt-5.2") -> SimpleBot:
     """Create a bot that explains the code in a notebook.
 
     :param model_name: The name of the model to use.
@@ -93,9 +93,7 @@ def provide_content(cell_source: str, previous_cells: list, upcoming_cells: list
 
 
 @app.command()
-def explain(
-    notebook_path: Path, overwrite: bool = False, model_name: str = "o1-preview"
-):
+def explain(notebook_path: Path, overwrite: bool = False, model_name: str = "gpt-5.2"):
     """
     Explain the code cells in a Jupyter notebook and create a new notebook with explanations.
 

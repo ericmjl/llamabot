@@ -39,7 +39,7 @@ def __init__(
 
 - **memory** (`Optional[AbstractDocumentStore]`, default: `None`): An optional chat memory component to use. If provided, the bot will retain chat history. For conversational memory, use `ChatMemory` (e.g., `lmb.ChatMemory()`). For RAG/document retrieval, use an `AbstractDocumentStore` (such as `BM25DocStore` or `LanceDBDocStore`).
 
-- **model_name** (`str`, default: `default_language_model()`): The name of the model to use. Supports all models from LiteLLM. Examples: `"gpt-4o-mini"`, `"ollama_chat/llama2:13b"`, `"anthropic/claude-3-5-sonnet"`.
+- **model_name** (`str`, default: `default_language_model()`): The name of the model to use. Supports all models from LiteLLM. Examples: `"gpt-5.2"`, `"ollama_chat/llama2:13b"`, `"anthropic/claude-3-5-sonnet"`.
 
 - **stream_target** (`str`, default: `"stdout"`): The target to stream the response to. Should be one of `"stdout"`, `"panel"`, `"api"`, or `"none"`. For **async** HTTP servers (FastAPI, SSE), use [`AsyncSimpleBot`](../streaming_async.md) from `llamabot` instead of `"api"` with `__call__`, which returns a synchronous generator.
 
@@ -126,7 +126,7 @@ import llamabot as lmb
 
 bot = lmb.SimpleBot(
     system_prompt="You are a helpful assistant.",
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 response = bot("What is machine learning?")
@@ -142,12 +142,12 @@ import llamabot as lmb
 memory = lmb.ChatMemory()
 
 # Or threaded memory (intelligent conversation threading)
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 
 bot = lmb.SimpleBot(
     system_prompt="You are a helpful assistant.",
     memory=memory,
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 # Bot remembers previous conversations
@@ -181,7 +181,7 @@ import llamabot as lmb
 bot = lmb.SimpleBot(
     system_prompt="You are a helpful assistant.",
     stream_target="panel",
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 response = bot("Tell me a long story.")

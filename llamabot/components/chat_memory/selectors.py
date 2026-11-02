@@ -180,7 +180,7 @@ class LLMNodeSelector(NodeSelector):
     :param model: LLM model name to use for node selection
     """
 
-    def __init__(self, model: str = "gpt-4o-mini"):
+    def __init__(self, model: str = "gpt-5.2"):
         self.model = model
         # We'll create the system prompt dynamically with candidate_nodes
         self.bot = None  # Will be initialized in select_parent

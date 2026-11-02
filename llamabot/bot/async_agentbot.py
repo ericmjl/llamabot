@@ -130,7 +130,7 @@ class AsyncAgentBot:
         tools: List[Callable],
         decide_node: Optional[Node] = None,
         system_prompt: Optional[str] = None,
-        model_name: str = "gpt-4.1",
+        model_name: str = "gpt-5.2",
         max_iterations: Optional[int] = None,
         mcp_servers: Optional[List[MCPServerConfig]] = None,
         mcp_options: Optional[MCPIntegrationOptions] = None,

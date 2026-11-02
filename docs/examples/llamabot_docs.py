@@ -116,7 +116,7 @@ def _(lmb):
     chat_memory = lmb.ChatMemory()
 
     # For intelligent threading (uses LLM for smart connections)
-    # chat_memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+    # chat_memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 
     return (chat_memory,)
 

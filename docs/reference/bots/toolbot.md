@@ -31,7 +31,7 @@ def __init__(
 
 - **system_prompt** (`str`): The system prompt to use for the bot. This defines the bot's behavior and tool selection strategy.
 
-- **model_name** (`str`): The name of the model to use. Must support function calling. Examples: `"gpt-4o-mini"`, `"gpt-4o"`, `"anthropic/claude-3-5-sonnet"`.
+- **model_name** (`str`): The name of the model to use. Must support function calling. Examples: `"gpt-5.2"`, `"gpt-5.2"`, `"anthropic/claude-3-5-sonnet"`.
 
 - **tools** (`Optional[List[Callable]]`, default: `None`): Optional list of additional tools to include. Tools should be decorated with `@tool` or be callable functions. Default tools (`today_date`, `respond_to_user`, `return_object_to_user`, `inspect_globals`) are automatically included.
 
@@ -77,7 +77,7 @@ from llamabot.components.tools import write_and_execute_code
 
 bot = lmb.ToolBot(
     system_prompt="You are a data analyst.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())]
 )
 
@@ -110,7 +110,7 @@ from llamabot.components.tools import write_and_execute_code
 
 bot = lmb.ToolBot(
     system_prompt="You are a helpful assistant that can execute Python code.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())]
 )
 
@@ -138,7 +138,7 @@ def calculate_fibonacci(n: int) -> int:
 
 bot = lmb.ToolBot(
     system_prompt="You are a mathematical assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     tools=[calculate_fibonacci]
 )
 
@@ -161,7 +161,7 @@ data = pd.DataFrame({
 
 bot = lmb.ToolBot(
     system_prompt="You are a data analyst.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())]
 )
 
@@ -178,7 +178,7 @@ memory = lmb.ChatMemory()
 
 bot = lmb.ToolBot(
     system_prompt="You are a data analysis assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())],
     chat_memory=memory
 )

@@ -20,7 +20,7 @@ def configured_litellm():
 
     - ``suppress_debug_info`` silences litellm's noisy "Provider List: ..."
       banner, printed whenever ``get_llm_provider()`` cannot infer a provider
-      from a bare model name (e.g. the default ``gpt-4.1``). The banner
+      from a bare model name (e.g. the default ``gpt-5.2``). The banner
       precedes a ``BadRequestError`` that callers already handle, so it is
       pure noise. litellm reads this flag at call time, so setting it here
       (before any litellm call) is equivalent to setting it at import time.
@@ -43,4 +43,4 @@ def default_language_model():
 
     load_dotenv(llamabotrc_path)
 
-    return os.getenv("DEFAULT_LANGUAGE_MODEL", "gpt-4.1")
+    return os.getenv("DEFAULT_LANGUAGE_MODEL", "gpt-5.2")

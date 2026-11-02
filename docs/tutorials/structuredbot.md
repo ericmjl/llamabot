@@ -58,7 +58,7 @@ from datetime import datetime
 bot = lmb.StructuredBot(
     system_prompt="Extract person information from the given text. Always include a created_at timestamp.",
     pydantic_model=Person,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 ```
 
@@ -125,7 +125,7 @@ class Product(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract product information from text.",
     pydantic_model=Product,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 ```
 
@@ -160,7 +160,7 @@ class Employee(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract employee information including company details.",
     pydantic_model=Employee,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 employee = bot("""
@@ -180,7 +180,7 @@ and has 150 employees.
 bot = lmb.StructuredBot(
     system_prompt="Extract data from text.",
     pydantic_model=YourModel,
-    model_name="gpt-4o",
+    model_name="gpt-5.2",
     allow_failed_validation=False,  # Default: False (retry on validation failure)
     max_retries=3,                  # Default: 3 retries
     temperature=0.1                 # Lower temperature for more consistent outputs
@@ -214,7 +214,7 @@ class Invoice(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract invoice information from the document.",
     pydantic_model=Invoice,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 invoice = bot(invoice_document_text)
@@ -232,7 +232,7 @@ class APIResponse(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Parse API response and extract structured data.",
     pydantic_model=APIResponse,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 response = bot(api_response_text)
@@ -251,7 +251,7 @@ class ContactForm(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract and validate contact form information.",
     pydantic_model=ContactForm,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 form_data = bot(user_submitted_text)
@@ -338,7 +338,7 @@ lmb.set_debug_mode(True)
 bot = lmb.StructuredBot(
     system_prompt="Extract data from text.",
     pydantic_model=YourModel,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 ```
 

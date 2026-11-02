@@ -13,9 +13,7 @@ app = typer.Typer()
 
 @app.command()
 def chat(
-    model_name: str = typer.Option(
-        "mistral/mistral-medium", help="Name of the LLM to use."
-    ),
+    model_name: str = typer.Option("gpt-5.2", help="Name of the LLM to use."),
     initial_message: str = typer.Option(..., help="Initial message for the bot."),
     panel: bool = typer.Option(True, help="Whether to use Panel or not."),
     doc_path: Path = typer.Argument(

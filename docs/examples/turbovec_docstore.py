@@ -180,7 +180,7 @@ def _(store):
     bot = QueryBot(
         system_prompt="You are a helpful assistant that answers questions about the provided documents.",
         docstore=store,
-        model_name="gpt-4o-mini",
+        model_name="gpt-5.2",
     )
     return (bot,)
 

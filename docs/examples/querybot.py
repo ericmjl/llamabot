@@ -165,7 +165,7 @@ def _(QueryBot):
         "You are an expert in code Q&A.",
         collection_name="llamabot",
         document_paths=source_python_files,
-        model_name="gpt-4-1106-preview",
+        model_name="gpt-5.2",
     )
     return codebot, source_python_files
 

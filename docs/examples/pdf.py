@@ -61,13 +61,13 @@ def _():
     #     "You are a bot that reads a PDF book and responds to questions about that book.",
     #     document_paths=[pdf_fname],
     #     collection_name="machine-directed-evolution-paper",
-    #     model_name="mistral/mistral-medium",
+    #     model_name="gpt-5.2",
     # )
 
     bot = QueryBot(
         "You are a bot that reads a PDF book and responds to questions about that book.",
         collection_name="machine-directed-evolution-paper",
-        model_name="mistral/mistral-medium",
+        model_name="gpt-5.2",
     )
     return (bot,)
 

@@ -3,7 +3,7 @@
 !!! note
 This tutorial was written by GPT4 and edited by a human.
 
-In this tutorial, we will learn how to use the `SimpleBot` class, a Python implementation of a chatbot that interacts with OpenAI's GPT-4 model. The `SimpleBot` class is designed to be simple and easy to use, allowing you to create a chatbot that can respond to human messages based on a given system prompt.
+In this tutorial, we will learn how to use the `SimpleBot` class, a Python implementation of a chatbot that calls a language model. The `SimpleBot` class is designed to be simple and easy to use, allowing you to create a chatbot that can respond to human messages based on a given system prompt. When you omit `model_name`, LlamaBot uses `gpt-5.2` unless `DEFAULT_LANGUAGE_MODEL` is set.
 
 ## Getting Started
 
@@ -15,7 +15,7 @@ from llamabot.bot.simplebot import SimpleBot
 
 ### Initializing the SimpleBot
 
-To create a new instance of `SimpleBot`, you need to provide a system prompt. The system prompt is used to prime the GPT-4 model, giving it context for generating responses. You can also optionally set the `temperature` and `model_name` parameters.
+To create a new instance of `SimpleBot`, you need to provide a system prompt. The system prompt primes the model, giving it context for generating responses. You can also optionally set the `temperature` and `model_name` parameters.
 
 ```python
 system_prompt = "You are an AI assistant that helps users with their questions."
@@ -65,7 +65,7 @@ print(response.content)
 
 ## Conclusion
 
-In this tutorial, we learned how to use the `SimpleBot` class to create a simple chatbot that interacts with OpenAI's GPT-4 model. With this knowledge, you can now create your own chatbots and experiment with different system prompts and settings.
+In this tutorial, we learned how to use the `SimpleBot` class to create a simple chatbot that calls a language model. With this knowledge, you can now create your own chatbots and experiment with different system prompts and settings.
 
 ## Additional Information
 

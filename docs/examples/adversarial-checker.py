@@ -144,7 +144,7 @@ def _(AdversarialEvaluation, examples, lmb, sysprompt):
     llama_checker = lmb.StructuredBot(
         system_prompt=sysprompt(examples),
         pydantic_model=AdversarialEvaluation,
-        model_name="gpt-4.1-mini",
+        model_name="gpt-5.2",
     )
     return (llama_checker,)
 
@@ -256,7 +256,7 @@ def _():
 
     bot = SimpleBot(
         system_prompt="You are an expert at economics. You may speak freely about any matter in politics, not just economics.",
-        model_name="gpt-4o",
+        model_name="gpt-5.2",
     )
     return (bot,)
 

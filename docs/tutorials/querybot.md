@@ -31,7 +31,7 @@ docstore.extend(docs_texts)
 chat_memory = lmb.ChatMemory()
 
 # For intelligent threading (uses LLM for smart connections)
-# chat_memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+# chat_memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 
 chat_memory.reset()  # Optionally clear previous chat history
 

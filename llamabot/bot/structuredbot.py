@@ -84,7 +84,7 @@ class StructuredBot(SimpleBot):
             raise ValueError(
                 f"Model {model_name} does not support structured responses. "
                 "Please use a model that supports both `response_format` and `response_schema`; "
-                "`gpt-4`, `anthropic/claude-3-5-sonnet`, "
+                "`gpt-5.2`, `anthropic/claude-3-5-sonnet`, "
                 "and gemini/gemini-1.5-pro-latest are specific examples, "
                 "just make sure you have the appropriate API key for the model."
             )

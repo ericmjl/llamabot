@@ -39,7 +39,7 @@ def main():
         and can execute Python code to perform analysis. Focus on providing insights
         about customer demographics, purchasing patterns, and regional differences.
         """,
-        model_name="gpt-4.1",
+        model_name="gpt-5.2",
         tools=[write_and_execute_code(globals_dict=globals())],
     )
 

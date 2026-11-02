@@ -52,7 +52,7 @@ import llamabot as lmb
 
 bot = lmb.SimpleBot(
     system_prompt="You are a helpful assistant.",
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 response = bot("Explain quantum computing")
@@ -80,7 +80,7 @@ from llamabot.components.tools import write_and_execute_code
 
 bot = lmb.ToolBot(
     system_prompt="You are a data analyst.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())]
 )
 
@@ -119,7 +119,7 @@ def respond_to_user(response: str) -> str:
 
 bot = lmb.AgentBot(
     tools=[search_web, respond_to_user],
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 response = bot("Research the latest developments in AI and summarize them")
@@ -184,7 +184,7 @@ class Person(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract person information.",
     pydantic_model=Person,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 person = bot("John is 25 years old. Email: john@example.com")
@@ -228,7 +228,7 @@ Available for: SimpleBot, ToolBot, StructuredBot, QueryBot
 - **Threaded memory**: Intelligent conversation threading
 
   ```python
-  memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+  memory = lmb.ChatMemory.threaded(model="gpt-5.2")
   ```
 
 ### Document Store (RAG Memory)
