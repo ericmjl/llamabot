@@ -44,7 +44,7 @@ def _():
 
     groq_bot = SimpleBot(
         system_prompt="You are a cheerful llama.",
-        model_name="groq/mixtral-8x7b-32768",
+        model_name="groq/openai/gpt-oss-120b",
     )
     return SimpleBot, groq_bot
 
@@ -52,7 +52,7 @@ def _():
 @app.cell
 def _(SimpleBot):
     openai_bot = SimpleBot(
-        system_prompt="You are a cheerful llama.", model_name="gpt-4-turbo"
+        system_prompt="You are a cheerful llama.", model_name="gpt-5.2"
     )
     return (openai_bot,)
 
@@ -61,7 +61,7 @@ def _(SimpleBot):
 def _(mo):
     mo.md(
         r"""
-    In my own testing, Groq's mixtral implementation is ~3-4x faster than OpenAI's GPT-4 turbo model.
+    The Groq cell calls `openai/gpt-oss-120b`. The OpenAI cell calls `gpt-5.2`.
     """
     )
     return

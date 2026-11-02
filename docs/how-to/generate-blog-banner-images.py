@@ -171,7 +171,7 @@ def _(DallEImagePrompt, StructuredBot, prompt):
     dalle_prompt_bot = StructuredBot(
         system_prompt=bannerbot_dalle_prompter_sysprompt(),
         pydantic_model=DallEImagePrompt,
-        model_name="gpt-4o",
+        model_name="gpt-5.2",
     )
     return (dalle_prompt_bot,)
 
@@ -574,7 +574,7 @@ def _(
             symbols=symbol_selector.value,
         ),
         pydantic_model=DallEImagePrompt,
-        model_name="gpt-4o",
+        model_name="gpt-5.2",
     )
     return (styled_dalle_prompt_bot,)
 

@@ -31,4 +31,4 @@ RUN apt-get install --only-upgrade libstdc++6 git
 ENV LD_LIBRARY_PATH=/opt/conda/lib:$LD_LIBRARY_PATH
 RUN llamabot doc chat --help
 EXPOSE 6363
-ENTRYPOINT ["llamabot", "doc", "chat", "--model-name", "gpt-4-0125-preview", "--panel",  "--initial-message", "Hello there, I am a bot to help you with answering questions about this book, 'Hiring Data Scientists and Machine Learning Engineers'.", "/tmp/dshiring.pdf"]
+ENTRYPOINT ["llamabot", "doc", "chat", "--model-name", "gpt-5.2", "--panel",  "--initial-message", "Hello there, I am a bot to help you with answering questions about this book, 'Hiring Data Scientists and Machine Learning Engineers'.", "/tmp/dshiring.pdf"]

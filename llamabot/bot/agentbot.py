@@ -116,7 +116,7 @@ class AgentBot:
         tools: List[Callable],
         decide_node=None,
         system_prompt: Optional[str] = None,
-        model_name: str = "gpt-4.1",
+        model_name: str = "gpt-5.2",
         max_iterations: Optional[int] = None,
         mcp_servers=None,
         mcp_options=None,

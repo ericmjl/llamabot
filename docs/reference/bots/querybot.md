@@ -153,7 +153,7 @@ docstore = lmb.LanceDBDocStore(table_name="my_docs")
 docstore.extend(documents)
 
 # Use intelligent threading for better context
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 
 bot = lmb.QueryBot(
     system_prompt="You are an expert on these documents.",

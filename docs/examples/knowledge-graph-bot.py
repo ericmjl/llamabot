@@ -155,9 +155,7 @@ def _(mo):
         r"""
     Now, let's set up the StructuredBot, which we will call `kgbot`,
     which stands for "Knowledge Graph Bot".
-    We will use the Groq-hosted `llama-3.1-70b-versatile`,
-    which is a powerful open-source language model developed by Meta AI
-    and hosted on Groq for lightning fast text generation.
+    We will use Groq's `openai/gpt-oss-120b` for fast text generation.
     """
     )
     return
@@ -179,7 +177,7 @@ def _(KnowledgeGraphTriplets, StructuredBot):
         system_prompt=kgbot_sysprompt(),
         pydantic_model=KnowledgeGraphTriplets,
         stream_target="none",
-        model_name="groq/llama-3.1-70b-versatile",
+        model_name="groq/openai/gpt-oss-120b",
     )
     return kgbot, prompt
 
@@ -188,11 +186,11 @@ def _(KnowledgeGraphTriplets, StructuredBot):
 def _(mo):
     mo.md(
         r"""
-    The LLM of choice here is GPT-4.
+    The LLM of choice here is Groq's `openai/gpt-oss-120b`.
     We could choose to use `ollama/llama3`,
     which is a powerful open source language model developed by Meta AI.
     It needs just over 16GB of RAM to run.
-    It's going to be much slower than calling on the GPT-4 API.
+    It's going to be much slower than calling the Groq API.
     """
     )
     return
@@ -407,7 +405,7 @@ def _(IBSRelationships, StructuredBot, ibsbot_sysprompt):
         system_prompt=ibsbot_sysprompt(),
         pydantic_model=IBSRelationships,
         stream_target="none",
-        model_name="groq/llama-3.1-70b-versatile",
+        model_name="groq/openai/gpt-oss-120b",
     )
     return (ibsbot,)
 

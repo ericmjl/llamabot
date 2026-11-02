@@ -13,7 +13,7 @@ import llamabot as lmb
 memory = lmb.ChatMemory()
 
 # Intelligent graph memory with threading
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 
 # Use with any bot
 bot = lmb.SimpleBot(system_prompt="You are helpful", memory=memory)
@@ -67,15 +67,15 @@ H1: "Let's talk about Python"
 memory = ChatMemory()  # Uses LinearNodeSelector by default
 
 # Graph memory with LLM-based threading
-memory = ChatMemory.threaded(model="gpt-4o-mini")
+memory = ChatMemory.threaded(model="gpt-5.2")
 ```
 
 #### Low-Level API (Full Configurability)
 
 ```python
 memory = ChatMemory(
-    node_selector=LLMNodeSelector(model="gpt-4o-mini"),
-    summarizer=LLMSummarizer(model="gpt-4o-mini"),  # Optional
+    node_selector=LLMNodeSelector(model="gpt-5.2"),
+    summarizer=LLMSummarizer(model="gpt-5.2"),  # Optional
     context_depth=5  # Default context depth for retrieval
 )
 ```
@@ -84,7 +84,7 @@ memory = ChatMemory(
 
 ```python
 @classmethod
-def threaded(cls, model: str = "gpt-4o-mini", **kwargs) -> "ChatMemory":
+def threaded(cls, model: str = "gpt-5.2", **kwargs) -> "ChatMemory":
     """Create ChatMemory with LLM-based threading.
 
     :param model: LLM model name for node selection and summarization
@@ -99,15 +99,15 @@ def threaded(cls, model: str = "gpt-4o-mini", **kwargs) -> "ChatMemory":
 
 #### Under the Hood: What `.threaded()` Actually Does
 
-When you call `ChatMemory.threaded(model="gpt-4o-mini")`, here's exactly what happens:
+When you call `ChatMemory.threaded(model="gpt-5.2")`, here's exactly what happens:
 
 ```python
 # 1. Factory method creates LLMNodeSelector
-llm_selector = LLMNodeSelector(model="gpt-4o-mini")
-# This creates a selector that will use GPT-4o-mini to choose conversation threads
+llm_selector = LLMNodeSelector(model="gpt-5.2")
+# This creates a selector that will use gpt-5.2 to choose conversation threads
 
 # 2. Factory method creates LLMSummarizer
-llm_summarizer = LLMSummarizer(model="gpt-4o-mini")
+llm_summarizer = LLMSummarizer(model="gpt-5.2")
 # This creates a summarizer that will generate message summaries for better threading
 
 # 3. Factory method calls the main constructor
@@ -138,8 +138,8 @@ def __init__(self, node_selector, summarizer, context_depth=5):
 ```python
 # This is exactly what .threaded() does internally
 memory = ChatMemory(
-    node_selector=LLMNodeSelector(model="gpt-4o-mini"),
-    summarizer=LLMSummarizer(model="gpt-4o-mini"),
+    node_selector=LLMNodeSelector(model="gpt-5.2"),
+    summarizer=LLMSummarizer(model="gpt-5.2"),
     context_depth=5
 )
 ```
@@ -189,7 +189,7 @@ import llamabot as lmb
 memory = lmb.ChatMemory()  # Default linear
 bot = lmb.SimpleBot(
     system_prompt="You are a helpful assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     memory=memory
 )
 
@@ -204,10 +204,10 @@ response2 = bot("What did I just ask you?")  # Bot can reference previous conver
 import llamabot as lmb
 
 # Create a bot with intelligent threading (uses LLM for smart connections)
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 bot = lmb.SimpleBot(
     system_prompt="You are a helpful assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     memory=memory
 )
 
@@ -225,14 +225,14 @@ import llamabot as lmb
 
 # Custom memory configuration (advanced users)
 memory = lmb.ChatMemory(
-    node_selector=lmb.LLMNodeSelector(model="gpt-4o-mini"),
-    summarizer=lmb.LLMSummarizer(model="gpt-4o-mini"),  # Optional for better threading
+    node_selector=lmb.LLMNodeSelector(model="gpt-5.2"),
+    summarizer=lmb.LLMSummarizer(model="gpt-5.2"),  # Optional for better threading
     context_depth=10  # How far back to look for context
 )
 
 bot = lmb.SimpleBot(
     system_prompt="You are a coding assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     memory=memory
 )
 ```
@@ -243,10 +243,10 @@ bot = lmb.SimpleBot(
 import llamabot as lmb
 
 # Bot with memory that can retrieve context
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 bot = lmb.SimpleBot(
     system_prompt="You are a helpful assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     memory=memory
 )
 
@@ -264,10 +264,10 @@ from llamabot.bot.simplebot import SimpleBot
 from llamabot.components.chat_memory import ChatMemory
 
 # Create bot with graph memory
-memory = ChatMemory.threaded(model="gpt-4o-mini")
+memory = ChatMemory.threaded(model="gpt-5.2")
 bot = SimpleBot(
     system_prompt="You are a helpful assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     memory=memory
 )
 
@@ -310,7 +310,7 @@ simple_bot = lmb.SimpleBot(
 )
 
 # Graph memory for complex conversations with threading (smart)
-graph_memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+graph_memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 query_bot = lmb.QueryBot(
     system_prompt="You are a helpful assistant.",
     memory=graph_memory
@@ -318,7 +318,7 @@ query_bot = lmb.QueryBot(
 
 # Custom memory for specific needs (advanced)
 custom_memory = lmb.ChatMemory(
-    node_selector=lmb.LLMNodeSelector(model="gpt-4o-mini"),
+    node_selector=lmb.LLMNodeSelector(model="gpt-5.2"),
     summarizer=None  # No summarization for performance
 )
 structured_bot = StructuredBot(
@@ -338,7 +338,7 @@ from llamabot.components.chat_memory import ChatMemory
 memory = ChatMemory()  # Default linear
 bot = SimpleBot(
     system_prompt="You are a helpful assistant.",
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.2",
     memory=memory
 )
 
@@ -1050,7 +1050,7 @@ messages = memory.retrieve()
 ```python
 import llamabot as lmb
 
-memory = lmb.ChatMemory.threaded(model="gpt-4o-mini")
+memory = lmb.ChatMemory.threaded(model="gpt-5.2")
 ```
 
 ## Conclusion

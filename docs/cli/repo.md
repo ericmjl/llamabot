@@ -25,7 +25,7 @@ The `chat` command allows you to interact with your code repository in a convers
 Run the command below to start a conversation with your repository:
 
 ```bash
-llamabot repo chat --repo-url https://github.com/yourusername/yourrepo --checkout="branch_or_tag" --source-file-extensions py --source-file-extensions md --model-name="gpt-4-0125-preview"
+llamabot repo chat --repo-url https://github.com/yourusername/yourrepo --checkout="branch_or_tag" --source-file-extensions py --source-file-extensions md --model-name="gpt-5.2"
 ```
 
 Here are the key parameters to understand:

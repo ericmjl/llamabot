@@ -22,7 +22,7 @@ def _():
     bot = lmb.SimpleBot(
         "You are a helpful bot.",
         # model_name="ollama_chat/phi4:latest",
-        memory=lmb.ChatMemory.threaded(model="gpt-4o-mini"),
+        memory=lmb.ChatMemory.threaded(model="gpt-5.2"),
     )
     bot("Help me write a program to teach CI/CD.")
     return (bot,)

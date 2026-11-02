@@ -51,7 +51,7 @@ Let's start with a basic ToolBot that can execute code:
 # Create a ToolBot with code execution capabilities
 bot = ToolBot(
     system_prompt="You are a helpful assistant that can execute Python code.",
-    model_name="gpt-4.1",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())],
     # Optional: Add chat memory for conversation context
     # chat_memory=lmb.ChatMemory(),
@@ -153,7 +153,7 @@ def analyze_dataframe(df_name: str, operation: str) -> str:
 # Create a ToolBot with custom tools
 bot = ToolBot(
     system_prompt="You are a data analysis assistant that can perform calculations and analyze DataFrames.",
-    model_name="gpt-4.1",
+    model_name="gpt-5.2",
     tools=[
         write_and_execute_code(globals_dict=globals()),
         calculate_fibonacci,
@@ -197,7 +197,7 @@ sales_data = pd.DataFrame({
 # Create a ToolBot that can access these variables
 bot = ToolBot(
     system_prompt="You are a data analyst. You have access to sales_data DataFrame.",
-    model_name="gpt-4.1",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())],
 )
 
@@ -216,7 +216,7 @@ import llamabot as lmb
 # Create a ToolBot with chat memory
 bot = ToolBot(
     system_prompt="You are a data analysis assistant.",
-    model_name="gpt-4.1",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())],
     chat_memory=lmb.ChatMemory(),  # Enable conversation memory
 )
@@ -229,7 +229,7 @@ response2 = bot("Now analyze the data you just created")  # Bot remembers the Da
 **Memory Options:**
 
 - `lmb.ChatMemory()` - Linear memory (fast, no LLM calls)
-- `lmb.ChatMemory.threaded(model="gpt-4o-mini")` - Intelligent threading (uses LLM for smart connections)
+- `lmb.ChatMemory.threaded(model="gpt-5.2")` - Intelligent threading (uses LLM for smart connections)
 
 ## ToolBot vs Other Bots
 
@@ -346,7 +346,7 @@ bot = ToolBot(
     and can execute Python code to perform analysis. Focus on providing insights
     about customer demographics, purchasing patterns, and regional differences.
     """,
-    model_name="gpt-4.1",
+    model_name="gpt-5.2",
     tools=[write_and_execute_code(globals_dict=globals())],
 )
 

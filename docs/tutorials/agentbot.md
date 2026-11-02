@@ -68,7 +68,7 @@ def get_weather(city: str) -> str:
 # Create an AgentBot with your function
 agent = lmb.AgentBot(
     tools=[get_weather],
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 
 # Use the agent
@@ -226,7 +226,7 @@ def analyze_portfolio(prices: list[float]) -> dict:
 # Create a financial analysis agent
 financial_agent = lmb.AgentBot(
     tools=[get_stock_price, calculate_percentage_change, analyze_portfolio],
-    model_name="gpt-4o-mini"
+    model_name="gpt-5.2"
 )
 ```
 
@@ -311,7 +311,7 @@ AgentBot's interface:
 agent = lmb.AgentBot(
     tools=[get_stock_price],
     system_prompt="Your custom system prompt here",
-    model_name="gpt-4.1",
+    model_name="gpt-5.2",
     # Additional completion kwargs (e.g., api_base, api_key)
     api_base="https://your-endpoint.com"
 )
@@ -328,7 +328,7 @@ from pocketflow import Node
 class CustomDecisionNode(Node):
     """Custom decision node with specialized logic."""
 
-    def __init__(self, tools, model_name="gpt-4.1", **kwargs):
+    def __init__(self, tools, model_name="gpt-5.2", **kwargs):
         super().__init__()
         self.tools = tools
         self.model_name = model_name
@@ -374,7 +374,7 @@ class CustomDecisionNode(Node):
 # AgentBot will automatically set the tools on your custom decide node
 custom_decide = CustomDecisionNode(
     tools=[],  # Will be set by AgentBot to include DEFAULT_TOOLS + your tools
-    model_name="gpt-4.1"
+    model_name="gpt-5.2"
 )
 
 agent = lmb.AgentBot(

@@ -39,7 +39,7 @@ def __init__(
   this model.
 
 - **model_name** (`str`, default: `default_language_model()`): The name of
-  the model to use. Must support structured outputs (e.g., `gpt-4o`,
+  the model to use. Must support structured outputs (e.g., `gpt-5.2`,
   `anthropic/claude-3-5-sonnet`, `gemini/gemini-1.5-pro-latest`). See
   [model support](#model-support) for details.
 
@@ -58,7 +58,7 @@ def __init__(
 StructuredBot requires models that support both `response_format` and
 `response_schema` parameters. Supported models include:
 
-- `gpt-4o`, `gpt-4-turbo`, `gpt-4`
+- `gpt-5.2`
 - `anthropic/claude-3-5-sonnet`, `anthropic/claude-3-opus`
 - `gemini/gemini-1.5-pro-latest`
 - `ollama_chat/*` (with structured output support)
@@ -104,7 +104,7 @@ class Person(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract person information from text.",
     pydantic_model=Person,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 person = bot("John is 25 years old. Email: john@example.com")
@@ -145,7 +145,7 @@ class Person(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract person information from text.",
     pydantic_model=Person,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 person = bot("John is 25 years old and enjoys hiking and photography.")
@@ -176,7 +176,7 @@ class Person(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract person information with address.",
     pydantic_model=Person,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 person = bot("John, 25, lives at 123 Main St, New York, 10001")
@@ -198,7 +198,7 @@ class Person(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract person information.",
     pydantic_model=Person,
-    model_name="gpt-4o"
+    model_name="gpt-5.2"
 )
 
 # Works even if email is missing
@@ -219,7 +219,7 @@ class Person(BaseModel):
 bot = lmb.StructuredBot(
     system_prompt="Extract person information.",
     pydantic_model=Person,
-    model_name="gpt-4o",
+    model_name="gpt-5.2",
     allow_failed_validation=True
 )
 

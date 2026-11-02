@@ -54,7 +54,7 @@ def _():
     Here is the code to write tests against:
     """,
         session_name="code-tested",
-        model_name="mistral/mistral-medium",
+        model_name="gpt-5.2",
         stream_target="stdout",
     )
     return (code_tester,)

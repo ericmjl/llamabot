@@ -301,7 +301,7 @@ def docwriter_sysprompt():
     """
 
 
-def ood_checker_bot(model_name: str = "gpt-4o") -> lmb.StructuredBot:
+def ood_checker_bot(model_name: str = "gpt-5.2") -> lmb.StructuredBot:
     """Return a StructuredBot for the out-of-date checker."""
     return lmb.StructuredBot(
         system_prompt=ood_checker_sysprompt(),
@@ -310,7 +310,7 @@ def ood_checker_bot(model_name: str = "gpt-4o") -> lmb.StructuredBot:
     )
 
 
-def docwriter_bot(model_name: str = "gpt-4o") -> lmb.StructuredBot:
+def docwriter_bot(model_name: str = "gpt-5.2") -> lmb.StructuredBot:
     """Return a StructuredBot for the documentation writer."""
     return lmb.StructuredBot(
         system_prompt=docwriter_sysprompt(),
@@ -331,7 +331,7 @@ def refine_bot_sysprompt():
     """
 
 
-def refine_bot(model_name: str = "o1-preview") -> SimpleBot:
+def refine_bot(model_name: str = "gpt-5.2") -> SimpleBot:
     """Return a SimpleBot for the documentation writer."""
     return lmb.SimpleBot(
         system_prompt=refine_bot_sysprompt(),
@@ -345,9 +345,9 @@ def write(
     from_scratch: bool = False,
     refine: bool = False,
     verbose: bool = False,
-    ood_checker_model_name: str = "gpt-4o",
-    docwriter_model_name: str = "gpt-4o",
-    refiner_model_name: str = "o1-preview",
+    ood_checker_model_name: str = "gpt-5.2",
+    docwriter_model_name: str = "gpt-5.2",
+    refiner_model_name: str = "gpt-5.2",
 ):
     """Write the documentation based on the given source file.
 

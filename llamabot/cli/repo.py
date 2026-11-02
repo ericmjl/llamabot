@@ -28,7 +28,7 @@ def chat(
         "lr",
         "rst",
     ],
-    model_name: str = "gpt-4-0125-preview",
+    model_name: str = "gpt-5.2",
     initial_message: Optional[str] = None,
     panel: bool = True,
 ):

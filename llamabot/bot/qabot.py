@@ -62,12 +62,12 @@ class DocQABot:
 
         self.response_bot = SimpleBot(
             "Based on Q&A results and relevant documents, please answer the query.",
-            model_name="mistral/mistral-medium",
-            api_key=os.getenv("MISTRAL_API_KEY"),
+            model_name="gpt-5.2",
+            api_key=os.getenv("OPENAI_API_KEY"),
         )
         self.jeopardy_bot = SimpleBot(
             system_prompt=jeopardy_bot_sysprompt(),
-            model_name="gpt-3.5-turbo-1106",
+            model_name="gpt-5.2",
             json_mode=True,
             stream_target="stdout",
             temperature=0.3,

@@ -62,7 +62,7 @@ class LLMSummarizer(Summarizer):
     :param model: LLM model name to use for summarization
     """
 
-    def __init__(self, model: str = "gpt-4o-mini"):
+    def __init__(self, model: str = "gpt-5.2"):
         from llamabot.bot.structuredbot import StructuredBot
 
         self.model = model
@@ -122,7 +122,7 @@ class ChatMemory:
         self._next_node_id = 1
 
     @classmethod
-    def threaded(cls, model: str = "gpt-4o-mini", **kwargs) -> "ChatMemory":
+    def threaded(cls, model: str = "gpt-5.2", **kwargs) -> "ChatMemory":
         """Create ChatMemory with LLM-based threading.
 
         :param model: LLM model name for node selection and summarization
