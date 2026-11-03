@@ -1,3 +1,4 @@
+mimo-v2.6
 lfm3
 lfm3-audio
 lfm3-omni
@@ -75,8 +76,8 @@ nomic-embed-text-v2-moe
 rnj-1
 devstral-small-2
 devstral-2
-mistral-large-3
 ministral-3
+mistral-large-3
 deepseek-ocr
 cogito-2.1
 gpt-oss-safeguard
