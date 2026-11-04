@@ -1,3 +1,5 @@
+kimi-k3.1-pro
+pplx-decider-flash
 mimo-v2.6
 lfm3
 lfm3-audio
@@ -25,8 +27,8 @@ laya
 tev1
 nimble
 nemotron-3.5-super
-mimo-v2.6-pro
 mimo-v2.6-flash
+mimo-v2.6-pro
 deepseek-v4.1-flash
 qwen3.8-flash-next
 glm-5.3-flash
@@ -73,11 +75,11 @@ olmo-3.1
 nemotron-3-nano
 olmo-3
 nomic-embed-text-v2-moe
-rnj-1
 devstral-small-2
+rnj-1
 devstral-2
-ministral-3
 mistral-large-3
+ministral-3
 deepseek-ocr
 cogito-2.1
 gpt-oss-safeguard
