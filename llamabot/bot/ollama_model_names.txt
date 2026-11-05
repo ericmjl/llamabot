@@ -1,3 +1,4 @@
+autotrust-jev
 kimi-k3.1-pro
 pplx-decider-flash
 mimo-v2.6
@@ -27,8 +28,8 @@ laya
 tev1
 nimble
 nemotron-3.5-super
-mimo-v2.6-flash
 mimo-v2.6-pro
+mimo-v2.6-flash
 deepseek-v4.1-flash
 qwen3.8-flash-next
 glm-5.3-flash
@@ -78,8 +79,8 @@ nomic-embed-text-v2-moe
 devstral-small-2
 rnj-1
 devstral-2
-mistral-large-3
 ministral-3
+mistral-large-3
 deepseek-ocr
 cogito-2.1
 gpt-oss-safeguard
