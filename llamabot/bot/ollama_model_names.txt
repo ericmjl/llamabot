@@ -1,3 +1,4 @@
+ripple-preview
 autotrust-jev
 kimi-k3.1-pro
 pplx-decider-flash
@@ -62,7 +63,6 @@ medgemma1.5
 medgemma
 kimi-k2.6
 nemotron-cascade-2
-minimax-m2.7
 gemma4
 lfm2
 nemotron-3-super
@@ -76,11 +76,10 @@ olmo-3.1
 nemotron-3-nano
 olmo-3
 nomic-embed-text-v2-moe
-devstral-small-2
 rnj-1
+devstral-small-2
 devstral-2
 ministral-3
-mistral-large-3
 deepseek-ocr
 cogito-2.1
 gpt-oss-safeguard
