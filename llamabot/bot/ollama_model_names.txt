@@ -1,3 +1,4 @@
+inkling-2-small
 ripple-preview
 autotrust-jev
 kimi-k3.1-pro
