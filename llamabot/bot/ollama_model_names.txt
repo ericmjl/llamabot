@@ -1,3 +1,4 @@
+inkling-2-mini
 inkling-2-small
 ripple-preview
 autotrust-jev
@@ -30,8 +31,8 @@ laya
 tev1
 nimble
 nemotron-3.5-super
-mimo-v2.6-pro
 mimo-v2.6-flash
+mimo-v2.6-pro
 deepseek-v4.1-flash
 qwen3.8-flash-next
 glm-5.3-flash
