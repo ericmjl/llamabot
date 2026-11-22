@@ -1,0 +1,237 @@
+:root {
+  color-scheme: light dark;
+  --bg: #0f1419;
+  --surface: #1a2332;
+  --surface2: #1e2d3d;
+  --border: #2d3a4d;
+  --text: #e7edf4;
+  --muted: #8b9cb3;
+  --accent: #5b9cf8;
+  --green: #4caf77;
+  --user-bg: #243447;
+  --assistant-bg: #142018;
+  --skill-bg: #1b3a5c;
+  --skill-border: #2d5a8c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sub {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin: 0 0 1.5rem;
+}
+
+/* ── Two-column layout ───────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 700px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+}
+
+/* ── Input column ────────────────────────────────── */
+textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  resize: vertical;
+  font-family: inherit;
+}
+
+textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button[type="submit"] {
+  margin-top: 0.65rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 0.4rem;
+  border: none;
+  background: var(--accent);
+  color: #031020;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+button[type="submit"]:hover {
+  opacity: 0.88;
+}
+
+button[type="submit"]:disabled,
+.htmx-request button[type="submit"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Streaming panel ─────────────────────────────── */
+.stream-panel {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.stream-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  padding: 0.4rem 0.75rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.dots span {
+  animation: blink 1.2s infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 1; }
+  40%            { opacity: 0; }
+}
+
+.json-preview {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  font-size: 0.8rem;
+  color: var(--green);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 14rem;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+/* ── Output / profile form ───────────────────────── */
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field.two-col {
+  flex-direction: row;
+  gap: 0.75rem;
+}
+
+.field.two-col > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+input[type="text"],
+.profile-form textarea {
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+input[readonly],
+.profile-form textarea[readonly] {
+  opacity: 0.85;
+  cursor: default;
+}
+
+/* ── Skill pill tags ─────────────────────────────── */
+.skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0.4rem 0;
+}
+
+.skill-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--skill-bg);
+  border: 1px solid var(--skill-border);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* ── Footer ──────────────────────────────────────── */
+footer {
+  margin-top: 2rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
